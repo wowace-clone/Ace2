@@ -62,6 +62,11 @@ local function inheritDefaults(t, defaults)
 					end
 				} )
 			end
+			for key in pairs(t) do
+				if (defaults[key] == nil or key == "*") and type(t[key]) == "table" then
+					inheritDefaults(t[key], v)
+				end
+			end
 		else
 			if type(v) == "table" then
 				if type(t[k]) ~= "table" then
