@@ -4,8 +4,8 @@ Revision: $Rev: 3745 $
 Author(s): ckknight (ckknight@gmail.com)
 Inspired By: AceDB 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceDB_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceDB
+Documentation: http://wiki.wowace.com/index.php/AceDB-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceDB-2.0
 Description: Mixin to allow for fast, clean, and featureful saved variable
              access.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0

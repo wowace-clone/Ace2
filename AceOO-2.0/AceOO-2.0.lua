@@ -4,8 +4,8 @@ Revision: $Rev: 3743 $
 Author(s): ckknight (ckknight@gmail.com)
            kergoth (kergoth@handhelds.org)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceOO_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceOO
+Documentation: http://wiki.wowace.com/index.php/AceOO-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceOO-2.0
 Description: Library to provide an object-orientation framework.
 Dependencies: AceLibrary
 ]]

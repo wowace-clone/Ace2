@@ -4,8 +4,8 @@ Revision: $Rev: 3746 $
 Author(s): ckknight (ckknight@gmail.com)
 Inspired By: Ace 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceAddon_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceAddon
+Documentation: http://wiki.wowace.com/index.php/AceAddon-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceAddon-2.0
 Description: Base for all Ace addons to inherit from.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0, (optional) AceConsole-2.0
 ]]

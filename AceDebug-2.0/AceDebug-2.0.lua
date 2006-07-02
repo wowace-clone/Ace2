@@ -4,8 +4,8 @@ Revision: $Rev: 3508 $
 Author(s): Kaelten (kaelten@gmail.com)
 Inspired By: AceDebug 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceDebug_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceDebug
+Documentation: http://wiki.wowace.com/index.php/AceDebug-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceDebug-2.0
 Description: Mixin to allow for simple debugging capabilities.
 Dependencies: AceLibrary, AceOO-2.0
 ]]

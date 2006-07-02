@@ -5,8 +5,8 @@ Author(s): ckknight (ckknight@gmail.com)
            cladhaire (cladhaire@gmail.com)
 Inspired By: AceChatCmd 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceConsole_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceConsole
+Documentation: http://wiki.wowace.com/index.php/AceConsole-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceConsole-2.0
 Description: Mixin to allow for input/output capabilities. This uses the
              AceOptions data table format to determine input.
              http://wiki.wowace.com/index.php/AceOptions_data_table

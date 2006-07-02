@@ -6,10 +6,13 @@ Author(s): ckknight (ckknight@gmail.com)
 Inspired By: Iriel (iriel@vigilance-committee.org)
              Tekkub (tekkub@gmail.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceLibrary_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceLibrary
+Documentation: http://wiki.wowace.com/index.php/AceLibrary
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceLibrary
 Description: Versioning library to handle other library instances, upgrading,
              and proper access.
+             It also provides a base for libraries to work off of, providing
+             proper error tools. It is handy because all the errors occur in the
+             file that called it, not in the library file itself.
 Dependencies: None
 ]]
 

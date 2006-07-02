@@ -5,8 +5,8 @@ Author(s): cladhaire (cladhaire@gmail.com)
            ckknight (ckknight@gmail.com)
 Inspired By: AceHook 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceHook_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceHook
+Documentation: http://wiki.wowace.com/index.php/AceHook-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceHook-2.0
 Description: Mixin to allow for safe hooking of functions, methods, and scripts.
 Dependencies: AceLibrary, AceOO-2.0
 ]]

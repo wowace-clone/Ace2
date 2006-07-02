@@ -3,8 +3,8 @@ Name: AceLocale-2.0
 Revision: $Rev: 3759 $
 Author(s): ckknight (ckknight@gmail.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceLocale_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceLocale
+Documentation: http://wiki.wowace.com/index.php/AceLocale-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceLocale-2.0
 Description: Localization library for addons to use to handle proper
              localization and internationalization.
 Dependencies: AceLibrary

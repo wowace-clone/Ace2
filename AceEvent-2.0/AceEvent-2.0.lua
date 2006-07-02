@@ -4,8 +4,8 @@ Revision: $Rev: 3753 $
 Author(s): ckknight (ckknight@gmail.com)
 Inspired By: AceEvent 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceEvent_API_Documentation
-SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceEvent
+Documentation: http://wiki.wowace.com/index.php/AceEvent-2.0
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceEvent-2.0
 Description: Mixin to allow for event handling and inter-addon communication.
 Dependencies: AceLibrary, AceOO-2.0
 ]]
