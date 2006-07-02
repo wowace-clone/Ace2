@@ -911,9 +911,9 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 							else
 								if type(t.set) == "function" then
 									if t.passValue then
-										set(t.passValue, r,g,b)
+										t.set(t.passValue, r,g,b)
 									else
-										set(r,g,b)
+										t.set(r,g,b)
 									end
 								else
 									if t.passValue then
