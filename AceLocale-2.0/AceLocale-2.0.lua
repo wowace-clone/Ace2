@@ -179,7 +179,7 @@ function AceLocale.prototype:GetReverseTranslation(text)
 	if not self.reverseTranslations then
 		initReverse(self)
 	end
-	local translation = bravo[localized]
+	local translation = self.reverseTranslations[text]
 	if type(translation) ~= "string" then
 		self:error("Reverse translation for %q does not exist", text)
 		return
