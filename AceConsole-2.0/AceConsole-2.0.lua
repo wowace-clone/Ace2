@@ -1093,7 +1093,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		end
 	end
 	_G.SlashCmdList[name] = handler
-	if not self.slashCommand then
+	if self ~= AceConsole and not self.slashCommand then
 		self.slashCommand = slashCommands[1]
 	end
 	
