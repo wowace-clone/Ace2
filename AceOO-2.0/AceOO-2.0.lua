@@ -331,92 +331,92 @@ do
 		end
 	end
 	local function classobjectequal(self, other)
-		if self.Equals then
+		if type(self) == "table" and self.Equals then
 			return self:Equals(other)
-		elseif other.Equals then
+		elseif type(other) == "table" and other.Equals then
 			return other:Equals(self)
-		elseif self.CompareTo then
+		elseif type(self) == "table" and self.CompareTo then
 			return self:CompareTo(other) == 0
-		elseif other.CompareTo then
+		elseif type(other) == "table" and other.CompareTo then
 			return other:CompareTo(self) == 0
 		else
 			return rawequal(self, other)
 		end
 	end
 	local function classobjectlessthan(self, other)
-		if self.IsLessThan then
+		if type(self) == "table" and self.IsLessThan then
 			return self:IsLessThan(other)
-		elseif other.IsLessThanOrEqualTo then
+		elseif type(other) == "table" and other.IsLessThanOrEqualTo then
 			return not other:IsLessThanOrEqualTo(self)
-		elseif self.CompareTo then
+		elseif type(self) == "table" and self.CompareTo then
 			return self:CompareTo(other) < 0
-		elseif other.CompareTo then
+		elseif type(other) == "table" and other.CompareTo then
 			return other:CompareTo(self) > 0
-		elseif other.IsLessThan and other.Equals then
+		elseif type(other) == "table" and other.IsLessThan and other.Equals then
 			return other:Equals(self) or other:IsLessThan(self)
 		else
 			error("cannot compare two objects", 2)
 		end
 	end
 	local function classobjectlessthanequal(self, other)
-		if self.IsLessThanOrEqualTo then
+		if type(self) == "table" and self.IsLessThanOrEqualTo then
 			return self:IsLessThanOrEqualTo(other)
-		elseif other.IsLessThan then
+		elseif type(other) == "table" and other.IsLessThan then
 			return not other:IsLessThan(self)
-		elseif self.CompareTo then
+		elseif type(self) == "table" and self.CompareTo then
 			return self:CompareTo(other) <= 0
-		elseif other.CompareTo then
+		elseif type(other) == "table" and other.CompareTo then
 			return other:CompareTo(self) >= 0
-		elseif self.IsLessThan and self.Equals then
+		elseif type(self) == "table" and self.IsLessThan and self.Equals then
 			return self:Equals(other) or self:IsLessThan(other)
 		else
 			error("cannot compare two incompatible objects", 2)
 		end
 	end
 	local function classobjectadd(self, other)
-		if self.Add then
+		if type(self) == "table" and self.Add then
 			return self:Add(other)
 		else
 			error("cannot add two incompatible objects", 2)
 		end
 	end
 	local function classobjectsub(self, other)
-		if self.Subtract then
+		if type(self) == "table" and self.Subtract then
 			return self:Subtract(other)
 		else
 			error("cannot subtract two incompatible objects", 2)
 		end
 	end
 	local function classobjectunm(self, other)
-		if self.UnaryNegation then
+		if type(self) == "table" and self.UnaryNegation then
 			return self:UnaryNegation(other)
 		else
 			error("attempt to negate an incompatible object", 2)
 		end
 	end
 	local function classobjectmul(self, other)
-		if self.Multiply then
+		if type(self) == "table" and self.Multiply then
 			return self:Multiply(other)
 		else
 			error("cannot multiply two incompatible objects", 2)
 		end
 	end
 	local function classobjectdiv(self, other)
-		if self.Divide then
+		if type(self) == "table" and self.Divide then
 			return self:Divide(other)
 		else
 			error("cannot divide two incompatible objects", 2)
 		end
 	end
 	local function classobjectpow(self, other)
-		if self.Exponent then
+		if type(self) == "table" and self.Exponent then
 			return self:Exponent(other)
 		else
 			error("cannot exponentiate two incompatible objects", 2)
 		end
 	end
 	local function classobjectconcat(self, other)
-		if self.Concatenate then
+		if type(self) == "table" and self.Concatenate then
 			return self:Concatenate(other)
 		else
 			error("cannot concatenate two incompatible objects", 2)
