@@ -702,6 +702,9 @@ do
 		if type(self.embedList) == "table" then
 			self.embedList[target] = true
 		end
+		if type(target.class) ~= "table" then
+			target[self] = true
+		end
 	end
 	
 	function Mixin.prototype:activate(oldLib, oldDeactivate)
