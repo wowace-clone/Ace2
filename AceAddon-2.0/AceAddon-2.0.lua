@@ -178,7 +178,7 @@ local function initChat(self)
 		local function mySort(alpha, bravo)
 			return tostring(alpha) < tostring(bravo)
 		end
-		AceConsole:RegisterChatCommand(slashCommands, {
+		AceConsole.RegisterChatCommand(self, slashCommands, {
 			desc = "AddOn development framework",
 			name = "Ace2",
 			type = "group",
@@ -273,16 +273,40 @@ local function initChat(self)
 								end
 							end
 						},
-						ace = {
+						ace1 = {
 							desc = "List all addons using Ace1",
-							name = "Ace",
+							name = "Ace 1.x",
 							type = "execute",
 							func = function()
 								print("|cffffff7fAddon list:|r")
-								local AceCoreAddon = AceLibrary:HasInstance("AceCoreAddon-2.0") and AceLibrary("AceCoreAddon-2.0")
 								local count = GetNumAddOns()
 								for i = 1, count do
-									listNormalAddon(i)
+									local dep1, dep2, dep3, dep4 = GetAddOnDependencies(i)
+									if dep1 == "Ace" or dep2 == "Ace" or dep3 == "Ace" or dep4 == "Ace" then
+										listNormalAddon(i)
+									end
+								end
+							end
+						},
+						libs = {
+							desc = "List all libraries using AceLibrary",
+							name = "Libraries",
+							type = "execute",
+							func = function()
+								if type(AceLibrary) == "table" and type(AceLibrary.libs) == "table" then
+									print("|cffffff7fLibrary list:|r")
+									for name, data in pairs(AceLibrary.libs) do
+										local s
+										if data.minor then
+											s = " - " .. tostring(name) .. "." .. tostring(data.minor)
+										else
+											s = " - " .. tostring(name)
+										end
+										if AceLibrary(name).slashCommand then
+											s = s .. " |cffffff7f(" .. tostring(AceLibrary(name).slashCommand) .. "|cffffff7f)"
+										end
+										print(s)
+									end
 								end
 							end
 						},
@@ -363,6 +387,54 @@ local function initChat(self)
 							LoadAddOn(text)
 							print(string.format("|cffffff7fAce2:|r %s is now loaded", title or name))
 						end
+					end
+				},
+				info = {
+					desc = "Display information",
+					name = "Information",
+					type = "execute",
+					func = function()
+						local mem, threshold = gcinfo()
+						print(string.format(" - |cffffff7fMemory usage [|r%.3f MiB|cffffff7f]|r", mem / 1024))
+						print(string.format(" - |cffffff7fThreshold [|r%.3f MiB|cffffff7f]|r", threshold / 1024))
+						print(string.format(" - |cffffff7fFramerate [|r%.0f fps|cffffff7f]|r", GetFramerate()))
+						local bandwidthIn, bandwidthOut, latency = GetNetStats()
+						bandwidthIn, bandwidthOut = floor(bandwidthIn * 1024), floor(bandwidthOut * 1024)
+						print(string.format(" - |cffffff7fLatency [|r%.0f ms|cffffff7f]|r", latency))
+						print(string.format(" - |cffffff7fBandwidth in [|r%.0f B/s|cffffff7f]|r", bandwidthIn))
+						print(string.format(" - |cffffff7fBandwidth out [|r%.0f B/s|cffffff7f]|r", bandwidthOut))
+						print(string.format(" - |cffffff7fTotal addons [|r%d|cffffff7f]|r", GetNumAddOns()))
+						print(string.format(" - |cffffff7fAce2 addons [|r%d|cffffff7f]|r", table.getn(self.addons)))
+						local ace = 0
+						local enabled = 0
+						local disabled = 0
+						local lod = 0
+						for i = 1, GetNumAddOns() do
+							local dep1, dep2, dep3, dep4 = GetAddOnDependencies(i)
+							if dep1 == "Ace" or dep2 == "Ace" or dep3 == "Ace" or dep4 == "Ace" then
+								ace = ace + 1
+							end
+							if IsAddOnLoadOnDemand(i) then
+								lod = lod + 1
+							end
+							local _,_,_,isEnabled,loadable = GetAddOnInfo(i)
+							if not isEnabled or not loadable then
+								disabled = disabled + 1
+							else
+								enabled = enabled + 1
+							end
+						end
+						print(string.format(" - |cffffff7fAce 1.x addons [|r%d|cffffff7f]|r", ace))
+						print(string.format(" - |cffffff7fLoadOnDemand addons [|r%d|cffffff7f]|r", lod))
+						print(string.format(" - |cffffff7fenabled addons [|r%d|cffffff7f]|r", enabled))
+						print(string.format(" - |cffffff7fdisabled addons [|r%d|cffffff7f]|r", disabled))
+						local libs = 0
+						if type(AceLibrary) == "table" and type(AceLibrary.libs) == "table" then
+							for _ in pairs(AceLibrary.libs) do
+								libs = libs + 1
+							end
+						end
+						print(string.format(" - |cffffff7fAceLibrary instances [|r%d|cffffff7f]|r", libs))
 					end
 				}
 			}
