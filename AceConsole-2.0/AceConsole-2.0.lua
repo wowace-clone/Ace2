@@ -133,10 +133,10 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 		end
 		for token in string.gfind(text, "([^%s]+)") do 
 			local num = tonumber(token)
-			if num then
+			if num and not string.find(token, "^0") then
 				token = num
 			end
-			table.insert(work, token) 
+			table.insert(work, token)
 		end
 	end
 	

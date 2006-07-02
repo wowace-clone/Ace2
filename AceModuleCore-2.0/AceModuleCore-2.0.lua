@@ -104,6 +104,8 @@ function AceModuleCore:OnInstanceInit(target)
 	target.modulePrototype = target.moduleClass.prototype
 end
 
+AceModuleCore.OnManualEmbed = AceModuleCore.OnInstanceInit
+
 local function activate(self, oldLib, oldDeactivate)
 	AceLibrary(MAJOR_VERSION).super.activate(self, oldLib, oldDeactivate)
 	
