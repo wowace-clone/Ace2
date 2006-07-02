@@ -92,16 +92,16 @@ AceLocale.prototype = {}
 AceLocale.prototype.class = AceLocale
 
 function AceLocale.prototype:GetTranslationStrict(text, sublevel)
-	self:argCheck(text, 1, "string")
+	AceLocale.argCheck(self, text, 1, "string")
 	if sublevel then
-		self:argCheck(sublevel, 2, "string")
+		AceLocale.argCheck(self, sublevel, 2, "string")
 		local t = self.translations[text]
 		if type(t) ~= "table" then
 			if type(self.baseTranslations[text]) == "table" then
-				self:error("%q::%q has not been translated into %q", text, sublevel, locale)
+				AceLocale.error(self, "%q::%q has not been translated into %q", text, sublevel, locale)
 				return
 			else
-				self:error("Translation for %q::%q does not exist", text, sublevel)
+				AceLocale.error(self, "Translation for %q::%q does not exist", text, sublevel)
 				return
 			end
 		end
@@ -109,14 +109,14 @@ function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 		if type(translation) ~= "string" then
 			if type(self.baseTranslations[text]) == "table" then
 				if type(self.baseTranslations[text][sublevel]) == "string" then
-					self:error("%q::%q has not been translated into %q", text, sublevel, locale)
+					AceLocale.error(self, "%q::%q has not been translated into %q", text, sublevel, locale)
 					return
 				else
-					self:error("Translation for %q::%q does not exist", text, sublevel)
+					AceLocale.error(self, "Translation for %q::%q does not exist", text, sublevel)
 					return
 				end
 			else
-				self:error("Translation for %q::%q does not exist", text, sublevel)
+				AceLocale.error(self, "Translation for %q::%q does not exist", text, sublevel)
 				return
 			end
 		end
@@ -125,10 +125,10 @@ function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 	local translation = self.translations[text]
 	if type(translation) ~= "string" then
 		if type(self.baseTranslations[text]) == "string" then
-			self:error("%q has not been translated into %q", text, locale)
+			AceLocale.error(self, "%q has not been translated into %q", text, locale)
 			return
 		else
-			self:error("Translation for %q does not exist", text)
+			AceLocale.error(self, "Translation for %q does not exist", text)
 			return
 		end
 	end
@@ -136,9 +136,9 @@ function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 end
 
 function AceLocale.prototype:GetTranslation(text, sublevel)
-	self:argCheck(text, 1, "string")
+	AceLocale.argCheck(self, text, 1, "string")
 	if sublevel then
-		self:argCheck(sublevel, 2, "string", "nil")
+		AceLocale.argCheck(self, sublevel, 2, "string", "nil")
 		local t = self.translations[text]
 		if type(t) == "table" then
 			local translation = t[sublevel]
@@ -147,12 +147,12 @@ function AceLocale.prototype:GetTranslation(text, sublevel)
 			else
 				t = self.baseTranslations[text]
 				if type(t) ~= "table" then
-					self:error("Translation table %q does not exist", text)
+					AceLocale.error(self, "Translation table %q does not exist", text)
 					return
 				end
 				translation = t[sublevel]
 				if type(translation) ~= "string" then
-					self:error("Translation for %q::%q does not exist", text, sublevel)
+					AceLocale.error(self, "Translation for %q::%q does not exist", text, sublevel)
 					return
 				end
 				return translation
@@ -160,12 +160,12 @@ function AceLocale.prototype:GetTranslation(text, sublevel)
 		else
 			t = self.baseTranslations[text]
 			if type(t) ~= "table" then
-				self:error("Translation table %q does not exist", text)
+				AceLocale.error(self, "Translation table %q does not exist", text)
 				return
 			end
 			local translation = t[sublevel]
 			if type(translation) ~= "string" then
-				self:error("Translation for %q::%q does not exist", text, sublevel)
+				AceLocale.error(self, "Translation for %q::%q does not exist", text, sublevel)
 				return
 			end
 			return translation
@@ -177,7 +177,7 @@ function AceLocale.prototype:GetTranslation(text, sublevel)
 	else
 		translation = self.baseTranslations[text]
 		if type(translation) ~= "string" then
-			self:error("Translation for %q does not exist", text)
+			AceLocale.error(self, "Translation for %q does not exist", text)
 			return
 		end
 		return translation
@@ -194,13 +194,13 @@ local function initReverse(self)
 end
 
 function AceLocale.prototype:GetReverseTranslation(text)
-	self:argCheck(text, 1, "string")
+	AceLocale.argCheck(self, text, 1, "string")
 	if not self.reverseTranslations then
 		initReverse(self)
 	end
 	local translation = self.reverseTranslations[text]
 	if type(translation) ~= "string" then
-		self:error("Reverse translation for %q does not exist", text)
+		AceLocale.error(self, "Reverse translation for %q does not exist", text)
 		return
 	end
 	return translation
@@ -218,9 +218,9 @@ function AceLocale.prototype:GetReverseIterator()
 end
 
 function AceLocale.prototype:HasTranslation(text, sublevel)
-	self:argCheck(text, 1, "string")
+	AceLocale.argCheck(self, text, 1, "string")
 	if sublevel then
-		self:argCheck(sublevel, 2, "string", "nil")
+		AceLocale.argCheck(self, sublevel, 2, "string", "nil")
 		return type(self.translations[text]) == "table" and self.translations[text][sublevel] and true
 	end
 	return self.translations[text] and true
@@ -234,16 +234,16 @@ function AceLocale.prototype:HasReverseTranslation(text)
 end
 
 function AceLocale.prototype:GetTableStrict(key, key2)
-	self:argCheck(key, 1, "string")
+	AceLocale.argCheck(self, key, 1, "string")
 	if key2 then
-		self:argCheck(key2, 2, "string")
+		AceLocale.argCheck(self, key2, 2, "string")
 		local t = self.translations[key]
 		if type(t) ~= "table" then
 			if type(self.baseTranslations[key]) == "table" then
-				self:error("%q::%q has not been translated into %q", key, key2, locale)
+				AceLocale.error(self, "%q::%q has not been translated into %q", key, key2, locale)
 				return
 			else
-				self:error("Translation table %q::%q does not exist", key, key2)
+				AceLocale.error(self, "Translation table %q::%q does not exist", key, key2)
 				return
 			end
 		end
@@ -251,14 +251,14 @@ function AceLocale.prototype:GetTableStrict(key, key2)
 		if type(translation) ~= "table" then
 			if type(self.baseTranslations[key]) == "table" then
 				if type(self.baseTranslations[key][key2]) == "table" then
-					self:error("%q::%q has not been translated into %q", key, key2, locale)
+					AceLocale.error(self, "%q::%q has not been translated into %q", key, key2, locale)
 					return
 				else
-					self:error("Translation table %q::%q does not exist", key, key2)
+					AceLocale.error(self, "Translation table %q::%q does not exist", key, key2)
 					return
 				end
 			else
-				self:error("Translation table %q::%q does not exist", key, key2)
+				AceLocale.error(self, "Translation table %q::%q does not exist", key, key2)
 				return
 			end
 		end
@@ -267,10 +267,10 @@ function AceLocale.prototype:GetTableStrict(key, key2)
 	local translation = self.translations[key]
 	if type(translation) ~= "table" then
 		if type(self.baseTranslations[key]) == "table" then
-			self:error("%q has not been translated into %q", key, locale)
+			AceLocale.error(self, "%q has not been translated into %q", key, locale)
 			return
 		else
-			self:error("Translation table %q does not exist", key)
+			AceLocale.error(self, "Translation table %q does not exist", key)
 			return
 		end
 	end
@@ -278,9 +278,9 @@ function AceLocale.prototype:GetTableStrict(key, key2)
 end
 
 function AceLocale.prototype:GetTable(key, key2)
-	self:argCheck(key, 1, "string")
+	AceLocale.argCheck(self, key, 1, "string")
 	if key2 then
-		self:argCheck(key2, 2, "string", "nil")
+		AceLocale.argCheck(self, key2, 2, "string", "nil")
 		local t = self.translations[key]
 		if type(t) == "table" then
 			local translation = t[key2]
@@ -289,12 +289,12 @@ function AceLocale.prototype:GetTable(key, key2)
 			else
 				t = self.baseTranslations[key]
 				if type(t) ~= "table" then
-					self:error("Translation table %q does not exist", key)
+					AceLocale.error(self, "Translation table %q does not exist", key)
 					return
 				end
 				translation = t[key2]
 				if type(translation) ~= "table" then
-					self:error("Translation table %q::%q does not exist", key, key2)
+					AceLocale.error(self, "Translation table %q::%q does not exist", key, key2)
 					return
 				end
 				return translation
@@ -302,12 +302,12 @@ function AceLocale.prototype:GetTable(key, key2)
 		else
 			t = self.baseTranslations[key]
 			if type(t) ~= "table" then
-				self:error("Translation table %q does not exist", key)
+				AceLocale.error(self, "Translation table %q does not exist", key)
 				return
 			end
 			local translation = t[key2]
 			if type(translation) ~= "table" then
-				self:error("Translation table %q::%q does not exist", key, key2)
+				AceLocale.error(self, "Translation table %q::%q does not exist", key, key2)
 				return
 			end
 			return translation
@@ -319,7 +319,7 @@ function AceLocale.prototype:GetTable(key, key2)
 	else
 		translation = self.baseTranslations[key]
 		if type(translation) ~= "table" then
-			self:error("Translation table %q does not exist", key)
+			AceLocale.error(self, "Translation table %q does not exist", key)
 			return
 		end
 		return translation
@@ -397,11 +397,6 @@ function AceLocale:Debug(name, baseLocale)
 end
 
 local function activate(self, oldLib, oldDeactivate)
-	self.prototype.error = self.error
-	self.prototype.argCheck = self.argCheck
-	self.prototype.assert = self.assert
-	self.prototype.pcall = self.pcall
-	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
 	end
