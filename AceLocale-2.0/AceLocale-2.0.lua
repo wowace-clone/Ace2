@@ -165,6 +165,55 @@ function AceLocale.prototype:GetTranslation(text, sublevel)
 	end
 end
 
+local function initReverse(self)
+	self.reverseTranslations = {}
+	local alpha = self.translations
+	local bravo = self.reverseTranslations
+	for base, localized in pairs(alpha) do
+		bravo[localized] = base
+	end
+end
+
+function AceLocale.prototype:GetReverseTranslation(text)
+	self:argCheck(text, 1, "string")
+	if not self.reverseTranslations then
+		initReverse(self)
+	end
+	local translation = bravo[localized]
+	if type(translation) ~= "string" then
+		self:error("Reverse translation for %q does not exist", text)
+		return
+	end
+	return translation
+end
+
+function AceLocale.prototype:GetIterator()
+	return pairs(self.translations)
+end
+
+function AceLocale.prototype:GetReverseIterator()
+	if not self.reverseTranslations then
+		initReverse(self)
+	end
+	return pairs(self.reverseTranslations)
+end
+
+function AceLocale.prototype:HasTranslation(text, sublevel)
+	self:argCheck(text, 1, "string")
+	if sublevel then
+		self:argCheck(sublevel, 2, "string", "nil")
+		return type(self.translations[text]) == "table" and self.translations[text][sublevel] and true
+	end
+	return self.translations[text] and true
+end
+
+function AceLocale.prototype:HasReverseTranslation(text)
+	if not self.reverseTranslations then
+		initReverse(self)
+	end
+	return self.reverseTranslations[text] and true
+end
+
 function AceLocale.prototype:GetTableStrict(key, key2)
 	self:argCheck(key, 1, "string")
 	if key2 then
