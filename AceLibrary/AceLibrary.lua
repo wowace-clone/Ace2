@@ -202,7 +202,7 @@ do
 		end
 		list2[to] = to
 		for k,v in pairs(to) do
-			if type(v) ~= "table" or isFrame(v) then
+			if type(from[k]) ~= "table" or type(v) ~= "table" or isFrame(v) then
 				if saveFields then
 					saveFields[k] = v
 				end
