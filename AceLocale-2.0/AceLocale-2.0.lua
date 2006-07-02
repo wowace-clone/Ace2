@@ -26,7 +26,17 @@ function AceLocale:new(name, strict, baseLocale)
 	self:argCheck(strict, 3, "boolean", "nil")
 	self:argCheck(baseLocale, 4, "string", "nil")
 	
-	local self = setmetatable({}, { __index = self.prototype, __call = strict and self.prototype.GetTranslationStrict or self.prototype.GetTranslation, __tostring = function() return "AceLocale(" .. name .. ")" end })
+	local self = setmetatable({}, {
+		__index = self.prototype,
+		__call = strict and self.prototype.GetTranslationStrict or self.prototype.GetTranslation,
+		__tostring = function(self)
+			if type(self.GetLibraryVersion) == "function" then
+				return self:GetLibraryVersion()
+			else
+				return "AceLocale(" .. name .. ")"
+			end
+		end
+	})
 	
 	if not baseLocale then
 		baseLocale = DEFAULT_LOCALE
@@ -58,6 +68,15 @@ function AceLocale:new(name, strict, baseLocale)
 	end
 	if type(self.baseTranslations) ~= "table" then
 		self:error("You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
+	end
+	
+	if locale ~= baseLocale then
+		for key in pairs(self.translations) do
+			if not self.baseTranslations[key] then
+				error("Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
+				break
+			end
+		end
 	end
 	_G[name .. "_Locale_enUS"] = nil
 	_G[name .. "_Locale_deDE"] = nil
@@ -319,10 +338,11 @@ function AceLocale:Debug(name, baseLocale)
 	local localizations = {}
 	print("--- AceLocale Debug ---")
 	for _,locale in ipairs(locales) do
-		if _G[name .. "_Locale_" .. locale] then
-			assert(type(_G[name .. "_Locale_" .. locale]) == "function")
-			local t = _G[name .. "_Locale_" .. locale]()
-			assert(type(t) == "table")
+		local gname = name .. "_Locale_" .. locale
+		if _G[gname] then
+			self:assert(type(_G[gname]) == "function")
+			local t = _G[gname]()
+			self:assert(type(t) == "table", "%q does not return a table", gname)
 			localizations[locale] = t
 		else
 			print(string.format("Locale %q not found", locale))
@@ -369,7 +389,7 @@ function AceLocale:Debug(name, baseLocale)
 		else
 			print(string.format("Locale %q missing:", locale))
 			for word in pairs(t) do
-				print(string.format("	%q", word))
+				print(string.format("    %q", word))
 			end
 		end
 	end
@@ -380,6 +400,7 @@ local function activate(self, oldLib, oldDeactivate)
 	self.prototype.error = self.error
 	self.prototype.argCheck = self.argCheck
 	self.prototype.assert = self.assert
+	self.prototype.pcall = self.pcall
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
