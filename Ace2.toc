@@ -1,0 +1,17 @@
+## Interface: 11100
+## Author: Ace Development Team
+## Url: http://www.wowace.com
+## Title: Ace |cffff00002
+## Notes: AddOn development framework
+AceLibrary\AceLibrary.lua
+AceOO-2.0\AceOO-2.0.lua
+AceLibraryBase-2.0\AceLibraryBase-2.0.lua
+
+AceEvent-2.0\AceEvent-2.0.lua
+AceHook-2.0\AceHook-2.0.lua
+AceDB-2.0\AceDB-2.0.lua
+AceDebug-2.0\AceDebug-2.0.lua
+AceLocale-2.0\AceLocale-2.0.lua
+AceConsole-2.0\AceConsole-2.0.lua
+AceAddon-2.0\AceAddon-2.0.lua
+AceModuleCore-2.0\AceModuleCore-2.0.lua

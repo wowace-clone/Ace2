@@ -1,0 +1,341 @@
+--[[
+Name: AceLocale-2.0
+Revision: $Rev: 3759 $
+Author(s): ckknight (ckknight@gmail.com)
+Website: http://www.wowace.com/
+Documentation: http://wiki.wowace.com/index.php/AceLocale_API_Documentation
+SVN: http://svn.wowace.com/root/branches/Ace2/Alpha/AceLocale
+Description: Localization library for addons to use to handle proper
+             localization and internationalization.
+Dependencies: AceLibrary
+]]
+
+local MAJOR_VERSION = "AceLocale-2.0"
+local MINOR_VERSION = "$Revision: 3759 $"
+
+if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
+if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
+
+local AceLocale = {}
+
+local DEFAULT_LOCALE = "enUS"
+local _G = getfenv(0)
+
+function AceLocale:new(name, strict, baseLocale)
+	self:argCheck(name, 2, "string")
+	self:argCheck(strict, 3, "boolean", "nil")
+	self:argCheck(baseLocale, 4, "string", "nil")
+	
+	local self = setmetatable({}, { __index = self.prototype, __call = strict and self.prototype.GetTranslationStrict or self.prototype.GetTranslation, __tostring = function() return "AceLocale(" .. name .. ")" end })
+	
+	if not baseLocale then
+		baseLocale = DEFAULT_LOCALE
+	end
+	if type(_G[name .. "_Locale_" .. baseLocale]) ~= "function" then
+		self:error("You have not provided adequate translations. You must at least have global function %s_Locale_%s that returns a translation table.", name, baseLocale)
+	end
+	local locale = type(GetLocale) == "function" and GetLocale() or baseLocale
+	local func = _G[name .. "_Locale_" .. locale]
+	if harsh then
+		if type(func) == "function" then
+			self.translations = func()
+		elseif func == nil then
+			self.translations = {}
+		end
+	else
+		if type(func) ~= "function" then
+			func = _G[name .. "_Locale_" .. baseLocale]
+		end
+		self.translations = func()
+	end
+	if type(self.translations) ~= "table" then
+		self:error("You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
+	end
+	if func == _G[name .. "_Locale_" .. baseLocale] then
+		self.baseTranslations = self.translations
+	else
+		self.baseTranslations = _G[name .. "_Locale_" .. baseLocale]()
+	end
+	if type(self.baseTranslations) ~= "table" then
+		self:error("You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
+	end
+	_G[name .. "_Locale_enUS"] = nil
+	_G[name .. "_Locale_deDE"] = nil
+	_G[name .. "_Locale_frFR"] = nil
+	_G[name .. "_Locale_zhCN"] = nil
+	_G[name .. "_Locale_zhTW"] = nil
+	_G[name .. "_Locale_koKR"] = nil
+	
+	return self
+end
+
+AceLocale.prototype = {}
+AceLocale.prototype.class = AceLocale
+
+function AceLocale.prototype:GetTranslationStrict(text, sublevel)
+	self:argCheck(text, 1, "string")
+	if sublevel then
+		self:argCheck(sublevel, 2, "string")
+		local t = self.translations[text]
+		if type(t) ~= "table" then
+			if type(self.baseTranslations[text]) == "table" then
+				self:error("%q::%q has not been translated into %q", text, sublevel, locale)
+				return
+			else
+				self:error("Translation for %q::%q does not exist", text, sublevel)
+				return
+			end
+		end
+		local translation = t[sublevel]
+		if type(translation) ~= "string" then
+			if type(self.baseTranslations[text]) == "table" then
+				if type(self.baseTranslations[text][sublevel]) == "string" then
+					self:error("%q::%q has not been translated into %q", text, sublevel, locale)
+					return
+				else
+					self:error("Translation for %q::%q does not exist", text, sublevel)
+					return
+				end
+			else
+				self:error("Translation for %q::%q does not exist", text, sublevel)
+				return
+			end
+		end
+		return translation
+	end
+	local translation = self.translations[text]
+	if type(translation) ~= "string" then
+		if type(self.baseTranslations[text]) == "string" then
+			self:error("%q has not been translated into %q", text, locale)
+			return
+		else
+			self:error("Translation for %q does not exist", text)
+			return
+		end
+	end
+	return translation
+end
+
+function AceLocale.prototype:GetTranslation(text, sublevel)
+	self:argCheck(text, 1, "string")
+	if sublevel then
+		self:argCheck(sublevel, 2, "string", "nil")
+		local t = self.translations[text]
+		if type(t) == "table" then
+			local translation = t[sublevel]
+			if type(translation) == "string" then
+				return translation
+			else
+				t = self.baseTranslations[text]
+				if type(t) ~= "table" then
+					self:error("Translation table %q does not exist", text)
+					return
+				end
+				translation = t[sublevel]
+				if type(translation) ~= "string" then
+					self:error("Translation for %q::%q does not exist", text, sublevel)
+					return
+				end
+				return translation
+			end
+		else
+			t = self.baseTranslations[text]
+			if type(t) ~= "table" then
+				self:error("Translation table %q does not exist", text)
+				return
+			end
+			local translation = t[sublevel]
+			if type(translation) ~= "string" then
+				self:error("Translation for %q::%q does not exist", text, sublevel)
+				return
+			end
+			return translation
+		end
+	end
+	local translation = self.translations[text]
+	if type(translation) == "string" then
+		return translation
+	else
+		translation = self.baseTranslations[text]
+		if type(translation) ~= "string" then
+			self:error("Translation for %q does not exist", text)
+			return
+		end
+		return translation
+	end
+end
+
+function AceLocale.prototype:GetTableStrict(key, key2)
+	self:argCheck(key, 1, "string")
+	if key2 then
+		self:argCheck(key2, 2, "string")
+		local t = self.translations[key]
+		if type(t) ~= "table" then
+			if type(self.baseTranslations[key]) == "table" then
+				self:error("%q::%q has not been translated into %q", key, key2, locale)
+				return
+			else
+				self:error("Translation table %q::%q does not exist", key, key2)
+				return
+			end
+		end
+		local translation = t[key2]
+		if type(translation) ~= "table" then
+			if type(self.baseTranslations[key]) == "table" then
+				if type(self.baseTranslations[key][key2]) == "table" then
+					self:error("%q::%q has not been translated into %q", key, key2, locale)
+					return
+				else
+					self:error("Translation table %q::%q does not exist", key, key2)
+					return
+				end
+			else
+				self:error("Translation table %q::%q does not exist", key, key2)
+				return
+			end
+		end
+		return translation
+	end
+	local translation = self.translations[key]
+	if type(translation) ~= "table" then
+		if type(self.baseTranslations[key]) == "table" then
+			self:error("%q has not been translated into %q", key, locale)
+			return
+		else
+			self:error("Translation table %q does not exist", key)
+			return
+		end
+	end
+	return translation
+end
+
+function AceLocale.prototype:GetTable(key, key2)
+	self:argCheck(key, 1, "string")
+	if key2 then
+		self:argCheck(key2, 2, "string", "nil")
+		local t = self.translations[key]
+		if type(t) == "table" then
+			local translation = t[key2]
+			if type(translation) == "table" then
+				return translation
+			else
+				t = self.baseTranslations[key]
+				if type(t) ~= "table" then
+					self:error("Translation table %q does not exist", key)
+					return
+				end
+				translation = t[key2]
+				if type(translation) ~= "table" then
+					self:error("Translation table %q::%q does not exist", key, key2)
+					return
+				end
+				return translation
+			end
+		else
+			t = self.baseTranslations[key]
+			if type(t) ~= "table" then
+				self:error("Translation table %q does not exist", key)
+				return
+			end
+			local translation = t[key2]
+			if type(translation) ~= "table" then
+				self:error("Translation table %q::%q does not exist", key, key2)
+				return
+			end
+			return translation
+		end
+	end
+	local translation = self.translations[key]
+	if type(translation) == "table" then
+		return translation
+	else
+		translation = self.baseTranslations[key]
+		if type(translation) ~= "table" then
+			self:error("Translation table %q does not exist", key)
+			return
+		end
+		return translation
+	end
+end
+
+function AceLocale:Debug(name, baseLocale)
+	local print = print
+	if DEFAULT_CHAT_FRAME then
+		function print(text)
+			DEFAULT_CHAT_FRAME:AddMessage(text)
+		end
+	end
+	local words = {}
+	local locales = {"enUS", "deDE", "frFR", "zhCN", "zhTW", "koKR"}
+	local localizations = {}
+	print("--- AceLocale Debug ---")
+	for _,locale in ipairs(locales) do
+		if _G[name .. "_Locale_" .. locale] then
+			assert(type(_G[name .. "_Locale_" .. locale]) == "function")
+			local t = _G[name .. "_Locale_" .. locale]()
+			assert(type(t) == "table")
+			localizations[locale] = t
+		else
+			print(string.format("Locale %q not found", locale))
+		end
+	end
+	local localeDebug = {}
+	for locale, localization in pairs(localizations) do
+		localeDebug[locale] = {}
+		for word in pairs(localization) do
+			if type(localization[word]) == "table" then
+				if type(words[word]) ~= "table" then
+					words[word] = {}
+				end
+				for bit in pairs(localization[word]) do
+					if type(localization[word][bit]) == "string" then
+						words[word][bit] = true
+					end
+				end
+			elseif type(localization[word]) == "string" then
+				words[word] = true
+			end
+		end
+	end
+	for word in pairs(words) do
+		if type(words[word]) == "table" then
+			for bit in pairs(words[word]) do
+				for locale, localization in pairs(localizations) do
+					if not localization[word] or not localization[word][bit] then
+						localeDebug[locale][word .. "::" .. bit] = true
+					end
+				end
+			end
+		else
+			for locale, localization in pairs(localizations) do
+				if not localization[word] then
+					localeDebug[locale][word] = true
+				end
+			end
+		end
+	end
+	for locale, t in pairs(localeDebug) do
+		if not next(t) then
+			print(string.format("Locale %q complete", locale))
+		else
+			print(string.format("Locale %q missing:", locale))
+			for word in pairs(t) do
+				print(string.format("	%q", word))
+			end
+		end
+	end
+	print("--- End AceLocale Debug ---")
+end
+
+local function activate(self, oldLib, oldDeactivate)
+	self.prototype.error = self.error
+	self.prototype.argCheck = self.argCheck
+	self.prototype.assert = self.assert
+	
+	if oldDeactivate then
+		oldDeactivate(oldLib)
+	end
+end
+
+AceLibrary:Register(AceLocale, MAJOR_VERSION, MINOR_VERSION, activate)
+AceLocale = AceLibrary(MAJOR_VERSION)
