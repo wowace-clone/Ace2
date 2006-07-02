@@ -299,6 +299,7 @@ end
 local initStatus
 local Class
 local Mixin
+local autoEmbed = false
 local function traverseInterfaces(bit, total)
 	if bit.superinterfaces then
 		for interface in pairs(bit.superinterfaces) do
@@ -561,7 +562,9 @@ do
 			local err, msg
 			for mixin in pairs(newclass.mixins) do
 				local ret
+				autoEmbed = true
 				ret, msg = pcall(mixin.embed, mixin, newclass.prototype)
+				autoEmbed = false
 				if not ret then
 					err = true
 					break
@@ -704,6 +707,9 @@ do
 		end
 		if type(target.class) ~= "table" then
 			target[self] = true
+		end
+		if not autoEmbed and type(self.OnManualEmbed) == "function" then
+			self:OnManualEmbed(target)
 		end
 	end
 	
