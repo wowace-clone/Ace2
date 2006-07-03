@@ -397,6 +397,8 @@ function AceLocale:Debug(name, baseLocale)
 end
 
 local function activate(self, oldLib, oldDeactivate)
+	AceLocale = self
+	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
 	end

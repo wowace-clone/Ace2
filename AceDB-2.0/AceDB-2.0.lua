@@ -20,7 +20,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local AceOO = AceLibrary("AceOO-2.0")
-local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
+local AceEvent
 local Mixin = AceOO.Mixin
 local AceDB = Mixin {
 						"RegisterDB",
@@ -458,25 +458,10 @@ function AceDB:ToggleStandby()
 	end
 end
 
-local function init(self, depth)
-	init = nil
-	if not AceEvent then
-		if not AceLibrary:HasInstance("AceEvent-2.0") then
-			error(MAJOR_VERSION .. " requires AceEvent-2.0", depth + 1)
-		end
-		AceEvent = AceLibrary("AceEvent-2.0")
-	end
-	
-	AceEvent:embed(self)
-	
-	self:RegisterEvent("ADDON_LOADED")
-	self:RegisterEvent("PLAYER_LOGOUT")
-end
-
 function AceDB:embed(target)
 	self.class.prototype.embed(self, target)
-	if init then
-		init(self, 7)
+	if not AceEvent then
+		AceDB:error(MAJOR_VERSION .. " requires AceEvent-2.0")
 	end
 end
 
@@ -577,11 +562,18 @@ local function activate(self, oldLib, oldDeactivate)
 	if oldLib then
 		oldDeactivate(oldLib)
 	end
-	
-	if init and AceLibrary:HasInstance("AceEvent-2.0") then
-		init(self)
+end
+
+local function external(self, major, instance)
+	if major == "AceEvent-2.0" then
+		AceEvent = instance
+		
+		AceEvent:embed(self)
+		
+		self:RegisterEvent("ADDON_LOADED")
+		self:RegisterEvent("PLAYER_LOGOUT")
 	end
 end
 
-AceLibrary:Register(AceDB, MAJOR_VERSION, MINOR_VERSION, activate)
+AceLibrary:Register(AceDB, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 AceDB = AceLibrary(MAJOR_VERSION)

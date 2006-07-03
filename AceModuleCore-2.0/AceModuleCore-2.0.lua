@@ -17,7 +17,7 @@ local MINOR_VERSION = "$Revision: 3508 $"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end 
+if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule"}
@@ -107,7 +107,9 @@ end
 AceModuleCore.OnManualEmbed = AceModuleCore.OnInstanceInit
 
 local function activate(self, oldLib, oldDeactivate)
-	AceLibrary(MAJOR_VERSION).super.activate(self, oldLib, oldDeactivate)
+	AceModuleCore = self
+	
+	self.super.activate(self, oldLib, oldDeactivate)
 	
 	if oldLib then
 		self.totalModules = oldLib.totalModules

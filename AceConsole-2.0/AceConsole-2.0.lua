@@ -46,7 +46,7 @@ local DEBUGGING = "Debugging"
 local NONE = NONE or "None"
 
 local AceOO = AceLibrary("AceOO-2.0")
-local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
+local AceEvent
 
 local AceConsole = AceOO.Mixin { "Print", "CustomPrint", "RegisterChatCommand" }
 
@@ -1151,12 +1151,6 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		self.slashCommand = slashCommands[1]
 	end
 	
-	if not AceEvent then
-		AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
-		if AceEvent then
-			AceEvent:embed(AceConsole)
-		end
-	end
 	if AceEvent then
 		if not AceConsole.nextAddon then
 			AceConsole.nextAddon = {}
@@ -1189,9 +1183,23 @@ function AceConsole:PLAYER_LOGIN()
 	end, "PRINT")
 end
 
-if AceEvent then
-	AceEvent:embed(AceConsole)
+local function external(self, major, instance)
+	if major == "AceEvent-2.0" then
+		AceEvent = instance
+		
+		AceEvent:embed(self)
+	end
 end
 
-AceLibrary:Register(AceConsole, MAJOR_VERSION, MINOR_VERSION, AceConsole.activate)
+local function activate(self, oldLib, oldDeactivate)
+	self.super.activate(self, oldLib, oldDeactivate)
+	
+	AceConsole = self
+	
+	if oldDeactivate then
+		oldDeactivate(oldLib)
+	end
+end
+
+AceLibrary:Register(AceConsole, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 AceConsole = AceLibrary(MAJOR_VERSION)

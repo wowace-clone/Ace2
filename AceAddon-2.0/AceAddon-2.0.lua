@@ -85,8 +85,8 @@ end })
 
 local AceOO = AceLibrary("AceOO-2.0")
 local AceAddon = AceOO.Class()
-local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
-local AceConsole = AceLibrary:HasInstance("AceConsole-2.0") and AceLibrary("AceConsole-2.0")
+local AceEvent
+local AceConsole
 
 function AceAddon:ToString()
 	return "AceAddon"
@@ -99,27 +99,244 @@ if DEFAULT_CHAT_FRAME then
 	end
 end
 
--- initialization for AceEvent
-local function init(self, depth)
-	init = nil
-	if not AceEvent then
-		if not AceLibrary:HasInstance("AceEvent-2.0") then
-			error(MAJOR_VERSION .. " requires AceEvent-2.0", depth + 1)
+local nextAddon
+
+local AceDB
+function AceAddon:ADDON_LOADED(name)
+	if type(nextAddon) == "table" then
+		while table.getn(nextAddon) > 0 do
+			local addon = table.remove(nextAddon, 1)
+			table.insert(self.addons, addon)
+			if not self.addons[name] then
+				self.addons[name] = addon
+			end
+			self:InitializeAddon(addon, name)
 		end
-		AceEvent = AceLibrary("AceEvent-2.0")
+	elseif nextAddon then
+		table.insert(self.addons, nextAddon)
+		self.addons[name] = nextAddon
+		self:InitializeAddon(nextAddon, name)
+		nextAddon = nil
 	end
-	
-	AceEvent:embed(self)
-	
-	self:RegisterEvent("PLAYER_LOGIN", "PLAYER_LOGIN", true)
 end
 
--- initialization for AceConsole (optional)
-local function initChat(self)
-	if not AceConsole then
-		AceConsole = AceLibrary:HasInstance("AceConsole-2.0") and AceLibrary("AceConsole-2.0")
+function AceAddon:InitializeAddon(addon, name)
+	if AceDB and AceOO.inherits(addon, AceDB) and type(addon.db) == "table" then
+		AceDB.InitializeDB(addon)
 	end
-	if AceConsole then
+	
+	if addon.name == nil then
+		addon.name = name
+	end
+	if GetAddOnMetadata then
+		-- TOC checks
+		if addon.title == nil then
+			addon.title = GetAddOnMetadata(name, "Title")
+			if addon.title then
+				local num = string.find(addon.title, " |cff7fff7f %-Ace2%-|r$")
+				if num then
+					addon.title = string.sub(addon.title, 1, num - 1)
+				end
+			end
+		end
+		if addon.notes == nil then
+			addon.notes = GetAddOnMetadata(name, "Notes")
+		end
+		if addon.version == nil then
+			addon.version = GetAddOnMetadata(name, "Version")
+			if addon.version then
+				if string.find(addon.version, "%$Revision: (%d+) %$") then
+					addon.version = string.gsub(addon.version, "%$Revision: (%d+) %$", "%1")
+				elseif string.find(addon.version, "%$Rev: (%d+) %$") then
+					addon.version = string.gsub(addon.version, "%$Rev: (%d+) %$", "%1")
+				elseif string.find(addon.version, "%$LastChangedRevision: (%d+) %$") then
+					addon.version = string.gsub(addon.version, "%$LastChangedRevision: (%d+) %$", "%1")
+				end
+			end
+		end
+		if addon.author == nil then
+			addon.author = GetAddOnMetadata(name, "Author")
+		end
+		if addon.date == nil then
+			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
+			if addon.date then
+				if string.find(addon.date, "%$Date: (.-) %$") then
+					addon.date = string.gsub(addon.date, "%$Date: (.-) %$", "%1")
+				elseif string.find(addon.date, "%$LastChangedDate: (.-) %$") then
+					addon.date = string.gsub(addon.date, "%$LastChangedDate: (.-) %$", "%1")
+				end
+			end
+		end
+		if addon.category == nil then
+			addon.category = GetAddOnMetadata(name, "X-Category")
+		end
+		if addon.email == nil then
+			addon.email = GetAddOnMetadata(name, "X-eMail") or GetAddOnMetadata(name, "X-Email")
+		end
+		if addon.website == nil then
+			addon.website = GetAddOnMetadata(name, "X-Website")
+		end
+	end
+	addon:OnInitialize()
+end
+
+function AceAddon.prototype:PrintAddonInfo()
+	local x
+	if self.title then
+		x = "|cffffff7f" .. tostring(self.title) .. "|r"
+	elseif self.name then
+		x = "|cffffff7f" .. tostring(self.name) .. "|r"
+	else
+		x = "|cffffff7f<" .. tostring(self.class) .. " instance>|r"
+	end
+	if type(self.IsEnabled) == "function" then
+		if not self:IsEnabled() then
+			x = x .. " " .. STANDBY
+		end
+	end
+	if self.version then
+		x = x .. " - |cffffff7f" .. tostring(self.version) .. "|r"
+	end
+	if self.notes then
+		x = x .. " - " .. tostring(self.notes)
+	end
+	print(x)
+	if self.author then
+		print(" - |cffffff7f" .. AUTHOR .. ":|r " .. tostring(self.author))
+	end
+	if self.date then
+		print(" - |cffffff7f" .. DATE .. ":|r " .. tostring(self.date))
+	end
+	if self.category then
+		local category = CATEGORIES[self.category]
+		if category then
+			print(" - |cffffff7f" .. CATEGORY .. ":|r " .. category)
+		end
+	end
+	if self.email then
+		print(" - |cffffff7f" .. EMAIL .. ":|r " .. tostring(self.email))
+	end
+	if self.website then
+		print(" - |cffffff7f" .. WEBSITE .. ":|r " .. tostring(self.website))
+	end
+end
+
+function AceAddon:PLAYER_LOGIN()
+	self.playerLoginFired = true
+	if self.pluginsToOnEnable then
+		for plugin in pairs(self.pluginsToOnEnable) do
+			if type(plugin.OnEnable) == "function" then
+				plugin:OnEnable()
+			end
+		end
+		self.pluginsToOnEnable = nil
+	end
+end
+
+function AceAddon.prototype:Inject(t)
+	if type(t) ~= "table" then
+		error(string.format("Bad argument #2 to `Inject' (expected table, got %s)", tostring(type(t))), 2)
+	end
+	for k,v in pairs(t) do
+		self[k] = v
+	end
+end
+
+function AceAddon.prototype:init()
+	if not AceEvent then
+		AceAddon:error(MAJOR_VERSION .. " requires AceEvent-2.0")
+	end
+	AceAddon.super.prototype.init(self)
+	
+	self.super = self.class.prototype
+	
+	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED", true)
+	if nextAddon then
+		table.insert(nextAddon, self)
+	else
+		nextAddon = {self}
+	end
+end
+
+function AceAddon.prototype:OnInitialize(name)
+	if self == AceAddon.prototype then
+		error("Cannot call self.super:OnInitialize(). proper form is self.super.OnInitialize(self)", 2)
+	end
+	if type(self.OnEnable) == "function" then
+		if type(self.IsEnabled) ~= "function" or self:IsEnabled() then
+			if AceAddon.playerLoginFired then
+				self:OnEnable()
+			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
+				self:OnEnable()
+			elseif type(self.RegisterEvent) == "function" then
+				self:RegisterEvent("PLAYER_LOGIN", "OnEnable", true)
+			else
+				if not AceAddon.pluginsToOnEnable then
+					AceAddon.pluginsToOnEnable = {}
+				end
+				AceAddon.pluginsToOnEnable[self] = true
+			end
+		end
+	end
+end
+
+function AceAddon.prototype:OnEnable()
+	if self == AceAddon.prototype then
+		error("Cannot call self.super:OnEnable(). proper form is self.super.OnEnable(self)", 2)
+	end
+end
+
+function AceAddon.prototype:OnDisable()
+	if self == AceAddon.prototype then
+		error("Cannot call self.super:OnDisable(). proper form is self.super.OnDisable(self)", 2)
+	end
+end
+
+function AceAddon.prototype:ToString()
+	local x
+	if type(self.title) == "string" then
+		x = self.title
+	elseif type(self.name) == "string" then
+		x = self.name
+	else
+		x = "<" .. tostring(self.class) .. " instance>"
+	end
+	if type(self.IsEnabled) == "function" then
+		if not self:IsEnabled() then
+			x = x .. " " .. STANDBY
+		end
+	end
+	return x
+end
+
+AceAddon.new = function(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
+	local class = AceOO.Classpool(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
+	return class:new()
+end
+
+local function activate(self, oldLib, oldDeactivate)
+	AceAddon = AceLibrary(MAJOR_VERSION)
+	
+	if oldLib then
+		self.playerLoginFired = oldLib.playerLoginFired
+		self.pluginsToOnEnable = oldLib.pluginsToOnEnable
+		oldDeactivate(oldLib)
+		self.addons = oldLib.addons
+	else
+		self.addons = {}
+	end
+end
+
+local function external(self, major, instance)
+	if major == "AceEvent-2.0" then
+		AceEvent = instance
+		
+		AceEvent:embed(self)
+		
+		self:RegisterEvent("PLAYER_LOGIN", "PLAYER_LOGIN", true)
+	elseif major == "AceConsole-2.0" then
+		AceConsole = instance
+		
 		local slashCommands = { "/ace2" }
 		if not IsAddOnLoaded("Ace") then
 			table.insert(slashCommands, "/ace")
@@ -439,254 +656,10 @@ local function initChat(self)
 				}
 			}
 		})
-		initChat = nil
+	elseif major == "AceDB-2.0" then
+		AceDB = instance
 	end
 end
 
-local nextAddon
-
-local AceDB
-function AceAddon:ADDON_LOADED(name)
-	if not AceDB and AceLibrary:HasInstance("AceDB-2.0") then
-		AceDB = AceLibrary("AceDB-2.0")
-	end
-	if type(nextAddon) == "table" then
-		while table.getn(nextAddon) > 0 do
-			local addon = table.remove(nextAddon, 1)
-			table.insert(self.addons, addon)
-			if not self.addons[name] then
-				self.addons[name] = addon
-			end
-			self:InitializeAddon(addon, name)
-		end
-	elseif nextAddon then
-		table.insert(self.addons, nextAddon)
-		self.addons[name] = nextAddon
-		self:InitializeAddon(nextAddon, name)
-		nextAddon = nil
-	end
-end
-
-function AceAddon:InitializeAddon(addon, name)
-	if AceDB and AceOO.inherits(addon, AceDB) and type(addon.db) == "table" then
-		AceDB.InitializeDB(addon)
-	end
-	
-	if addon.name == nil then
-		addon.name = name
-	end
-	if GetAddOnMetadata then
-		-- TOC checks
-		if addon.title == nil then
-			addon.title = GetAddOnMetadata(name, "Title")
-			if addon.title then
-				local num = string.find(addon.title, " |cff7fff7f %-Ace2%-|r$")
-				if num then
-					addon.title = string.sub(addon.title, 1, num - 1)
-				end
-			end
-		end
-		if addon.notes == nil then
-			addon.notes = GetAddOnMetadata(name, "Notes")
-		end
-		if addon.version == nil then
-			addon.version = GetAddOnMetadata(name, "Version")
-			if addon.version then
-				if string.find(addon.version, "%$Revision: (%d+) %$") then
-					addon.version = string.gsub(addon.version, "%$Revision: (%d+) %$", "%1")
-				elseif string.find(addon.version, "%$Rev: (%d+) %$") then
-					addon.version = string.gsub(addon.version, "%$Rev: (%d+) %$", "%1")
-				elseif string.find(addon.version, "%$LastChangedRevision: (%d+) %$") then
-					addon.version = string.gsub(addon.version, "%$LastChangedRevision: (%d+) %$", "%1")
-				end
-			end
-		end
-		if addon.author == nil then
-			addon.author = GetAddOnMetadata(name, "Author")
-		end
-		if addon.date == nil then
-			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
-			if addon.date then
-				if string.find(addon.date, "%$Date: (.-) %$") then
-					addon.date = string.gsub(addon.date, "%$Date: (.-) %$", "%1")
-				elseif string.find(addon.date, "%$LastChangedDate: (.-) %$") then
-					addon.date = string.gsub(addon.date, "%$LastChangedDate: (.-) %$", "%1")
-				end
-			end
-		end
-		if addon.category == nil then
-			addon.category = GetAddOnMetadata(name, "X-Category")
-		end
-		if addon.email == nil then
-			addon.email = GetAddOnMetadata(name, "X-eMail") or GetAddOnMetadata(name, "X-Email")
-		end
-		if addon.website == nil then
-			addon.website = GetAddOnMetadata(name, "X-Website")
-		end
-	end
-	addon:OnInitialize()
-end
-
-function AceAddon.prototype:PrintAddonInfo()
-	local x
-	if self.title then
-		x = "|cffffff7f" .. tostring(self.title) .. "|r"
-	elseif self.name then
-		x = "|cffffff7f" .. tostring(self.name) .. "|r"
-	else
-		x = "|cffffff7f<" .. tostring(self.class) .. " instance>|r"
-	end
-	if type(self.IsEnabled) == "function" then
-		if not self:IsEnabled() then
-			x = x .. " " .. STANDBY
-		end
-	end
-	if self.version then
-		x = x .. " - |cffffff7f" .. tostring(self.version) .. "|r"
-	end
-	if self.notes then
-		x = x .. " - " .. tostring(self.notes)
-	end
-	print(x)
-	if self.author then
-		print(" - |cffffff7f" .. AUTHOR .. ":|r " .. tostring(self.author))
-	end
-	if self.date then
-		print(" - |cffffff7f" .. DATE .. ":|r " .. tostring(self.date))
-	end
-	if self.category then
-		local category = CATEGORIES[self.category]
-		if category then
-			print(" - |cffffff7f" .. CATEGORY .. ":|r " .. category)
-		end
-	end
-	if self.email then
-		print(" - |cffffff7f" .. EMAIL .. ":|r " .. tostring(self.email))
-	end
-	if self.website then
-		print(" - |cffffff7f" .. WEBSITE .. ":|r " .. tostring(self.website))
-	end
-end
-
-function AceAddon:PLAYER_LOGIN()
-	self.playerLoginFired = true
-	if self.pluginsToOnEnable then
-		for plugin in pairs(self.pluginsToOnEnable) do
-			if type(plugin.OnEnable) == "function" then
-				plugin:OnEnable()
-			end
-		end
-		self.pluginsToOnEnable = nil
-	end
-end
-
-function AceAddon.prototype:Inject(t)
-	if type(t) ~= "table" then
-		error(string.format("Bad argument #2 to `Inject' (expected table, got %s)", tostring(type(t))), 2)
-	end
-	for k,v in pairs(t) do
-		self[k] = v
-	end
-end
-
-function AceAddon.prototype:init()
-	if init then
-		init(AceAddon, 4)
-	end
-	if initChat then
-		initChat(AceAddon)
-	end
-	AceAddon.super.prototype.init(self)
-	
-	self.super = self.class.prototype
-	
-	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED", true)
-	if nextAddon then
-		table.insert(nextAddon, self)
-	else
-		nextAddon = {self}
-	end
-end
-
-function AceAddon.prototype:OnInitialize(name)
-	if self == AceAddon.prototype then
-		error("Cannot call self.super:OnInitialize(). proper form is self.super.OnInitialize(self)", 2)
-	end
-	if type(self.OnEnable) == "function" then
-		if type(self.IsEnabled) ~= "function" or self:IsEnabled() then
-			if AceAddon.playerLoginFired then
-				self:OnEnable()
-			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
-				self:OnEnable()
-			elseif type(self.RegisterEvent) == "function" then
-				self:RegisterEvent("PLAYER_LOGIN", "OnEnable", true)
-			else
-				if not AceAddon.pluginsToOnEnable then
-					AceAddon.pluginsToOnEnable = {}
-				end
-				AceAddon.pluginsToOnEnable[self] = true
-			end
-		end
-	end
-end
-
-function AceAddon.prototype:OnEnable()
-	if self == AceAddon.prototype then
-		error("Cannot call self.super:OnEnable(). proper form is self.super.OnEnable(self)", 2)
-	end
-end
-
-function AceAddon.prototype:OnDisable()
-	if self == AceAddon.prototype then
-		error("Cannot call self.super:OnDisable(). proper form is self.super.OnDisable(self)", 2)
-	end
-end
-
-function AceAddon.prototype:ToString()
-	local x
-	if type(self.title) == "string" then
-		x = self.title
-	elseif type(self.name) == "string" then
-		x = self.name
-	else
-		x = "<" .. tostring(self.class) .. " instance>"
-	end
-	if type(self.IsEnabled) == "function" then
-		if not self:IsEnabled() then
-			x = x .. " " .. STANDBY
-		end
-	end
-	return x
-end
-
-AceAddon.new = function(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
-	if init then
-		init(self, 2)
-	end
-	local class = AceOO.Classpool(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
-	return class:new()
-end
-
-local function activate(self, oldLib, oldDeactivate)
-	AceAddon = AceLibrary(MAJOR_VERSION)
-	
-	if oldLib then
-		self.playerLoginFired = oldLib.playerLoginFired
-		self.pluginsToOnEnable = oldLib.pluginsToOnEnable
-		oldDeactivate(oldLib)
-		self.addons = oldLib.addons
-	else
-		self.addons = {}
-	end
-	
-	if init and AceLibrary:HasInstance("AceEvent-2.0") then
-		init(self)
-	end
-	
-	if initChat and AceLibrary:HasInstance("AceConsole-2.0") then
-		initChat(self)
-	end
-end
-
-AceLibrary:Register(AceAddon, MAJOR_VERSION, MINOR_VERSION, activate)
+AceLibrary:Register(AceAddon, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 AceAddon = AceLibrary(MAJOR_VERSION)
