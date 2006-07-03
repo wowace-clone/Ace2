@@ -559,16 +559,16 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 			activateFunc(instance, nil, nil) -- no old version, so explicit nil
 		end
 		
+		for k,data in pairs(self.libs) do
+			if k ~= major and data.externalFunc then
+				data.externalFunc(major)
+			end
+		end
 		if major == "AceEvent-2.0" then
 			AceEvent = instance
 		end
 		if AceEvent then
 			AceEvent.TriggerEvent(self, "AceLibrary_Register", major)
-		end
-		for k,data in pairs(self.libs) do
-			if k ~= major and data.externalFunc then
-				data.externalFunc(major)
-			end
 		end
 		
 		return instance
