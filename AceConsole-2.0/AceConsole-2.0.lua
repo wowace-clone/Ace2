@@ -147,15 +147,23 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 	end
 	
 	if type(options.args) == "table" then
-		local disabled = false
-		if options.disabled then
-			if type(options.disabled) == "function" then
-				disabled = options.disabled()
-			elseif type(options.disabled) == "string" then
+		local disabled, hidden = options.disabled, options.hidden
+		if hidden then
+			if type(hidden) == "function" then
+				hidden = hidden()
+			elseif type(hidden) == "string" then
 				local handler = options.handler or self
-				disabled = handler[options.disabled](handler)
-			elseif options.disabled == true then
-				disabled = true
+				hidden = handler[hidden](handler)
+			end
+		end
+		if hidden then
+			disabled = true
+		elseif disabled then
+			if type(disabled) == "function" then
+				disabled = disabled()
+			elseif type(disabled) == "string" then
+				local handler = options.handler or self
+				disabled = handler[disabled](handler)
 			end
 		end
 		if not disabled then
@@ -215,6 +223,9 @@ local function validateOptionsMethods(self, options, position)
 	end
 	if options.disabled and type(options.disabled) == "string" and type(self[options.disabled]) ~= "function" then
 		return string.format("%q is not a proper function", options.disabled), position
+	end
+	if options.hidden and type(options.hidden) == "string" and type(self[options.hidden]) ~= "function" then
+		return string.format("%q is not a proper function", options.hidden), position
 	end
 	if options.type == "group" and type(options.args) == "table" then
 		for k,v in pairs(options.args) do
@@ -302,6 +313,11 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 	if options.disabled then
 		if type(options.disabled) ~= "function" and type(options.disabled) ~= "string" and options.disabled ~= true then
 			return '"disabled" must be a function, string, or boolean', position
+		end
+	end
+	if options.hidden then
+		if type(options.hidden) ~= "function" and type(options.hidden) ~= "string" and options.hidden ~= true then
+			return '"hidden" must be a function, string, or boolean', position
 		end
 	end
 	if kind == "text" then
@@ -510,8 +526,17 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			
 			local options, path, args, handler, passTable, passValue = findTableLevel(self, options, chat, msg)
 			
-			local disabled = options.disabled
-			if disabled then
+			local hidden, disabled = options.hidden, options.disabled
+			if hidden then
+				if type(hidden) == "function" then
+					hidden = hidden()
+				elseif type(hidden) == "string" then
+					hidden = handler[hidden](handler)
+				end
+			end
+			if hidden then
+				disabled = true
+			elseif disabled then
 				if type(disabled) == "function" then
 					disabled = disabled()
 				elseif type(disabled) == "string" then
@@ -1042,8 +1067,18 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 						end
 						for _,k in ipairs(order) do
 							local v = options.args[k]
-							local disabled = v.disabled
-							if disabled then
+							local hidden, disabled = v.hidden, v.disabled
+							if hidden then
+								if type(hidden) == "function" then
+									hidden = hidden()
+								elseif type(hidden) == "string" then
+									local handler = v.handler or self
+									hidden = handler[hidden](handler)
+								end
+							end
+							if hidden then
+								disabled = true
+							elseif disabled then
 								if type(disabled) == "function" then
 									disabled = disabled()
 								elseif type(disabled) == "string" then
@@ -1090,19 +1125,23 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 								else
 									s = tostring(a1 or NONE)
 								end
-								if disabled then
-									local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-									local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-									print(string.format("|cffcfcfcf - %s: [%s]|r %s", k, s, desc))
-								else
-									print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
+								if not hidden then
+									if disabled then
+										local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+										local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+										print(string.format("|cffcfcfcf - %s: [%s]|r %s", k, s, desc))
+									else
+										print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
+									end
 								end
 							else
-								if disabled then
-									local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-									print(string.format("|cffcfcfcf - %s: %s", k, desc))
-								else
-									print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
+								if not hidden then
+									if disabled then
+										local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+										print(string.format("|cffcfcfcf - %s: %s", k, desc))
+									else
+										print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
+									end
 								end
 							end
 						end
