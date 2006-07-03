@@ -31,6 +31,7 @@ local IS_NOT_A_VALID_OPTION_FOR = "|cffffff7f%s|r is not a valid option for |cff
 local NO_OPTIONS_AVAILABLE = "No options available"
 local OPTION_HANDLER_NOT_FOUND = "Option handler |cffffff7f%q|r not found."
 local OPTION_HANDLER_NOT_VALID = "Option handler not valid."
+local OPTION_IS_DISABLED = "Option %q is disabled."
 local TOGGLE_STANDBY = "Enable/disable this addon"
 local TOGGLE_DEBUGGING = "Enable/disable debugging"
 local PRINT_ADDON_INFO = "Print out addon info"
@@ -133,10 +134,10 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 		end
 		for token in string.gfind(text, "([^%s]+)") do 
 			local num = tonumber(token)
-			if num and not string.find(token, "^0") then
+			if num then
 				token = num
 			end
-			table.insert(work, token)
+			table.insert(work, token) 
 		end
 	end
 	
@@ -146,11 +147,24 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 	end
 	
 	if type(options.args) == "table" then
-		local next = work[index] and string.lower(work[index])
-		if next then
-			for k,v in options.args do
-				if string.lower(k) == next then
-					return findTableLevel(options.handler or self, v, chat, text, index + 1, options.pass and options or nil)
+		local disabled = false
+		if options.disabled then
+			if type(options.disabled) == "function" then
+				disabled = options.disabled()
+			elseif type(options.disabled) == "string" then
+				local handler = options.handler or self
+				disabled = handler[options.disabled](handler)
+			elseif options.disabled == true then
+				disabled = true
+			end
+		end
+		if not disabled then
+			local next = work[index] and string.lower(work[index])
+			if next then
+				for k,v in options.args do
+					if string.lower(k) == next then
+						return findTableLevel(options.handler or self, v, chat, text, index + 1, options.pass and options or nil)
+					end
 				end
 			end
 		end
@@ -165,6 +179,7 @@ local function validateOptionsMethods(self, options, position)
 	if type(options) ~= "table" then
 		return "Options must be a table.", position
 	end
+	self = options.handler or self
 	if options.type == "execute" then
 		if options.func and type(options.func) ~= "string" and type(options.func) ~= "function" then
 			return "func must be a string or function", position
@@ -197,6 +212,9 @@ local function validateOptionsMethods(self, options, position)
 				return string.format("%q is not a proper function", options.validate), position
 			end
 		end
+	end
+	if options.disabled and type(options.disabled) == "string" and type(self[options.disabled]) ~= "function" then
+		return string.format("%q is not a proper function", options.disabled), position
 	end
 	if options.type == "group" and type(options.args) == "table" then
 		for k,v in pairs(options.args) do
@@ -280,6 +298,11 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 	end
 	if options.current and type(options.current) ~= "string" then
 		return '"current" must be a string or nil', position
+	end
+	if options.disabled then
+		if type(options.disabled) ~= "function" and type(options.disabled) ~= "string" and options.disabled ~= true then
+			return '"disabled" must be a function, string, or boolean', position
+		end
 	end
 	if kind == "text" then
 		if type(options.validate) == "table" then
@@ -486,8 +509,19 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			end
 			
 			local options, path, args, handler, passTable, passValue = findTableLevel(self, options, chat, msg)
+			
+			local disabled = options.disabled
+			if disabled then
+				if type(disabled) == "function" then
+					disabled = disabled()
+				elseif type(disabled) == "string" then
+					disabled = handler[disabled](handler)
+				end
+			end
 			local kind = string.lower(options.type or "group")
-			if kind == "text" then
+			if disabled then
+				print(string.format(OPTION_IS_DISABLED, path), realOptions.name or self)
+			elseif kind == "text" then
 				if table.getn(args) > 0 then
 					if (type(options.validate) == "table" and table.getn(args) > 1) or (type(options.validate) ~= "table" and not options.input) then
 						local arg = table.concat(args, " ")
@@ -911,9 +945,9 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 							else
 								if type(t.set) == "function" then
 									if t.passValue then
-										t.set(t.passValue, r,g,b)
+										set(t.passValue, r,g,b)
 									else
-										t.set(r,g,b)
+										set(r,g,b)
 									end
 								else
 									if t.passValue then
@@ -1008,6 +1042,15 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 						end
 						for _,k in ipairs(order) do
 							local v = options.args[k]
+							local disabled = v.disabled
+							if disabled then
+								if type(disabled) == "function" then
+									disabled = disabled()
+								elseif type(disabled) == "string" then
+									local handler = v.handler or self
+									disabled = handler[disabled](handler)
+								end
+							end
 							if v.get and v.type ~= "group" and v.type ~= "pass" and v.type ~= "execute" then
 								local a1,a2,a3,a4
 								if type(v.get) == "function" then
@@ -1047,9 +1090,20 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 								else
 									s = tostring(a1 or NONE)
 								end
-								print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
+								if disabled then
+									local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+									local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+									print(string.format("|cffcfcfcf - %s: [%s]|r %s", k, s, desc))
+								else
+									print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
+								end
 							else
-								print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
+								if disabled then
+									local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+									print(string.format("|cffcfcfcf - %s: %s", k, desc))
+								else
+									print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
+								end
 							end
 						end
 					else
