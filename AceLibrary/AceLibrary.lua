@@ -471,6 +471,8 @@ end
 
 local donothing
 
+local AceEvent
+
 -- @method               Register
 -- @brief                Registers a new version of a given library.
 -- @param newInstance    the library to register
@@ -483,12 +485,14 @@ local donothing
 --                       oldDeactivateFunc(oldInstance).
 -- @param deactivateFunc (optional) A function to be called by a newer library's
 --                       activateFunc.
-function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivateFunc)
+-- @param externalFunc   (optional) A function to be called whenever a new
+--                       library is registered.
+function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivateFunc, externalFunc)
 	if type(newInstance) ~= "table" then
 		error(string.format("Bad argument #2 to `Register' (table expected, got %s)", type(newInstance)), 2)
 		return
 	elseif type(major) ~= "string" then
-		error(string.format("Bad argument #3 to `Register' (string expected, got %s)", type(major)), 2)
+		error(string.format("Bad argument #3 to `Register' (string expected, got %s)", tostring(type(major))), 2)
 		return
 	end
 	if type(minor) == "string" then
@@ -498,16 +502,19 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		end
 	end
 	if type(minor) ~= "number" then
-		error(string.format("Bad argument #4 to `Register' (number expected, got %s)", type(minor)), 2)
+		error(string.format("Bad argument #4 to `Register' (number expected, got %s)", tostring(type(minor))), 2)
 		return
 	elseif math.floor(minor) ~= minor or minor < 0 then
 		error(string.format("Bad argument #4 to `Register' (integer >= 0 expected, got %s)", minor), 2)
 		return
 	elseif activateFunc ~= nil and type(activateFunc) ~= "function" then
-		error(string.format("Bad argument #5 to `Register' (nil or function expected, got %s)", type(activateFunc)), 2)
+		error(string.format("Bad argument #5 to `Register' (nil or function expected, got %s)", tostring(type(activateFunc))), 2)
 		return
 	elseif deactivateFunc ~= nil and type(deactivateFunc) ~= "function" then
-		error(string.format("Bad argument #6 to `Register' (nil or function expected, got %s)", type(deactivateFunc)), 2)
+		error(string.format("Bad argument #6 to `Register' (nil or function expected, got %s)", tostring(type(deactivateFunc))), 2)
+		return
+	elseif externalFunc ~= nil and type(externalFunc) ~= "function" then
+		error(string.format("Bad argument #7 to `Register' (nil or function expected, got %s)", tostring(type(externalFunc))), 2)
 		return
 	end
 	if not deactivateFunc then
@@ -529,7 +536,8 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		self.libs[major] = {
 			instance = instance,
 			minor = minor,
-			deactivateFunc = deactivateFunc
+			deactivateFunc = deactivateFunc,
+			externalFunc = externalFunc,
 		}
 		function instance:GetLibraryVersion()
 			return major, minor
@@ -550,6 +558,19 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		if activateFunc then
 			activateFunc(instance, nil, nil) -- no old version, so explicit nil
 		end
+		
+		if major == "AceEvent-2.0" then
+			AceEvent = instance
+		end
+		if AceEvent then
+			AceEvent.TriggerEvent(self, "AceLibrary_Register", major)
+		end
+		for k,data in pairs(self.libs) do
+			if k ~= major and data.externalFunc then
+				data.externalFunc(major)
+			end
+		end
+		
 		return instance
 	end
 	local instance = data.instance
@@ -574,6 +595,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	local oldDeactivateFunc = data.deactivateFunc
 	data.minor = minor
 	data.deactivateFunc = deactivateFunc
+	data.externalFunc = externalFunc
 	function instance:GetLibraryVersion()
 		return major, minor
 	end
