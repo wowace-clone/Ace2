@@ -5,7 +5,6 @@
 ## Notes: AddOn development framework
 AceLibrary\AceLibrary.lua
 AceOO-2.0\AceOO-2.0.lua
-AceLibraryBase-2.0\AceLibraryBase-2.0.lua
 
 AceEvent-2.0\AceEvent-2.0.lua
 AceHook-2.0\AceHook-2.0.lua
