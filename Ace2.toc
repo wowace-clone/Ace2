@@ -3,6 +3,7 @@
 ## Url: http://www.wowace.com
 ## Title: Ace |cffff00002
 ## Notes: AddOn development framework
+## Version: 2.0.$Rev$
 AceLibrary\AceLibrary.lua
 AceOO-2.0\AceOO-2.0.lua
 
