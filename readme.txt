@@ -3,7 +3,7 @@
 Ace2 is an embeddable framework for rapid mod development.
 
 [b]Features:[/b][list]
-[*]100% embeddable.  An Ace2 addon should never require a dependency.
+[*]100% embeddable.  An Ace2 addon should never require Ace2 as a dependency.
 [*]Provides the following modules:[list]
 [*][b]Ace00[/b] - Provides a fully functional object oriented framework. - [b][url=http://wiki.wowace.com/index.php/AceOO-2.0]Documentation[/url][/b]
 [*][b]AceLibrary[/b] - A global versioning library to handle other library instances, upgrading, and access. - [b][url=http://wiki.wowace.com/index.php/AceLibrary]Documentation[/url][/b]
