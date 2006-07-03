@@ -480,7 +480,7 @@ function AceAddon:InitializeAddon(addon, name)
 		if addon.title == nil then
 			addon.title = GetAddOnMetadata(name, "Title")
 			if addon.title then
-				local num = string.find(addon.title, " |cff7fff7f -Ace2-|r$")
+				local num = string.find(addon.title, " |cff7fff7f %-Ace2%-|r$")
 				if num then
 					addon.title = string.sub(addon.title, 1, num - 1)
 				end
