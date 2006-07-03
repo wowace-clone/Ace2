@@ -1,5 +1,7 @@
 Ace2 is an embeddable framework for rapid mod development.
 
+[b]Current Version: 2.0.3870 Release Candidate 1[/b]
+
 [b]Features:[/b][list]
 [*]100% embeddable.  An Ace2 addon should never require a dependency.
 [*]Provides the following modules:[list]
