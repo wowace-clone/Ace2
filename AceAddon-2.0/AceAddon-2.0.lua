@@ -120,6 +120,26 @@ function AceAddon:ADDON_LOADED(name)
 	end
 end
 
+local runOnEnableCode = false
+local function RegisterOnEnable(self)
+	if type(self.OnEnable) == "function" then
+		if type(self.IsEnabled) ~= "function" or self:IsEnabled() then
+			if AceAddon.playerLoginFired then
+				self:OnEnable()
+			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
+				self:OnEnable()
+			elseif type(self.RegisterEvent) == "function" then
+				self:RegisterEvent("PLAYER_LOGIN", "OnEnable", true)
+			else
+				if not AceAddon.pluginsToOnEnable then
+					AceAddon.pluginsToOnEnable = {}
+				end
+				AceAddon.pluginsToOnEnable[self] = true
+			end
+		end
+	end
+end
+
 function AceAddon:InitializeAddon(addon, name)
 	if AceDB and AceOO.inherits(addon, AceDB) and type(addon.db) == "table" then
 		AceDB.InitializeDB(addon)
@@ -178,6 +198,10 @@ function AceAddon:InitializeAddon(addon, name)
 		end
 	end
 	addon:OnInitialize()
+	if runOnEnableCode then
+		RegisterOnEnable(addon)
+		runOnEnableCode = false
+	end
 end
 
 function AceAddon.prototype:PrintAddonInfo()
@@ -262,22 +286,7 @@ function AceAddon.prototype:OnInitialize(name)
 	if self == AceAddon.prototype then
 		error("Cannot call self.super:OnInitialize(). proper form is self.super.OnInitialize(self)", 2)
 	end
-	if type(self.OnEnable) == "function" then
-		if type(self.IsEnabled) ~= "function" or self:IsEnabled() then
-			if AceAddon.playerLoginFired then
-				self:OnEnable()
-			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
-				self:OnEnable()
-			elseif type(self.RegisterEvent) == "function" then
-				self:RegisterEvent("PLAYER_LOGIN", "OnEnable", true)
-			else
-				if not AceAddon.pluginsToOnEnable then
-					AceAddon.pluginsToOnEnable = {}
-				end
-				AceAddon.pluginsToOnEnable[self] = true
-			end
-		end
-	end
+	runOnEnableCode = true
 end
 
 function AceAddon.prototype:OnEnable()
