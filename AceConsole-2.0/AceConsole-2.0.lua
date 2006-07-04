@@ -14,7 +14,7 @@ Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceConsole-2.0"
-local MINOR_VERSION = "$Revision: 3508 $"
+local MINOR_VERSION = "$Revision: 5508 $"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
@@ -28,6 +28,7 @@ local USAGE = "Usage"
 local IS_CURRENTLY_SET_TO = "|cffffff7f%s|r is currently set to |cffffff7f[|r%s|cffffff7f]|r"
 local IS_NOW_SET_TO = "|cffffff7f%s|r is now set to |cffffff7f[|r%s|cffffff7f]|r"
 local IS_NOT_A_VALID_OPTION_FOR = "|cffffff7f%s|r is not a valid option for |cffffff7f%s|r"
+local IS_NOT_A_VALID_VALUE_FOR = "|cffffff7f%s|r is not a valid value for |cffffff7f%s|r"
 local NO_OPTIONS_AVAILABLE = "No options available"
 local OPTION_HANDLER_NOT_FOUND = "Option handler |cffffff7f%q|r not found."
 local OPTION_HANDLER_NOT_VALID = "Option handler not valid."
@@ -703,15 +704,14 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 				if arg then
 					local min = options.min or 0
 					local max = options.max or 1
+					local good = false
 					if type(arg) == "number" then
 						if options.isPercent then
-							if arg / 100 >= min and arg / 100 <= max then
-								good = true
-							end
-						else
-							if arg >= min and arg <= max then
-								good = true
-							end
+							arg = arg / 100
+						end
+
+						if arg >= min and arg <= max then
+							good = true
 						end
 					end
 					if not good then
@@ -725,14 +725,10 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 						if min < 0 or max < 0 then
 							bit = " - "
 						end
-						usage = "{" .. min .. bit .. max .. "}"
-						print(string.format(self.error or IS_NOT_A_VALID_OPTION_FOR, tostring(arg), path), realOptions.name or self)
+						usage = string.format("{%s%s%s}", min, bit, max)
+						print(string.format(self.error or IS_NOT_A_VALID_VALUE_FOR, tostring(arg), path), realOptions.name or self)
 						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage))
 						return
-					end
-	
-					if options.isPercent then
-						arg = arg / 100
 					end
 					
 					if passTable then
@@ -768,6 +764,9 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 				end
 				
 				if arg then
+					if var and options.isPercent then
+						var = tostring(var * 100) .. "%"
+					end
 					print(string.format(options.message or IS_NOW_SET_TO, tostring(options.name), tostring(var or NONE)), realOptions.name or self)
 				else
 					local usage
@@ -775,6 +774,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 					local max = options.max or 1
 					if options.isPercent then
 						min, max = min * 100, max * 100
+						var = tostring(var * 100) .. "%"
 					end
 					local bit = "-"
 					if min < 0 or max < 0 then
@@ -1121,6 +1121,12 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 										s = tostring(v.map[a1 or false] or NONE)
 									else
 										s = tostring(MAP_ONOFF[a1 or false] or NONE)
+									end
+								elseif v.type == "range" then
+									if v.isPercent then
+										s = tostring(a1 * 100) .. "%"
+									else
+										s = tostring(a1)
 									end
 								else
 									s = tostring(a1 or NONE)

@@ -32,4 +32,4 @@ Ace2 is an embeddable framework for rapid mod development.
 
 [SIZE=3][b][url=http://kaelten.wowinterface.com/portal.php?id=2&a=listfeatures]Please Post Feature Requests Using this Link[/url][/b][/SIZE]
 
-[SIZE=3][b][url=http://kaelten.wowinterface.com/portal.php?&id=2&pageid=68]Version History[/url][/b][/SIZE]
+[SIZE=3][b][url=http://kaelten.wowinterface.com/portal.php?&id=2&pageid=68]Version History[/url][/b][/SIZE] 
