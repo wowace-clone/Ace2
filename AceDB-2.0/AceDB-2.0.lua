@@ -198,8 +198,15 @@ end, __newindex = function(db, key, value)
 	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
 end }
 
-function AceDB:InitializeDB()
+function AceDB:InitializeDB(addonName)
 	local db = self.db
+	
+	if not db then
+		if addonName then
+			AceDB.addonsLoaded[addonName] = true
+		end
+		return
+	end
 	
 	if db.raw then
 		-- someone manually initialized
@@ -240,7 +247,7 @@ function AceDB:RegisterDB(name, charName)
 		charName = charName
 	}
 	if AceDB.addonsLoaded[addonName] then
-		AceDB.InitializeDB(self)
+		AceDB.InitializeDB(self, addonName)
 	else
 		AceDB.addonsToBeInitialized[self] = addonName
 	end
@@ -469,7 +476,7 @@ function AceDB:ADDON_LOADED(name)
 	AceDB.addonsLoaded[name] = true
 	for addon, addonName in pairs(AceDB.addonsToBeInitialized) do
 		if name == addonName then
-			AceDB.InitializeDB(addon)
+			AceDB.InitializeDB(addon, name)
 			AceDB.addonsToBeInitialized[addon] = nil
 		end
 	end

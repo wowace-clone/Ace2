@@ -141,8 +141,8 @@ local function RegisterOnEnable(self)
 end
 
 function AceAddon:InitializeAddon(addon, name)
-	if AceDB and AceOO.inherits(addon, AceDB) and type(addon.db) == "table" then
-		AceDB.InitializeDB(addon)
+	if AceDB and AceOO.inherits(addon, AceDB) then
+		AceDB.InitializeDB(addon, name)
 	end
 	
 	if addon.name == nil then
