@@ -1,6 +1,6 @@
 --[[
 Name: AceDB-2.0
-Revision: $Rev: 3745 $
+Revision: $Rev$
 Author(s): ckknight (ckknight@gmail.com)
 Inspired By: AceDB 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
@@ -12,7 +12,7 @@ Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0
 ]]
 
 local MAJOR_VERSION = "AceDB-2.0"
-local MINOR_VERSION = "$Revision: 3745 $"
+local MINOR_VERSION = "$Revision$"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end

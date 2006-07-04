@@ -1,6 +1,6 @@
 --[[
 Name: AceHook-2.0
-Revision: $Rev: 3743 $
+Revision: $Rev$
 Author(s): cladhaire (cladhaire@gmail.com)
            ckknight (ckknight@gmail.com)
 Inspired By: AceHook 1.x by Turan (<email here>)
@@ -12,7 +12,7 @@ Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceHook-2.0"
-local MINOR_VERSION = "$Revision: 3743 $"
+local MINOR_VERSION = "$Revision$"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end

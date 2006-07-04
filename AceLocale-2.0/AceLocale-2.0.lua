@@ -1,6 +1,6 @@
 --[[
 Name: AceLocale-2.0
-Revision: $Rev: 3759 $
+Revision: $Rev$
 Author(s): ckknight (ckknight@gmail.com)
 Website: http://www.wowace.com/
 Documentation: http://wiki.wowace.com/index.php/AceLocale-2.0
@@ -11,7 +11,7 @@ Dependencies: AceLibrary
 ]]
 
 local MAJOR_VERSION = "AceLocale-2.0"
-local MINOR_VERSION = "$Revision: 3759 $"
+local MINOR_VERSION = "$Revision$"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end

@@ -1,6 +1,6 @@
 --[[
 Name: AceModuleCore-2.0
-Revision: $Rev: 3508 $
+Revision: $Rev$
 Author(s): Kaelten (kaelten@gmail.com)
            ckknight (ckknight@gmail.com)
 Website: http://www.wowace.com/
@@ -12,7 +12,7 @@ Dependencies: AceLibrary, AceOO-2.0, AceAddon-2.0
 ]]
 
 local MAJOR_VERSION = "AceModuleCore-2.0"
-local MINOR_VERSION = "$Revision: 3508 $"
+local MINOR_VERSION = "$Revision$"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
