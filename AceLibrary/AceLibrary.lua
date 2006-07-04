@@ -627,9 +627,9 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	del(oldInstance)
 	
 	if externalFunc then
-		for k in pairs(self.libs) do
+		for k,data in pairs(self.libs) do
 			if k ~= major then
-				externalFunc(instance, k)
+				externalFunc(instance, k, data.instance)
 			end
 		end
 	end
