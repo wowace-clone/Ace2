@@ -560,9 +560,14 @@ local function activate(self, oldLib, oldDeactivate)
 		self.addonsToBeInitialized = oldLib.addonsToBeInitialized
 		self.addonsLoaded = oldLib.addonsLoaded
 		self.registry = oldLib.registry
-	else
+	end
+	if not self.addonsToBeInitialized then
 		self.addonsToBeInitialized = {}
+	end
+	if not self.addonsLoaded then
 		self.addonsLoaded = {}
+	end
+	if not self.registry then
 		self.registry = {}
 	end
 	
