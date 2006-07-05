@@ -1085,7 +1085,8 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	if not options then
 		options = {
 			type = 'group',
-			args = {}
+			args = {},
+			handler = self
 		}
 	end
 	
@@ -1097,6 +1098,10 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			else
 				error(err, 2)
 			end
+		end
+		
+		if not options.handler then
+			options.handler = self
 		end
 		
 		if not options.type or string.lower(options.type) == "group" then
