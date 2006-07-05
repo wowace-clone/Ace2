@@ -1193,7 +1193,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	
 	if not name then
 		repeat
-			name = string.char(math.random(26) + string.byte('A')) .. string.char(math.random(26) + string.byte('A')) .. string.char(math.random(26) + string.byte('A')) .. string.char(math.random(26) + string.byte('A')) .. string.char(math.random(26) + string.byte('A')) .. string.char(math.random(26) + string.byte('A')) .. string.char(math.random(26) + string.byte('A')) .. string.char(math.random(26) + string.byte('A'))
+			name = string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1)
 		until not _G.SlashCmdList[name]
 	end
 	
@@ -1285,6 +1285,7 @@ local function activate(self, oldLib, oldDeactivate)
 		self.registry = {}
 	else
 		for name,options in pairs(self.registry) do
+			DEFAULT_CHAT_FRAME:AddMessage(tostring(name))
 			self:RegisterChatCommand(false, options, name)
 		end
 	end
