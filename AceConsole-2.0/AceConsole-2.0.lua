@@ -462,7 +462,7 @@ local function handlerFunc(self, chat, msg, options)
 					else
 						usage = options.usage or "{value}"
 					end
-					print(string.format(self.error or IS_NOT_A_VALID_OPTION_FOR, tostring(table.concat(args, " ")), path), realOptions.name or self)
+					print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, tostring(table.concat(args, " ")), path), realOptions.name or self)
 					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage))
 					return
 				end
@@ -602,7 +602,7 @@ local function handlerFunc(self, chat, msg, options)
 					bit = " - "
 				end
 				usage = string.format("{%s%s%s}", min, bit, max)
-				print(string.format(self.error or IS_NOT_A_VALID_VALUE_FOR, tostring(arg), path), realOptions.name or self)
+				print(string.format(options.error or IS_NOT_A_VALID_VALUE_FOR, tostring(arg), path), realOptions.name or self)
 				print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage))
 				return
 			end
@@ -690,7 +690,7 @@ local function handlerFunc(self, chat, msg, options)
 				end
 			end
 			if not r then
-				print(string.format(self.error or IS_NOT_A_VALID_OPTION_FOR, table.concat(args, ' '), path), realOptions.name or self)
+				print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, table.concat(args, ' '), path), realOptions.name or self)
 				print(string.format("|cffffff7f%s:|r %s {0-1} {0-1} {0-1}%s", USAGE, path, options.hasAlpha and " {0-1}" or ""))
 				return
 			end
