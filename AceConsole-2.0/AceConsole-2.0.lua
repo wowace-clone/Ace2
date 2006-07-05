@@ -56,7 +56,7 @@ local _G = getfenv(0)
 local print
 if DEFAULT_CHAT_FRAME then
 	function print(text, name, r, g, b, frame, delay)
-		if not name then
+		if not name or name == AceConsole then
 			(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, 1, delay or 5)
 		else
 			(frame or DEFAULT_CHAT_FRAME):AddMessage("|cffffff78" .. tostring(name) .. ":|r " .. text, r, g, b, 1, delay or 5)
@@ -171,7 +171,20 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			local next = work[index] and string.lower(work[index])
 			if next then
 				for k,v in options.args do
+					local good = false
 					if string.lower(k) == next then
+						good = true
+					elseif type(v.aliases) == "table" then
+						for _,alias in ipairs(v.aliases) do
+							if string.lower(alias) == next then
+								good = true
+								break
+							end
+						end
+					elseif type(v.aliases) == "string" and string.lower(v.aliases) == next then
+						good = true
+					end
+					if good then
 						return findTableLevel(options.handler or self, v, chat, text, index + 1, options.pass and options or nil)
 					end
 				end
@@ -258,6 +271,11 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 		return '"type" must be a string.', position
 	elseif kind ~= "group" and kind ~= "range" and kind ~= "text" and kind ~= "execute" and kind ~= "toggle" and kind ~= "color" then
 		return '"type" must either be "range", "text", "group", "toggle", "execute", or "color".', position
+	end
+	if options.aliases then
+		if type(options.aliases) ~= "table" and type(options.aliases) ~= "string" then
+			return '"alias" must be a table or string', position
+		end
 	end
 	if not fromPass then
 		if kind == "execute" then
@@ -460,7 +478,7 @@ local function handlerFunc(self, chat, msg, options)
 					if type(options.validate) == "table" then
 						usage = "{" .. table.concat(options.validate, " || ") .. "}"
 					else
-						usage = options.usage or "{value}"
+						usage = options.usage or "<value>"
 					end
 					print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, tostring(table.concat(args, " ")), path), realOptions.name or self)
 					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage))
@@ -961,6 +979,11 @@ local function handlerFunc(self, chat, msg, options)
 							local handler = v.handler or self
 							disabled = handler[disabled](handler)
 						end
+					end
+					if type(v.aliases) == "table" then
+						k = k .. " || " .. table.concat(v.aliases, " || ")
+					elseif type(v.aliases) == "string" then
+						k = k .. " || " .. v.aliases
 					end
 					if v.get and v.type ~= "group" and v.type ~= "pass" and v.type ~= "execute" then
 						local a1,a2,a3,a4
