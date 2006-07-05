@@ -435,21 +435,21 @@ function AceDB:ToggleStandby()
 		return true
 	else
 		db.raw.disabled[profile] = true
-		if type(self.OnDisable) == "function" then
-			local current = self.class
-			while true do
-				if current == AceOO.Class then
-					break
-				end
-				if current.mixins then
-					for mixin in pairs(current.mixins) do
-						if type(mixin.OnEmbedDisable) == "function" then
-							mixin:OnEmbedDisable(self)
-						end
+		local current = self.class
+		while true do
+			if current == AceOO.Class then
+				break
+			end
+			if current.mixins then
+				for mixin in pairs(current.mixins) do
+					if type(mixin.OnEmbedDisable) == "function" then
+						mixin:OnEmbedDisable(self)
 					end
 				end
-				current = current.super
 			end
+			current = current.super
+		end
+		if type(self.OnDisable) == "function" then
 			self:OnDisable()
 		end
 		return false

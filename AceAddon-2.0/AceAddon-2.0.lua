@@ -87,6 +87,7 @@ local AceOO = AceLibrary("AceOO-2.0")
 local AceAddon = AceOO.Class()
 local AceEvent
 local AceConsole
+local AceModuleCore
 
 function AceAddon:ToString()
 	return "AceAddon"
@@ -99,42 +100,31 @@ if DEFAULT_CHAT_FRAME then
 	end
 end
 
-local nextAddon
-
 local AceDB
 function AceAddon:ADDON_LOADED(name)
-	if type(nextAddon) == "table" then
-		while table.getn(nextAddon) > 0 do
-			local addon = table.remove(nextAddon, 1)
-			table.insert(self.addons, addon)
-			if not self.addons[name] then
-				self.addons[name] = addon
-			end
-			self:InitializeAddon(addon, name)
+	while table.getn(self.nextAddon) > 0 do
+		local addon = table.remove(self.nextAddon, 1)
+		table.insert(self.addons, addon)
+		if not self.addons[name] then
+			self.addons[name] = addon
 		end
-	elseif nextAddon then
-		table.insert(self.addons, nextAddon)
-		self.addons[name] = nextAddon
-		self:InitializeAddon(nextAddon, name)
-		nextAddon = nil
+		self:InitializeAddon(addon, name)
 	end
 end
 
-local runOnEnableCode = false
 local function RegisterOnEnable(self)
 	if type(self.OnEnable) == "function" then
 		if type(self.IsEnabled) ~= "function" or self:IsEnabled() then
 			if AceAddon.playerLoginFired then
 				self:OnEnable()
 			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
+				AceAddon.playerLoginFired = true
 				self:OnEnable()
-			elseif type(self.RegisterEvent) == "function" then
-				self:RegisterEvent("PLAYER_LOGIN", "OnEnable", true)
 			else
-				if not AceAddon.pluginsToOnEnable then
-					AceAddon.pluginsToOnEnable = {}
+				if not AceAddon.addonsToOnEnable then
+					AceAddon.addonsToOnEnable = {}
 				end
-				AceAddon.pluginsToOnEnable[self] = true
+				table.insert(AceAddon.addonsToOnEnable, self)
 			end
 		end
 	end
@@ -197,11 +187,10 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.website = GetAddOnMetadata(name, "X-Website")
 		end
 	end
-	addon:OnInitialize()
-	if runOnEnableCode then
-		RegisterOnEnable(addon)
-		runOnEnableCode = false
+	if type(addon.OnInitialize) == "function" then
+		addon:OnInitialize()
 	end
+	RegisterOnEnable(addon)
 end
 
 function AceAddon.prototype:PrintAddonInfo()
@@ -247,13 +236,14 @@ end
 
 function AceAddon:PLAYER_LOGIN()
 	self.playerLoginFired = true
-	if self.pluginsToOnEnable then
-		for plugin in pairs(self.pluginsToOnEnable) do
-			if type(plugin.OnEnable) == "function" then
-				plugin:OnEnable()
+	if self.addonsToOnEnable then
+		while table.getn(self.addonsToOnEnable) > 0 do
+			local addon = table.remove(self.addonsToOnEnable, 1)
+			if type(addon.OnEnable) == "function" then
+				addon:OnEnable()
 			end
 		end
-		self.pluginsToOnEnable = nil
+		self.addonsToOnEnable = nil
 	end
 end
 
@@ -273,30 +263,7 @@ function AceAddon.prototype:init()
 	self.super = self.class.prototype
 	
 	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED", true)
-	if nextAddon then
-		table.insert(nextAddon, self)
-	else
-		nextAddon = {self}
-	end
-end
-
-function AceAddon.prototype:OnInitialize(name)
-	if self == AceAddon.prototype then
-		AceAddon:error("Cannot call self.super:OnInitialize(). proper form is self.super.OnInitialize(self)")
-	end
-	runOnEnableCode = true
-end
-
-function AceAddon.prototype:OnEnable()
-	if self == AceAddon.prototype then
-		self:error("Cannot call self.super:OnEnable(). proper form is self.super.OnEnable(self)")
-	end
-end
-
-function AceAddon.prototype:OnDisable()
-	if self == AceAddon.prototype then
-		self:error("Cannot call self.super:OnDisable(). proper form is self.super.OnDisable(self)")
-	end
+	table.insert(AceAddon.nextAddon, self)
 end
 
 function AceAddon.prototype:ToString()
@@ -319,20 +286,6 @@ end
 AceAddon.new = function(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 	local class = AceOO.Classpool(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 	return class:new()
-end
-
-local function activate(self, oldLib, oldDeactivate)
-	AceAddon = self
-	
-	if oldLib then
-		self.playerLoginFired = oldLib.playerLoginFired
-		self.pluginsToOnEnable = oldLib.pluginsToOnEnable
-		oldDeactivate(oldLib)
-		self.addons = oldLib.addons
-	end
-	if not self.addons then
-		self.addons = {}
-	end
 end
 
 local function external(self, major, instance)
@@ -666,6 +619,28 @@ local function external(self, major, instance)
 		})
 	elseif major == "AceDB-2.0" then
 		AceDB = instance
+	elseif major == "AceModuleCore-2.0" then
+		AceModuleCore = instance
+	end
+end
+
+local function activate(self, oldLib, oldDeactivate)
+	AceAddon = self
+	
+	if oldLib then
+		self.playerLoginFired = oldLib.playerLoginFired
+		self.addonsToOnEnable = oldLib.addonsToOnEnable
+		oldDeactivate(oldLib)
+		self.addons = oldLib.addons
+		self.playerLoginFired = oldLib.playerLoginFired
+		self.nextAddon = {}
+		self.addonsToOnEnable = oldLib.addonsToOnEnable
+	end
+	if not self.addons then
+		self.addons = {}
+	end
+	if not self.nextAddon then
+		self.nextAddon = {}
 	end
 end
 
