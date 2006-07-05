@@ -20,10 +20,18 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
-local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule"}
+local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "SetModuleMixins"}
 
+local function getlibrary(lib)
+	if type(lib) == "string" then
+		return AceLibrary(lib)
+	else
+		return lib
+	end
+end
+
+local tmp
 function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	
 	if not self.modules then
 		AceModuleCore:error("CreatePrototype() must be called before attempting to create a new module.", 2)
 	end
@@ -35,12 +43,60 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 		AceModuleCore:error("The module %q has already been registered", name)
 	end
 	
-	local module = AceOO.Classpool(self.moduleClass, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20):new()
+	if not tmp then
+		tmp = {}
+	end
+	if a1 then table.insert(tmp, a1)
+	if a2 then table.insert(tmp, a2)
+	if a3 then table.insert(tmp, a3)
+	if a4 then table.insert(tmp, a4)
+	if a5 then table.insert(tmp, a5)
+	if a6 then table.insert(tmp, a6)
+	if a7 then table.insert(tmp, a7)
+	if a8 then table.insert(tmp, a8)
+	if a9 then table.insert(tmp, a9)
+	if a10 then table.insert(tmp, a10)
+	if a11 then table.insert(tmp, a11)
+	if a12 then table.insert(tmp, a12)
+	if a13 then table.insert(tmp, a13)
+	if a14 then table.insert(tmp, a14)
+	if a15 then table.insert(tmp, a15)
+	if a16 then table.insert(tmp, a16)
+	if a17 then table.insert(tmp, a17)
+	if a18 then table.insert(tmp, a18)
+	if a19 then table.insert(tmp, a19)
+	if a20 then table.insert(tmp, a20)
+	end end end end end end end end end end end end end end end end end end end end
+	for k,v in ipairs(tmp) do
+		tmp[k] = getlibrary(v)
+	end
+	
+	if self.moduleMixins then
+		for _,mixin in ipairs(self.moduleMixins) do
+			local exists = false
+			for _,v in ipairs(tmp) do
+				if mixin == v then
+					exists = true
+					break
+				end
+			end
+			if not exists then
+				table.insert(tmp, mixin)
+			end
+		end
+	end
+	
+	local module = AceOO.Classpool(self.moduleClass, unpack(tmp)):new()
 	self.modules[name] = module
 	module.name = name
 	module.title = name
 	
 	AceModuleCore.totalModules[module] = true
+	
+	for k in pairs(tmp) do
+		tmp[k] = nil
+	end
+	table.setn(tmp, 0)
 	return module
 end
 
@@ -90,6 +146,21 @@ function AceModuleCore:IsModule(module)
 			end
 		end
 		return false
+	end
+end
+
+function AceModuleCore:SetModuleMixins(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if self.moduleMixins then
+		AceModuleCore:error('Cannot call "SetModuleMixins" twice')
+	elseif not self.modules then
+		AceModuleCore:error("Error initializing class.  Please report error.")
+	elseif next(self.modules) then
+		AceModuleCore:error('Cannot call "SetModuleMixins" after "NewModule" has been called.')
+	end
+	
+	self.moduleMixins = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
+	for k,v in ipairs(self.moduleMixins) do
+		self.moduleMixins[k] = getlibrary(v)
 	end
 end
 
