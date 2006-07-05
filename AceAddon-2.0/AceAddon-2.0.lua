@@ -283,6 +283,7 @@ function AceAddon.prototype:ToString()
 	return x
 end
 
+local _G = getfenv(0)
 local debugstack
 if type(_G.debugstack) == "function" then
 	debugstack = _G.debugstack
