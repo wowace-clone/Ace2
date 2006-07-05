@@ -133,7 +133,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 end
 
 function AceEvent:UnregisterEvent(event)
-	AceEvent:argCheck(event, "string")
+	AceEvent:argCheck(event, 2, "string")
 	
 	if AceEvent.registry[event] and AceEvent.registry[event][self] then
 		AceEvent.registry[event][self] = nil
