@@ -20,7 +20,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
-local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "SetModuleMixins"}
+local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "IterateModules", "SetModuleMixins"}
 
 local function getlibrary(lib)
 	if type(lib) == "string" then
@@ -147,6 +147,10 @@ function AceModuleCore:IsModule(module)
 		end
 		return false
 	end
+end
+
+function AceModuleCore:IterateModules()
+	return pairs(self.modules)
 end
 
 function AceModuleCore:SetModuleMixins(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
