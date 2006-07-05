@@ -17,6 +17,11 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
+local AceOO = {
+	error = AceLibrary.error,
+	argCheck = AceLibrary.argCheck
+}
+
 -- @function	getuid
 -- @brief		Obtain a unique string identifier for the object in question.
 -- @param t		The object to obtain the uid for.
@@ -37,7 +42,7 @@ local function getlibrary(o)
 		return o
 	elseif type(o) == "string" then
 		if not AceLibrary:HasInstance(o) then
-			error(string.format("Library %q does not exist.", o), 3)
+			AceOO:error("Library %q does not exist.", o)
 		end
 		return AceLibrary(o)
 	end
@@ -205,9 +210,8 @@ local function inherits(object, parent)
 			parent = AceLibrary(parent)
 		end
 	end
-	if type(parent) ~= "table" then
-		error(string.format("Bad argument #2 to `inherits' (table expected, got %s)", type(class)), 2)
-	elseif type(object) ~= "table" then
+	AceOO:argCheck(parent, 2, "table")
+	if type(object) ~= "table" then
 		return false
 	end
 	local current
@@ -355,7 +359,7 @@ do
 		elseif type(other) == "table" and other.IsLessThan and other.Equals then
 			return other:Equals(self) or other:IsLessThan(self)
 		else
-			error("cannot compare two objects", 2)
+			AceOO:error("cannot compare two objects")
 		end
 	end
 	local function classobjectlessthanequal(self, other)
@@ -370,62 +374,62 @@ do
 		elseif type(self) == "table" and self.IsLessThan and self.Equals then
 			return self:Equals(other) or self:IsLessThan(other)
 		else
-			error("cannot compare two incompatible objects", 2)
+			AceOO:error("cannot compare two incompatible objects")
 		end
 	end
 	local function classobjectadd(self, other)
 		if type(self) == "table" and self.Add then
 			return self:Add(other)
 		else
-			error("cannot add two incompatible objects", 2)
+			AceOO:error("cannot add two incompatible objects")
 		end
 	end
 	local function classobjectsub(self, other)
 		if type(self) == "table" and self.Subtract then
 			return self:Subtract(other)
 		else
-			error("cannot subtract two incompatible objects", 2)
+			AceOO:error("cannot subtract two incompatible objects")
 		end
 	end
 	local function classobjectunm(self, other)
 		if type(self) == "table" and self.UnaryNegation then
 			return self:UnaryNegation(other)
 		else
-			error("attempt to negate an incompatible object", 2)
+			AceOO:error("attempt to negate an incompatible object")
 		end
 	end
 	local function classobjectmul(self, other)
 		if type(self) == "table" and self.Multiply then
 			return self:Multiply(other)
 		else
-			error("cannot multiply two incompatible objects", 2)
+			AceOO:error("cannot multiply two incompatible objects")
 		end
 	end
 	local function classobjectdiv(self, other)
 		if type(self) == "table" and self.Divide then
 			return self:Divide(other)
 		else
-			error("cannot divide two incompatible objects", 2)
+			AceOO:error("cannot divide two incompatible objects")
 		end
 	end
 	local function classobjectpow(self, other)
 		if type(self) == "table" and self.Exponent then
 			return self:Exponent(other)
 		else
-			error("cannot exponentiate two incompatible objects", 2)
+			AceOO:error("cannot exponentiate two incompatible objects")
 		end
 	end
 	local function classobjectconcat(self, other)
 		if type(self) == "table" and self.Concatenate then
 			return self:Concatenate(other)
 		else
-			error("cannot concatenate two incompatible objects", 2)
+			AceOO:error("cannot concatenate two incompatible objects")
 		end
 	end
 	function class_new(self, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
 						a13, a14, a15, a16, a17, a18, a19, a20)
 		if self.virtual then
-			error("Cannot instantiate a virtual class.", 2)
+			AceOO:error("Cannot instantiate a virtual class.")
 		end
 		
 		local o = self.prototype
@@ -442,7 +446,7 @@ do
 			for interface in pairs(self.interfaces) do
 				for field,kind in pairs(interface.interface) do
 					if tostring(type(newobj[field])) ~= kind then
-						error(string.format("Class did not satisfy all interfaces. %q is required to be a %s. It is a %s", field, kind, tostring(type(newobj[field]))), 5)
+						AceOO:error("Class did not satisfy all interfaces. %q is required to be a %s. It is a %s", field, kind, tostring(type(newobj[field])))
 					end
 				end
 			end
@@ -454,7 +458,7 @@ do
 						a13, a14, a15, a16, a17, a18, a19, a20)
 		if initStatus then
 			initStatus = tmp
-			error("Initialization not completed, be sure to call the superclass's init method.", 2)
+			AceOO:error("Initialization not completed, be sure to call the superclass's init method.")
 			return
 		end
 		initStatus = tmp
@@ -490,10 +494,10 @@ do
 			}
 		end
 		if not inherits(parent, Class) then
-			error("Classes must inherit from a proper class", 4)
+			AceOO:error("Classes must inherit from a proper class")
 		end
 		if parent.sealed then
-			error("Cannot inherit from a sealed class", 4)
+			AceOO:error("Cannot inherit from a sealed class")
 		end
 		for i,v in ipairs(total) do
 			if inherits(v, Mixin) and v.class then
@@ -501,7 +505,7 @@ do
 					newclass.mixins = {}
 				end
 				if newclass.mixins[v] then
-					error("Cannot explicitly inherit from the same mixin twice", 4)
+					AceOO:error("Cannot explicitly inherit from the same mixin twice")
 				end
 				newclass.mixins[v] = true
 			elseif inherits(v, Interface) and v.class then
@@ -509,11 +513,11 @@ do
 					newclass.interfaces = {}
 				end
 				if newclass.interfaces[v] then
-					error("Cannot explicitly inherit from the same interface twice", 4)
+					AceOO:error("Cannot explicitly inherit from the same interface twice")
 				end
 				newclass.interfaces[v] = true
 			else
-				error("Classes can only inherit from one or zero classes and any number of mixins or interfaces", 4)
+				AceOO:error("Classes can only inherit from one or zero classes and any number of mixins or interfaces")
 			end
 		end
 		if parent.interfaces then
@@ -578,7 +582,7 @@ do
 				end
 	
 				-- method conflict
-				error(msg, 4)
+				AceOO:error(msg)
 			end
 		end
 		
@@ -615,7 +619,7 @@ do
 		if rawequal(self, initStatus) then
 			initStatus = nil
 		else
-			error("Improper self passed to init. You must do MyClass.super.prototype.init(self, ...)", 2)
+			AceOO:error("Improper self passed to init. You must do MyClass.super.prototype.init(self, ...)", 2)
 		end
 		local current = self.class
 		while true do
@@ -679,7 +683,7 @@ do
 		end
 
 		if rawget(target, field) or (target[field] and target[field] ~= state[field]) then
-			error(string.format("Method conflict in attempt to mixin. Field %q", field), 2)
+			AceOO:error("Method conflict in attempt to mixin. Field %q", field)
 		end
 
 		target[field] = state[field]
@@ -691,7 +695,7 @@ do
 			-- methods.
 
 			target[field] = nil
-			error(msg, 2)
+			AceOO:error(msg)
 		end
 	end
 	function Mixin.prototype:embed(target)
@@ -700,7 +704,7 @@ do
 		local err, msg = pcall(_Embed, self, nil, target)
 		setmetatable(target, mt)
 		if not err then
-			error(msg, 2)
+			AceOO:error(msg)
 		end
 		if type(self.embedList) == "table" then
 			self.embedList[target] = true
@@ -735,14 +739,12 @@ do
 	function Mixin.prototype:init(export, a1, a2, a3, a4, a5, a6, a7, a8, a9,
 											a10, a11, a12, a13, a14, a15, a16,
 											a17, a18, a19, a20)
-		if type(export) ~= "table" then
-			error(string.format("Bad argument #2 to `new' (table expected, got %s)", type(export)), 3)
-		end
+		AceOO:argCheck(export, 2, "table")
 		for k,v in pairs(export) do
 			if type(k) ~= "number" then
-				error("All keys to argument #2 must be numbers.", 3)
+				AceOO:error("All keys to argument #2 must be numbers.")
 			elseif type(v) ~= "string" then
-				error("All values to argument #2 must be strings.", 3)
+				AceOO:error("All values to argument #2 must be strings.")
 			end
 		end
 		local num = table.getn(export)
@@ -760,7 +762,7 @@ do
 				l(a16), l(a17), l(a18), l(a19), l(a20) }
 			for _,v in ipairs(interfaces) do
 				if not v.class or not inherits(v, Interface) then
-					error("Mixins can inherit only from interfaces", 4)
+					AceOO:error("Mixins can inherit only from interfaces")
 				end
 			end
 			local num = table.getn(interfaces)
@@ -784,7 +786,7 @@ do
 							end
 						end
 						if not good then
-							error(string.format("Mixin does not fully accommodate field %q", field), 4)
+							AceOO:error("Mixin does not fully accommodate field %q", field)
 						end
 					end
 				end
@@ -819,16 +821,14 @@ do
 	end
 	function Interface.prototype:init(interface, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 		Interface.super.prototype.init(self)
-		if type(interface) ~= "table" then
-			error(string.format("Bad argument #2 to `new' (table expected, got %s)", type(interface)), 3)
-		end
+		AceOO:argCheck(interface, 2, "table")
 		for k,v in pairs(interface) do
 			if type(k) ~= "string" then
-				error("All keys to argument #2 must be numbers.", 3)
+				AceOO:error("All keys to argument #2 must be numbers.")
 			elseif type(v) ~= "string" then
-				error("All values to argument #2 must be strings.", 3)
+				AceOO:error("All values to argument #2 must be strings.")
 			elseif v ~= "nil" and v ~= "string" and v ~= "number" and v ~= "table" and v ~= "function" then
-				error('All values to argument #2 must either be "nil", "string", "number", "table", or "function".', 3)
+				AceOO:error('All values to argument #2 must either be "nil", "string", "number", "table", or "function".')
 			end
 		end
 		local l = getlibrary
@@ -837,7 +837,7 @@ do
 			self.superinterfaces = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
 			for k,v in ipairs(self.superinterfaces) do
 				if not inherits(v, Interface) or not v.class then
-					error('Cannot provide a non-Interface to inherit from', 3)
+					AceOO:error('Cannot provide a non-Interface to inherit from')
 				end
 			end
 			local num = table.getn(self.superinterfaces)
@@ -862,7 +862,7 @@ local Classpool
 do
 	local pool = setmetatable({}, {__mode = 'v'})
 	local function newindex(k, v)
-		error('Attempt to modify a read only class.', 2)
+		AceOO:error('Attempt to modify a read only class.')
 	end
 	local t
 	local function getcomplexuid(sc, m1, m2, m3, m4, m5, m6, m7, m8, m9,
@@ -929,19 +929,18 @@ do
 	end
 end
 
-local obj = {
-	Factory = Factory,
-	Object = Object,
-	Class = Class,
-	Mixin = Mixin,
-	Interface = Interface,
-	Classpool = Classpool,
-	inherits = inherits
-}
+AceOO.Factory = Factory
+AceOO.Object = Object
+AceOO.Class = Class
+AceOO.Mixin = Mixin
+AceOO.Interface = Interface
+AceOO.Classpool = Classpool
+AceOO.inherits = inherits
 
 -- Library handling bits
 
 local function activate(self, oldLib, oldDeactivate)
+	AceOO = self
 	Factory = self.Factory
 	Object = self.Object
 	Class = self.Class
@@ -954,4 +953,5 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 end
 
-AceLibrary:Register(obj, MAJOR_VERSION, MINOR_VERSION, activate)
+AceLibrary:Register(AceOO, MAJOR_VERSION, MINOR_VERSION, activate)
+AceOO = AceLibrary(MAJOR_VERSION)

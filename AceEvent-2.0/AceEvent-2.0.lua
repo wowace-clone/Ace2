@@ -29,17 +29,14 @@ local AceEvent = Mixin {
 					   }
 
 function AceEvent:RegisterEvent(event, method, once)
-	if type(event) ~= "string" then
-		error(string.format("Bad argument #2 to `RegisterEvent' (string expected, got %s)", type(event)), 2)
-	end
+	AceEvent:argCheck(event, 2, "string")
+	AceEvent:argCheck(method, 3, "string", "function", "nil")
+	AceEvent:argCheck(once, 4, "boolean", "nil")
 	if not method then
 		method = event
 	end
-	if type(method) ~= "function" and type(method) ~= "string" then
-		error(string.format("Bad argument #3 to `RegisterEvent' (string or function expected, got %s)", type(method)), 2)
-	end
 	if type(method) == "string" and type(self[method]) ~= "function" then
-		error(string.format("Cannot register event %q to method %q, it does not exist", event, method), 2)
+		AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
 	end
 	
 	if not AceEvent.registry[event] then
@@ -66,13 +63,9 @@ end
 
 local _G = getfenv(0)
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	if type(event) ~= "string" then
-		error(string.format("Bad argument #2 to `TriggerEvent' (string expected, got %s)", type(event)), 2)
-	end
+	AceEvent:argCheck(event, 2, "string")
 	local _G_event = _G.event
 	_G.event = event
-	
-	AceEvent = AceLibrary(MAJOR_VERSION)
 	
 	if AceEvent.registry[event] then
 		if AceEvent.onceRegistry and AceEvent.onceRegistry[event] then
@@ -139,14 +132,12 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 end
 
 function AceEvent:UnregisterEvent(event)
-	if type(event) ~= "string" then
-		error(string.format("Bad argument #2 to `UnregisterEvent' (string expected, got %s)", type(event)), 2)
-	end
+	AceEvent:argCheck(event, "string")
 	
 	if AceEvent.registry[event] and AceEvent.registry[event][self] then
 		AceEvent.registry[event][self] = nil
 	else
-		error("Cannot unregister an event that you are not registered with.", 2)
+		AceEvent:error("Cannot unregister an event that you are not registered with.")
 	end
 end
 
@@ -157,9 +148,7 @@ function AceEvent:UnregisterAllEvents()
 end
 
 function AceEvent:IsEventRegistered(event)
-	if type(event) ~= "string" then
-		error(string.format("Bad argument #2 to `IsEventRegistered' (string expected, got %s)", type(event)), 2)
-	end
+	AceEvent:argCheck(event, 2, "string")
 	if AceEvent.registry[event] and AceEvent.registry[event][self] then
 		return true, AceEvent.registry[event][self]
 	end

@@ -258,9 +258,7 @@ function AceAddon:PLAYER_LOGIN()
 end
 
 function AceAddon.prototype:Inject(t)
-	if type(t) ~= "table" then
-		error(string.format("Bad argument #2 to `Inject' (expected table, got %s)", tostring(type(t))), 2)
-	end
+	AceAddon:argCheck(t, 2, "table")
 	for k,v in pairs(t) do
 		self[k] = v
 	end
@@ -284,20 +282,20 @@ end
 
 function AceAddon.prototype:OnInitialize(name)
 	if self == AceAddon.prototype then
-		error("Cannot call self.super:OnInitialize(). proper form is self.super.OnInitialize(self)", 2)
+		AceAddon:error("Cannot call self.super:OnInitialize(). proper form is self.super.OnInitialize(self)")
 	end
 	runOnEnableCode = true
 end
 
 function AceAddon.prototype:OnEnable()
 	if self == AceAddon.prototype then
-		error("Cannot call self.super:OnEnable(). proper form is self.super.OnEnable(self)", 2)
+		self:error("Cannot call self.super:OnEnable(). proper form is self.super.OnEnable(self)")
 	end
 end
 
 function AceAddon.prototype:OnDisable()
 	if self == AceAddon.prototype then
-		error("Cannot call self.super:OnDisable(). proper form is self.super.OnDisable(self)", 2)
+		self:error("Cannot call self.super:OnDisable(). proper form is self.super.OnDisable(self)")
 	end
 end
 
@@ -324,14 +322,15 @@ AceAddon.new = function(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12,
 end
 
 local function activate(self, oldLib, oldDeactivate)
-	AceAddon = AceLibrary(MAJOR_VERSION)
+	AceAddon = self
 	
 	if oldLib then
 		self.playerLoginFired = oldLib.playerLoginFired
 		self.pluginsToOnEnable = oldLib.pluginsToOnEnable
 		oldDeactivate(oldLib)
 		self.addons = oldLib.addons
-	else
+	end
+	if not self.addons then
 		self.addons = {}
 	end
 end

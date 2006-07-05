@@ -25,15 +25,14 @@ local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsMod
 function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	
 	if not self.modules then
-		error("CreatePrototype() must be called before attempting to create a new module.", 2)
+		AceModuleCore:error("CreatePrototype() must be called before attempting to create a new module.", 2)
 	end
-	if type(name) ~= "string" then
-		error(string.format("Bad argument #2 to `NewModule` (expected string, got %s)", tostring(type(name))), 2)
-	elseif string.len(name) == 0 then
-		error("Bad argument #2 to `NewModule`, string must not be empty", 2)
+	AceModuleCore:argCheck(name, 2, "string")
+	if string.len(name) == 0 then
+		AceModuleCore:error("Bad argument #2 to `NewModule`, string must not be empty")
 	end
 	if self.modules[name] then
-		error(string.format("The module %q has already been registered", name), 2)
+		AceModuleCore:error("The module %q has already been registered", name)
 	end
 	
 	local module = AceOO.Classpool(self.moduleClass, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20):new()
@@ -73,10 +72,10 @@ end
 
 function AceModuleCore:GetModule(name)
 	if not self.modules then
-		error("Error initializing class.  Please report error.", 2)
+		AceModuleCore:error("Error initializing class.  Please report error.")
 	end
 	if not self.modules[name] then
-		error(string.format("Cannot find module %q.", name), 2)
+		AceModuleCore:error("Cannot find module %q.", name)
 	end
 	return self.modules[name]
 end
@@ -96,7 +95,7 @@ end
 
 function AceModuleCore:OnInstanceInit(target)
 	if target.modules then
-		error("OnInstanceInit cannot be called twice", 2)
+		AceModuleCore:error("OnInstanceInit cannot be called twice")
 	end
 	target.modules = {}
 	

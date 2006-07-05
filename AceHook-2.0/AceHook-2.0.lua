@@ -205,16 +205,16 @@ local function _hookFunc(self, func, handler)
 			self.hooks[func].active = true
 			return
 		else
-			error(string.format("There is a stale hook for %q can't hook or reactivate.", func), 3)
+			AceHook:error("There is a stale hook for %q can't hook or reactivate.", func)
 		end
 	end	
 	
 	if type(handler) == "string" then
 		if type(self[handler]) ~= "function" then
-			error(string.format("Could not find the the handler %q when hooking function %q", handler, func), 3)
+			AceHook:error("Could not find the the handler %q when hooking function %q", handler, func)
 		end
 	elseif type(handler) ~= "function" then
-		error(string.format("Could not find the handler you supplied when hooking %q", func), 3)
+		AceHook:error("Could not find the handler you supplied when hooking %q", func)
 	end
 	
 	local t = new()
@@ -262,7 +262,7 @@ end
 local function _hookMeth(self, obj, method, handler, script)
 	if not handler then handler = method end
 	if (not obj or type(obj) ~= "table") then
-		error("The object you supplied could not be found, or isn't a table.", 3)
+		AceHook:error("The object you supplied could not be found, or isn't a table.")
 	end
 	
 	if self.hooks[obj] and self.hooks[obj][method] then
@@ -276,26 +276,26 @@ local function _hookMeth(self, obj, method, handler, script)
 			self.hooks[obj][method].active = true
 			return
 		else
-			error(string.format("There is a stale hook for %q can't hook or reactivate.", method) ,3)
+			AceHook:error("There is a stale hook for %q can't hook or reactivate.", method)
 		end
 	end
 	-- We're clear to try the hook, let's make some checks first
 	if type(handler) == "string" then
 		if type(self[handler]) ~= "function" then
-			error(string.format("Could not find the handler %q you supplied when hooking method %q", handler, method), 3)
+			AceHook:error("Could not find the handler %q you supplied when hooking method %q", handler, method)
 		end
 	elseif type(handler) ~= "function" then
-		error(string.format("Could not find the handler you supplied when hooking method %q", method), 3)
+		AceHook:error("Could not find the handler you supplied when hooking method %q", method)
 	end
 	-- Handler has been found, so now try to find the method we're trying to hook	
-	local orig, setscript
+	local orig
 	-- Script
 	if script then
 		if not obj.GetScript then
-			error("The object you supplied does not have a GetScript method.", 3)
+			AceHook:error("The object you supplied does not have a GetScript method.")
 		end
 		if not obj:HasScript(method) then
-			error(string.format("The object you supplied doesn't allow the %q method.", method), 3)
+			AceHook:error("The object you supplied doesn't allow the %q method.", method)
 		end
 		-- Sometimes there is not a original function for a script.
 		orig = obj:GetScript(method)
@@ -310,7 +310,7 @@ local function _hookMeth(self, obj, method, handler, script)
 		orig = obj[method]
 	end
 	if not orig then
-		error(string.format("Could not find the method or script %q you are trying to hook.", method), 3)
+		AceHook:error("Could not find the method or script %q you are trying to hook.", method)
 	end
 	if not self.hooks[obj] then
 		self.hooks[obj] = new()
@@ -416,7 +416,7 @@ function AceHook:Hook(arg1, arg2, arg3)
 		if protFuncs[arg1] then
  			if self.hooks.name then
 				string.format("%s tried to hook %q, which is a Blizzard protected function.", self.hooks.name, arg1)
-				error(string.format("%s tried to hook %q, which is a Blizzard protected function.", self.hooks.name, arg1), 3)
+				AceHook:error("%s tried to hook %q, which is a Blizzard protected function.", self.hooks.name, arg1)
 			else
 				_debug(self, string.format("An Addon tried to hook %q, which is a Blizzard protected function.", arg1))
 			end

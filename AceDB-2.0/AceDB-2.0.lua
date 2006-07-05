@@ -230,12 +230,10 @@ function AceDB:InitializeDB(addonName)
 end
 
 function AceDB:RegisterDB(name, charName)
-	if type(name) ~= "string" then
-		error(string.format("Bad argument #2 to `RegisterDB' (string expected, got %s)", tostring(type(name))), 2)
-	elseif charName and type(charName) ~= "string" then
-		error(string.format("Bad argument #3 to `RegisterDB' (string or nil expected, got %s)", tostring(type(charName))), 2)
-	elseif self.db then
-		error("Cannot call \"RegisterDB\" if self.db is set.", 2)
+	AceDB:argCheck(name, 2, "string")
+	AceDB:argCheck(charName, 3, "string", "nil")
+	if self.db then
+		AceDB:error("Cannot call \"RegisterDB\" if self.db is set.")
 	end
 	local stack = debugstack()
 	local addonName = string.gsub(stack, ".-\n.-\\AddOns\\(.-)\\.*", "%1")
@@ -255,18 +253,16 @@ function AceDB:RegisterDB(name, charName)
 end
 
 function AceDB:RegisterDefaults(kind, defaults, a3)
-	if type(kind) ~= "string" then
-		error(string.format("Bad argument #2 to `RegisterDefaults' (string expected, got %s)", tostring(type(kind))), 2)
-	elseif kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" then
-		error(string.format("Bad argument #2 to `RegisterDefaults' (\"char\", \"class\", \"profile\", \"account\", or \"realm\" expected, got %q)", kind), 2)
+	AceDB:argCheck(kind, 2, "string")
+	if kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" then
+		AceDB:error("Bad argument #2 to `RegisterDefaults' (\"char\", \"class\", \"profile\", \"account\", or \"realm\" expected, got %q)", kind)
 	elseif type(self.db) ~= "table" or type(self.db.name) ~= "string" then
-			error("Cannot call \"RegisterDefaults\" unless \"RegisterDB\" has been previously called.", 2)
+		AceDB:error("Cannot call \"RegisterDefaults\" unless \"RegisterDB\" has been previously called.")
 	end
 	if not a3 then
-		if type(defaults) ~= "table" then
-			error(string.format("Bad argument #3 to `RegisterDefaults' (table expected, got %s)", tostring(type(defaults))), 2)
-		elseif self.db.defaults and self.db.defaults[kind] then
-			error(string.format("\"RegisterDefaults\" has already been called for %q.", kind), 2)
+		AceDB:argCheck(defaults, 3, "table")
+		if self.db.defaults and self.db.defaults[kind] then
+			AceDB:error("\"RegisterDefaults\" has already been called for %q.", kind)
 		end
 		if not self.db.defaults then
 			rawset(self.db, 'defaults', {})
@@ -274,16 +270,13 @@ function AceDB:RegisterDefaults(kind, defaults, a3)
 		self.db.defaults[kind] = defaults
 	else
 		local subkey, defaults = defaults, a3
-		if type(defaults) ~= "table" then
-			error(string.format("Bad argument #4 to `RegisterDefaults' (table expected, got %s)", tostring(type(defaults))), 2)
-		end
-		if type(subkey) ~= "string" then
-			error(string.format("Bad argument #3 to `RegisterDefaults' (string expected, got %s)", tostring(type(subkey))), 2)
-		elseif subkey == '*' then
-			error("Argument #3 to `RegisterDefaults' cannot be \"*\"", 2)
+		AceDB:argCheck(subkey, 3, "string")
+		AceDB:argCheck(defaults, 4, "table")
+		if subkey == '*' then
+			AceDB:error("Argument #3 to `RegisterDefaults' cannot be \"*\"")
 		end
 		if self.db.defaults and self.db.defaults[kind] and self.db.defaults[kind][subkey] then
-			error(string.format("\"RegisterDefaults\" has already been called for [%q][%q].", kind, subkey), 2)
+			AceDB:error("\"RegisterDefaults\" has already been called for [%q][%q].", kind, subkey)
 		end
 		if not self.db.defaults then
 			rawset(self.db, 'defaults', {})
@@ -368,9 +361,7 @@ local function copyTable(to, from)
 end
 
 function AceDB:SetProfile(name)
-	if type(name) ~= "string" then
-		error(string.format("Bad argument #2 to `SetProfile' (string expected, got %s)", tostring(type(name))), 2)
-	end
+	AceDB:argCheck(name, 2, "string")
 	if not self.db or not self.db.raw then
 		error("Cannot call \"SetProfile\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.", 2)
 	end
@@ -379,10 +370,10 @@ function AceDB:SetProfile(name)
 	local lowerName = string.lower(name)
 	if string.sub(lowerName, 1, 5) == "char/" or string.sub(lowerName, 1, 6) == "realm/" or string.sub(lowerName, 1, 6) == "class/" then
 		if not db.raw.profiles or not db.raw.profiles[name] then
-			error(string.format("Cannot copy profile %q, it does not exist.", name), 2)
+			AceDB:error("Cannot copy profile %q, it does not exist.", name)
 		else
 			if (string.sub(lowerName, 1, 5) == "char/" and string.sub(lowerName, 6) == string.lower(charID)) or (string.sub(lowerName, 1, 6) == "realm/" and string.sub(lowerName, 7) == string.lower(realmID)) or (string.sub(lowerName, 1, 6) == "class/" and string.sub(lowerName, 7) == string.lower(classID)) then
-				error(string.format("Cannot copy profile %q, it is currently in use.", name), 2)
+				AceDB:error("Cannot copy profile %q, it is currently in use.", name)
 			end
 			copy = true
 		end
@@ -429,7 +420,7 @@ end
 
 function AceDB:ToggleStandby()
 	if not self.db or not self.db.raw then
-		error("Cannot call \"ToggleStandby\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.", 2)
+		AceDB:error("Cannot call \"ToggleStandby\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
 	local db = self.db
 	if not db.raw.disabled then

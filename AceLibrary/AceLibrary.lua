@@ -33,6 +33,135 @@ local AceLibrary = {}
 local AceLibrary_mt = {}
 setmetatable(AceLibrary, AceLibrary_mt)
 
+local debugstack
+if type(debug) == "table" and type(debug.traceback) == "function" then
+	debugstack = debug.traceback
+elseif type(_G.debugstack) == "function" then
+	debugstack = _G.debugstack
+else
+	_G.error(MAJOR_VERSION .. " requires either debug.traceback() or debugstack()")
+end
+
+local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if not tmp then
+		tmp = {}
+	else
+		for k in pairs(tmp) do tmp[k] = nil end
+		table.setn(tmp, 0)
+	end
+	
+	if a1 ~= nil then table.insert(tmp, a1)
+	if a2 ~= nil then table.insert(tmp, a2)
+	if a3 ~= nil then table.insert(tmp, a3)
+	if a4 ~= nil then table.insert(tmp, a4)
+	if a5 ~= nil then table.insert(tmp, a5)
+	if a6 ~= nil then table.insert(tmp, a6)
+	if a7 ~= nil then table.insert(tmp, a7)
+	if a8 ~= nil then table.insert(tmp, a8)
+	if a9 ~= nil then table.insert(tmp, a9)
+	if a10 ~= nil then table.insert(tmp, a10)
+	if a11 ~= nil then table.insert(tmp, a11)
+	if a12 ~= nil then table.insert(tmp, a12)
+	if a13 ~= nil then table.insert(tmp, a13)
+	if a14 ~= nil then table.insert(tmp, a14)
+	if a15 ~= nil then table.insert(tmp, a15)
+	if a16 ~= nil then table.insert(tmp, a16)
+	if a17 ~= nil then table.insert(tmp, a17)
+	if a18 ~= nil then table.insert(tmp, a18)
+	if a19 ~= nil then table.insert(tmp, a19)
+	if a20 ~= nil then table.insert(tmp, a20)
+	end end end end end end end end end end end end end end end end end end end end
+	
+	local stack = debugstack()
+	local first = string.gsub(stack, "\n.*", "")
+	local file = string.gsub(first, "^\s*(.*).lua:%d+: .*", "%1")
+	file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
+	if not message then
+		local _,_,second = string.find(stack, "\n(.-)\n")
+		message = "error raised! " .. second
+	else
+		for i,v in ipairs(tmp) do
+			tmp[i] = tostring(v)
+		end
+		message = string.format(message, unpack(tmp))
+	end
+	if getmetatable(self) and getmetatable(self).__tostring then
+		message = string.format("%s: %s", tostring(self), message)
+	elseif type(self.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
+		message = string.format("%s: %s", self:GetLibraryVersion(), message)
+	elseif type(self.class) == "table" and type(self.class.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
+		message = string.format("%s: %s", self.class:GetLibraryVersion(), message)
+	end
+	local i = 1
+	for s in string.gfind(stack, "\n([^\n]*)") do
+		i = i + 1
+		if not string.find(s, file .. "%.lua:%d+:") then
+			file = string.gsub(s, "^\s*(.*).lua:%d+: .*", "%1")
+			file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
+			break
+		end
+	end
+	for s in string.gfind(stack, "\n([^\n]*)") do
+		i = i + 1
+		if not string.find(s, file .. "%.lua:%d+:") then
+			_G.error(message, i)
+			return
+		end
+	end
+	_G.error(message, 2)
+	return
+end
+
+local function assert(self, condition, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if not condition then
+		if not message then
+			local stack = debugstack()
+			local _,_,second = string.find(stack, "\n(.-)\n")
+			message = "assertion failed! " .. second
+		end
+		error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+		return
+	end
+	return condition
+end
+
+local function argCheck(self, arg, num, kind, kind2, kind3, kind4)
+	if tostring(type(arg)) ~= kind then
+		if kind2 then
+			if tostring(type(arg)) ~= kind2 then
+				if kind3 then
+					if tostring(type(arg)) ~= kind3 then
+						if kind4 then
+							if tostring(type(arg)) ~= kind4 then
+								local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
+								error(self, "Bad argument #%s to `%s' (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, type(arg))
+							end
+						else
+							local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
+							error(self, "Bad argument #%s to `%s' (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, type(arg))
+						end
+					end
+				else
+					local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
+					error(self, "Bad argument #%s to `%s' (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, type(arg))
+				end
+			end
+		else
+			local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
+			error(self, "Bad argument #%s to `%s' (%s expected, got %s)", tonumber(num) or 0/0, func, tostring(kind), type(arg))
+		end
+	end
+end
+
+local function pcall(self, func, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = _G.pcall(func, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if not a1 then
+		error(self, string.gsub(a2, ".-%.lua:%d-: ", ""))
+	else
+		return a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
+	end
+end
+
 local recurse = {}
 local function addToPositions(t, major)
 	if not AceLibrary.positions[t] or AceLibrary.positions[t] == major then
@@ -250,20 +379,14 @@ end
 -- @return      whether the supplied version would be newer than what is
 --              currently available.
 function AceLibrary:IsNewVersion(major, minor)
-	if type(major) ~= "string" then
-		error(string.format("Bad argument #2 to `IsNewVersion' (string expected, got %s)", type(major)), 2)
-		return
-	end
+	argCheck(self, major, 2, "string")
 	if type(minor) == "string" then
 		local m = svnRevisionToNumber(minor)
 		if m then
 			minor = m
 		end
 	end
-	if type(minor) ~= "number" then
-		error(string.format("Bad argument #3 to `IsNewVersion' (number expected, got %s)", type(minor)), 2)
-		return
-	end
+	argCheck(self, minor, 3, "number")
 	local data = self.libs[major]
 	if not data then
 		return true
@@ -277,10 +400,7 @@ end
 -- @param minor (optional) An integer or an svn revision string representing the minor version.
 -- @return      Whether an instance exists.
 function AceLibrary:HasInstance(major, minor)
-	if type(major) ~= "string" then
-		error(string.format("Bad argument #2 to `HasInstance' (string expected, got %s)", type(major)), 2)
-		return
-	end
+	argCheck(self, major, 2, "string")
 	if minor then
 		if type(minor) == "string" then
 			local m = svnRevisionToNumber(minor)
@@ -288,10 +408,7 @@ function AceLibrary:HasInstance(major, minor)
 				minor = m
 			end
 		end
-		if type(minor) ~= "number" then
-			error(string.format("Bad argument #3 to `HasInstance' (number or nil expected, got %s)", type(minor)), 2)
-			return
-		end
+		argCheck(self, minor, 3, "number")
 		if not self.libs[major] then
 			return
 		end
@@ -306,10 +423,7 @@ end
 -- @param minor (optional) An integer or an svn revision string representing the minor version.
 -- @return      The library with the given major/minor version.
 function AceLibrary:GetInstance(major, minor)
-	if type(major) ~= "string" then
-		error(string.format("Bad argument #2 to `GetInstance' (string expected, got %s)", type(major)), 2)
-		return
-	end
+	argCheck(self, major, 2, "string")
 
 	local data = self.libs[major]
 	if not data then
@@ -323,10 +437,8 @@ function AceLibrary:GetInstance(major, minor)
 				minor = m
 			end
 		end
-		if type(minor) ~= "number" then
-			error(string.format("Bad argument #3 to `GetInstance' (number or nil expected, got %s)", type(minor)), 2)
-			return
-		elseif data.minor ~= minor then
+		argCheck(self, minor, 2, "number")
+		if data.minor ~= minor then
 			error(string.format("Cannot find a library instance of %s, minor version %d.", major, minor), 2)
 			return
 		end
@@ -337,137 +449,7 @@ end
 -- Syntax sugar.  AceLibrary("FooBar-1.0")
 AceLibrary_mt.__call = AceLibrary.GetInstance
 
-local debugstack
-local _G = getfenv(0)
-if type(debug) == "table" and type(debug.traceback) == "function" then
-	debugstack = debug.traceback
-elseif type(_G.debugstack) == "function" then
-	debugstack = _G.debugstack
-else
-	error(MAJOR_VERSION .. " requires either debug.traceback() or debugstack()")
-end
-
 local tmp
-
-local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	if not tmp then
-		tmp = {}
-	else
-		for k in pairs(tmp) do tmp[k] = nil end
-		table.setn(tmp, 0)
-	end
-	
-	if a1 ~= nil then table.insert(tmp, a1)
-	if a2 ~= nil then table.insert(tmp, a2)
-	if a3 ~= nil then table.insert(tmp, a3)
-	if a4 ~= nil then table.insert(tmp, a4)
-	if a5 ~= nil then table.insert(tmp, a5)
-	if a6 ~= nil then table.insert(tmp, a6)
-	if a7 ~= nil then table.insert(tmp, a7)
-	if a8 ~= nil then table.insert(tmp, a8)
-	if a9 ~= nil then table.insert(tmp, a9)
-	if a10 ~= nil then table.insert(tmp, a10)
-	if a11 ~= nil then table.insert(tmp, a11)
-	if a12 ~= nil then table.insert(tmp, a12)
-	if a13 ~= nil then table.insert(tmp, a13)
-	if a14 ~= nil then table.insert(tmp, a14)
-	if a15 ~= nil then table.insert(tmp, a15)
-	if a16 ~= nil then table.insert(tmp, a16)
-	if a17 ~= nil then table.insert(tmp, a17)
-	if a18 ~= nil then table.insert(tmp, a18)
-	if a19 ~= nil then table.insert(tmp, a19)
-	if a20 ~= nil then table.insert(tmp, a20)
-	end end end end end end end end end end end end end end end end end end end end
-	
-	local stack = debugstack()
-	local first = string.gsub(stack, "\n.*", "")
-	local file = string.gsub(first, "^\s*(.*).lua:%d+: .*", "%1")
-	file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
-	if not message then
-		local _,_,second = string.find(stack, "\n(.-)\n")
-		message = "error raised! " .. second
-	else
-		for i,v in ipairs(tmp) do
-			tmp[i] = tostring(v)
-		end
-		message = string.format(message, unpack(tmp))
-	end
-	if getmetatable(self) and getmetatable(self).__tostring then
-		message = string.format("%s: %s", tostring(self), message)
-	elseif type(self.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
-		message = string.format("%s: %s", self:GetLibraryVersion(), message)
-	elseif type(self.class) == "table" and type(self.class.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
-		message = string.format("%s: %s", self.class:GetLibraryVersion(), message)
-	end
-	local i = 1
-	for s in string.gfind(stack, "\n([^\n]*)") do
-		i = i + 1
-		if not string.find(s, file .. "%.lua:%d+:") then
-			file = string.gsub(s, "^\s*(.*).lua:%d+: .*", "%1")
-			file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
-			break
-		end
-	end
-	for s in string.gfind(stack, "\n([^\n]*)") do
-		i = i + 1
-		if not string.find(s, file .. "%.lua:%d+:") then
-			_G.error(message, i)
-			return
-		end
-	end
-	_G.error(message, 2)
-	return
-end
-
-local function assert(self, condition, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	if not condition then
-		if not message then
-			local stack = debugstack()
-			local _,_,second = string.find(stack, "\n(.-)\n")
-			message = "assertion failed! " .. second
-		end
-		error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-		return
-	end
-	return condition
-end
-
-local function argCheck(self, arg, num, kind, kind2, kind3, kind4)
-	if tostring(type(arg)) ~= kind then
-		if kind2 then
-			if tostring(type(arg)) ~= kind2 then
-				if kind3 then
-					if tostring(type(arg)) ~= kind3 then
-						if kind4 then
-							if tostring(type(arg)) ~= kind4 then
-								local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-								error(self, "Bad argument #%s to `%s' (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, type(arg))
-							end
-						else
-							local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-							error(self, "Bad argument #%s to `%s' (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, type(arg))
-						end
-					end
-				else
-					local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-					error(self, "Bad argument #%s to `%s' (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, type(arg))
-				end
-			end
-		else
-			local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-			error(self, "Bad argument #%s to `%s' (%s expected, got %s)", tonumber(num) or 0/0, func, tostring(kind), type(arg))
-		end
-	end
-end
-
-local function pcall(self, func, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = _G.pcall(func, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	if not a1 then
-		self:error(string.gsub(a2, ".-%.lua:%d-: ", ""))
-	else
-		return a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
-	end
-end
 
 local donothing
 
@@ -488,35 +470,21 @@ local AceEvent
 -- @param externalFunc   (optional) A function to be called whenever a new
 --                       library is registered.
 function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivateFunc, externalFunc)
-	if type(newInstance) ~= "table" then
-		error(string.format("Bad argument #2 to `Register' (table expected, got %s)", type(newInstance)), 2)
-		return
-	elseif type(major) ~= "string" then
-		error(string.format("Bad argument #3 to `Register' (string expected, got %s)", tostring(type(major))), 2)
-		return
-	end
+	argCheck(self, newInstance, 2, "table")
+	argCheck(self, major, 3, "string")
 	if type(minor) == "string" then
 		local m = svnRevisionToNumber(minor)
 		if m then
 			minor = m
 		end
 	end
-	if type(minor) ~= "number" then
-		error(string.format("Bad argument #4 to `Register' (number expected, got %s)", tostring(type(minor))), 2)
-		return
-	elseif math.floor(minor) ~= minor or minor < 0 then
-		error(string.format("Bad argument #4 to `Register' (integer >= 0 expected, got %s)", minor), 2)
-		return
-	elseif activateFunc ~= nil and type(activateFunc) ~= "function" then
-		error(string.format("Bad argument #5 to `Register' (nil or function expected, got %s)", tostring(type(activateFunc))), 2)
-		return
-	elseif deactivateFunc ~= nil and type(deactivateFunc) ~= "function" then
-		error(string.format("Bad argument #6 to `Register' (nil or function expected, got %s)", tostring(type(deactivateFunc))), 2)
-		return
-	elseif externalFunc ~= nil and type(externalFunc) ~= "function" then
-		error(string.format("Bad argument #7 to `Register' (nil or function expected, got %s)", tostring(type(externalFunc))), 2)
-		return
+	argCheck(self, minor, 4, "number")
+	if math.floor(minor) ~= minor or minor < 0 then
+		error(self, "Bad argument #4 to `Register' (integer >= 0 expected, got %s)", minor)
 	end
+	argCheck(self, activateFunc, 5, "function", "nil")
+	argCheck(self, deactivateFunc, 6, "function", "nil")
+	argCheck(self, externalFunc, 7, "function", "nil")
 	if not deactivateFunc then
 		if not donothing then
 			donothing = function() end
