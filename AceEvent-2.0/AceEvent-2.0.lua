@@ -85,14 +85,14 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				end
 				local method = AceEvent.registry[event][obj]
 				AceEvent.registry[event][obj] = nil
+				AceEvent.onceRegistry[event][obj] = nil
 				if type(method) == "string" then
 					if obj[method] then
 						obj[method](obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 					end
-				else -- function
+				elseif method then -- function
 					method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 				end
-				AceEvent.onceRegistry[event][obj] = nil
 				if AceEvent.debugTable then
 					mem, time = mem - gcinfo(), time - GetTime()
 					AceEvent.debugTable[event][obj].mem = AceEvent.debugTable[event][obj].mem + mem
