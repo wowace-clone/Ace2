@@ -1285,7 +1285,6 @@ local function activate(self, oldLib, oldDeactivate)
 		self.registry = {}
 	else
 		for name,options in pairs(self.registry) do
-			DEFAULT_CHAT_FRAME:AddMessage(tostring(name))
 			self:RegisterChatCommand(false, options, name)
 		end
 	end
