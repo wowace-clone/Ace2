@@ -20,7 +20,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
-local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "IterateModules", "SetModuleMixins"}
+local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "IterateModules", "SetModuleMixins", "SetModuleClass"}
 
 local function getlibrary(lib)
 	if type(lib) == "string" then
@@ -166,6 +166,20 @@ function AceModuleCore:SetModuleMixins(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 	for k,v in ipairs(self.moduleMixins) do
 		self.moduleMixins[k] = getlibrary(v)
 	end
+end
+
+function AceModuleCore:SetModuleClass(class)
+	class = getlibrary(class)
+	AceModuleCore:assert(AceOO.inherits(class, AceOO.Class), "Bad argument #2 to `SetModuleClass' (Class expected)")
+	if not self.modules then
+		AceModuleCore:error("Error initializing class.  Please report error.")
+	end
+	if self.customModuleClass then
+		AceModuleCore:error("Cannot call `SetModuleClass' twice.")
+	end
+	self.customModuleClass = true
+	self.moduleClass = class
+	self.modulePrototype = class.prototype
 end
 
 function AceModuleCore:OnInstanceInit(target)
