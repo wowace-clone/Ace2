@@ -283,6 +283,15 @@ function AceAddon.prototype:ToString()
 	return x
 end
 
+local debugstack
+if type(_G.debugstack) == "function" then
+	debugstack = _G.debugstack
+elseif type(_G.debug) == "table" and type(_G.debug.traceback) == "function" then
+	debugstack = _G.debug.traceback
+else
+	error("Either debugstack or debug.traceback must be available")
+end
+
 function AceAddon.prototype:OnInitialize()
 	local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
 	DEFAULT_CHAT_FRAME:AddMessage(line .. " - self.super.OnInitialize(self) is no longer supported. This will error on July 11.")
