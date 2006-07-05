@@ -187,7 +187,7 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.website = GetAddOnMetadata(name, "X-Website")
 		end
 	end
-	if type(addon.OnInitialize) == "function" then
+	if type(addon.OnInitialize) == "function" and addon.OnInitialize ~= self.prototype.OnInitialize then
 		addon:OnInitialize()
 	end
 	RegisterOnEnable(addon)
