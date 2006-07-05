@@ -21,19 +21,11 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local AceDebug = AceOO.Mixin {"Debug", "CustomDebug", "IsDebugging", "SetDebugging"}
 
-local tmp
-
-local print
-if DEFAULT_CHAT_FRAME then
-	function print(text, r, g, b, frame, delay)
-		(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, 1, delay or 5)
-	end
-else
-	local _G = getfenv(0)
-	function print(text)
-		_G.print(text)
-	end
+local function print(text, r, g, b, frame, delay)
+	(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, 1, delay or 5)
 end
+
+local tmp
 
 function AceDebug:CustomDebug(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	if not self.debugging then return end

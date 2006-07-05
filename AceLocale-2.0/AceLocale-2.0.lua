@@ -44,7 +44,7 @@ function AceLocale:new(name, strict, baseLocale)
 	if type(_G[name .. "_Locale_" .. baseLocale]) ~= "function" then
 		self:error("You have not provided adequate translations. You must at least have global function %s_Locale_%s that returns a translation table.", name, baseLocale)
 	end
-	local locale = type(GetLocale) == "function" and GetLocale() or baseLocale
+	local locale = GetLocale()
 	local func = _G[name .. "_Locale_" .. locale]
 	if harsh then
 		if type(func) == "function" then
@@ -327,11 +327,8 @@ function AceLocale.prototype:GetTable(key, key2)
 end
 
 function AceLocale:Debug(name, baseLocale)
-	local print = print
-	if DEFAULT_CHAT_FRAME then
-		function print(text)
-			DEFAULT_CHAT_FRAME:AddMessage(text)
-		end
+	local function print(text)
+		DEFAULT_CHAT_FRAME:AddMessage(text)
 	end
 	local words = {}
 	local locales = {"enUS", "deDE", "frFR", "zhCN", "zhTW", "koKR"}

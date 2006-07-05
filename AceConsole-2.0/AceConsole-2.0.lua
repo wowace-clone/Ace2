@@ -53,22 +53,11 @@ local AceConsole = AceOO.Mixin { "Print", "CustomPrint", "RegisterChatCommand" }
 
 local _G = getfenv(0)
 
-local print
-if DEFAULT_CHAT_FRAME then
-	function print(text, name, r, g, b, frame, delay)
-		if not name or name == AceConsole then
-			(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, 1, delay or 5)
-		else
-			(frame or DEFAULT_CHAT_FRAME):AddMessage("|cffffff78" .. tostring(name) .. ":|r " .. text, r, g, b, 1, delay or 5)
-		end
-	end
-else
-	function print(text, name)
-		if name then
-			_G.print(tostring(name) .. ": " .. string.gsub(text, "|c%x%x%x%x%x%x%x%x(.-)|r", "%1"))
-		else
-			_G.print((string.gsub(text, "|c%x%x%x%x%x%x%x%x(.-)|r", "%1")))
-		end
+local function print(text, name, r, g, b, frame, delay)
+	if not name or name == AceConsole then
+		(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, 1, delay or 5)
+	else
+		(frame or DEFAULT_CHAT_FRAME):AddMessage("|cffffff78" .. tostring(name) .. ":|r " .. text, r, g, b, 1, delay or 5)
 	end
 end
 

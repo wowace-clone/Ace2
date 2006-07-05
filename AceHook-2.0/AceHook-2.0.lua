@@ -63,11 +63,8 @@ local _G = getfenv(0)
 --[[----------------------------------------------------------------------
 	_debug - Internal Method
 -------------------------------------------------------------------------]]		
-local print = print
-if DEFAULT_CHAT_FRAME then
-	function print(text)
-		DEFAULT_CHAT_FRAME:AddMessage(text)
-	end
+local function print(text)
+	DEFAULT_CHAT_FRAME:AddMessage(text)
 end
 
 local function _debug(self, msg)

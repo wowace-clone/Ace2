@@ -33,15 +33,6 @@ local AceLibrary = {}
 local AceLibrary_mt = {}
 setmetatable(AceLibrary, AceLibrary_mt)
 
-local debugstack
-if type(debug) == "table" and type(debug.traceback) == "function" then
-	debugstack = debug.traceback
-elseif type(_G.debugstack) == "function" then
-	debugstack = _G.debugstack
-else
-	_G.error(MAJOR_VERSION .. " requires either debug.traceback() or debugstack()")
-end
-
 local tmp
 local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	if not tmp then

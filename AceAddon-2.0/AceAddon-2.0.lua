@@ -93,11 +93,8 @@ function AceAddon:ToString()
 	return "AceAddon"
 end
 
-local print = print
-if DEFAULT_CHAT_FRAME then
-	function print(text)
-		DEFAULT_CHAT_FRAME:AddMessage(text)
-	end
+local function print(text)
+	DEFAULT_CHAT_FRAME:AddMessage(text)
 end
 
 local AceDB
@@ -283,19 +280,9 @@ function AceAddon.prototype:ToString()
 	return x
 end
 
-local _G = getfenv(0)
-local debugstack
-if type(_G.debugstack) == "function" then
-	debugstack = _G.debugstack
-elseif type(_G.debug) == "table" and type(_G.debug.traceback) == "function" then
-	debugstack = _G.debug.traceback
-else
-	error("Either debugstack or debug.traceback must be available")
-end
-
 function AceAddon.prototype:OnInitialize()
 	local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-	DEFAULT_CHAT_FRAME:AddMessage(line .. " - self.super.OnInitialize(self) is no longer supported. This will error on July 11.")
+	print(line .. " - self.super.OnInitialize(self) is no longer supported. This will error on July 11.")
 end
 
 AceAddon.new = function(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)

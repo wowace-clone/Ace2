@@ -31,12 +31,6 @@ local AceDB = Mixin {
 						"IsEnabled",
 					}
 
-local debugstack = debugstack
-if type(debug) == "table" and debug.traceback then
-	debugstack = debug.traceback
-end
-local inWoW = DEFAULT_CHAT_FRAME and true
-
 local _G = getfenv(0)
 
 local function inheritDefaults(t, defaults)
@@ -237,9 +231,6 @@ function AceDB:RegisterDB(name, charName)
 	end
 	local stack = debugstack()
 	local addonName = string.gsub(stack, ".-\n.-\\AddOns\\(.-)\\.*", "%1")
-	if not inWoW then
-		addonName = "Alpha"
-	end
 	self.db = {
 		name = name,
 		charName = charName
