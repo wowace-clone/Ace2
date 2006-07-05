@@ -283,6 +283,12 @@ function AceAddon.prototype:ToString()
 	return x
 end
 
+function AceAddon.prototype:OnInitialize()
+	local stack = debugstack()
+	local line = string.gsub(".-\n(.-)\n.*", "%1")
+	DEFAULT_CHAT_FRAME:AddMessage(line .. " - self.super.OnInitialize(self) is no longer supported. This will error on July 11.")
+end
+
 AceAddon.new = function(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 	local class = AceOO.Classpool(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 	return class:new()
