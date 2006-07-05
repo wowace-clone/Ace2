@@ -284,8 +284,7 @@ function AceAddon.prototype:ToString()
 end
 
 function AceAddon.prototype:OnInitialize()
-	local stack = debugstack()
-	local line = string.gsub(".-\n(.-)\n.*", "%1")
+	local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
 	DEFAULT_CHAT_FRAME:AddMessage(line .. " - self.super.OnInitialize(self) is no longer supported. This will error on July 11.")
 end
 
