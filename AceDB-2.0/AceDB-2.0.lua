@@ -466,7 +466,7 @@ function AceDB:ToggleStandby()
 end
 
 function AceDB:embed(target)
-	self.class.prototype.embed(self, target)
+	self.super.embed(self, target)
 	if not AceEvent then
 		AceDB:error(MAJOR_VERSION .. " requires AceEvent-2.0")
 	end
@@ -542,6 +542,7 @@ end
 
 local function activate(self, oldLib, oldDeactivate)
 	AceDB = self
+	AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
 	
 	self.super.activate(self, oldLib, oldDeactivate)
 	
