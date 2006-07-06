@@ -30,7 +30,10 @@ local function pad(cap)
 	return string.rep('0', 8 - string.len(cap)) .. cap
 end
 local function getuid(t)
+	local mt = getmetatable(t)
+	setmetatable(t, nil)
 	local str = tostring(t)
+	setmetatable(t, mt)
 	local _,_,cap = string.find(str, '[^:]*: 0x(.*)$')
 	if cap then return pad(cap) end
 	_,_,cap = string.find(str, '[^:]*: (.*)$')
@@ -621,6 +624,7 @@ do
 		else
 			AceOO:error("Improper self passed to init. You must do MyClass.super.prototype.init(self, ...)", 2)
 		end
+		self.uid = getuid(self)
 		local current = self.class
 		while true do
 			if current == Class then
@@ -866,8 +870,7 @@ do
 	end
 	local t
 	local function getcomplexuid(sc, m1, m2, m3, m4, m5, m6, m7, m8, m9,
-		m10, m11, m12, m13, m14, m15, m16,
-		m17, m18, m19, m20)
+		m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 		if not t then t = {} end
 		if sc then table.insert(t, sc.uid)
 		if m1 then table.insert(t, m1.uid)
@@ -903,6 +906,9 @@ do
 		m17, m18, m19, m20)
 		local l = getlibrary
 		sc, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20 = l(sc), l(m1), l(m2), l(m3), l(m4), l(m5), l(m6), l(m7), l(m8), l(m9), l(m10), l(m11), l(m12), l(m13), l(m14), l(m15), l(m16), l(m17), l(m18), l(m19), l(m20)
+		if sc.class then
+			sc, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20 = Class, sc, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19
+		end
 		sc = sc or Class
 		local key = getcomplexuid(sc, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 		if not pool[key] then
