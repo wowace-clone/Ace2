@@ -122,12 +122,21 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			work = {}
 			argwork = {}
 		end
-		for token in string.gfind(text, "([^%s]+)") do 
+		local len = string.len(text)
+		local count
+		repeat
+			text, count = string.gsub(text, "(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[[^%]]-) (.-%]|h|r)", "%1\001%2")
+		until count == 0
+		text = string.gsub(text, "(%]|h|r)(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[)", "%1 %2")
+		for token in string.gfind(text, "([^%s]+)") do
+			local token = token
 			local num = tonumber(token)
 			if num then
 				token = num
+			else
+				token = string.gsub(token, "\001", " ")
 			end
-			table.insert(work, token) 
+			table.insert(work, token)
 		end
 	end
 	
