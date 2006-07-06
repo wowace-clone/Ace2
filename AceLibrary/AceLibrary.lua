@@ -419,7 +419,7 @@ function AceLibrary:GetInstance(major, minor)
 
 	local data = self.libs[major]
 	if not data then
-		error(string.format("Cannot find a library instance of %s.", major), 2)
+		_G.error(string.format("Cannot find a library instance of %s.", major), 2)
 		return
 	end
 	if minor then
@@ -431,7 +431,7 @@ function AceLibrary:GetInstance(major, minor)
 		end
 		argCheck(self, minor, 2, "number")
 		if data.minor ~= minor then
-			error(string.format("Cannot find a library instance of %s, minor version %d.", major, minor), 2)
+			_G.error(string.format("Cannot find a library instance of %s, minor version %d.", major, minor), 2)
 			return
 		end
 	end
