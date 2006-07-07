@@ -326,13 +326,13 @@ function AceDB:GetProfile()
 	end
 	local profile = self.db.raw.currentProfile[charID]
 	if profile == "char" then
-		return "char/" .. charID
+		return "char", "char/" .. charID
 	elseif profile == "class" then
-		return "class/" .. classID
+		return "class", "class/" .. classID
 	elseif profile == "realm" then
-		return "realm/" .. realmID
+		return "realm", "realm/" .. realmID
 	end
-	return profile
+	return profile, profile
 end
 
 local function copyTable(to, from)
@@ -351,7 +351,7 @@ local function copyTable(to, from)
 	return to
 end
 
-function AceDB:SetProfile(name)
+function AceDB:SetProfile(name, copyFrom)
 	AceDB:argCheck(name, 2, "string")
 	if not self.db or not self.db.raw then
 		error("Cannot call \"SetProfile\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.", 2)
@@ -359,14 +359,24 @@ function AceDB:SetProfile(name)
 	local db = self.db
 	local copy = false
 	local lowerName = string.lower(name)
+	local lowerCopyFrom = copyFrom and string.lower(copyFrom)
 	if string.sub(lowerName, 1, 5) == "char/" or string.sub(lowerName, 1, 6) == "realm/" or string.sub(lowerName, 1, 6) == "class/" then
-		if not db.raw.profiles or not db.raw.profiles[name] then
-			AceDB:error("Cannot copy profile %q, it does not exist.", name)
+		AceDB:error("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/.")
+	end
+	if copyFrom then
+		if string.sub(lowerCopyFrom, 1, 5) == "char/" then
+			AceDB:assert(lowerName == "char", "If argument #3 starts with `char/', argument #2 must be `char'")
+		elseif string.sub(lowerCopyFrom, 1, 6) == "realm/" then
+			AceDB:assert(lowerName == "realm", "If argument #3 starts with `realm/', argument #2 must be `realm'")
+		elseif string.sub(lowerCopyFrom, 1, 6) == "class/" then
+			AceDB:assert(lowerName == "class", "If argument #3 starts with `class/', argument #2 must be `class'")
 		else
-			if (string.sub(lowerName, 1, 5) == "char/" and string.sub(lowerName, 6) == string.lower(charID)) or (string.sub(lowerName, 1, 6) == "realm/" and string.sub(lowerName, 7) == string.lower(realmID)) or (string.sub(lowerName, 1, 6) == "class/" and string.sub(lowerName, 7) == string.lower(classID)) then
-				AceDB:error("Cannot copy profile %q, it is currently in use.", name)
-			end
-			copy = true
+			AceDB:assert(lowerName ~= "char" and lowerName ~= "realm" and lowerName ~= "class", "If argument #3 does not start with a special prefix, that prefix cannot be copied to.")
+		end
+		if not db.raw.profiles or not db.raw.profiles[copyFrom] then
+			AceDB:error("Cannot copy profile %q, it does not exist.", copyFrom)
+		elseif (string.sub(lowerName, 1, 5) == "char/" and string.sub(lowerName, 6) == string.lower(charID)) or (string.sub(lowerName, 1, 6) == "realm/" and string.sub(lowerName, 7) == string.lower(realmID)) or (string.sub(lowerName, 1, 6) == "class/" and string.sub(lowerName, 7) == string.lower(classID)) then
+			AceDB:error("Cannot copy profile %q, it is currently in use.", name)
 		end
 	end
 	local oldName = db.raw.currentProfile[charID]
@@ -374,25 +384,22 @@ function AceDB:SetProfile(name)
 		self:OnProfileDisable()
 	end
 	local oldProfileData = db.profile
-	if copy then
-		local realName
-		if string.sub(lowerName, 1, 5) == "char/" then
-			realName, name = name, "char"
-		elseif string.sub(lowerName, 1, 6) == "realm/" then
-			realName, name = name, "realm"
-		elseif string.sub(lowerName, 1, 6) == "class/" then
-			realName, name = name, "class"
-		end
-		db.raw.currentProfile[charID] = name
-		rawset(db, 'profile', nil)
+	local realName = name
+	if lowerName == "char" then
+		realName = name .. "/" .. charID
+	elseif lowerName == "realm/" then
+		realName = name .. "/" .. realmID
+	elseif lowerName == "class/" then
+		realName = name .. "/" .. classID
+	end
+	db.raw.currentProfile[charID] = name
+	rawset(db, 'profile', nil)
+	if copyFrom then
 		for k,v in pairs(db.profile) do
 			db.profile[k] = nil
 		end
-		copyTable(db.profile, db.raw.profiles[realName])
+		copyTable(db.profile, db.raw.profiles[copyFrom])
 		inheritDefaults(db.profile, db.defaults and db.defaults.profile)
-	else
-		db.raw.currentProfile[charID] = name
-		rawset(db, 'profile', nil)
 	end
 	if type(self.OnProfileEnable) == "function" then
 		self:OnProfileEnable(oldName, oldProfileData)

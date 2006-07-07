@@ -1166,16 +1166,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 					options.args.profile = {
 						name = PROFILE,
 						desc = SET_PROFILE,
-						get = function()
-							local profile = self:GetProfile()
-							if profile then
-								local a,b = string.find(profile, "/")
-								if a then
-									profile = string.sub(profile, 1, a - 1)
-								end
-							end
-							return profile
-						end,
+						get = "GetProfile",
 						set = "SetProfile",
 						usage = SET_PROFILE_USAGE,
 						type = "text",
