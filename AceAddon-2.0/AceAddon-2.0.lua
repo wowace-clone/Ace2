@@ -280,7 +280,7 @@ function AceAddon.prototype:ToString()
 	return x
 end
 
-if tonumber(os.date("%Y%m%d")) < 20060711 then
+if tonumber(date("%Y%m%d")) < 20060711 then
 	function AceAddon.prototype:OnInitialize()
 		local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
 		print(line .. " - self.super.OnInitialize(self) is no longer supported. This will error on July 11, 2006.")
