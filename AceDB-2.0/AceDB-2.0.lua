@@ -351,17 +351,40 @@ local function copyTable(to, from)
 	return to
 end
 
+local stage
+if tonumber(date("%Y%m%d")) < 20060713 then
+	stage = 1
+elseif tonumber(date("%Y%m%d")) < 20060720 then
+	stage = 2
+else
+	stage = 3
+end
+
 function AceDB:SetProfile(name, copyFrom)
 	AceDB:argCheck(name, 2, "string")
+	AceDB:argCheck(copyFrom, 3, "string", "nil")
 	if not self.db or not self.db.raw then
-		error("Cannot call \"SetProfile\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.", 2)
+		AceDB:error("Cannot call \"SetProfile\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
 	local db = self.db
 	local copy = false
 	local lowerName = string.lower(name)
 	local lowerCopyFrom = copyFrom and string.lower(copyFrom)
 	if string.sub(lowerName, 1, 5) == "char/" or string.sub(lowerName, 1, 6) == "realm/" or string.sub(lowerName, 1, 6) == "class/" then
-		AceDB:error("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/.")
+		if stage <= 2 then
+			if string.sub(lowerName, 1, 5) == "char/" then
+				name, copyFrom = "char", name
+			else
+				name, copyFrom = string.sub(lowerName, 1, 5), name
+			end
+			lowerName = string.lower(name)
+			lowerCopyFrom = string.lower(copyFrom)
+			if stage == 2 then
+				DEFAULT_CHAT_MESSAGE:AddMessage("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/. This will cause an error on July 20, 2006.")
+			end
+		else
+			AceDB:error("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/.")
+		end
 	end
 	if copyFrom then
 		if string.sub(lowerCopyFrom, 1, 5) == "char/" then
