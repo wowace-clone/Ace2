@@ -311,11 +311,15 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 	if options ~= baseOptions then
 		if type(options.desc) ~= "string" then
 			return '"desc" must be a string', position
+		elseif string.len(options.desc) == 0 then
+			return '"desc" cannot be a 0-length string', position
 		end
 	end
 	if options ~= baseOptions or kind == "range" or kind == "text" or kind == "toggle" or kind == "color" then
 		if type(options.name) ~= "string" then
 			return '"name" must be a string', position
+		elseif string.len(options.name) == 0 then
+			return '"name" cannot be a 0-length string', position
 		end
 	end
 	if options.message and type(options.message) ~= "string" then
