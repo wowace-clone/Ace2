@@ -176,6 +176,7 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 		self.translationTables[locale] = t
 	end
 	t = nil
+	collectgarbage()
 end
 
 function AceLocale.prototype:SetStrictness(strict)
