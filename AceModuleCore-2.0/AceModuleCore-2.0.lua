@@ -86,7 +86,7 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 		end
 	end
 	
-	local module = AceOO.Classpool(self.moduleClass, unpack(tmp)):new()
+	local module = AceOO.Classpool(self.moduleClass, unpack(tmp)):new(name)
 	self.modules[name] = module
 	module.name = name
 	module.title = name
