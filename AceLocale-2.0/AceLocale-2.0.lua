@@ -132,6 +132,14 @@ AceLocale.prototype = {}
 AceLocale.prototype.class = AceLocale
 
 function AceLocale.prototype:EnableDebugging()
+	local addonDeclaredIn = string.gsub(debugstack(), "^.-\\AddOns\\(.-)\\.*", "%1")
+	if self.addonDeclaredIn ~= addonDeclaredIn then
+		self.addonDeclaredIn = addonDeclaredIn
+		self.debugging = nil
+		self.baseTranslations = nil
+		self.translationTables = nil
+		self.translations = nil
+	end
 	if self.baseTranslations then
 		AceLocale.error(self, "Cannot enable debugging after a translation has been registered.")
 	end
