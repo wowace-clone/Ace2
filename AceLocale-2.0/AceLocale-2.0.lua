@@ -152,11 +152,13 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	
 	local addonDeclaredIn = string.gsub(debugstack(), "^.-\\AddOns\\(.-)\\.*", "%1")
 	if self.addonDeclaredIn ~= addonDeclaredIn then
-		self.addonDeclaredIn = addonDeclaredIn
-		self.debugging = nil
-		self.baseTranslations = nil
-		self.translationTables = nil
-		self.translations = nil
+		if not string.find(addonDeclaredIn, "^stack traceback:\n") then
+			self.addonDeclaredIn = addonDeclaredIn
+			self.debugging = nil
+			self.baseTranslations = nil
+			self.translationTables = nil
+			self.translations = nil
+		end
 	end
 	if self.baseTranslations and GetLocale() ~= locale then
 		if self.debugging then
@@ -166,7 +168,10 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 				AceLocale.error(self, "Bad argument #3 to `RegisterTranslation'. function did not return a table. (expected table, got %s)", type(t))
 			end
 			self.translationTables[locale] = t
+			t = nil
 		end
+		func = nil
+		collectgarbage()
 		return
 	end
 	local t = func()
