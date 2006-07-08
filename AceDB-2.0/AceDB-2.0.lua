@@ -27,8 +27,10 @@ local AceDB = Mixin {
 						"RegisterDefaults",
 						"SetProfile",
 						"GetProfile",
-						"ToggleStandby",
-						"IsEnabled",
+						"ToggleActive",
+						"IsActive",
+						"ToggleStandby", -- remove at 2006-07-21
+						"IsEnabled", -- remove at 2006-07-21
 					}
 
 local _G = getfenv(0)
@@ -351,13 +353,11 @@ local function copyTable(to, from)
 	return to
 end
 
-local stage
+local stage = 3
 if tonumber(date("%Y%m%d")) < 20060713 then
 	stage = 1
 elseif tonumber(date("%Y%m%d")) < 20060720 then
 	stage = 2
-else
-	stage = 3
 end
 
 function AceDB:SetProfile(name, copyFrom)
@@ -436,19 +436,38 @@ function AceDB:SetProfile(name, copyFrom)
 	end
 end
 
-function AceDB:IsEnabled()
+local stage = 3
+if tonumber(date("%Y%m%d")) < 20060714 then
+	stage = 1
+elseif tonumber(date("%Y%m%d")) < 20060721 then
+	stage = 2
+end
+
+function AceDB:IsActive()
 	return not self.db or not self.db.raw or not self.db.raw.disabled or not self.db.raw.disabled[self.db.raw.currentProfile[charID]]
 end
 
-function AceDB:ToggleStandby()
+function AceDB:ToggleActive(state)
+	self:argCheck(state, 2, "boolean", "nil")
 	if not self.db or not self.db.raw then
-		AceDB:error("Cannot call \"ToggleStandby\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
+		AceDB:error("Cannot call \"ToggleActive\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
 	local db = self.db
 	if not db.raw.disabled then
 		db.raw.disabled = setmetatable({}, caseInsensitive_mt)
 	end
 	local profile = db.raw.currentProfile[charID]
+	if state ~= nil then
+		if state then
+			if not db.raw.disabled[profile] then
+				return
+			end
+		else
+			if db.raw.disabled[profile] then
+				return
+			end
+		end
+	end
 	if db.raw.disabled[profile] then
 		db.raw.disabled[profile] = nil
 		if type(self.OnEnable) == "function" then
@@ -475,6 +494,23 @@ function AceDB:ToggleStandby()
 			self:OnDisable()
 		end
 		return false
+	end
+end
+
+if stage <= 2 then
+	function AceDB:IsEnabled()
+		if stage == 2 then
+			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
+			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - :IsEnabled() has been replaced by :IsActive(). This will cause an error on July 21, 2006.")
+		end
+		return self:IsActive()
+	end
+	function AceDB:ToggleStandby()
+		if stage == 2 then
+			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
+			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - :ToggleStandby() has been replaced by :ToggleActive([state]). This will cause an error on July 21, 2006.")
+		end
+		return self:ToggleActive()
 	end
 end
 

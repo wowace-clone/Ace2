@@ -1130,7 +1130,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		end
 		
 		if not options.type or string.lower(options.type) == "group" then
-			if type(self.ToggleStandby) == "function" and type(self.IsEnabled) == "function" then
+			if type(self.ToggleActive) == "function" and type(self.IsActive) == "function" then
 				if type(options.args) ~= "table" then
 					options.args = {}
 				end
@@ -1139,8 +1139,8 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 						name = STANDBY,
 						desc = TOGGLE_STANDBY,
 						type = "toggle",
-						get = function() return not self:IsEnabled() end,
-						set = "ToggleStandby",
+						get = "IsActive",
+						set = "ToggleActive",
 						map = MAP_ACTIVESUSPENDED
 					}
 				end

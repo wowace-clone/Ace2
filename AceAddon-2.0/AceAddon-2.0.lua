@@ -111,7 +111,7 @@ end
 
 local function RegisterOnEnable(self)
 	if type(self.OnEnable) == "function" then
-		if type(self.IsEnabled) ~= "function" or self:IsEnabled() then
+		if type(self.IsActive) ~= "function" or self:IsActive() then
 			if AceAddon.playerLoginFired then
 				self:OnEnable()
 			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
@@ -199,8 +199,8 @@ function AceAddon.prototype:PrintAddonInfo()
 	else
 		x = "|cffffff7f<" .. tostring(self.class) .. " instance>|r"
 	end
-	if type(self.IsEnabled) == "function" then
-		if not self:IsEnabled() then
+	if type(self.IsActive) == "function" then
+		if not self:IsActive() then
 			x = x .. " " .. STANDBY
 		end
 	end
@@ -272,8 +272,8 @@ function AceAddon.prototype:ToString()
 	else
 		x = "<" .. tostring(self.class) .. " instance>"
 	end
-	if type(self.IsEnabled) == "function" then
-		if not self:IsEnabled() then
+	if type(self.IsActive) == "function" then
+		if not self:IsActive() then
 			x = x .. " " .. STANDBY
 		end
 	end
@@ -599,8 +599,8 @@ local function external(self, major, instance)
 							if IsAddOnLoadOnDemand(i) then
 								lod = lod + 1
 							end
-							local _,_,_,isEnabled,loadable = GetAddOnInfo(i)
-							if not isEnabled or not loadable then
+							local _,_,_,IsActive,loadable = GetAddOnInfo(i)
+							if not IsActive or not loadable then
 								disabled = disabled + 1
 							else
 								enabled = enabled + 1
