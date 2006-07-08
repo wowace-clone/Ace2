@@ -7,7 +7,7 @@ Website: http://www.wowace.com/
 Documentation: http://wiki.wowace.com/index.php/AceEvent-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceEvent-2.0
 Description: Mixin to allow for event handling and inter-addon communication.
-Dependencies: AceLibrary, AceOO-2.0
+Dependencies: AceLibrary, AceOO-2.0, Compost-2.0 (optional)
 ]]
 
 local MAJOR_VERSION = "AceEvent-2.0"
@@ -28,7 +28,7 @@ local AceEvent = Mixin {
 						"IsEventRegistered",
 					   }
 
-local compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
+local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
 
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
@@ -42,7 +42,7 @@ function AceEvent:RegisterEvent(event, method, once)
 	end
 	
 	if not AceEvent.registry[event] then
-		AceEvent.registry[event] = compost and compost:Acquire() or {}
+		AceEvent.registry[event] = Compost and Compost:Acquire() or {}
 		AceEvent.frame:RegisterEvent(event)
 	end
 	
@@ -50,10 +50,10 @@ function AceEvent:RegisterEvent(event, method, once)
 	
 	if once then
 		if not AceEvent.onceRegistry then
-			AceEvent.onceRegistry = compost and compost:Acquire() or {}
+			AceEvent.onceRegistry = Compost and Compost:Acquire() or {}
 		end
 		if not AceEvent.onceRegistry[event] then
-			AceEvent.onceRegistry[event] = compost and compost:Acquire() or {}
+			AceEvent.onceRegistry[event] = Compost and Compost:Acquire() or {}
 		end
 		AceEvent.onceRegistry[event][self] = true
 	else
@@ -75,10 +75,10 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				local mem, time
 				if AceEvent.debugTable then
 					if not AceEvent.debugTable[event] then
-						AceEvent.debugTable[event] = {}
+						AceEvent.debugTable[event] = Compost and Compost:Acquire() or {}
 					end
 					if not AceEvent.debugTable[event][obj] then
-						AceEvent.debugTable[event][obj] = compost and compost:AcquireHash(
+						AceEvent.debugTable[event][obj] = Compost and Compost:AcquireHash(
 							'mem', 0,
 							'time', 0
 						) or {
@@ -110,10 +110,10 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			local mem, time
 			if AceEvent.debugTable then
 				if not AceEvent.debugTable[event] then
-					AceEvent.debugTable[event] = compost and compost:Acquire() or {}
+					AceEvent.debugTable[event] = Compost and Compost:Acquire() or {}
 				end
 				if not AceEvent.debugTable[event][obj] then
-					AceEvent.debugTable[event][obj] = compost and compost:AcquireHash(
+					AceEvent.debugTable[event][obj] = Compost and Compost:AcquireHash(
 						'mem', 0,
 						'time', 0
 					) or {
@@ -147,8 +147,8 @@ local function OnUpdate()
 	for i,v in ipairs(delayRegistry) do
 		if v.time <= t then
 			local x = table.remove(delayRegistry, i)
-			if compost then
-				compost:Reclaim(x)
+			if Compost then
+				Compost:Reclaim(x)
 			end
 			i = i - 1
 			AceEvent:TriggerEvent(v.event, unpack(v))
@@ -160,11 +160,11 @@ function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, 
 	AceEvent:argCheck(event, 2, "string")
 	AceEvent:argCheck(delay, 3, "number")
 	if not AceEvent.delayRegistry then
-		AceEvent.delayRegistry = compost and compost:Acquire() or {}
+		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
 		delayRegistry = AceEvent.delayRegistry
 		AceEvent.frame:SetScript("OnUpdate", OnUpdate)
 	end
-	local t = compost and compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
+	local t = Compost and Compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
 	t.event = event
 	t.time = GetTime() + delay
 	table.insert(self.delayRegistry, t)
