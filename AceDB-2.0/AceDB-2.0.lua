@@ -380,7 +380,8 @@ function AceDB:SetProfile(name, copyFrom)
 			lowerName = string.lower(name)
 			lowerCopyFrom = string.lower(copyFrom)
 			if stage == 2 then
-				DEFAULT_CHAT_MESSAGE:AddMessage("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/. This will cause an error on July 20, 2006.")
+				local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
+				DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/. This will cause an error on July 20, 2006.")
 			end
 		else
 			AceDB:error("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/.")
