@@ -20,7 +20,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
 -- Localization
-local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, WEBSITE, CATEGORIES
+local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
 if false then -- GetLocale() == "deDE"
 else -- enUS
 	STANDBY = "|cffff5050(standby)|r"
@@ -33,6 +33,9 @@ else -- enUS
 	CATEGORY = "Category"
 	EMAIL = "E-mail"
 	WEBSITE = "Website"
+	
+	ABOUT = "About"
+	PRINT_ADDON_INFO = "Print out addon info"
 	
 	CATEGORIES = {
 		["Action Bars"] = "Action Bars",
@@ -229,6 +232,18 @@ function AceAddon.prototype:PrintAddonInfo()
 	if self.website then
 		print(" - |cffffff7f" .. WEBSITE .. ":|r " .. tostring(self.website))
 	end
+end
+
+function AceAddon:GetAceOptionsDataTable(target)
+	return {
+		about = {
+			name = ABOUT,
+			desc = PRINT_ADDON_INFO,
+			type = "execute",
+			func = "PrintAddonInfo",
+			handler = target,
+		}
+	}
 end
 
 function AceAddon:PLAYER_LOGIN()

@@ -19,6 +19,15 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
+-- localize --
+local ACTIVE = "Active"
+local TOGGLE_ACTIVE = "Suspend/resume this addon"
+local MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Active|r", [false] = "|cffff0000Suspended|r" }
+local SET_PROFILE = "Set profile for this addon"
+local SET_PROFILE_USAGE = "{char || class || realm || <profile name>}"
+local PROFILE = "Profile"
+-- localize --
+
 local AceOO = AceLibrary("AceOO-2.0")
 local AceEvent
 local Mixin = AceOO.Mixin
@@ -587,6 +596,30 @@ function AceDB:PLAYER_LOGOUT()
 			end
 		end
 	end
+end
+
+function AceDB:GetAceOptionsDataTable(target)
+	return {
+		suspend = {
+			name = ACTIVE,
+			desc = TOGGLE_ACTIVE,
+			type = "toggle",
+			get = "IsActive",
+			set = "ToggleActive",
+			map = MAP_ACTIVESUSPENDED,
+			handler = target,
+		},
+		profile = {
+			name = PROFILE,
+			desc = SET_PROFILE,
+			get = "GetProfile",
+			set = "SetProfile",
+			usage = SET_PROFILE_USAGE,
+			type = "text",
+			validate = function(x) return not tonumber(x) end,
+			handler = target,
+		}
+	}
 end
 
 local function activate(self, oldLib, oldDeactivate)

@@ -33,15 +33,15 @@ local NO_OPTIONS_AVAILABLE = "No options available"
 local OPTION_HANDLER_NOT_FOUND = "Option handler |cffffff7f%q|r not found."
 local OPTION_HANDLER_NOT_VALID = "Option handler not valid."
 local OPTION_IS_DISABLED = "Option %q is disabled."
-local TOGGLE_STANDBY = "Suspend/resume this addon"
+local DEBUGGING = "Debugging"
 local TOGGLE_DEBUGGING = "Enable/disable debugging"
 local PRINT_ADDON_INFO = "Print out addon info"
 local SET_PROFILE = "Set profile for this addon"
 local SET_PROFILE_USAGE = "{char || class || realm || <profile name>}"
 local STANDBY = "Active"
+local TOGGLE_STANDBY = "Suspend/resume this addon"
 local ABOUT = "About"
 local PROFILE = "Profile"
-local DEBUGGING = "Debugging"
 -- localize --
 
 local NONE = NONE or "None"
@@ -1129,65 +1129,37 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			options.handler = self
 		end
 		
-		if not options.type or string.lower(options.type) == "group" then
-			if type(self.ToggleActive) == "function" and type(self.IsActive) == "function" then
-				if type(options.args) ~= "table" then
-					options.args = {}
+		if options.handler == self and string.lower(options.type) == "group" then
+			local class = self.class
+			while class and class ~= AceOO.Class do
+				if type(class.GetAceOptionsDataTable) == "function" then
+					local t = class:GetAceOptionsDataTable()
+					for k,v in pairs(t) do
+						if type(options.args) ~= "table" then
+							options.args = {}
+						end
+						if options.args[k] == nil then
+							options.args[k] = v
+						end
+					end
 				end
-				if options.args.standby == nil then
-					options.args.standby = {
-						name = STANDBY,
-						desc = TOGGLE_STANDBY,
-						type = "toggle",
-						get = "IsActive",
-						set = "ToggleActive",
-						map = MAP_ACTIVESUSPENDED
-					}
+				local mixins = class.mixins
+				if mixins then
+					for mixin in pairs(mixins) do
+						if type(mixin.GetAceOptionsDataTable) == "function" then
+							local t = mixin:GetAceOptionsDataTable()
+							for k,v in pairs(t) do
+								if type(options.args) ~= "table" then
+									options.args = {}
+								end
+								if options.args[k] == nil then
+									options.args[k] = v
+								end
+							end
+						end
+					end
 				end
-			end
-			if type(self.PrintAddonInfo) == "function" then
-				if type(options.args) ~= "table" then
-					options.args = {}
-				end
-				if options.args.about == nil then
-					options.args.about = {
-						name = ABOUT,
-						desc = PRINT_ADDON_INFO,
-						type = "execute",
-						func = "PrintAddonInfo",
-					}
-				end
-			end
-			if type(self.SetProfile) == "function" and type(self.GetProfile) == "function" then
-				if type(options.args) ~= "table" then
-					options.args = {}
-				end
-				if options.args.profile == nil then
-					options.args.profile = {
-						name = PROFILE,
-						desc = SET_PROFILE,
-						get = "GetProfile",
-						set = "SetProfile",
-						usage = SET_PROFILE_USAGE,
-						type = "text",
-						input = true,
-						validate = function(x) return not tonumber(x) end,
-					}
-				end
-			end
-			if type(self.SetDebugging) == "function" and type(self.IsDebugging) == "function" then
-				if type(options.args) ~= "table" then
-					options.args = {}
-				end
-				if options.args.debug == nil then
-					options.args.debug = {
-						name = DEBUGGING,
-						desc = TOGGLE_DEBUGGING,
-						type = "toggle",
-						get = "IsDebugging",
-						set = "SetDebugging"
-					}
-				end
+				class = class.super
 			end
 		end
 	end

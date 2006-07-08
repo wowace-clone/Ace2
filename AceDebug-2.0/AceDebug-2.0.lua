@@ -18,6 +18,11 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end 
 
+-- localize --
+local DEBUGGING = "Debugging"
+local TOGGLE_DEBUGGING = "Enable/disable debugging"
+-- localize --
+
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local AceDebug = AceOO.Mixin {"Debug", "CustomDebug", "IsDebugging", "SetDebugging"}
 
@@ -86,5 +91,17 @@ function AceDebug:SetDebugging(debugging)
 	self.debugging = debugging
 end
 
+function AceDebug:GetAceOptionsDataTable(target)
+	return {
+		suspend = {
+			name = DEBUGGING,
+			desc = TOGGLE_DEBUGGING,
+			type = "toggle",
+			get = "IsDebugging",
+			set = "SetDebugging",
+			handler = target,
+		}
+	}
+end
 AceLibrary:Register(AceDebug, MAJOR_VERSION, MINOR_VERSION, AceDebug.activate)
 AceDebug = AceLibrary(MAJOR_VERSION)
