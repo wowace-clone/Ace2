@@ -141,6 +141,11 @@ end
 function AceLocale.prototype:RegisterTranslations(locale, func)
 	AceLocale.argCheck(self, locale, 2, "string")
 	AceLocale.argCheck(self, func, 3, "function")
+	if self.baseLocale == locale then
+		self.baseTranslations = nil
+		self.translationTables = nil
+		self.translations = nil
+	end
 	if self.baseTranslations and GetLocale() ~= locale then
 		if self.debugging then
 			local t = func()
@@ -161,6 +166,7 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	self.translations = t
 	if not self.baseTranslations then
 		self.baseTranslations = t
+		self.baseLocale = locale
 	else
 		for key in pairs(self.translations) do
 			if not self.baseTranslations[key] then
