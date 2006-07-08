@@ -180,7 +180,7 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 		self.baseTranslations = t
 		self.baseLocale = locale
 		for key,value in pairs(self.baseTranslations) do
-			if value == true
+			if value == true then
 				self.baseTranslations[key] = key
 			end
 		end
