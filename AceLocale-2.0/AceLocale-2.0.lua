@@ -21,75 +21,174 @@ local AceLocale = {}
 local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
 
-function AceLocale:new(name, strict, baseLocale)
-	self:argCheck(name, 2, "string")
-	self:argCheck(strict, 3, "boolean", "nil")
-	self:argCheck(baseLocale, 4, "string", "nil")
-	
-	local self = setmetatable({}, {
-		__index = self.prototype,
-		__call = strict and self.prototype.GetTranslationStrict or self.prototype.GetTranslation,
-		__tostring = function(self)
-			if type(self.GetLibraryVersion) == "function" then
-				return self:GetLibraryVersion()
-			else
-				return "AceLocale(" .. name .. ")"
+local stage = 3
+if tonumber(date("%Y%m%d")) < 20060714 then
+	stage = 1
+elseif tonumber(date("%Y%m%d")) < 20060721 then
+	stage = 2
+end
+
+if stage <= 2 then
+	function AceLocale:new(name, strict, baseLocale)
+		self:argCheck(name, 2, "string")
+		self:argCheck(strict, 3, "boolean", "nil")
+		self:argCheck(baseLocale, 4, "string", "nil")
+		
+		if self.registry[name] then
+			return self.registry[name]
+		end
+		
+		local self = setmetatable({}, {
+			__index = self.prototype,
+			__call = strict and self.prototype.GetTranslationStrict or self.prototype.GetTranslation,
+			__tostring = function(self)
+				if type(self.GetLibraryVersion) == "function" then
+					return self:GetLibraryVersion()
+				else
+					return "AceLocale(" .. name .. ")"
+				end
+			end
+		})
+		
+		if not baseLocale then
+			baseLocale = DEFAULT_LOCALE
+		end
+		if type(_G[name .. "_Locale_" .. baseLocale]) ~= "function" then
+			AceLocale.registry[name] = self
+			return self -- ;-)
+		end
+		local locale = GetLocale()
+		local func = _G[name .. "_Locale_" .. locale]
+		if strict then
+			if type(func) == "function" then
+				self.translations = func()
+			elseif func == nil then
+				self.translations = {}
+			end
+		else
+			if type(func) ~= "function" then
+				func = _G[name .. "_Locale_" .. baseLocale]
+			end
+			self.translations = func()
+		end
+		if type(self.translations) ~= "table" then
+			AceLocale.error(self, "You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
+		end
+		if func == _G[name .. "_Locale_" .. baseLocale] then
+			self.baseTranslations = self.translations
+		else
+			self.baseTranslations = _G[name .. "_Locale_" .. baseLocale]()
+		end
+		if type(self.baseTranslations) ~= "table" then
+			AceLocale.error(self, "You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
+		end
+		
+		if locale ~= baseLocale then
+			for key in pairs(self.translations) do
+				if not self.baseTranslations[key] then
+					AceLocale.error(self, "Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
+					break
+				end
 			end
 		end
-	})
-	
-	if not baseLocale then
-		baseLocale = DEFAULT_LOCALE
+		_G[name .. "_Locale_enUS"] = nil
+		_G[name .. "_Locale_deDE"] = nil
+		_G[name .. "_Locale_frFR"] = nil
+		_G[name .. "_Locale_zhCN"] = nil
+		_G[name .. "_Locale_zhTW"] = nil
+		_G[name .. "_Locale_koKR"] = nil
+		
+		AceLocale.registry[name] = self
+		return self
 	end
-	if type(_G[name .. "_Locale_" .. baseLocale]) ~= "function" then
-		self:error("You have not provided adequate translations. You must at least have global function %s_Locale_%s that returns a translation table.", name, baseLocale)
-	end
-	local locale = GetLocale()
-	local func = _G[name .. "_Locale_" .. locale]
-	if harsh then
-		if type(func) == "function" then
-			self.translations = func()
-		elseif func == nil then
-			self.translations = {}
+else
+	function AceLocale:new(name)
+		self:argCheck(name, 2, "string")
+		
+		if self.registry[name] then
+			return self.registry[name]
 		end
-	else
-		if type(func) ~= "function" then
-			func = _G[name .. "_Locale_" .. baseLocale]
+		
+		local self = setmetatable({}, {
+			__index = self.prototype,
+			__call = self.prototype.GetTranslation,
+			__tostring = function(self)
+				if type(self.GetLibraryVersion) == "function" then
+					return self:GetLibraryVersion()
+				else
+					return "AceLocale(" .. name .. ")"
+				end
+			end
+		})
+		
+		AceLocale.registry[name] = self
+		return self
+	end
+end
+
+setmetatable(AceLocale, { __call = AceLocale.new })
+
+AceLocale.prototype = {}
+AceLocale.prototype.class = AceLocale
+
+function AceLocale.prototype:EnableDebugging()
+	if self.baseTranslations then
+		AceLocale.error(self, "Cannot enable debugging after a translation has been registered.")
+	end
+	self.debugging = true
+end
+
+function AceLocale.prototype:RegisterTranslations(locale, func)
+	AceLocale.argCheck(self, locale, 2, "string")
+	AceLocale.argCheck(self, func, 3, "function")
+	if self.baseTranslations and GetLocale() ~= locale then
+		if self.debugging then
+			local t = func()
+			func = nil
+			if type(t) ~= "table" then
+				AceLocale.error(self, "Bad argument #3 to `RegisterTranslation'. function did not return a table. (expected table, got %s)", type(t))
+			end
+			self.translationTables[locale] = t
 		end
-		self.translations = func()
+		return
 	end
-	if type(self.translations) ~= "table" then
-		self:error("You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
-	end
-	if func == _G[name .. "_Locale_" .. baseLocale] then
-		self.baseTranslations = self.translations
-	else
-		self.baseTranslations = _G[name .. "_Locale_" .. baseLocale]()
-	end
-	if type(self.baseTranslations) ~= "table" then
-		self:error("You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
+	local t = func()
+	func = nil
+	if type(t) ~= "table" then
+		AceLocale.error(self, "Bad argument #3 to `RegisterTranslation'. function did not return a table. (expected table, got %s)", type(t))
 	end
 	
-	if locale ~= baseLocale then
+	self.translations = t
+	if not self.baseTranslations then
+		self.baseTranslations = t
+	else
 		for key in pairs(self.translations) do
 			if not self.baseTranslations[key] then
-				error("Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
+				AceLocale.error(self, "Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
 				break
 			end
 		end
 	end
-	_G[name .. "_Locale_enUS"] = nil
-	_G[name .. "_Locale_deDE"] = nil
-	_G[name .. "_Locale_frFR"] = nil
-	_G[name .. "_Locale_zhCN"] = nil
-	_G[name .. "_Locale_zhTW"] = nil
-	_G[name .. "_Locale_koKR"] = nil
-	
-	return self
+	if self.debugging then
+		if not self.translationTables then
+			self.translationTables = {}
+		end
+		self.translationTables[locale] = t
+	end
+	t = nil
 end
 
-AceLocale.prototype = {}
-AceLocale.prototype.class = AceLocale
+function AceLocale.prototype:SetStrictness(strict)
+	local mt = getmetatable(self)
+	if not mt then
+		AceLocale.error(self, "Cannot call `SetStrictness' without a metatable.")
+	end
+	if strict then
+		mt.__call = self.GetTranslationStrict
+	else
+		mt.__call = self.GetTranslation
+	end
+end
 
 function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 	AceLocale.argCheck(self, text, 1, "string")
@@ -326,23 +425,19 @@ function AceLocale.prototype:GetTable(key, key2)
 	end
 end
 
-function AceLocale:Debug(name, baseLocale)
-	local function print(text)
-		DEFAULT_CHAT_FRAME:AddMessage(text)
+function AceLocale.prototype:Debug()
+	if not self.debugging then
+		return
 	end
 	local words = {}
 	local locales = {"enUS", "deDE", "frFR", "zhCN", "zhTW", "koKR"}
 	local localizations = {}
-	print("--- AceLocale Debug ---")
+	DEFAULT_CHAT_FRAME:AddMessage("--- AceLocale Debug ---")
 	for _,locale in ipairs(locales) do
-		local gname = name .. "_Locale_" .. locale
-		if _G[gname] then
-			self:assert(type(_G[gname]) == "function")
-			local t = _G[gname]()
-			self:assert(type(t) == "table", "%q does not return a table", gname)
-			localizations[locale] = t
+		if not self.translationTables[locale] then
+			DEFAULT_CHAT_FRAME:AddMessage(string.format("Locale %q not found", locale))
 		else
-			print(string.format("Locale %q not found", locale))
+			localizations[locale] = self.translationTables[locale]
 		end
 	end
 	local localeDebug = {}
@@ -382,19 +477,26 @@ function AceLocale:Debug(name, baseLocale)
 	end
 	for locale, t in pairs(localeDebug) do
 		if not next(t) then
-			print(string.format("Locale %q complete", locale))
+			DEFAULT_CHAT_FRAME:AddMessage(string.format("Locale %q complete", locale))
 		else
-			print(string.format("Locale %q missing:", locale))
+			DEFAULT_CHAT_FRAME:AddMessage(string.format("Locale %q missing:", locale))
 			for word in pairs(t) do
-				print(string.format("    %q", word))
+				DEFAULT_CHAT_FRAME:AddMessage(string.format("    %q", word))
 			end
 		end
 	end
-	print("--- End AceLocale Debug ---")
+	DEFAULT_CHAT_FRAME:AddMessage("--- End AceLocale Debug ---")
 end
 
 local function activate(self, oldLib, oldDeactivate)
 	AceLocale = self
+	
+	if oldLib then
+		self.registry = oldLib.registry
+	end
+	if not self.registry then
+		self.registry = {}
+	end
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
