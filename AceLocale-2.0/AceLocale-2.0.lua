@@ -141,7 +141,11 @@ end
 function AceLocale.prototype:RegisterTranslations(locale, func)
 	AceLocale.argCheck(self, locale, 2, "string")
 	AceLocale.argCheck(self, func, 3, "function")
-	if self.baseLocale == locale then
+	
+	local addonDeclaredIn = string.gsub(debugstack(), "^.-\\AddOns\\(.-)\\.*", "%1")
+	if self.addonDeclaredIn ~= addonDeclaredIn then
+		self.addonDeclaredIn = addonDeclaredIn
+		self.debugging = nil
 		self.baseTranslations = nil
 		self.translationTables = nil
 		self.translations = nil
@@ -167,11 +171,17 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	if not self.baseTranslations then
 		self.baseTranslations = t
 		self.baseLocale = locale
+		for key,value in pairs(self.baseTranslations) do
+			if value == true
+				self.baseTranslations[key] = key
+			end
+		end
 	else
-		for key in pairs(self.translations) do
+		for key, value in pairs(self.translations) do
 			if not self.baseTranslations[key] then
 				AceLocale.error(self, "Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
-				break
+			elseif value == true then
+				AceLocale.error(self, "Can only accept true as a value on the base locale. %q is the base locale, %q is not.", self.baseLocale, locale)
 			end
 		end
 	end
