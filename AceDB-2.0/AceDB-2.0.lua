@@ -39,7 +39,7 @@ local AceDB = Mixin {
 						"GetProfile",
 						"ToggleActive",
 						"IsActive",
-						"AcquireNamespace",
+						"AcquireDBNamespace",
 						"ToggleStandby", -- remove at 2006-07-21
 						"IsEnabled", -- remove at 2006-07-21
 					}
@@ -407,7 +407,7 @@ function AceDB:RegisterDefaults(kind, defaults, a3)
 	end
 	local db
 	if name then
-		local namespace = self:AcquireNamespace(name)
+		local namespace = self:AcquireDBNamespace(name)
 		if namespace.defaults and namespace.defaults[kind] then
 			AceDB:error("\"RegisterDefaults\" has already been called for %q::%q.", name, kind)
 		end
@@ -807,7 +807,7 @@ function AceDB:PLAYER_LOGOUT()
 	end
 end
 
-function AceDB:AcquireNamespace(name)
+function AceDB:AcquireDBNamespace(name)
 	AceDB:argCheck(name, 2, "string")
 	local db = self.db
 	if not db.namespaces then
