@@ -23,7 +23,7 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 -- localize --
 local MAP_ONOFF = { [false] = "|cffff0000Off|r", [true] = "|cff00ff00On|r" }
-local MAP_ENABLEDDISABLED = { [false] = "|cffff0000Disabled|r", [true] = "|cff00ff00Enabled|r" }
+local MAP_RUNNINGSUSPENDED = { [false] = "|cff00ff00Running|r", [true] = "|cffff0000Suspended|r" }
 local USAGE = "Usage"
 local IS_CURRENTLY_SET_TO = "|cffffff7f%s|r is currently set to |cffffff7f[|r%s|cffffff7f]|r"
 local IS_NOW_SET_TO = "|cffffff7f%s|r is now set to |cffffff7f[|r%s|cffffff7f]|r"
@@ -33,12 +33,12 @@ local NO_OPTIONS_AVAILABLE = "No options available"
 local OPTION_HANDLER_NOT_FOUND = "Option handler |cffffff7f%q|r not found."
 local OPTION_HANDLER_NOT_VALID = "Option handler not valid."
 local OPTION_IS_DISABLED = "Option %q is disabled."
-local TOGGLE_STANDBY = "Enable/disable this addon"
+local TOGGLE_STANDBY = "Suspend/resume this addon"
 local TOGGLE_DEBUGGING = "Enable/disable debugging"
 local PRINT_ADDON_INFO = "Print out addon info"
 local SET_PROFILE = "Set profile for this addon"
 local SET_PROFILE_USAGE = "{char || class || realm || <profile name>}"
-local STANDBY = "Standby"
+local STANDBY = "Active"
 local ABOUT = "About"
 local PROFILE = "Profile"
 local DEBUGGING = "Debugging"
@@ -1139,9 +1139,9 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 						name = STANDBY,
 						desc = TOGGLE_STANDBY,
 						type = "toggle",
-						get = "IsEnabled",
+						get = function() return not self:IsEnabled() end,
 						set = "ToggleStandby",
-						map = MAP_ENABLEDDISABLED
+						map = MAP_RUNNINGSUSPENDED
 					}
 				end
 			end
