@@ -28,6 +28,8 @@ local AceEvent = Mixin {
 						"IsEventRegistered",
 					   }
 
+local compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
+
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
 	AceEvent:argCheck(method, 3, "string", "function", "nil")
@@ -40,7 +42,7 @@ function AceEvent:RegisterEvent(event, method, once)
 	end
 	
 	if not AceEvent.registry[event] then
-		AceEvent.registry[event] = {}
+		AceEvent.registry[event] = compost and compost:Acquire() or {}
 		AceEvent.frame:RegisterEvent(event)
 	end
 	
@@ -48,10 +50,10 @@ function AceEvent:RegisterEvent(event, method, once)
 	
 	if once then
 		if not AceEvent.onceRegistry then
-			AceEvent.onceRegistry = {}
+			AceEvent.onceRegistry = compost and compost:Acquire() or {}
 		end
 		if not AceEvent.onceRegistry[event] then
-			AceEvent.onceRegistry[event] = {}
+			AceEvent.onceRegistry[event] = compost and compost:Acquire() or {}
 		end
 		AceEvent.onceRegistry[event][self] = true
 	else
@@ -76,7 +78,10 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 						AceEvent.debugTable[event] = {}
 					end
 					if not AceEvent.debugTable[event][obj] then
-						AceEvent.debugTable[event][obj] = {
+						AceEvent.debugTable[event][obj] = compost and compost:AcquireHash(
+							'mem', 0,
+							'time', 0
+						) or {
 							mem = 0,
 							time = 0
 						}
@@ -105,10 +110,13 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			local mem, time
 			if AceEvent.debugTable then
 				if not AceEvent.debugTable[event] then
-					AceEvent.debugTable[event] = {}
+					AceEvent.debugTable[event] = compost and compost:Acquire() or {}
 				end
 				if not AceEvent.debugTable[event][obj] then
-					AceEvent.debugTable[event][obj] = {
+					AceEvent.debugTable[event][obj] = compost and compost:AcquireHash(
+						'mem', 0,
+						'time', 0
+					) or {
 						mem = 0,
 						time = 0
 					}
@@ -130,6 +138,36 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		end
 	end
 	_G.event = _G_event
+end
+
+local GetTime = GetTime
+local delayRegistry
+local function OnUpdate()
+	local t = GetTime()
+	for i,v in ipairs(delayRegistry) do
+		if v.time <= t then
+			local x = table.remove(delayRegistry, i)
+			if compost then
+				compost:Reclaim(x)
+			end
+			i = i - 1
+			AceEvent:TriggerEvent(v.event, unpack(v))
+		end
+	end
+end
+
+function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	AceEvent:argCheck(event, 2, "string")
+	AceEvent:argCheck(delay, 3, "number")
+	if not AceEvent.delayRegistry then
+		AceEvent.delayRegistry = compost and compost:Acquire() or {}
+		delayRegistry = AceEvent.delayRegistry
+		AceEvent.frame:SetScript("OnUpdate", OnUpdate)
+	end
+	local t and compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
+	t.event = event
+	t.time = GetTime() + delay
+	table.insert(self.delayRegistry, t)
 end
 
 function AceEvent:UnregisterEvent(event)
@@ -171,6 +209,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	
 	if oldLib then
 		self.onceRegistry = oldLib.onceRegistry
+		self.delayRegistry = oldLib.delayRegistry
 		self.registry = oldLib.registry
 		self.frame = oldLib.frame
 		self.debugTable = oldLib.debugTable
@@ -186,6 +225,10 @@ function AceEvent:activate(oldLib, oldDeactivate)
 			self:TriggerEvent(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 		end
 	end)
+	if self.delayRegistry then
+		delayRegistry = self.delayRegistry
+		self.frame:SetScript("OnUpdate", OnUpdate)
+	end
 	
 	self.super.activate(self, oldLib, oldDeactivate)
 	if oldLib then
@@ -193,5 +236,11 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	end
 end
 
-AceLibrary:Register(AceEvent, MAJOR_VERSION, MINOR_VERSION, AceEvent.activate)
+local function external(self, major, instance)
+	if major == "Compost-2.0" then
+		Compost = instance
+	end
+end
+
+AceLibrary:Register(AceEvent, MAJOR_VERSION, MINOR_VERSION, AceEvent.activate, nil, external)
 AceEvent = AceLibrary(MAJOR_VERSION)
