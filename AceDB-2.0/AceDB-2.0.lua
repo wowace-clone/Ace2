@@ -39,6 +39,7 @@ local AceDB = Mixin {
 						"GetProfile",
 						"ToggleActive",
 						"IsActive",
+						"AcquireNamespace",
 						"ToggleStandby", -- remove at 2006-07-21
 						"IsEnabled", -- remove at 2006-07-21
 					}
@@ -126,16 +127,19 @@ local db_mt = { __index = function(db, key)
 			if type(_G[db.charName]) ~= "table" then
 				_G[db.charName] = {}
 			end
-			rawset(db, 'char', _G[db.charName])
+			if type(_G[db.charName].raw) ~= "table" then
+				_G[db.charName].global = {}
+			end
+			rawset(db, 'char', _G[db.charName].global)
 		else
 			if type(db.raw.chars) ~= "table" then
 				db.raw.chars = {}
 			end
-			local name = charID
-			if type(db.raw.chars[name]) ~= "table" then
-				db.raw.chars[name] = {}
+			local id = charID
+			if type(db.raw.chars[id]) ~= "table" then
+				db.raw.chars[id] = {}
 			end
-			rawset(db, 'char', db.raw.chars[name])
+			rawset(db, 'char', db.raw.chars[id])
 		end
 		if db.defaults and db.defaults.char then
 			inheritDefaults(db.char, db.defaults.char)
@@ -145,11 +149,11 @@ local db_mt = { __index = function(db, key)
 		if type(db.raw.realms) ~= "table" then
 			db.raw.realms = {}
 		end
-		local name = realmID
-		if type(db.raw.realms[name]) ~= "table" then
-			db.raw.realms[name] = {}
+		local id = realmID
+		if type(db.raw.realms[id]) ~= "table" then
+			db.raw.realms[id] = {}
 		end
-		rawset(db, 'realm', db.raw.realms[name])
+		rawset(db, 'realm', db.raw.realms[id])
 		if db.defaults and db.defaults.realm then
 			inheritDefaults(db.realm, db.defaults.realm)
 		end
@@ -167,11 +171,11 @@ local db_mt = { __index = function(db, key)
 		if type(db.raw.classes) ~= "table" then
 			db.raw.classes = {}
 		end
-		local name = classID
-		if type(db.raw.classes[name]) ~= "table" then
-			db.raw.classes[name] = {}
+		local id = classID
+		if type(db.raw.classes[id]) ~= "table" then
+			db.raw.classes[id] = {}
 		end
-		rawset(db, 'class', db.raw.classes[name])
+		rawset(db, 'class', db.raw.classes[id])
 		if db.defaults and db.defaults.class then
 			inheritDefaults(db.class, db.defaults.class)
 		end
@@ -179,24 +183,150 @@ local db_mt = { __index = function(db, key)
 	elseif key == "profile" then
 		if type(db.raw.profiles) ~= "table" then
 			db.raw.profiles = setmetatable({}, caseInsensitive_mt)
+		else
+			setmetatable(db.raw.profiles, caseInsensitive_mt)
 		end
-		local name = db.raw.currentProfile[charID]
-		if name == "char" then
-			name = "char/" .. charID
-		elseif name == "class" then
-			name = "class/" .. classID
-		elseif name == "realm" then
-			name = "realm/" .. realmID
+		local id = db.raw.currentProfile[charID]
+		if id == "char" then
+			id = "char/" .. charID
+		elseif id == "class" then
+			id = "class/" .. classID
+		elseif id == "realm" then
+			id = "realm/" .. realmID
 		end
-		if type(db.raw.profiles[name]) ~= "table" then
-			db.raw.profiles[name] = {}
+		if type(db.raw.profiles[id]) ~= "table" then
+			db.raw.profiles[id] = {}
 		end
-		rawset(db, 'profile', db.raw.profiles[name])
+		rawset(db, 'profile', db.raw.profiles[id])
 		if db.defaults and db.defaults.profile then
 			inheritDefaults(db.profile, db.defaults.profile)
 		end
 		return db.profile
-	elseif key == "raw" or key == "defaults" or key == "name" or key == "charName" then
+	elseif key == "raw" or key == "defaults" or key == "name" or key == "charName" or key == "namespaces" then
+		return nil
+	end
+	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
+end, __newindex = function(db, key, value)
+	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
+end }
+
+local namespace_mt = { __index = function(namespace, key)
+	local db = namespace.db
+	local name = namespace.name
+	if key == "char" then
+		if db.charName then
+			if type(_G[db.charName]) ~= "table" then
+				_G[db.charName] = {}
+			end
+			if type(_G[db.charName].namespaces) ~= "table" then
+				_G[db.charName].namespaces = {}
+			end
+			if type(_G[db.charName].namespaces[name]) ~= "table" then
+				_G[db.charName].namespaces[name] = {}
+			end
+			rawset(namespace, 'char', _G[db.charName].namespaces[name])
+		else
+			if type(db.raw.namespaces) ~= "table" then
+				db.raw.namespaces = {}
+			end
+			if type(db.raw.namespaces[name]) ~= "table" then
+				db.raw.namespaces[name] = {}
+			end
+			if type(db.raw.namespaces[name].chars) ~= "table" then
+				db.raw.namespaces[name].chars = {}
+			end
+			local id = charID
+			if type(db.raw.namespaces[name].chars[id]) ~= "table" then
+				db.raw.namespaces[name].chars[id] = {}
+			end
+			rawset(namespace, 'char', db.raw.namespaces[name].chars[id])
+		end
+		if namespace.defaults and namespace.defaults.char then
+			inheritDefaults(namespace.char, namespace.defaults.char)
+		end
+		return namespace.char
+	elseif key == "realm" then
+		if type(db.raw.namespaces) ~= "table" then
+			db.raw.namespaces = {}
+		end
+		if type(db.raw.namespaces[name]) ~= "table" then
+			db.raw.namespaces[name] = {}
+		end
+		if type(db.raw.namespaces[name].realms) ~= "table" then
+			db.raw.namespaces[name].realms = {}
+		end
+		local id = realmID
+		if type(db.raw.namespaces[name].realms[id]) ~= "table" then
+			db.raw.namespaces[name].realms[id] = {}
+		end
+		rawset(namespace, 'realm', db.raw.namespaces[name].realms[id])
+		if namespace.defaults and namespace.defaults.realm then
+			inheritDefaults(namespace.realm, namespace.defaults.realm)
+		end
+		return namespace.realm
+	elseif key == "account" then
+		if type(db.raw.namespaces) ~= "table" then
+			db.raw.namespaces = {}
+		end
+		if type(db.raw.namespaces[name]) ~= "table" then
+			db.raw.namespaces[name] = {}
+		end
+		if type(db.raw.namespaces[name].account) ~= "table" then
+			db.raw.namespaces[name].account = {}
+		end
+		rawset(namespace, 'account', db.raw.namespaces[name].account)
+		if namespace.defaults and namespace.defaults.account then
+			inheritDefaults(namespace.account, namespace.defaults.account)
+		end
+		return namespace.account
+	elseif key == "class" then
+		if type(db.raw.namespaces) ~= "table" then
+			db.raw.namespaces = {}
+		end
+		if type(db.raw.namespaces[name]) ~= "table" then
+			db.raw.namespaces[name] = {}
+		end
+		if type(db.raw.namespaces[name].classes) ~= "table" then
+			db.raw.namespaces[name].classes = {}
+		end
+		local id = classID
+		if type(db.raw.namespaces[name].classes[id]) ~= "table" then
+			db.raw.namespaces[name].classes[id] = {}
+		end
+		rawset(namespace, 'class', db.raw.namespaces[name].classes[id])
+		if namespace.defaults and namespace.defaults.class then
+			inheritDefaults(namespace.class, namespace.defaults.class)
+		end
+		return namespace.class
+	elseif key == "profile" then
+		if type(db.raw.namespaces) ~= "table" then
+			db.raw.namespaces = {}
+		end
+		if type(db.raw.namespaces[name]) ~= "table" then
+			db.raw.namespaces[name] = {}
+		end
+		if type(db.raw.namespaces[name].profiles) ~= "table" then
+			db.raw.namespaces[name].profiles = setmetatable({}, caseInsensitive_mt)
+		else
+			setmetatable(db.raw.namespaces[name].profiles, caseInsensitive_mt)
+		end
+		local id = db.raw.currentProfile[charID]
+		if id == "char" then
+			id = "char/" .. charID
+		elseif id == "class" then
+			id = "class/" .. classID
+		elseif id == "realm" then
+			id = "realm/" .. realmID
+		end
+		if type(db.raw.namespaces[name].profiles[id]) ~= "table" then
+			db.raw.namespaces[name].profiles[id] = {}
+		end
+		rawset(namespace, 'profile', db.raw.namespaces[name].profiles[id])
+		if namespace.defaults and namespace.defaults.profile then
+			inheritDefaults(namespace.profile, namespace.defaults.profile)
+		end
+		return namespace.profile
+	elseif key == "defaults" or key == "name" or key == "db" then
 		return nil
 	end
 	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
@@ -256,44 +386,44 @@ function AceDB:RegisterDB(name, charName)
 end
 
 function AceDB:RegisterDefaults(kind, defaults, a3)
-	AceDB:argCheck(kind, 2, "string")
-	if kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" then
-		AceDB:error("Bad argument #2 to `RegisterDefaults' (\"char\", \"class\", \"profile\", \"account\", or \"realm\" expected, got %q)", kind)
-	elseif type(self.db) ~= "table" or type(self.db.name) ~= "string" then
+	local name
+	if a3 then
+		name, kind, defaults = kind, defaults, a3
+		AceDB:argCheck(name, 2, "string")
+		AceDB:argCheck(kind, 3, "string")
+		AceDB:argCheck(defaults, 4, "table")
+		if kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" then
+			AceDB:error("Bad argument #3 to `RegisterDefaults' (\"char\", \"class\", \"profile\", \"account\", or \"realm\" expected, got %q)", kind)
+		end
+	else
+		AceDB:argCheck(kind, 2, "string")
+		AceDB:argCheck(defaults, 3, "table")
+		if kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" then
+			AceDB:error("Bad argument #2 to `RegisterDefaults' (\"char\", \"class\", \"profile\", \"account\", or \"realm\" expected, got %q)", kind)
+		end
+	end
+	if type(self.db) ~= "table" or type(self.db.name) ~= "string" then
 		AceDB:error("Cannot call \"RegisterDefaults\" unless \"RegisterDB\" has been previously called.")
 	end
-	if not a3 then
-		AceDB:argCheck(defaults, 3, "table")
+	local db
+	if name then
+		local namespace = self:AcquireNamespace(name)
+		if namespace.defaults and namespace.defaults[kind] then
+			AceDB:error("\"RegisterDefaults\" has already been called for %q::%q.", name, kind)
+		end
+		db = namespace
+	else
 		if self.db.defaults and self.db.defaults[kind] then
 			AceDB:error("\"RegisterDefaults\" has already been called for %q.", kind)
 		end
-		if not self.db.defaults then
-			rawset(self.db, 'defaults', {})
-		end
-		self.db.defaults[kind] = defaults
-	else
-		local subkey, defaults = defaults, a3
-		AceDB:argCheck(subkey, 3, "string")
-		AceDB:argCheck(defaults, 4, "table")
-		if subkey == '*' then
-			AceDB:error("Argument #3 to `RegisterDefaults' cannot be \"*\"")
-		end
-		if self.db.defaults and self.db.defaults[kind] and self.db.defaults[kind][subkey] then
-			AceDB:error("\"RegisterDefaults\" has already been called for [%q][%q].", kind, subkey)
-		end
-		if not self.db.defaults then
-			rawset(self.db, 'defaults', {})
-		end
-		if not self.db.defaults[kind] then
-			self.db.defaults[kind] = {}
-		end
-		self.db.defaults[kind][subkey] = defaults
-		if rawget(self.db, kind) then
-			if not rawget(self.db[kind], subkey) then
-				self.db[kind][subkey] = {}
-			end
-			inheritDefaults(self.db[kind][subkey], defaults)
-		end
+		db = self.db
+	end
+	if not db.defaults then
+		rawset(db, 'defaults', {})
+	end
+	db.defaults[kind] = defaults
+	if rawget(db, kind) then
+		inheritDefaults(db[kind], defaults)
 	end
 end
 
@@ -426,6 +556,7 @@ function AceDB:SetProfile(name, copyFrom)
 	elseif lowerName == "class/" then
 		realName = name .. "/" .. classID
 	end
+	local active = self:IsActive()
 	db.raw.currentProfile[charID] = name
 	rawset(db, 'profile', nil)
 	if copyFrom then
@@ -442,6 +573,32 @@ function AceDB:SetProfile(name, copyFrom)
 		db.raw.profiles[oldName] = nil
 		if not next(db.raw.profiles) then
 			db.raw.profiles = nil
+		end
+	end
+	local newactive = self:IsActive()
+	if active ~= newactive then
+		if newactive then
+			if type(self.OnEnable) == "function" then
+				self:OnEnable()
+			end
+		else
+			local current = self.class
+			while true do
+				if current == AceOO.Class then
+					break
+				end
+				if current.mixins then
+					for mixin in pairs(current.mixins) do
+						if type(mixin.OnEmbedDisable) == "function" then
+							mixin:OnEmbedDisable(self)
+						end
+					end
+				end
+				current = current.super
+			end
+			if type(self.OnDisabled) == "function" then
+				self:OnDisable()
+			end
 		end
 	end
 end
@@ -544,11 +701,14 @@ end
 function AceDB:PLAYER_LOGOUT()
 	for addon in pairs(AceDB.registry) do
 		local db = addon.db
-		setmetatable(db, nil)
 		if db then
+			setmetatable(db, nil)
 			if db.char and cleanDefaults(db.char, db.defaults and db.defaults.char) then
-				if db.charName and _G[db.charName] == db.char then
-					_G[db.charName] = nil
+				if db.charName and _G[db.charName].global == db.char then
+					_G[db.charName].global = nil
+					if not next(_G[db.charName]) then
+						_G[db.charName] = nil
+					end
 				else
 					db.raw.chars[charID] = nil
 					if not next(db.raw.chars) then
@@ -577,6 +737,54 @@ function AceDB:PLAYER_LOGOUT()
 					db.raw.profiles = nil
 				end
 			end
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					setmetatable(v, nil)
+					if v.char and cleanDefaults(v.char, v.defaults and v.defaults.char) then
+						if db.charName and _G[db.charName] and _G[db.charName].namespaces and _G[db.charName].namespaces[name] == v then
+							_G[db.charName].namespaces[name] = nil
+							if not next(_G[db.charName].namespaces) then
+								_G[db.charName].namespaces = nil
+								if not next(_G[db.charName]) then
+									_G[db.charName] = nil
+								end
+							end
+						else
+							db.raw.namespaces[name].chars[charID] = nil
+							if not next(db.raw.namespaces[name].chars) then
+								db.raw.namespaces[name].chars = nil
+							end
+						end
+					end
+					if v.realm and cleanDefaults(v.realm, v.defaults and v.defaults.realm) then
+						db.raw.namespaces[name].realms[realmID] = nil
+						if not next(db.raw.namespaces[name].realms) then
+							db.raw.namespaces[name].realms = nil
+						end
+					end
+					if v.class and cleanDefaults(v.class, v.defaults and v.defaults.class) then
+						db.raw.namespaces[name].classes[classID] = nil
+						if not next(db.raw.namespaces[name].classes) then
+							db.raw.namespaces[name].classes = nil
+						end
+					end
+					if v.account and cleanDefaults(v.account, v.defaults and v.defaults.account) then
+						db.raw.namespaces[name].account = nil
+					end
+					if v.profile and cleanDefaults(v.profile, v.defaults and v.defaults.profile) then
+						db.raw.namespaces[name].profiles[db.raw.currentProfile[charID] or "default"] = nil
+						if not next(db.raw.namespaces[name].profiles) then
+							db.raw.namespaces[name].profiles = nil
+						end
+					end
+					if not next(db.raw.namespaces[name]) then
+						db.raw.namespaces[name] = nil
+					end
+				end
+				if not next(db.raw.namespaces) then
+					db.raw.namespaces = nil
+				end
+			end
 			if db.raw.disabled then
 				if not next(db.raw.diabled) then
 					db.raw.disabled = nil
@@ -597,6 +805,22 @@ function AceDB:PLAYER_LOGOUT()
 			end
 		end
 	end
+end
+
+function AceDB:AcquireNamespace(name)
+	AceDB:argCheck(name, 2, "string")
+	local db = self.db
+	if not db.namespaces then
+		db.namespaces = {}
+	end
+	if not db.namespaces[name] then
+		local namespace = {}
+		db.namespaces[name] = namespace
+		namespace.db = db
+		namespace.name = name
+		setmetatable(namespace, namespace_mt)
+	end
+	return db.namespaces[name]
 end
 
 function AceDB:GetAceOptionsDataTable(target)
