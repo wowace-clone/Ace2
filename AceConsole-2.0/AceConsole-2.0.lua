@@ -23,7 +23,7 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 -- localize --
 local MAP_ONOFF = { [false] = "|cffff0000Off|r", [true] = "|cff00ff00On|r" }
-local MAP_RUNNINGSUSPENDED = { [false] = "|cff00ff00Running|r", [true] = "|cffff0000Suspended|r" }
+local MAP_ACTIVESUSPENDED = { [false] = "|cff00ff00Active|r", [true] = "|cffff0000Suspended|r" }
 local USAGE = "Usage"
 local IS_CURRENTLY_SET_TO = "|cffffff7f%s|r is currently set to |cffffff7f[|r%s|cffffff7f]|r"
 local IS_NOW_SET_TO = "|cffffff7f%s|r is now set to |cffffff7f[|r%s|cffffff7f]|r"
@@ -1141,7 +1141,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 						type = "toggle",
 						get = function() return not self:IsEnabled() end,
 						set = "ToggleStandby",
-						map = MAP_RUNNINGSUSPENDED
+						map = MAP_ACTIVESUSPENDED
 					}
 				end
 			end
