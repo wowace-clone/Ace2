@@ -93,7 +93,7 @@ end
 
 function AceDebug:GetAceOptionsDataTable(target)
 	return {
-		suspend = {
+		debug = {
 			name = DEBUGGING,
 			desc = TOGGLE_DEBUGGING,
 			type = "toggle",
