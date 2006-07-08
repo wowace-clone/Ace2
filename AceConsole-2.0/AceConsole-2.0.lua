@@ -306,16 +306,22 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 		end
 	end
 	if options ~= baseOptions or kind == "range" or kind == "text" or kind == "toggle" or kind == "color" then
-		if type(options.name) ~= "string" then
-			return '"name" must be a string', position
-		elseif string.len(options.name) == 0 then
-			return '"name" cannot be a 0-length string', position
-		end
 		if options.cmdName then
-			if type(options.name) ~= "string" then
+			if type(options.cmdName) ~= "string" then
 				return '"cmdName" must be a string or nil', position
 			elseif string.len(options.cmdName) == 0 then
 				return '"cmdName" cannot be a 0-length string', position
+			end
+			if type(options.guiName) ~= "string" then
+				return '"guiName" must be a string or nil', position
+			elseif string.len(options.guiName) == 0 then
+				return '"guiName" cannot be a 0-length string', position
+			end
+		else
+			if type(options.name) ~= "string" then
+				return '"name" must be a string', position
+			elseif string.len(options.name) == 0 then
+				return '"name" cannot be a 0-length string', position
 			end
 		end
 	end
