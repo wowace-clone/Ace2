@@ -448,7 +448,7 @@ function AceDB:IsActive()
 end
 
 function AceDB:ToggleActive(state)
-	self:argCheck(state, 2, "boolean", "nil")
+	AceDB:argCheck(state, 2, "boolean", "nil")
 	if not self.db or not self.db.raw then
 		AceDB:error("Cannot call \"ToggleActive\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
