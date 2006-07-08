@@ -311,6 +311,13 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 		elseif string.len(options.name) == 0 then
 			return '"name" cannot be a 0-length string', position
 		end
+		if options.cmdName then
+			if type(options.name) ~= "string" then
+				return '"cmdName" must be a string or nil', position
+			elseif string.len(options.cmdName) == 0 then
+				return '"cmdName" cannot be a 0-length string', position
+			end
+		end
 	end
 	if options.message and type(options.message) ~= "string" then
 		return '"message" must be a string or nil', position
@@ -432,7 +439,7 @@ local function handlerFunc(self, chat, msg, options)
 	end
 	local kind = string.lower(options.type or "group")
 	if disabled then
-		print(string.format(OPTION_IS_DISABLED, path), realOptions.name or self)
+		print(string.format(OPTION_IS_DISABLED, path), realOptions.cmdName or realOptions.name or self)
 	elseif kind == "text" then
 		if table.getn(args) > 0 then
 			if (type(options.validate) == "table" and table.getn(args) > 1) or (type(options.validate) ~= "table" and not options.input) then
@@ -472,7 +479,7 @@ local function handlerFunc(self, chat, msg, options)
 					else
 						usage = options.usage or "<value>"
 					end
-					print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, tostring(table.concat(args, " ")), path), realOptions.name or self)
+					print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, tostring(table.concat(args, " ")), path), realOptions.cmdName or realOptions.name or self)
 					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage))
 					return
 				end
@@ -512,7 +519,7 @@ local function handlerFunc(self, chat, msg, options)
 		
 		if table.getn(args) > 0 then
 			if (passTable and passTable.get) or options.get then
-				print(string.format(options.message or IS_NOW_SET_TO, tostring(options.name), tostring(var or NONE)), realOptions.name or self)
+				print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)), realOptions.cmdName or realOptions.name or self)
 			end
 		else
 			local usage
@@ -521,9 +528,9 @@ local function handlerFunc(self, chat, msg, options)
 			else
 				usage = options.usage or "{value}"
 			end
-			print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.name or self)
+			print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.cmdName or realOptions.name or self)
 			if (passTable and passTable.get) or options.get then
-				print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.name), tostring(var or NONE)))
+				print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)))
 			end
 		end
 	elseif kind == "execute" then
@@ -578,7 +585,7 @@ local function handlerFunc(self, chat, msg, options)
 			end
 		end
 		
-		print(string.format(options.message or IS_NOW_SET_TO, tostring(options.name), (options.map or MAP_ONOFF)[var or false] or NONE), realOptions.name or self)
+		print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), (options.map or MAP_ONOFF)[var or false] or NONE), realOptions.cmdName or realOptions.name or self)
 	elseif kind == "range" then
 		local arg
 		if table.getn(args) <= 1 then
@@ -612,7 +619,7 @@ local function handlerFunc(self, chat, msg, options)
 					bit = " - "
 				end
 				usage = string.format("{%s%s%s}", min, bit, max)
-				print(string.format(options.error or IS_NOT_A_VALID_VALUE_FOR, tostring(arg), path), realOptions.name or self)
+				print(string.format(options.error or IS_NOT_A_VALID_VALUE_FOR, tostring(arg), path), realOptions.cmdName or realOptions.name or self)
 				print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage))
 				return
 			end
@@ -653,7 +660,7 @@ local function handlerFunc(self, chat, msg, options)
 			if var and options.isPercent then
 				var = tostring(var * 100) .. "%"
 			end
-			print(string.format(options.message or IS_NOW_SET_TO, tostring(options.name), tostring(var or NONE)), realOptions.name or self)
+			print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)), realOptions.cmdName or realOptions.name or self)
 		else
 			local usage
 			local min = options.min or 0
@@ -667,8 +674,8 @@ local function handlerFunc(self, chat, msg, options)
 				bit = " - "
 			end
 			usage = "{" .. min .. bit .. max .. "}"
-			print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.name or self)
-			print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.name), tostring(var or NONE)))
+			print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.cmdName or realOptions.name or self)
+			print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)))
 		end
 	elseif kind == "color" then
 		if table.getn(args) > 0 then
@@ -700,7 +707,7 @@ local function handlerFunc(self, chat, msg, options)
 				end
 			end
 			if not r then
-				print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, table.concat(args, ' '), path), realOptions.name or self)
+				print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, table.concat(args, ' '), path), realOptions.cmdName or realOptions.name or self)
 				print(string.format("|cffffff7f%s:|r %s {0-1} {0-1} {0-1}%s", USAGE, path, options.hasAlpha and " {0-1}" or ""))
 				return
 			end
@@ -743,7 +750,7 @@ local function handlerFunc(self, chat, msg, options)
 			else
 				s = NONE
 			end
-			print(string.format(options.message or IS_NOW_SET_TO, tostring(options.name), s), realOptions.name or self)
+			print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), s), realOptions.cmdName or realOptions.name or self)
 		else
 			local r,g,b,a
 			if passTable then
@@ -799,7 +806,7 @@ local function handlerFunc(self, chat, msg, options)
 								else
 									s = NONE
 								end
-								print(string.format(t.message, tostring(t.name), s), realOptions.name or self)
+								print(string.format(t.message, tostring(t.name), s), t.realOptions.cmdName or t.realOptions.name or self)
 							end
 							for k,v in pairs(t) do
 								t[k] = nil
@@ -826,11 +833,12 @@ local function handlerFunc(self, chat, msg, options)
 			if hasAlpha then
 				t.a = a
 			end
+			t.realOptions = realOptions
 			t.hasAlpha = options.hasAlpha
 			t.handler = handler
 			t.set = passTable and passTable.set or options.set
 			t.get = passTable and passTable.get or options.get
-			t.name = options.name
+			t.name = options.cmdName or options.name
 			t.message = options.message or IS_NOW_SET_TO
 			t.passValue = passValue
 			t.active = true
@@ -935,20 +943,20 @@ local function handlerFunc(self, chat, msg, options)
 				table.sort(order)
 				if options == realOptions then
 					if options.desc then
-						print(tostring(options.desc), realOptions.name or self)
+						print(tostring(options.desc), realOptions.cmdName or realOptions.name or self)
 						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"))
 					elseif self.description or self.notes then
-						print(tostring(self.description or self.notes), realOptions.name or self)
+						print(tostring(self.description or self.notes), realOptions.cmdName or realOptions.name or self)
 						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"))
 					else
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.name or self)
+						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
 					end
 				else
 					if options.desc then
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.name or self)
+						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
 						print(tostring(options.desc))
 					else
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.name or self)
+						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
 					end
 				end
 				for _,k in ipairs(order) do
@@ -1045,19 +1053,19 @@ local function handlerFunc(self, chat, msg, options)
 			else
 				if options.desc then
 					desc = options.desc
-					print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.name or self)
+					print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.cmdName or realOptions.name or self)
 					print(tostring(options.desc))
 				elseif options == realOptions and (self.description or self.notes) then
-					print(tostring(self.description or self.notes), realOptions.name or self)
+					print(tostring(self.description or self.notes), realOptions.cmdName or realOptions.name or self)
 					print(string.format("|cffffff7f%s:|r %s", USAGE, path))
 				else
-					print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.name or self)
+					print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.cmdName or realOptions.name or self)
 				end
 				print(self, NO_OPTIONS_AVAILABLE)
 			end
 		else
 			-- invalid argument
-			print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, args[1], path), realOptions.name or self)
+			print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, args[1], path), realOptions.cmdName or realOptions.name or self)
 		end
 	end
 end
