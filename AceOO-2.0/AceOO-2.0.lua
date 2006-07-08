@@ -869,30 +869,41 @@ do
 		AceOO:error('Attempt to modify a read only class.')
 	end
 	local t
+	local function ts(bit)
+		if type(bit) ~= "table" then
+			return tostring(bit)
+		elseif getmetatable(bit) and bit.__tostring then
+			return tostring(bit)
+		elseif type(bit.GetLibraryVersion) == "function" then
+			return bit:GetLibraryVersion()
+		else
+			return tostring(bit)
+		end
+	end
 	local function getcomplexuid(sc, m1, m2, m3, m4, m5, m6, m7, m8, m9,
 		m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 		if not t then t = {} end
-		if sc then table.insert(t, sc.uid)
-		if m1 then table.insert(t, m1.uid)
-		if m2 then table.insert(t, m2.uid)
-		if m3 then table.insert(t, m3.uid)
-		if m4 then table.insert(t, m4.uid)
-		if m5 then table.insert(t, m5.uid)
-		if m6 then table.insert(t, m6.uid)
-		if m7 then table.insert(t, m7.uid)
-		if m8 then table.insert(t, m8.uid)
-		if m9 then table.insert(t, m9.uid)
-		if m10 then table.insert(t, m10.uid)
-		if m11 then table.insert(t, m11.uid)
-		if m12 then table.insert(t, m12.uid)
-		if m13 then table.insert(t, m13.uid)
-		if m14 then table.insert(t, m14.uid)
-		if m15 then table.insert(t, m15.uid)
-		if m16 then table.insert(t, m16.uid)
-		if m17 then table.insert(t, m17.uid)
-		if m18 then table.insert(t, m18.uid)
-		if m19 then table.insert(t, m19.uid)
-		if m20 then table.insert(t, m20.uid)
+		if sc then if sc.uid then table.insert(t, sc.uid) else AceOO:error("%s is not an appropriate class/mixin", ts(sc)) end
+		if m1 then if m1.uid then table.insert(t, m1.uid) else AceOO:error("%s is not an appropriate mixin", ts(m1)) end
+		if m2 then if m2.uid then table.insert(t, m2.uid) else AceOO:error("%s is not an appropriate mixin", ts(m2)) end
+		if m3 then if m3.uid then table.insert(t, m3.uid) else AceOO:error("%s is not an appropriate mixin", ts(m3)) end
+		if m4 then if m4.uid then table.insert(t, m4.uid) else AceOO:error("%s is not an appropriate mixin", ts(m4)) end
+		if m5 then if m5.uid then table.insert(t, m5.uid) else AceOO:error("%s is not an appropriate mixin", ts(m5)) end
+		if m6 then if m6.uid then table.insert(t, m6.uid) else AceOO:error("%s is not an appropriate mixin", ts(m6)) end
+		if m7 then if m7.uid then table.insert(t, m7.uid) else AceOO:error("%s is not an appropriate mixin", ts(m7)) end
+		if m8 then if m8.uid then table.insert(t, m8.uid) else AceOO:error("%s is not an appropriate mixin", ts(m8)) end
+		if m9 then if m9.uid then table.insert(t, m9.uid) else AceOO:error("%s is not an appropriate mixin", ts(m9)) end
+		if m10 then if m10.uid then table.insert(t, m10.uid) else AceOO:error("%s is not an appropriate mixin", ts(m10)) end
+		if m11 then if m11.uid then table.insert(t, m11.uid) else AceOO:error("%s is not an appropriate mixin", ts(m11)) end
+		if m12 then if m12.uid then table.insert(t, m12.uid) else AceOO:error("%s is not an appropriate mixin", ts(m12)) end
+		if m13 then if m13.uid then table.insert(t, m13.uid) else AceOO:error("%s is not an appropriate mixin", ts(m13)) end
+		if m14 then if m14.uid then table.insert(t, m14.uid) else AceOO:error("%s is not an appropriate mixin", ts(m14)) end
+		if m15 then if m15.uid then table.insert(t, m15.uid) else AceOO:error("%s is not an appropriate mixin", ts(m15)) end
+		if m16 then if m16.uid then table.insert(t, m16.uid) else AceOO:error("%s is not an appropriate mixin", ts(m16)) end
+		if m17 then if m17.uid then table.insert(t, m17.uid) else AceOO:error("%s is not an appropriate mixin", ts(m17)) end
+		if m18 then if m18.uid then table.insert(t, m18.uid) else AceOO:error("%s is not an appropriate mixin", ts(m18)) end
+		if m19 then if m19.uid then table.insert(t, m19.uid) else AceOO:error("%s is not an appropriate mixin", ts(m19)) end
+		if m20 then if m20.uid then table.insert(t, m20.uid) else AceOO:error("%s is not an appropriate mixin", ts(m20)) end
 		end end end end end end end end end end end end end end end end end end end end end
 		table.sort(t)
 		local uid = table.concat(t, '')
