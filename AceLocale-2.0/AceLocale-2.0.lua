@@ -34,7 +34,7 @@ if stage <= 2 then
 		self:argCheck(strict, 3, "boolean", "nil")
 		self:argCheck(baseLocale, 4, "string", "nil")
 		
-		if self.registry[name] then
+		if self.registry[name] and type(self.registry[name].GetLibraryVersion) ~= "function" then
 			return self.registry[name]
 		end
 		
@@ -105,7 +105,7 @@ else
 	function AceLocale:new(name)
 		self:argCheck(name, 2, "string")
 		
-		if self.registry[name] then
+		if self.registry[name] and type(self.registry[name].GetLibraryVersion) ~= "function" then
 			return self.registry[name]
 		end
 		
@@ -132,14 +132,6 @@ AceLocale.prototype = {}
 AceLocale.prototype.class = AceLocale
 
 function AceLocale.prototype:EnableDebugging()
-	local addonDeclaredIn = string.gsub(debugstack(), "^.-\\AddOns\\(.-)\\.*", "%1")
-	if self.addonDeclaredIn ~= addonDeclaredIn then
-		self.addonDeclaredIn = addonDeclaredIn
-		self.debugging = nil
-		self.baseTranslations = nil
-		self.translationTables = nil
-		self.translations = nil
-	end
 	if self.baseTranslations then
 		AceLocale.error(self, "Cannot enable debugging after a translation has been registered.")
 	end
@@ -150,16 +142,6 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	AceLocale.argCheck(self, locale, 2, "string")
 	AceLocale.argCheck(self, func, 3, "function")
 	
-	local addonDeclaredIn = string.gsub(debugstack(), "^.-\\AddOns\\(.-)\\.*", "%1")
-	if self.addonDeclaredIn ~= addonDeclaredIn then
-		if not string.find(addonDeclaredIn, "^stack traceback:\n") then
-			self.addonDeclaredIn = addonDeclaredIn
-			self.debugging = nil
-			self.baseTranslations = nil
-			self.translationTables = nil
-			self.translations = nil
-		end
-	end
 	if self.baseTranslations and GetLocale() ~= locale then
 		if self.debugging then
 			local t = func()
