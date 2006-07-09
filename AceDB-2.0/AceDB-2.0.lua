@@ -811,7 +811,7 @@ function AceDB:AcquireDBNamespace(name)
 	AceDB:argCheck(name, 2, "string")
 	local db = self.db
 	if not db.namespaces then
-		db.namespaces = {}
+		rawset(db, 'namespaces', {})
 	end
 	if not db.namespaces[name] then
 		local namespace = {}
