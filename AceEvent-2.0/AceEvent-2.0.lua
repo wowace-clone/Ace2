@@ -162,7 +162,24 @@ local function OnUpdate()
 	end
 end
 
-function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+local stage = 3
+if tonumber(date("%Y%m%d")) < 20060716 then
+	stage = 1
+elseif tonumber(date("%Y%m%d")) < 20060723 then
+	stage = 2
+end
+
+if stage <= 2 then
+	function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+		if stage == 2 then
+			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
+			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - `TriggerDelayedEvent' has been replaced with `ScheduleDelayedEvent'. This will cause an error on July 23, 2006.")
+		end
+		self:ScheduleDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	end
+end
+
+function AceEvent:ScheduleDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string", "function")
 	AceEvent:argCheck(delay, 3, "number")
 	if not AceEvent.delayRegistry then
