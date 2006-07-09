@@ -187,8 +187,17 @@ if stage <= 2 then
 end
 
 function AceEvent:ScheduleDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	AceEvent:argCheck(event, 2, "string", "function")
-	AceEvent:argCheck(delay, 3, "number")
+	local id
+	if type(event) == "string" then
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "number", "string", "function")
+			AceEvent:argCheck(delay, 4, "number")
+			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
 	if not AceEvent.delayRegistry then
 		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
 		delayRegistry = AceEvent.delayRegistry
@@ -198,14 +207,15 @@ function AceEvent:ScheduleDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7,
 	t.event = event
 	t.time = GetTime() + delay
 	t.self = self
+	t.id = id or t
 	table.insert(AceEvent.delayRegistry, t)
-	return t
+	return t.id
 end
 
 function AceEvent:CancelDelayedEvent(t)
 	if AceEvent.delayRegistry then
 		for i,v in ipairs(AceEvent.delayRegistry) do
-			if v == t then
+			if v.id == t then
 				table.remove(AceEvent.delayRegistry, i)
 				if Compost then
 					Compost:Reclaim(t)
