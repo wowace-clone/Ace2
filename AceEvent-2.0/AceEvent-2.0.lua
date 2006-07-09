@@ -244,11 +244,11 @@ function AceEvent:IsEventScheduled(t)
 	if AceEvent.delayRegistry then
 		for i,v in ipairs(AceEvent.delayRegistry) do
 			if v.id == t then
-				return true
+				return true, v.time - GetTime()
 			end
 		end
 	end
-	return false
+	return false, nil
 end
 
 function AceEvent:UnregisterEvent(event)
