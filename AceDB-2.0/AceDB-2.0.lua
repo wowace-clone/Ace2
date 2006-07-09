@@ -97,7 +97,7 @@ else
 	faction = FACTION_ALLIANCE
 end
 local charID = string.format(PLAYER_OF_REALM, UnitName("player"), (string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1")))
-local realmID = GetRealmName() .. " - " .. faction
+local realmID = string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1") .. " - " .. faction
 local classID = UnitClass("player")
 
 AceDB.CHAR_ID = charID
