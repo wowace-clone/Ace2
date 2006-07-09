@@ -415,6 +415,263 @@ local colorTable
 local colorFunc
 local colorCancelFunc
 
+local order
+
+local function printUsage(self, realOptions, options, path, args, filter)
+	if filter then
+		filter = "^" .. string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
+	end
+	local hidden, disabled = options.hidden, options.disabled
+	if hidden then
+		if type(hidden) == "function" then
+			hidden = hidden()
+		elseif type(hidden) == "string" then
+			hidden = handler[hidden](handler)
+		end
+	end
+	if hidden then
+		disabled = true
+	elseif disabled then
+		if type(disabled) == "function" then
+			disabled = disabled()
+		elseif type(disabled) == "string" then
+			disabled = handler[disabled](handler)
+		end
+	end
+	local kind = string.lower(options.type or "group")
+	if disabled then
+		print(string.format(OPTION_IS_DISABLED, path), realOptions.cmdName or realOptions.name or self)
+	elseif kind == "text" then
+		local var
+		if passTable then
+			if not passTable.get then
+			elseif type(passTable.get) == "function" then
+				var = passTable.get(passValue)
+			else
+				var = handler[passTable.get](handler, passValue)
+			end
+		else
+			if not options.get then
+			elseif type(options.get) == "function" then
+				var = options.get()
+			else
+				var = handler[options.get](handler)
+			end
+		end
+		
+		local usage
+		if type(options.validate) == "table" then
+			if filter then
+				if not order then
+					order = {}
+				end
+				for _,v in ipairs(options.validate) do
+					if string.find(k, filter) then
+						table.insert(order, k)
+					end
+				end
+				usage = "{" .. table.concat(order, " || ") .. "}"
+				for k in pairs(order) do
+					order[k] = nil
+				end
+				table.setn(order, 0)
+			else
+				usage = "{" .. table.concat(options.validate, " || ") .. "}"
+			end
+		else
+			usage = options.usage or "<value>"
+		end
+		print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.cmdName or realOptions.name or self)
+		if (passTable and passTable.get) or options.get then
+			print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)))
+		end
+	elseif kind == "range" then
+		local var
+		if passTable then
+			if type(passTable.get) == "function" then
+				var = passTable.get(passValue)
+			else
+				var = handler[passTable.get](handler, passValue)
+			end
+		else
+			if type(options.get) == "function" then
+				var = options.get()
+			else
+				local handler = options.handler or self
+				var = handler[options.get](handler)
+			end
+		end
+		
+		local usage
+		local min = options.min or 0
+		local max = options.max or 1
+		if options.isPercent then
+			min, max = min * 100, max * 100
+			var = tostring(var * 100) .. "%"
+		end
+		local bit = "-"
+		if min < 0 or max < 0 then
+			bit = " - "
+		end
+		usage = string.format("(%s%s%s)", min, bit, max)
+		print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.cmdName or realOptions.name or self)
+		print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)))
+	elseif kind == "group" then
+		local usage
+		if next(options.args) then
+			if not order then
+				order = {}
+			end
+			for k,v in pairs(options.args) do
+				if filter then
+					if string.find(k, filter) then
+						table.insert(order, k)
+					elseif type(v.aliases) == "table" then
+						for _,bit in ipairs(v.aliases) do
+							if string.find(v.aliases, filter) then
+								table.insert(order, k)
+								break
+							end
+						end
+					elseif type(v.aliases) == "string" then
+						if string.find(v.aliases, filter) then
+							table.insert(order, k)
+						end
+					end
+				else
+					table.insert(order, k)
+				end
+			end
+			table.sort(order)
+			if options == realOptions then
+				if options.desc then
+					print(tostring(options.desc), realOptions.cmdName or realOptions.name or self)
+					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"))
+				elseif self.description or self.notes then
+					print(tostring(self.description or self.notes), realOptions.cmdName or realOptions.name or self)
+					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"))
+				else
+					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
+				end
+			else
+				if options.desc then
+					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
+					print(tostring(options.desc))
+				else
+					print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
+				end
+			end
+			for _,k in ipairs(order) do
+				local v = options.args[k]
+				local hidden, disabled = v.hidden, v.disabled
+				if hidden then
+					if type(hidden) == "function" then
+						hidden = hidden()
+					elseif type(hidden) == "string" then
+						local handler = v.handler or self
+						hidden = handler[hidden](handler)
+					end
+				end
+				if hidden then
+					disabled = true
+				elseif disabled then
+					if type(disabled) == "function" then
+						disabled = disabled()
+					elseif type(disabled) == "string" then
+						local handler = v.handler or self
+						disabled = handler[disabled](handler)
+					end
+				end
+				if type(v.aliases) == "table" then
+					k = k .. " || " .. table.concat(v.aliases, " || ")
+				elseif type(v.aliases) == "string" then
+					k = k .. " || " .. v.aliases
+				end
+				if v.get and v.type ~= "group" and v.type ~= "pass" and v.type ~= "execute" then
+					local a1,a2,a3,a4
+					if type(v.get) == "function" then
+						if options.pass then
+							a1,a2,a3,a4 = v.get(k)
+						else
+							a1,a2,a3,a4 = v.get()
+						end
+					else
+						local handler = v.handler or self
+						if options.pass then
+							a1,a2,a3,a4 = handler[v.get](handler, k)
+						else
+							a1,a2,a3,a4 = handler[v.get](handler)
+						end
+					end
+					if v.type == "color" then
+						if v.hasAlpha then
+							if not a1 or not a2 or not a3 or not a4 then
+								s = NONE
+							else
+								s = string.format("|c%02x%02x%02x%02x%02x%02x%02x%02x|r", a4*255, a1*255, a2*255, a3*255, a4*255, a1*255, a2*255, a3*255)
+							end
+						else
+							if not a1 or not a2 or not a3 then
+								s = NONE
+							else
+								s = string.format("|cff%02x%02x%02x%02x%02x%02x|r", a1*255, a2*255, a3*255, a1*255, a2*255, a3*255)
+							end
+						end
+					elseif v.type == "toggle" then
+						if v.map then
+							s = tostring(v.map[a1 or false] or NONE)
+						else
+							s = tostring(MAP_ONOFF[a1 or false] or NONE)
+						end
+					elseif v.type == "range" then
+						if v.isPercent then
+							s = tostring(a1 * 100) .. "%"
+						else
+							s = tostring(a1)
+						end
+					else
+						s = tostring(a1 or NONE)
+					end
+					if not hidden then
+						if disabled then
+							local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							print(string.format("|cffcfcfcf - %s: [%s]|r %s", k, s, desc))
+						else
+							print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
+						end
+					end
+				else
+					if not hidden then
+						if disabled then
+							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							print(string.format("|cffcfcfcf - %s: %s", k, desc))
+						else
+							print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
+						end
+					end
+				end
+			end
+			for k in pairs(order) do
+				order[k] = nil
+			end
+			table.setn(order, 0)
+		else
+			if options.desc then
+				desc = options.desc
+				print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.cmdName or realOptions.name or self)
+				print(tostring(options.desc))
+			elseif options == realOptions and (self.description or self.notes) then
+				print(tostring(self.description or self.notes), realOptions.cmdName or realOptions.name or self)
+				print(string.format("|cffffff7f%s:|r %s", USAGE, path))
+			else
+				print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.cmdName or realOptions.name or self)
+			end
+			print(self, NO_OPTIONS_AVAILABLE)
+		end
+	end
+end
+
 local function handlerFunc(self, chat, msg, options)
 	if not msg then
 		msg = ""
@@ -506,38 +763,28 @@ local function handlerFunc(self, chat, msg, options)
 			end
 		end
 		
-		local var
-		if passTable then
-			if not passTable.get then
-			elseif type(passTable.get) == "function" then
-				var = passTable.get(passValue)
-			else
-				var = handler[passTable.get](handler, passValue)
-			end
-		else
-			if not options.get then
-			elseif type(options.get) == "function" then
-				var = options.get()
-			else
-				var = handler[options.get](handler)
-			end
-		end
-		
 		if table.getn(args) > 0 then
+			local var
+			if passTable then
+				if not passTable.get then
+				elseif type(passTable.get) == "function" then
+					var = passTable.get(passValue)
+				else
+					var = handler[passTable.get](handler, passValue)
+				end
+			else
+				if not options.get then
+				elseif type(options.get) == "function" then
+					var = options.get()
+				else
+					var = handler[options.get](handler)
+				end
+			end
 			if (passTable and passTable.get) or options.get then
 				print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)), realOptions.cmdName or realOptions.name or self)
 			end
 		else
-			local usage
-			if type(options.validate) == "table" then
-				usage = "{" .. table.concat(options.validate, " || ") .. "}"
-			else
-				usage = options.usage or "{value}"
-			end
-			print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.cmdName or realOptions.name or self)
-			if (passTable and passTable.get) or options.get then
-				print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)))
-			end
+			printUsage(self, realOptions, options, path, args)
 		end
 	elseif kind == "execute" then
 		if passTable then
@@ -624,7 +871,7 @@ local function handlerFunc(self, chat, msg, options)
 				if min < 0 or max < 0 then
 					bit = " - "
 				end
-				usage = string.format("{%s%s%s}", min, bit, max)
+				usage = string.format("(%s%s%s)", min, bit, max)
 				print(string.format(options.error or IS_NOT_A_VALID_VALUE_FOR, tostring(arg), path), realOptions.cmdName or realOptions.name or self)
 				print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage))
 				return
@@ -646,42 +893,29 @@ local function handlerFunc(self, chat, msg, options)
 			end
 		end
 		
-		local var
-		if passTable then
-			if type(passTable.get) == "function" then
-				var = passTable.get(passValue)
-			else
-				var = handler[passTable.get](handler, passValue)
-			end
-		else
-			if type(options.get) == "function" then
-				var = options.get()
-			else
-				local handler = options.handler or self
-				var = handler[options.get](handler)
-			end
-		end
-		
 		if arg then
+			local var
+			if passTable then
+				if type(passTable.get) == "function" then
+					var = passTable.get(passValue)
+				else
+					var = handler[passTable.get](handler, passValue)
+				end
+			else
+				if type(options.get) == "function" then
+					var = options.get()
+				else
+					local handler = options.handler or self
+					var = handler[options.get](handler)
+				end
+			end
+			
 			if var and options.isPercent then
 				var = tostring(var * 100) .. "%"
 			end
 			print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)), realOptions.cmdName or realOptions.name or self)
 		else
-			local usage
-			local min = options.min or 0
-			local max = options.max or 1
-			if options.isPercent then
-				min, max = min * 100, max * 100
-				var = tostring(var * 100) .. "%"
-			end
-			local bit = "-"
-			if min < 0 or max < 0 then
-				bit = " - "
-			end
-			usage = "{" .. min .. bit .. max .. "}"
-			print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, usage), realOptions.cmdName or realOptions.name or self)
-			print(string.format(options.current or IS_CURRENTLY_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)))
+			printUsage(self, realOptions, options, path, args)
 		end
 	elseif kind == "color" then
 		if table.getn(args) > 0 then
@@ -939,136 +1173,7 @@ local function handlerFunc(self, chat, msg, options)
 		end
 	elseif kind == "group" then
 		if table.getn(args) == 0 then
-			-- usage statement
-			local usage
-			if next(options.args) then
-				local order = {}
-				for k in pairs(options.args) do
-					table.insert(order, k)
-				end
-				table.sort(order)
-				if options == realOptions then
-					if options.desc then
-						print(tostring(options.desc), realOptions.cmdName or realOptions.name or self)
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"))
-					elseif self.description or self.notes then
-						print(tostring(self.description or self.notes), realOptions.cmdName or realOptions.name or self)
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"))
-					else
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
-					end
-				else
-					if options.desc then
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
-						print(tostring(options.desc))
-					else
-						print(string.format("|cffffff7f%s:|r %s %s", USAGE, path, "{" .. table.concat(order, " || ") .. "}"), realOptions.cmdName or realOptions.name or self)
-					end
-				end
-				for _,k in ipairs(order) do
-					local v = options.args[k]
-					local hidden, disabled = v.hidden, v.disabled
-					if hidden then
-						if type(hidden) == "function" then
-							hidden = hidden()
-						elseif type(hidden) == "string" then
-							local handler = v.handler or self
-							hidden = handler[hidden](handler)
-						end
-					end
-					if hidden then
-						disabled = true
-					elseif disabled then
-						if type(disabled) == "function" then
-							disabled = disabled()
-						elseif type(disabled) == "string" then
-							local handler = v.handler or self
-							disabled = handler[disabled](handler)
-						end
-					end
-					if type(v.aliases) == "table" then
-						k = k .. " || " .. table.concat(v.aliases, " || ")
-					elseif type(v.aliases) == "string" then
-						k = k .. " || " .. v.aliases
-					end
-					if v.get and v.type ~= "group" and v.type ~= "pass" and v.type ~= "execute" then
-						local a1,a2,a3,a4
-						if type(v.get) == "function" then
-							if options.pass then
-								a1,a2,a3,a4 = v.get(k)
-							else
-								a1,a2,a3,a4 = v.get()
-							end
-						else
-							local handler = v.handler or self
-							if options.pass then
-								a1,a2,a3,a4 = handler[v.get](handler, k)
-							else
-								a1,a2,a3,a4 = handler[v.get](handler)
-							end
-						end
-						if v.type == "color" then
-							if v.hasAlpha then
-								if not a1 or not a2 or not a3 or not a4 then
-									s = NONE
-								else
-									s = string.format("|c%02x%02x%02x%02x%02x%02x%02x%02x|r", a4*255, a1*255, a2*255, a3*255, a4*255, a1*255, a2*255, a3*255)
-								end
-							else
-								if not a1 or not a2 or not a3 then
-									s = NONE
-								else
-									s = string.format("|cff%02x%02x%02x%02x%02x%02x|r", a1*255, a2*255, a3*255, a1*255, a2*255, a3*255)
-								end
-							end
-						elseif v.type == "toggle" then
-							if v.map then
-								s = tostring(v.map[a1 or false] or NONE)
-							else
-								s = tostring(MAP_ONOFF[a1 or false] or NONE)
-							end
-						elseif v.type == "range" then
-							if v.isPercent then
-								s = tostring(a1 * 100) .. "%"
-							else
-								s = tostring(a1)
-							end
-						else
-							s = tostring(a1 or NONE)
-						end
-						if not hidden then
-							if disabled then
-								local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-								local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-								print(string.format("|cffcfcfcf - %s: [%s]|r %s", k, s, desc))
-							else
-								print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
-							end
-						end
-					else
-						if not hidden then
-							if disabled then
-								local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-								print(string.format("|cffcfcfcf - %s: %s", k, desc))
-							else
-								print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
-							end
-						end
-					end
-				end
-			else
-				if options.desc then
-					desc = options.desc
-					print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.cmdName or realOptions.name or self)
-					print(tostring(options.desc))
-				elseif options == realOptions and (self.description or self.notes) then
-					print(tostring(self.description or self.notes), realOptions.cmdName or realOptions.name or self)
-					print(string.format("|cffffff7f%s:|r %s", USAGE, path))
-				else
-					print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.cmdName or realOptions.name or self)
-				end
-				print(self, NO_OPTIONS_AVAILABLE)
-			end
+			printUsage(self, realOptions, options, path, args)
 		else
 			-- invalid argument
 			print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, args[1], path), realOptions.cmdName or realOptions.name or self)
