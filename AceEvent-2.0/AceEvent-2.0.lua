@@ -146,17 +146,24 @@ local GetTime = GetTime
 local delayRegistry
 local function OnUpdate()
 	local t = GetTime()
-	for i,v in ipairs(delayRegistry) do
+	local i = 0
+	while true do
+		i = i + 1
+		local v = delayRegistry[i]
+		if not v then
+			break
+		end
 		if v.time <= t then
-			local x = table.remove(delayRegistry, i)
+			table.remove(delayRegistry, i)
 			i = i - 1
-			if type(v.event) == "function" then
-				v.event(unpack(v))
+			local event = v.event
+			if type(event) == "function" then
+				event(unpack(v))
 			else
-				AceEvent:TriggerEvent(v.event, unpack(v))
+				AceEvent:TriggerEvent(event, unpack(v))
 			end
 			if Compost then
-				Compost:Reclaim(x)
+				Compost:Reclaim(v)
 			end
 		end
 	end
