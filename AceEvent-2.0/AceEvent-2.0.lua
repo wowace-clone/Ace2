@@ -25,9 +25,12 @@ local AceEvent = Mixin {
 						"UnregisterEvent",
 						"UnregisterAllEvents",
 						"TriggerEvent",
-						"TriggerDelayedEvent",
-						"CancelDelayedEvent",
+						"ScheduleEvent",
+						"CancelScheduledEvent",
+						"TriggerDelayedEvent", -- remove on July 23
+						"CancelDelayedEvent", -- remove on July 23
 						"IsEventRegistered",
+						"IsEventScheduled",
 					   }
 
 local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
@@ -180,13 +183,20 @@ if stage <= 2 then
 	function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 		if stage == 2 then
 			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - `TriggerDelayedEvent' has been replaced with `ScheduleDelayedEvent'. This will cause an error on July 23, 2006.")
+			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - `TriggerDelayedEvent' has been replaced with `ScheduleEvent'. This will cause an error on July 23, 2006.")
 		end
-		self:ScheduleDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+		self:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	end
+	function AceEvent:CancelDelayedEvent(t)
+		if stage == 2 then
+			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
+			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - `CancelDelayedEvent' has been replaced with `CancelScheduledEvent'. This will cause an error on July 23, 2006.")
+		end
+		self:CancelScheduledEvent(t)
 	end
 end
 
-function AceEvent:ScheduleDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	local id
 	if type(event) == "string" then
 		if type(delay) ~= "number" then
@@ -213,7 +223,8 @@ function AceEvent:ScheduleDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7,
 	return t.id
 end
 
-function AceEvent:CancelDelayedEvent(t)
+function AceEvent:CancelScheduledEvent(t)
+	self:argCheck(t, 2, "string", "table")
 	if AceEvent.delayRegistry then
 		for i,v in ipairs(AceEvent.delayRegistry) do
 			if v.id == t then
@@ -221,6 +232,18 @@ function AceEvent:CancelDelayedEvent(t)
 				if Compost then
 					Compost:Reclaim(t)
 				end
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function AceEvent:IsEventScheduled(t)
+	self:argCheck(t, 2, "string", "table")
+	if AceEvent.delayRegistry then
+		for i,v in ipairs(AceEvent.delayRegistry) do
+			if v.id == t then
 				return true
 			end
 		end
