@@ -629,25 +629,17 @@ function AceDB:ToggleActive(state)
 		db.raw.disabled = setmetatable({}, caseInsensitive_mt)
 	end
 	local profile = db.raw.currentProfile[charID]
-	if state ~= nil then
-		if state then
-			if not db.raw.disabled[profile] then
-				return
-			end
-		else
-			if db.raw.disabled[profile] then
-				return
-			end
-		end
+	if state == nil then
+		state = not db.raw.disabled[profile]
+	elseif state == db.raw.disabled[profile] then
+		return
 	end
-	if db.raw.disabled[profile] then
-		db.raw.disabled[profile] = nil
+	db.raw.disabled[profile] = state or nil
+	if state then
 		if type(self.OnEnable) == "function" then
 			self:OnEnable()
 		end
-		return true
 	else
-		db.raw.disabled[profile] = true
 		local current = self.class
 		while true do
 			if current == AceOO.Class then
@@ -665,8 +657,8 @@ function AceDB:ToggleActive(state)
 		if type(self.OnDisable) == "function" then
 			self:OnDisable()
 		end
-		return false
 	end
+	return state
 end
 
 if stage <= 2 then
