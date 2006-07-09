@@ -197,14 +197,18 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		end
 	end
 	
+	local disable
 	if state == nil then
-		state = not self:IsModuleActive(module)
-	elseif state == self:IsModuleActive(module) then
-		return
+		disable = self:IsModuleActive(module)
+	else
+		disable = not state
+		if disable ~= self:IsModuleActive(module) then
+			return
+		end
 	end
 	
 	if type(module.ToggleActive) == "function" then
-		return module:ToggleActive(state)
+		return module:ToggleActive(not disable)
 	elseif AceOO.inherits(self, "AceDB-2.0") then
 		if not self.db or not self.db.raw then
 			self:error("Cannot toggle a module until `RegisterDB' has been called and `ADDON_LOADED' has been fireed.")
@@ -217,9 +221,9 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			self.db.raw.disabledModules[profile] = {}
 		end
 		if type(self.db.raw.disabledModules[profile][module.name]) ~= "table" then
-			self.db.raw.disabledModules[profile][module.name] = state or nil
+			self.db.raw.disabledModules[profile][module.name] = disable or nil
 		end
-		if not state then
+		if not disable then
 			if not next(self.db.raw.disabledModules[profile]) then
 				if Compost then
 					Compost:Reclaim(self.db.raw.disabledModules[profile])
@@ -237,9 +241,9 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		if type(self.disabledModules) ~= "table" then
 			self.disabledModules = {}
 		end
-		self.disabledModules[module.name] = state or nil
+		self.disabledModules[module.name] = disable or nil
 	end
-	if state then
+	if not disable then
 		if type(module.OnEnable) == "function" then
 			module:OnEnable()
 		end
