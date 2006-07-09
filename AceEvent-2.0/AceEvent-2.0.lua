@@ -26,6 +26,7 @@ local AceEvent = Mixin {
 						"UnregisterAllEvents",
 						"TriggerEvent",
 						"TriggerDelayedEvent",
+						"CancelDelayedEvent",
 						"IsEventRegistered",
 					   }
 
@@ -41,14 +42,14 @@ function AceEvent:RegisterEvent(event, method, once)
 	if type(method) == "string" and type(self[method]) ~= "function" then
 		AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
 	end
-
+	
 	if not AceEvent.registry[event] then
 		AceEvent.registry[event] = Compost and Compost:Acquire() or {}
 		AceEvent.frame:RegisterEvent(event)
 	end
-
+	
 	AceEvent.registry[event][self] = method
-
+	
 	if once then
 		if not AceEvent.onceRegistry then
 			AceEvent.onceRegistry = Compost and Compost:Acquire() or {}
@@ -170,6 +171,22 @@ function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, 
 	t.time = GetTime() + delay
 	t.self = self
 	table.insert(AceEvent.delayRegistry, t)
+	return t
+end
+
+function AceEvent:CancelDelayedEvent(t)
+	if AceEvent.delayRegistry then
+		for i,v in ipairs(AceEvent.delayRegistry) do
+			if v == t then
+				table.remove(AceEvent.delayRegistry, i)
+				if Compost then
+					Compost:Reclaim(t)
+				end
+				return true
+			end
+		end
+	end
+	return false
 end
 
 function AceEvent:UnregisterEvent(event)
