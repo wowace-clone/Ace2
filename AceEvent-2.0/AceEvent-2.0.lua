@@ -25,6 +25,7 @@ local AceEvent = Mixin {
 						"UnregisterEvent",
 						"UnregisterAllEvents",
 						"TriggerEvent",
+						"TriggerDelayedEvent",
 						"IsEventRegistered",
 					   }
 
@@ -40,14 +41,14 @@ function AceEvent:RegisterEvent(event, method, once)
 	if type(method) == "string" and type(self[method]) ~= "function" then
 		AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
 	end
-	
+
 	if not AceEvent.registry[event] then
 		AceEvent.registry[event] = Compost and Compost:Acquire() or {}
 		AceEvent.frame:RegisterEvent(event)
 	end
-	
+
 	AceEvent.registry[event][self] = method
-	
+
 	if once then
 		if not AceEvent.onceRegistry then
 			AceEvent.onceRegistry = Compost and Compost:Acquire() or {}
@@ -68,7 +69,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 	AceEvent:argCheck(event, 2, "string")
 	local _G_event = _G.event
 	_G.event = event
-	
+
 	if AceEvent.registry[event] then
 		if AceEvent.onceRegistry and AceEvent.onceRegistry[event] then
 			for obj in pairs(AceEvent.onceRegistry[event]) do
@@ -147,11 +148,11 @@ local function OnUpdate()
 	for i,v in ipairs(delayRegistry) do
 		if v.time <= t then
 			local x = table.remove(delayRegistry, i)
+			i = i - 1
+			AceEvent:TriggerEvent(v.event, unpack(v))
 			if Compost then
 				Compost:Reclaim(x)
 			end
-			i = i - 1
-			AceEvent:TriggerEvent(v.event, unpack(v))
 		end
 	end
 end
@@ -173,7 +174,7 @@ end
 
 function AceEvent:UnregisterEvent(event)
 	AceEvent:argCheck(event, 2, "string")
-	
+
 	if AceEvent.registry[event] and AceEvent.registry[event][self] then
 		AceEvent.registry[event][self] = nil
 	else
@@ -197,7 +198,7 @@ end
 
 function AceEvent:OnEmbedDisable(target)
 	self.UnregisterAllEvents(target)
-	
+
 	if AceEvent.delayRegistry then
 		for i,v in ipairs(AceEvent.delayRegistry) do
 			if v.self == target then
@@ -219,7 +220,7 @@ end
 
 function AceEvent:activate(oldLib, oldDeactivate)
 	AceEvent = self
-	
+
 	if oldLib then
 		self.onceRegistry = oldLib.onceRegistry
 		self.delayRegistry = oldLib.delayRegistry
@@ -242,7 +243,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		delayRegistry = self.delayRegistry
 		self.frame:SetScript("OnUpdate", OnUpdate)
 	end
-	
+
 	self.super.activate(self, oldLib, oldDeactivate)
 	if oldLib then
 		oldDeactivate(oldLib)
