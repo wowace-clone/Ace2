@@ -182,6 +182,114 @@ function AceModuleCore:SetModuleClass(class)
 	self.modulePrototype = class.prototype
 end
 
+function AceModuleCore:ToggleModuleActive(module, state)
+	AceModuleCore:checkArg(module, 2, "table", "string")
+	AceModuleCore:checkArg(state, 3, "nil", "boolean")
+	
+	if type(module) == "string" then
+		if not self:HasModule(module) then
+			AceModuleCore:error("Cannot find module %q", module)
+		end
+		module = self:GetModule(module)
+	else
+		if not self:IsModule(module) then
+			AceModuleCore:error("%q is not a module", module)
+		end
+	end
+	
+	if state == nil then
+		state = not self:IsModuleActive(module)
+	elseif state == self:IsModuleActive(module) then
+		return
+	end
+	
+	if type(module.ToggleActive) == "function" then
+		return module:ToggleActive(state)
+	elseif AceOO.inherits(self, "AceDB-2.0") then
+		if not self.db or not self.db.raw then
+			self:error("Cannot toggle a module until `RegisterDB' has been called and `ADDON_LOADED' has been fireed.")
+		end
+		if type(self.db.raw.disabledModules) ~= "table" then
+			self.db.raw.disabledModules = {}
+		end
+		local _,profile = self:GetProfile()
+		if type(self.db.raw.disabledModules[profile]) ~= "table" then
+			self.db.raw.disabledModules[profile] = {}
+		end
+		if type(self.db.raw.disabledModules[profile][module.name]) ~= "table" then
+			self.db.raw.disabledModules[profile][module.name] = state or nil
+		end
+		if not state then
+			if not next(self.db.raw.disabledModules[profile]) then
+				if Compost then
+					Compost:Reclaim(self.db.raw.disabledModules[profile])
+				end
+				self.db.raw.disabledModules[profile] = nil
+			end
+			if not next(self.db.raw.disabledModules) then
+				if Compost then
+					Compost:Reclaim(self.db.raw.disabledModules)
+				end
+				self.db.raw.disabledModules = nil
+			end
+		end
+	else
+		if type(self.disabledModules) ~= "table" then
+			self.disabledModules = {}
+		end
+		self.disabledModules[module.name] = state or nil
+	end
+	if state then
+		if type(module.OnEnable) == "function" then
+			module:OnEnable()
+		end
+	else
+		local current = module.class
+		while true do
+			if current == AceOO.Class then
+				break
+			end
+			if current.mixins then
+				for mixin in pairs(current.mixins) do
+					if type(mixin.OnEmbedDisable) == "function" then
+						mixin:OnEmbedDisable(self)
+					end
+				end
+			end
+			current = current.super
+		end
+		if type(module.OnDisable) == "function" then
+			module:OnDisable()
+		end
+		return false
+	end
+	return state
+end
+
+function AceModuleCore:IsModuleActive(name)
+	AceModuleCore:checkArg(module, 2, "table", "string")
+	
+	if type(module) == "string" then
+		if not self:HasModule(module) then
+			AceModuleCore:error("Cannot find module %q", module)
+		end
+		module = self:GetModule(module)
+	else
+		if not self:IsModule(module) then
+			AceModuleCore:error("%q is not a module", module)
+		end
+	end
+	
+	if type(module.IsActive) == "function" then
+		return module:IsActive()
+	elseif AceOO.inherits(self, "AceDB-2.0") then
+		local _,profile = self:GetProfile()
+		return not self.db or not self.db.raw or not self.db.raw.disabledModules or not self.db.raw.disabledModules[profile] or not self.db.raw.disabledModules[profile][module.name]
+	else
+		return not self.disabledModules or not self.disabledModules[module.name]
+	end
+end
+
 function AceModuleCore:OnInstanceInit(target)
 	if target.modules then
 		AceModuleCore:error("OnInstanceInit cannot be called twice")
