@@ -27,6 +27,7 @@ local MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Active|r", [false] = "|cffff00
 local SET_PROFILE = "Set profile for this addon"
 local SET_PROFILE_USAGE = "{char || class || realm || <profile name>}"
 local PROFILE = "Profile"
+local PLAYER_OF_REALM = "%s of %s"
 -- localize --
 
 local AceOO = AceLibrary("AceOO-2.0")
@@ -88,7 +89,6 @@ local function inheritDefaults(t, defaults)
 	return t
 end
 
-local charID = UnitName("player") .. " of " .. GetRealmName()
 local _,race = UnitRace("player")
 local faction
 if race == "Orc" or race == "Scourge" or race == "Troll" or race == "Tauren" then
@@ -96,8 +96,13 @@ if race == "Orc" or race == "Scourge" or race == "Troll" or race == "Tauren" the
 else
 	faction = FACTION_ALLIANCE
 end
+local charID = string.format(PLAYER_OF_REALM, UnitName("player"), (string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1")))
 local realmID = GetRealmName() .. " - " .. faction
 local classID = UnitClass("player")
+
+AceDB.CHAR_ID = charID
+AceDB.REALM_ID = realmID
+AceDB.CLASS_ID = classID
 
 local caseInsensitive_mt = {
 	__index = function(self, key)
