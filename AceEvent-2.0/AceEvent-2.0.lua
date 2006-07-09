@@ -167,7 +167,8 @@ function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, 
 	local t = Compost and Compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
 	t.event = event
 	t.time = GetTime() + delay
-	table.insert(self.delayRegistry, t)
+	t.self = self
+	table.insert(AceEvent.delayRegistry, t)
 end
 
 function AceEvent:UnregisterEvent(event)
@@ -196,6 +197,18 @@ end
 
 function AceEvent:OnEmbedDisable(target)
 	self.UnregisterAllEvents(target)
+	
+	if AceEvent.delayRegistry then
+		for i,v in ipairs(AceEvent.delayRegistry) do
+			if v.self == target then
+				local x = table.remove(AceEvent.delayRegistry, i)
+				if Compost then
+					Compost:Reclaim(x)
+				end
+				i = i - 1
+			end
+		end
+	end
 end
 
 function AceEvent:EnableDebugging()
