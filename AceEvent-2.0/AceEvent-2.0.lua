@@ -150,7 +150,11 @@ local function OnUpdate()
 		if v.time <= t then
 			local x = table.remove(delayRegistry, i)
 			i = i - 1
-			AceEvent:TriggerEvent(v.event, unpack(v))
+			if type(v.event) == "function" then
+				v.event(unpack(v))
+			else
+				AceEvent:TriggerEvent(v.event, unpack(v))
+			end
 			if Compost then
 				Compost:Reclaim(x)
 			end
@@ -159,7 +163,7 @@ local function OnUpdate()
 end
 
 function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	AceEvent:argCheck(event, 2, "string")
+	AceEvent:argCheck(event, 2, "string", "function")
 	AceEvent:argCheck(delay, 3, "number")
 	if not AceEvent.delayRegistry then
 		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
