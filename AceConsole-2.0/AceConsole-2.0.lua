@@ -371,6 +371,11 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 				return '"min" must be less than "max"', position
 			end
 		end
+		if options.step then
+			if type(options.step) ~= "number" then
+				return '"step" must be a number', position
+			end
+		end
 		if options.isPercent and options.isPercent ~= true then
 			return '"isPercent" must either be nil, true, or false', position
 		end
@@ -866,6 +871,16 @@ local function handlerFunc(self, chat, msg, options)
 
 				if arg >= min and arg <= max then
 					good = true
+				end
+				
+				if type(options.step) == "number" then
+					local step = options.step
+					arg = math.floor((x - min) / step + 0.5) * step + min
+					if arg > max then
+						arg = max
+					elseif arg < min then
+						arg = min
+					end
 				end
 			end
 			if not good then
