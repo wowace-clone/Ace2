@@ -101,7 +101,7 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 	module.name = name
 	module.title = name
 
-	AceModuleCore.totalModules[module] = true
+	AceModuleCore.totalModules[module] = self
 
 	for k in pairs(tmp) do
 		tmp[k] = nil
@@ -281,7 +281,17 @@ end
 
 function AceModuleCore:IsModuleActive(module)
 	AceModuleCore:argCheck(module, 2, "table", "string")
-
+	
+	if AceModuleCore == self then
+		self:argCheck(module, 2, "table")
+		
+		local core = AceModuleCore.totalModules[module]
+		if not core then
+			self:error("Bad argument #2 to `IsModuleActive'. Not a module")
+		end
+		return core:IsModuleActive(module)
+	end
+	
 	if type(module) == "string" then
 		if not self:HasModule(module) then
 			AceModuleCore:error("Cannot find module %q", module)

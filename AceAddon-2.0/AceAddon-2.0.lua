@@ -114,7 +114,7 @@ end
 
 local function RegisterOnEnable(self)
 	if type(self.OnEnable) == "function" then
-		if type(self.IsActive) ~= "function" or self:IsActive() then
+		if (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
 			if AceAddon.playerLoginFired then
 				self:OnEnable()
 			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
@@ -252,7 +252,7 @@ function AceAddon:PLAYER_LOGIN()
 		while table.getn(self.addonsToOnEnable) > 0 do
 			local addon = table.remove(self.addonsToOnEnable, 1)
 			if type(addon.OnEnable) == "function" then
-				if type(addon.IsActive) ~= "function" or addon:IsActive() then
+				if (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
 					addon:OnEnable()
 				end
 			end
@@ -289,10 +289,8 @@ function AceAddon.prototype:ToString()
 	else
 		x = "<" .. tostring(self.class) .. " instance>"
 	end
-	if type(self.IsActive) == "function" then
-		if not self:IsActive() then
-			x = x .. " " .. STANDBY
-		end
+	if (type(self.IsActive) == "function" and not self:IsActive()) or (AceModuleCore and AceModuleCore:IsModule(addon) and AceModuleCore:IsModuleActive(addon)) then
+		x = x .. " " .. STANDBY
 	end
 	return x
 end
