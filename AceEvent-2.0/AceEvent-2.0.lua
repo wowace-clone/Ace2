@@ -346,6 +346,10 @@ function AceEvent:EnableDebugging()
 	end
 end
 
+function AceEvent:IsFullyInitialized()
+	return self.postInit or false
+end
+
 function AceEvent:activate(oldLib, oldDeactivate)
 	AceEvent = self
 
@@ -380,16 +384,16 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		local isReload = true
 		local function func()
 			self.postInit = true
-			self:TriggerEvent("AceEvent_PostInitialization")
+			self:TriggerEvent("AceEvent_FullyInitialized")
 			DEFAULT_CHAT_FRAME:AddMessage("alpha")
 			self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 			self:UnregisterEvent("SPELLS_CHANGED")
 		end
 		self:RegisterEvent("MEETINGSTONE_CHANGED", function()
-			self:ScheduleEvent("AceEvent_PostInitialization", func, isReload and 1 or 4)
+			self:ScheduleEvent("AceEvent_FullyInitialized", func, isReload and 1 or 4)
 		end, true)
 		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE", function()
-			self:ScheduleEvent("AceEvent_PostInitialization", func, 0.05)
+			self:ScheduleEvent("AceEvent_FullyInitialized", func, 0.05)
 		end)
 		self:RegisterEvent("SPELLS_CHANGED", function()
 			isReload = false
