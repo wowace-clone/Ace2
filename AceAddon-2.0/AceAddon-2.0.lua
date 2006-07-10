@@ -252,7 +252,9 @@ function AceAddon:PLAYER_LOGIN()
 		while table.getn(self.addonsToOnEnable) > 0 do
 			local addon = table.remove(self.addonsToOnEnable, 1)
 			if type(addon.OnEnable) == "function" then
-				addon:OnEnable()
+				if type(addon.IsActive) ~= "function" or addon:IsActive() then
+					addon:OnEnable()
+				end
 			end
 		end
 		self.addonsToOnEnable = nil
