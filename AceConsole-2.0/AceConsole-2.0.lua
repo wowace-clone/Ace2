@@ -44,6 +44,9 @@ local AceConsole = AceOO.Mixin { "Print", "CustomPrint", "RegisterChatCommand" }
 local _G = getfenv(0)
 
 local function print(text, name, r, g, b, frame, delay)
+	if not text or string.len(text) == 0 then
+		text = " "
+	end
 	if not name or name == AceConsole then
 		(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, 1, delay or 5)
 	else
@@ -61,26 +64,31 @@ function AceConsole:CustomPrint(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a
 			tmp = {}
 		end
 		table.insert(tmp, a1)
-		if a2 ~= nil then table.insert(tmp, tostring(a2))
-		if a3 ~= nil then table.insert(tmp, tostring(a3))
-		if a4 ~= nil then table.insert(tmp, tostring(a4))
-		if a5 ~= nil then table.insert(tmp, tostring(a5))
-		if a6 ~= nil then table.insert(tmp, tostring(a6))
-		if a7 ~= nil then table.insert(tmp, tostring(a7))
-		if a8 ~= nil then table.insert(tmp, tostring(a8))
-		if a9 ~= nil then table.insert(tmp, tostring(a9))
-		if a10 ~= nil then table.insert(tmp, tostring(a10))
-		if a11 ~= nil then table.insert(tmp, tostring(a11))
-		if a12 ~= nil then table.insert(tmp, tostring(a12))
-		if a13 ~= nil then table.insert(tmp, tostring(a13))
-		if a14 ~= nil then table.insert(tmp, tostring(a14))
-		if a15 ~= nil then table.insert(tmp, tostring(a15))
-		if a16 ~= nil then table.insert(tmp, tostring(a16))
-		if a17 ~= nil then table.insert(tmp, tostring(a17))
-		if a18 ~= nil then table.insert(tmp, tostring(a18))
-		if a19 ~= nil then table.insert(tmp, tostring(a19))
-		if a20 ~= nil then table.insert(tmp, tostring(a20))
-		end end end end end end end end end end end end end end end end end end end
+		table.insert(tmp, a2)
+		table.insert(tmp, a3)
+		table.insert(tmp, a4)
+		table.insert(tmp, a5)
+		table.insert(tmp, a6)
+		table.insert(tmp, a7)
+		table.insert(tmp, a8)
+		table.insert(tmp, a9)
+		table.insert(tmp, a10)
+		table.insert(tmp, a11)
+		table.insert(tmp, a12)
+		table.insert(tmp, a13)
+		table.insert(tmp, a14)
+		table.insert(tmp, a15)
+		table.insert(tmp, a16)
+		table.insert(tmp, a17)
+		table.insert(tmp, a18)
+		table.insert(tmp, a19)
+		table.insert(tmp, a20)
+		while tmp[table.getn(tmp)] == nil do
+			table.remove(tmp)
+		end
+		for k = 1, table.getn(tmp) do
+			tmp[k] = tostring(tmp[k])
+		end
 		print(table.concat(tmp, " "), self, r, g, b, frame or self.printFrame, delay)
 		for k,v in tmp do
 			tmp[k] = nil
