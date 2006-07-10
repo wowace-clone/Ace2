@@ -20,7 +20,17 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
-local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "IterateModules", "SetModuleMixins", "SetModuleClass", "IsModuleActive", "ToggleModuleActive"}
+local AceModuleCore = AceOO.Mixin {
+									"NewModule",
+									"HasModule",
+									"GetModule",
+									"IsModule",
+									"IterateModules",
+									"SetModuleMixins", 
+									"SetModuleClass",
+									"IsModuleActive",
+									"ToggleModuleActive"
+								  }
 
 local function getlibrary(lib)
 	if type(lib) == "string" then
@@ -256,7 +266,7 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedDisable) == "function" then
-						mixin:OnEmbedDisable(self)
+						mixin:OnEmbedDisable(module)
 					end
 				end
 			end
@@ -265,9 +275,8 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		if type(module.OnDisable) == "function" then
 			module:OnDisable()
 		end
-		return false
 	end
-	return state
+	return not disable
 end
 
 function AceModuleCore:IsModuleActive(module)
