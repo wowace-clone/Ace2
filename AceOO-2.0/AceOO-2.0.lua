@@ -7,7 +7,7 @@ Website: http://www.wowace.com/
 Documentation: http://wiki.wowace.com/index.php/AceOO-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceOO-2.0
 Description: Library to provide an object-orientation framework.
-Dependencies: AceLibrary
+Dependencies: AceLibrary, Compost-2.0 (optional)
 ]]
 
 local MAJOR_VERSION = "AceOO-2.0"
@@ -16,6 +16,8 @@ local MINOR_VERSION = "$Revision$"
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
+
+local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
 
 local AceOO = {
 	error = AceLibrary.error,
@@ -65,7 +67,7 @@ local Factory
 do
 	local function new(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
 							a13, a14, a15, a16, a17, a18, a19, a20)
-		local t = {}
+		local t = Compost and Compost:Acquire() or {}
 		local uid = getuid(t)
 		local l = getlibrary
 		obj:init(t, l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7),
@@ -157,7 +159,10 @@ do
 		if not rawget(newobject, 'uid') then
 			newobject.uid = getuid(newobject)
 		end
-		local mt = {
+		local mt = Compost and Compost:AcquireHash(
+			'__index', parent,
+			'__tostring', objtostring
+		) or {
 			__index = parent,
 			__tostring = objtostring,
 		}
@@ -187,7 +192,7 @@ local function validateInterface(object, interface)
 	end
 	if type(object.class) == "table" and rawequal(object.class.prototype, object) then
 		if not object.class.interfaces then
-			rawset(object.class, 'interfaces', {})
+			rawset(object.class, 'interfaces', Compost and Compost:Acquire() or {})
 		end
 		object.class.interfaces[interface] = true
 	elseif type(object.class) == "table" and type(object.class.prototype) == "table" then
@@ -436,7 +441,7 @@ do
 		end
 		
 		local o = self.prototype
-		local newobj = {}
+		local newobj = Compost and Compost:Acquire() or {}
 		if o.class and o.class.instancemeta then
 			setmetatable(newobj, o.class.instancemeta)
 		else
@@ -505,7 +510,7 @@ do
 		for i,v in ipairs(total) do
 			if inherits(v, Mixin) and v.class then
 				if not newclass.mixins then
-					newclass.mixins = {}
+					newclass.mixins = Compost and Compost:Acquire() or {}
 				end
 				if newclass.mixins[v] then
 					AceOO:error("Cannot explicitly inherit from the same mixin twice")
@@ -513,7 +518,7 @@ do
 				newclass.mixins[v] = true
 			elseif inherits(v, Interface) and v.class then
 				if not newclass.interfaces then
-					newclass.interfaces = {}
+					newclass.interfaces = Compost and Compost:Acquire() or {}
 				end
 				if newclass.interfaces[v] then
 					AceOO:error("Cannot explicitly inherit from the same interface twice")
@@ -539,7 +544,10 @@ do
 		
 		newclass.super = parent
 		
-		newclass.prototype = setmetatable(total, {
+		newclass.prototype = setmetatable(total, Compost and Compost:AcquireHash(
+			'__index',  parent.prototype,
+			'__tostring', protostring,
+		) or {
 			__index = parent.prototype,
 			__tostring = protostring,
 		})
@@ -600,7 +608,7 @@ do
 			for mixin in pairs(newclass.mixins) do
 				if mixin.interfaces then
 					if not newclass.interfaces then
-						newclass.interfaces = {}
+						newclass.interfaces = Compost and Compost:Acquire() or {}
 					end
 					for interface in pairs(mixin.interfaces) do
 						newclass.interfaces[interface] = true
@@ -736,7 +744,7 @@ do
 				self:embed(target)
 			end
 		else
-			self.embedList = setmetatable({}, {__mode="k"})
+			self.embedList = setmetatable(Compost and Compost:Acquire() or {}, Compost and Compost:AcquireHash('__mode', 'k') or {__mode="k"})
 		end
 	end
 	
@@ -761,9 +769,12 @@ do
 		local interfaces
 		if a1 then
 			local l = getlibrary
-			interfaces = { l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7),
-				l(a8), l(a9), l(a10), l(a11), l(a12), l(a13), l(a14), l(a15),
-				l(a16), l(a17), l(a18), l(a19), l(a20) }
+			interfaces = Compost and Compost:Acquire(l(a1), l(a2), l(a3), l(a4),
+				l(a5), l(a6), l(a7), l(a8), l(a9), l(a10), l(a11), l(a12),
+				l(a13), l(a14), l(a15), l(a16), l(a17), l(a18), l(a19), l(a20))
+				or { l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7), l(a8),
+				l(a9), l(a10), l(a11), l(a12), l(a13), l(a14), l(a15), l(a16),
+				l(a17), l(a18), l(a19), l(a20) }
 			for _,v in ipairs(interfaces) do
 				if not v.class or not inherits(v, Interface) then
 					AceOO:error("Mixins can inherit only from interfaces")
@@ -838,7 +849,7 @@ do
 		local l = getlibrary
 		a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7), l(a8), l(a9), l(a10), l(a11), l(a12), l(a13), l(a14), l(a15), l(a16), l(a17), l(a18), l(a19), l(a20)
 		if a1 then
-			self.superinterfaces = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
+			self.superinterfaces = Compost and Compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
 			for k,v in ipairs(self.superinterfaces) do
 				if not inherits(v, Interface) or not v.class then
 					AceOO:error('Cannot provide a non-Interface to inherit from')
@@ -868,7 +879,6 @@ do
 	local function newindex(k, v)
 		AceOO:error('Attempt to modify a read only class.')
 	end
-	local t
 	local function ts(bit)
 		if type(bit) ~= "table" then
 			return tostring(bit)
@@ -880,6 +890,7 @@ do
 			return tostring(bit)
 		end
 	end
+	local t
 	local function getcomplexuid(sc, m1, m2, m3, m4, m5, m6, m7, m8, m9,
 		m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
 		if not t then t = {} end
@@ -970,5 +981,11 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 end
 
-AceLibrary:Register(AceOO, MAJOR_VERSION, MINOR_VERSION, activate)
+local function external(self, major, instance)
+	if major == "Compost-2.0" then
+		Compost = instance
+	end
+end
+
+AceLibrary:Register(AceOO, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 AceOO = AceLibrary(MAJOR_VERSION)
