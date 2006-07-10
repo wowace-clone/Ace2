@@ -1479,23 +1479,27 @@ function AceConsole:ChatEdit_OnTabPressed()
 		end
 	end
 	
-	if not validArgs.args then return end
-	
-	local matches = {}
-	for arg in validArgs.args do
-		if string.find(string.lower(arg), string.lower(word), nil, 1) == 1 then
-			table.insert(matches, arg)
-		end	
-	end
-	local numMatches = table.getn(matches)
-	if numMatches == 1 then
-		Complete(matches[1], this, left, string.len(word))
-		this:Insert(" ")
-	elseif numMatches > 1 then
-		printUsage(validArgs.handler, realOptions, validArgs, path, argwork, true, LCS(matches))
-		Complete(LCS(matches), this, left, string.len(word))
-	else
+	if not validArgs.args then
 		printUsage(validArgs.handler, realOptions, validArgs, path, argwork)
+	else
+		local matches = {}
+		for arg in validArgs.args do
+			if string.find(string.lower(arg), string.lower(word), nil, 1) == 1 then
+				table.insert(matches, arg)
+			end	
+		end
+		local numMatches = table.getn(matches)
+		if validArgs.type == "group" then
+			if numMatches == 1 then
+				Complete(matches[1], this, left, string.len(word))
+				this:Insert(" ")
+			elseif numMatches > 1 then
+				printUsage(validArgs.handler, realOptions, validArgs, path, argwork, true, LCS(matches))
+				Complete(LCS(matches), this, left, string.len(word))
+			else
+				printUsage(validArgs.handler, realOptions, validArgs, path, argwork)
+			end
+		end
 	end
 end
 
