@@ -1450,18 +1450,15 @@ function AceConsole:ChatEdit_OnTabPressed()
 	local pos = GetCaretPos(this)
 	local text = this:GetText()
 	
-	local left = string.find(string.sub(text, 0, pos), "[%S]+$")
-	if not left then return end	
-
 	local _, _, cmd  = string.find(text, "^([%S]+)")
+	local left = string.find(string.sub(text, 0, pos), "[%S]+$") or string.len(cmd)
 	
 	local _, _, word = string.find(string.sub(text, left, pos), "^([%S]+)")
-	if not word or word == "" then return end
 	
 	local realOptions, validArgs, path, argwork
 	if string.sub(cmd, 1, 1) == "/" then
 		if left == 1 and word == cmd then
-			self.hooks[this].OnTabPressed.orig()
+			self.hooks.ChatEdit_OnTabPressed.orig()
 			return
 		else
 			for name in pairs(SlashCmdList) do --global
