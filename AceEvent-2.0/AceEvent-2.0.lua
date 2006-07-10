@@ -198,10 +198,24 @@ end
 
 function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	local id
-	if type(event) == "string" then
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			local i = 0
+			while true do
+				i = i + 1
+				local v = delayRegistry[i]
+				if not v then
+					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+					return
+				elseif v == event then
+					table.remove(delayRegistry, i)
+					break
+				end
+			end
+		end
 		if type(delay) ~= "number" then
 			AceEvent:argCheck(delay, 3, "number", "string", "function")
-			AceEvent:argCheck(delay, 4, "number")
+			AceEvent:argCheck(a1, 4, "number")
 			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
 			self:CancelDelayedEvent(id)
 		end
@@ -214,7 +228,37 @@ function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9
 		delayRegistry = AceEvent.delayRegistry
 		AceEvent.frame:SetScript("OnUpdate", OnUpdate)
 	end
-	local t = Compost and Compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
+	local t
+	if type(id) == "table" then
+		for k in pairs(id) do
+			id[k] = nil
+		end
+		table.setn(id, 0)
+		t = id
+	else
+		t = Compost and Compost:Acquire() or {}
+	end
+	t.n = 0
+	table.insert(t, a1)
+	table.insert(t, a2)
+	table.insert(t, a3)
+	table.insert(t, a4)
+	table.insert(t, a5)
+	table.insert(t, a6)
+	table.insert(t, a7)
+	table.insert(t, a8)
+	table.insert(t, a9)
+	table.insert(t, a10)
+	table.insert(t, a11)
+	table.insert(t, a12)
+	table.insert(t, a13)
+	table.insert(t, a14)
+	table.insert(t, a15)
+	table.insert(t, a16)
+	table.insert(t, a17)
+	table.insert(t, a18)
+	table.insert(t, a19)
+	table.insert(t, a20)
 	t.event = event
 	t.time = GetTime() + delay
 	t.self = self
@@ -224,7 +268,7 @@ function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9
 end
 
 function AceEvent:CancelScheduledEvent(t)
-	self:argCheck(t, 2, "string", "table")
+	AceEvent:argCheck(t, 2, "string", "table")
 	if AceEvent.delayRegistry then
 		for i,v in ipairs(AceEvent.delayRegistry) do
 			if v.id == t then
@@ -240,7 +284,7 @@ function AceEvent:CancelScheduledEvent(t)
 end
 
 function AceEvent:IsEventScheduled(t)
-	self:argCheck(t, 2, "string", "table")
+	AceEvent:argCheck(t, 2, "string", "table")
 	if AceEvent.delayRegistry then
 		for i,v in ipairs(AceEvent.delayRegistry) do
 			if v.id == t then
