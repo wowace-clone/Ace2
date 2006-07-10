@@ -20,7 +20,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
-local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "IterateModules", "SetModuleMixins", "SetModuleClass"}
+local AceModuleCore = AceOO.Mixin {"NewModule", "HasModule", "GetModule", "IsModule", "IterateModules", "SetModuleMixins", "SetModuleClass", "IsModuleActive", "ToggleModuleActive"}
 
 local function getlibrary(lib)
 	if type(lib) == "string" then
@@ -42,7 +42,7 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 	if self.modules[name] then
 		AceModuleCore:error("The module %q has already been registered", name)
 	end
-	
+
 	if not tmp then
 		tmp = {}
 	end
@@ -70,7 +70,7 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 	for k,v in ipairs(tmp) do
 		tmp[k] = getlibrary(v)
 	end
-	
+
 	if self.moduleMixins then
 		for _,mixin in ipairs(self.moduleMixins) do
 			local exists = false
@@ -85,14 +85,14 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 			end
 		end
 	end
-	
+
 	local module = AceOO.Classpool(self.moduleClass, unpack(tmp)):new(name)
 	self.modules[name] = module
 	module.name = name
 	module.title = name
-	
+
 	AceModuleCore.totalModules[module] = true
-	
+
 	for k in pairs(tmp) do
 		tmp[k] = nil
 	end
@@ -122,7 +122,7 @@ function AceModuleCore:HasModule(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a
 	if a19 then if not self.modules[a19] then return false end
 	if a20 then if not self.modules[a20] then return false end
 	end end end end end end end end end end end end end end end end end end end end
-	
+
 	return true
 end
 
@@ -161,7 +161,7 @@ function AceModuleCore:SetModuleMixins(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 	elseif next(self.modules) then
 		AceModuleCore:error('Cannot call "SetModuleMixins" after "NewModule" has been called.')
 	end
-	
+
 	self.moduleMixins = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
 	for k,v in ipairs(self.moduleMixins) do
 		self.moduleMixins[k] = getlibrary(v)
@@ -183,9 +183,9 @@ function AceModuleCore:SetModuleClass(class)
 end
 
 function AceModuleCore:ToggleModuleActive(module, state)
-	AceModuleCore:checkArg(module, 2, "table", "string")
-	AceModuleCore:checkArg(state, 3, "nil", "boolean")
-	
+	AceModuleCore:argCheck(module, 2, "table", "string")
+	AceModuleCore:argCheck(state, 3, "nil", "boolean")
+
 	if type(module) == "string" then
 		if not self:HasModule(module) then
 			AceModuleCore:error("Cannot find module %q", module)
@@ -196,7 +196,7 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			AceModuleCore:error("%q is not a module", module)
 		end
 	end
-	
+
 	local disable
 	if state == nil then
 		disable = self:IsModuleActive(module)
@@ -206,12 +206,12 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			return
 		end
 	end
-	
+
 	if type(module.ToggleActive) == "function" then
 		return module:ToggleActive(not disable)
 	elseif AceOO.inherits(self, "AceDB-2.0") then
 		if not self.db or not self.db.raw then
-			self:error("Cannot toggle a module until `RegisterDB' has been called and `ADDON_LOADED' has been fireed.")
+			AceModuleCore:error("Cannot toggle a module until `RegisterDB' has been called and `ADDON_LOADED' has been fireed.")
 		end
 		if type(self.db.raw.disabledModules) ~= "table" then
 			self.db.raw.disabledModules = {}
@@ -270,9 +270,9 @@ function AceModuleCore:ToggleModuleActive(module, state)
 	return state
 end
 
-function AceModuleCore:IsModuleActive(name)
-	AceModuleCore:checkArg(module, 2, "table", "string")
-	
+function AceModuleCore:IsModuleActive(module)
+	AceModuleCore:argCheck(module, 2, "table", "string")
+
 	if type(module) == "string" then
 		if not self:HasModule(module) then
 			AceModuleCore:error("Cannot find module %q", module)
@@ -283,7 +283,7 @@ function AceModuleCore:IsModuleActive(name)
 			AceModuleCore:error("%q is not a module", module)
 		end
 	end
-	
+
 	if type(module.IsActive) == "function" then
 		return module:IsActive()
 	elseif AceOO.inherits(self, "AceDB-2.0") then
@@ -299,7 +299,7 @@ function AceModuleCore:OnInstanceInit(target)
 		AceModuleCore:error("OnInstanceInit cannot be called twice")
 	end
 	target.modules = {}
-	
+
 	target.moduleClass = AceOO.Class("AceAddon-2.0")
 	target.modulePrototype = target.moduleClass.prototype
 end
@@ -308,9 +308,9 @@ AceModuleCore.OnManualEmbed = AceModuleCore.OnInstanceInit
 
 local function activate(self, oldLib, oldDeactivate)
 	AceModuleCore = self
-	
+
 	self.super.activate(self, oldLib, oldDeactivate)
-	
+
 	if oldLib then
 		self.totalModules = oldLib.totalModules
 	end
