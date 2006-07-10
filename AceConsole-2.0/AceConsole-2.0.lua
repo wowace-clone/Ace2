@@ -1467,6 +1467,8 @@ function AceConsole:ChatEdit_OnTabPressed()
 		end
 	end
 	
+	if not validArgs then return end
+	
 	if not validArgs.args then
 		printUsage(validArgs.handler, realOptions, validArgs, path, argwork)
 	else
