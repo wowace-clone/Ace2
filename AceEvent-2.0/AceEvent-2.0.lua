@@ -27,6 +27,7 @@ local AceEvent = Mixin {
 						"TriggerEvent",
 						"ScheduleEvent",
 						"CancelScheduledEvent",
+						"CancelAllScheduledEvents",
 						"TriggerDelayedEvent", -- remove on July 23
 						"CancelDelayedEvent", -- remove on July 23
 						"IsEventRegistered",
@@ -311,17 +312,7 @@ function AceEvent:UnregisterAllEvents()
 	end
 end
 
-function AceEvent:IsEventRegistered(event)
-	AceEvent:argCheck(event, 2, "string")
-	if AceEvent.registry[event] and AceEvent.registry[event][self] then
-		return true, AceEvent.registry[event][self]
-	end
-	return false, nil
-end
-
-function AceEvent:OnEmbedDisable(target)
-	self.UnregisterAllEvents(target)
-
+function AceEvent:CancelAllScheduledEvents()
 	if AceEvent.delayRegistry then
 		for i,v in ipairs(AceEvent.delayRegistry) do
 			if v.self == target then
@@ -333,6 +324,20 @@ function AceEvent:OnEmbedDisable(target)
 			end
 		end
 	end
+end
+
+function AceEvent:IsEventRegistered(event)
+	AceEvent:argCheck(event, 2, "string")
+	if AceEvent.registry[event] and AceEvent.registry[event][self] then
+		return true, AceEvent.registry[event][self]
+	end
+	return false, nil
+end
+
+function AceEvent:OnEmbedDisable(target)
+	self.UnregisterAllEvents(target)
+
+	self.CancelAllScheduledEvents(target)
 end
 
 function AceEvent:EnableDebugging()
@@ -350,8 +355,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.registry = oldLib.registry
 		self.frame = oldLib.frame
 		self.debugTable = oldLib.debugTable
-		self.pew = oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
-		self.postInit = oldLib.postInit or self.pew and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
+		self.postInit = oldLib.postInit or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
 	end
 	if not self.registry then
 		self.registry = {}
@@ -369,31 +373,26 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.frame:SetScript("OnUpdate", OnUpdate)
 	end
 	
-	if not self.pew then
-		self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
-			self.pew = true
-			if self.postInit then
-				DEFAULT_CHAT_FRAME:AddMessage("alpha")
-				self:TriggerEvent("AceEvent_PostInitialization")
-			end
-		end, true)
-	end
+	self:UnregisterAllEvents()
+	self:CancelAllScheduledEvents()
+	
 	if not self.postInit then
-		local func = function()
+		local isReload = true
+		local function func()
 			self.postInit = true
-			self:UnregisterEvent("UPDATE_CHAT_COLOR")
-			if self.pew then
-				DEFAULT_CHAT_FRAME:AddMessage("bravo")
-				self:TriggerEvent("AceEvent_PostInitialization")
-			end
+			self:TriggerEvent("AceEvent_PostInitialization")
+			DEFAULT_CHAT_FRAME:AddMessage("alpha")
+			self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+			self:UnregisterEvent("SPELLS_CHANGED")
 		end
-		local x
-		self:RegisterEvent("UPDATE_CHAT_COLOR", function()
-			if x then
-				x = self:ScheduleEvent(x, func, 1)
-			else
-				x = self:ScheduleEvent(func, 1)
-			end
+		self:RegisterEvent("MEETINGSTONE_CHANGED", function()
+			self:ScheduleEvent("AceEvent_PostInitialization", func, isReload and 1 or 4)
+		end, true)
+		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE", function()
+			self:ScheduleEvent("AceEvent_PostInitialization", func, 0.05)
+		end)
+		self:RegisterEvent("SPELLS_CHANGED", function()
+			isReload = false
 		end)
 	end
 	
