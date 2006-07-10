@@ -546,7 +546,7 @@ do
 		
 		newclass.prototype = setmetatable(total, Compost and Compost:AcquireHash(
 			'__index',  parent.prototype,
-			'__tostring', protostring,
+			'__tostring', protostring
 		) or {
 			__index = parent.prototype,
 			__tostring = protostring,
