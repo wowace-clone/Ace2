@@ -350,6 +350,8 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.registry = oldLib.registry
 		self.frame = oldLib.frame
 		self.debugTable = oldLib.debugTable
+		self.pew = oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
+		self.postInit = oldLib.postInit or self.pew and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
 	end
 	if not self.registry then
 		self.registry = {}
@@ -366,7 +368,35 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		delayRegistry = self.delayRegistry
 		self.frame:SetScript("OnUpdate", OnUpdate)
 	end
-
+	
+	if not self.pew then
+		self:RegisterEvent("PLAYER_ENTERING_WORLD", function()
+			self.pew = true
+			if self.postInit then
+				DEFAULT_CHAT_FRAME:AddMessage("alpha")
+				self:TriggerEvent("AceEvent_PostInitialization")
+			end
+		end, true)
+	end
+	if not self.postInit then
+		local func = function()
+			self.postInit = true
+			self:UnregisterEvent("UPDATE_CHAT_COLOR")
+			if self.pew then
+				DEFAULT_CHAT_FRAME:AddMessage("bravo")
+				self:TriggerEvent("AceEvent_PostInitialization")
+			end
+		end
+		local x
+		self:RegisterEvent("UPDATE_CHAT_COLOR", function()
+			if x then
+				x = self:ScheduleEvent(x, func, 1)
+			else
+				x = self:ScheduleEvent(func, 1)
+			end
+		end)
+	end
+	
 	self.super.activate(self, oldLib, oldDeactivate)
 	if oldLib then
 		oldDeactivate(oldLib)
