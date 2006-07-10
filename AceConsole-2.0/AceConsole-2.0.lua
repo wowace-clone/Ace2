@@ -1406,26 +1406,6 @@ function AceConsole:PLAYER_LOGIN()
 	end, "PRINT")
 end
 
-local function GetCaretPos(ebox)
-	local ost = ebox:GetScript("OnTextSet")
-	if ost then ebox:SetScript("OnTextSet", nil) end
-	
-	local text = ebox:GetText()
-	ebox:Insert("\1")
-	local pos = string.find(ebox:GetText(), "\1", 1)
-	ebox:HighlightText(pos-1, pos)
-	ebox:Insert("\0")
-	
-	if ost then ebox:SetScript("OnTextSet", ost) end
-
-	return pos-1
-end
-
-local function Complete(text, ebox, left, len)
-	ebox:HighlightText(left - 1,left + len)
-	ebox:Insert(text)
-end
-
 local function LCS(strings) --returns Least Common Substring
 	local len = 0
 	local numStrings = table.getn(strings)
@@ -1446,11 +1426,19 @@ local function LCS(strings) --returns Least Common Substring
 end
 
 function AceConsole:ChatEdit_OnTabPressed()
-
-	local pos = GetCaretPos(this)
+	local ost = this:GetScript("OnTextSet")
+	if ost then this:SetScript("OnTextSet", nil) end
+	this:Insert("\1")
+	local pos = string.find(this:GetText(), "\1", 1) - 1
+	this:HighlightText(pos, pos+1)
+	this:Insert("\0")
+	if ost then this:SetScript("OnTextSet", ost) end
+	
 	local text = this:GetText()
 	
 	local _, _, cmd  = string.find(text, "^([%S]+)")
+	if not cmd then return end
+	
 	local left = string.find(string.sub(text, 0, pos), "[%S]+$") or string.len(cmd)
 	
 	local _, _, word = string.find(string.sub(text, left, pos), "^([%S]+)")
@@ -1491,11 +1479,13 @@ function AceConsole:ChatEdit_OnTabPressed()
 		local numMatches = table.getn(matches)
 		if validArgs.type == "group" then
 			if numMatches == 1 then
-				Complete(matches[1], this, left, string.len(word))
+				this:HighlightText(left - 1, left + string.len(word))
+				this:Insert(matches[1])
 				this:Insert(" ")
 			elseif numMatches > 1 then
 				printUsage(validArgs.handler, realOptions, validArgs, path, argwork, true, LCS(matches))
-				Complete(LCS(matches), this, left, string.len(word))
+				this:HighlightText(left - 1, left + string.len(word))
+				this:Insert(LCS(matches))
 			else
 				printUsage(validArgs.handler, realOptions, validArgs, path, argwork)
 			end
