@@ -171,7 +171,7 @@ local function OnUpdate()
 			else
 				AceEvent:TriggerEvent(event, unpack(v))
 			end
-			if v.repeatDelay and Compost then
+			if not v.repeatDelay and Compost then
 				Compost:Reclaim(v)
 			end
 		end
