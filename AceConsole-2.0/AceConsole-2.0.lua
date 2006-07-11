@@ -1378,7 +1378,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 
 	if AceHook then
 		if not self.hooks then
-			AceConsole:Hook("ChatEdit_OnTabPressed")
+			AceConsole:Hook("ChatEdit_OnLoad")
 		end
 	end
 		
@@ -1406,6 +1406,10 @@ function AceConsole:PLAYER_LOGIN()
 	end, "PRINT")
 end
 
+function AceConsole:ChatEdit_OnLoad()
+	AceConsole:HookScript(this, "OnTabPressed")
+end
+
 local function LCS(strings) --returns Least Common Substring
 	local len = 0
 	local numStrings = table.getn(strings)
@@ -1425,7 +1429,8 @@ local function LCS(strings) --returns Least Common Substring
 	return strings[1]
 end
 
-function AceConsole:ChatEdit_OnTabPressed()
+function AceConsole:OnTabPressed()
+	--Get the position of the cursor
 	local ost = this:GetScript("OnTextSet")
 	if ost then this:SetScript("OnTextSet", nil) end
 	this:Insert("\1")
@@ -1437,7 +1442,7 @@ function AceConsole:ChatEdit_OnTabPressed()
 	local text = this:GetText()
 	
 	local _, _, cmd  = string.find(text, "^([%S]+)")
-	if not cmd then return end
+	if not cmd then return self.hooks[this].OnTabPressed.orig() end
 	
 	local left = string.find(string.sub(text, 0, pos), "[%S]+$") or string.len(cmd)
 	
@@ -1446,8 +1451,7 @@ function AceConsole:ChatEdit_OnTabPressed()
 	local realOptions, validArgs, path, argwork
 	if string.sub(cmd, 1, 1) == "/" then
 		if left == 1 and word == cmd then
-			self.hooks.ChatEdit_OnTabPressed.orig()
-			return
+			return self.hooks[this].OnTabPressed.orig()
 		else
 			for name in pairs(SlashCmdList) do --global
 				if AceConsole.registry[name] then
@@ -1467,7 +1471,7 @@ function AceConsole:ChatEdit_OnTabPressed()
 		end
 	end
 	
-	if not validArgs then return end
+	if not validArgs then return self.hooks[this].OnTabPressed.orig() end
 	
 	if not validArgs.args then
 		printUsage(validArgs.handler, realOptions, validArgs, path, argwork)
