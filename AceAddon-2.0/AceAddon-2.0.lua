@@ -647,19 +647,19 @@ local function activate(self, oldLib, oldDeactivate)
 	AceAddon = self
 	
 	if oldLib then
-		self.playerLoginFired = oldLib.playerLoginFired
+		self.playerLoginFired = oldLib.playerLoginFired or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage
 		self.addonsToOnEnable = oldLib.addonsToOnEnable
-		oldDeactivate(oldLib)
 		self.addons = oldLib.addons
-		self.playerLoginFired = oldLib.playerLoginFired
-		self.nextAddon = {}
-		self.addonsToOnEnable = oldLib.addonsToOnEnable
+		self.nextAddon = oldLib.nextAddon
 	end
 	if not self.addons then
 		self.addons = {}
 	end
 	if not self.nextAddon then
 		self.nextAddon = {}
+	end
+	if oldDeactivate then
+		oldDeactivate(oldLib)
 	end
 end
 
