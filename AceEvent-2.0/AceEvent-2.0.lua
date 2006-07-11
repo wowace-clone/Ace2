@@ -26,6 +26,7 @@ local AceEvent = Mixin {
 						"UnregisterAllEvents",
 						"TriggerEvent",
 						"ScheduleEvent",
+						"ScheduleRepeatingEvent",
 						"CancelScheduledEvent",
 						"CancelAllScheduledEvents",
 						"TriggerDelayedEvent", -- remove on July 23
@@ -158,7 +159,11 @@ local function OnUpdate()
 			break
 		end
 		if v.time <= t then
-			table.remove(delayRegistry, i)
+			if v.repeatDelay then
+				v.time = t + v.repeatDelay
+			else
+				table.remove(delayRegistry, i)
+			end
 			i = i - 1
 			local event = v.event
 			if type(event) == "function" then
@@ -166,7 +171,7 @@ local function OnUpdate()
 			else
 				AceEvent:TriggerEvent(event, unpack(v))
 			end
-			if Compost then
+			if v.repeatDelay and Compost then
 				Compost:Reclaim(v)
 			end
 		end
@@ -197,33 +202,7 @@ if stage <= 2 then
 	end
 end
 
-function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	local id
-	if type(event) == "string" or type(event) == "table" then
-		if type(event) == "table" then
-			local i = 0
-			while true do
-				i = i + 1
-				local v = delayRegistry[i]
-				if not v then
-					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
-					return
-				elseif v == event then
-					table.remove(delayRegistry, i)
-					break
-				end
-			end
-		end
-		if type(delay) ~= "number" then
-			AceEvent:argCheck(delay, 3, "number", "string", "function")
-			AceEvent:argCheck(a1, 4, "number")
-			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
-			self:CancelDelayedEvent(id)
-		end
-	else
-		AceEvent:argCheck(event, 2, "string", "function")
-		AceEvent:argCheck(delay, 3, "number")
-	end
+local function ScheduleEvent(repeat, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	if not AceEvent.delayRegistry then
 		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
 		delayRegistry = AceEvent.delayRegistry
@@ -264,8 +243,67 @@ function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9
 	t.time = GetTime() + delay
 	t.self = self
 	t.id = id or t
+	t.repeatDelay = repeat and delay
 	table.insert(AceEvent.delayRegistry, t)
 	return t.id
+end
+
+function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	local id
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			local i = 0
+			while true do
+				i = i + 1
+				local v = delayRegistry[i]
+				if not v then
+					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+					return
+				elseif v == event then
+					break
+				end
+			end
+		end
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "number", "string", "function")
+			AceEvent:argCheck(a1, 4, "number")
+			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
+			self:CancelScheduledEvent(id)
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
+	ScheduleEvent(false, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+end
+
+function AceEvent:ScheduleRepeatingEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	local id
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			local i = 0
+			while true do
+				i = i + 1
+				local v = delayRegistry[i]
+				if not v then
+					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+					return
+				elseif v == event then
+					break
+				end
+			end
+		end
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "number", "string", "function")
+			AceEvent:argCheck(a1, 4, "number")
+			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
+			self:CancelScheduledEvent(id)
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
+	ScheduleEvent(true, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 function AceEvent:CancelScheduledEvent(t)
