@@ -151,20 +151,15 @@ local GetTime = GetTime
 local delayRegistry
 local function OnUpdate()
 	local t = GetTime()
-	local i = 0
-	while true do
-		i = i + 1
-		local v = delayRegistry[i]
-		if not v then
-			break
-		end
+	local last = nil
+	for v in pairs(delayRegistry) do
 		if v.time <= t then
 			if v.repeatDelay then
 				v.time = t + v.repeatDelay
+				last = v
 			else
-				table.remove(delayRegistry, i)
+				delayRegistry[v] = nil
 			end
-			i = i - 1
 			local event = v.event
 			if type(event) == "function" then
 				event(unpack(v))
@@ -174,7 +169,13 @@ local function OnUpdate()
 			if not v.repeatDelay and Compost then
 				Compost:Reclaim(v)
 			end
+			v = last
+		else
+			last = v
 		end
+	end
+	if not next(delayRegistry) then
+		AceEvent.frame:Hide()
 	end
 end
 
@@ -202,26 +203,18 @@ if stage <= 2 then
 	end
 end
 
-local function ScheduleEvent(self, repeat, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	local id
 	if type(event) == "string" or type(event) == "table" then
 		if type(event) == "table" then
-			local i = 0
-			while true do
-				i = i + 1
-				local v = delayRegistry[i]
-				if not v then
-					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
-					return
-				elseif v == event then
-					break
-				end
+			if not delayRegistry[event] then
+				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
 			end
 		end
 		if type(delay) ~= "number" then
-			AceEvent:argCheck(delay, 3, "number", "string", "function")
-			AceEvent:argCheck(a1, 4, "number")
 			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
+			AceEvent:argCheck(event, 3, "string", "function", --[[ so message is right ]] "number")
+			AceEvent:argCheck(delay, 4, "number")
 			self:CancelScheduledEvent(id)
 		end
 	else
@@ -269,8 +262,9 @@ local function ScheduleEvent(self, repeat, event, delay, a1, a2, a3, a4, a5, a6,
 	t.time = GetTime() + delay
 	t.self = self
 	t.id = id or t
-	t.repeatDelay = repeat and delay
-	table.insert(AceEvent.delayRegistry, t)
+	t.repeatDelay = repeating and delay
+	AceEvent.delayRegistry[t.id] = t
+	AceEvent.frame:Show()
 	return t.id
 end
 
@@ -285,14 +279,16 @@ end
 function AceEvent:CancelScheduledEvent(t)
 	AceEvent:argCheck(t, 2, "string", "table")
 	if AceEvent.delayRegistry then
-		for i,v in ipairs(AceEvent.delayRegistry) do
-			if v.id == t then
-				table.remove(AceEvent.delayRegistry, i)
-				if Compost then
-					Compost:Reclaim(t)
-				end
-				return true
+		local v = AceEvent.delayRegistry[t]
+		if v then
+			AceEvent.delayRegistry[t] = nil
+			if Compost then
+				Compost:Reclaim(v)
 			end
+			if not next(AceEvent.delayRegistry) then
+				AceEvent.frame:Hide()
+			end
+			return true
 		end
 	end
 	return false
@@ -301,10 +297,12 @@ end
 function AceEvent:IsEventScheduled(t)
 	AceEvent:argCheck(t, 2, "string", "table")
 	if AceEvent.delayRegistry then
-		for i,v in ipairs(AceEvent.delayRegistry) do
-			if v.id == t then
-				return true, v.time - GetTime()
+		local v = AceEvent.delayRegistry[t]
+		if v then
+			if Compost then
+				Compost:Reclaim(v)
 			end
+			return true, v.time - GetTime()
 		end
 	end
 	return false, nil
@@ -328,13 +326,12 @@ end
 
 function AceEvent:CancelAllScheduledEvents()
 	if AceEvent.delayRegistry then
-		for i,v in ipairs(AceEvent.delayRegistry) do
+		for v in pairs(AceEvent.delayRegistry) do
 			if v.self == target then
-				local x = table.remove(AceEvent.delayRegistry, i)
 				if Compost then
-					Compost:Reclaim(x)
+					Compost:Reclaim(v)
 				end
-				i = i - 1
+				AceEvent.delayRegistry[v] = nil
 			end
 		end
 	end
