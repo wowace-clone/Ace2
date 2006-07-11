@@ -361,6 +361,10 @@ function AceEvent:IsFullyInitialized()
 	return self.postInit or false
 end
 
+function AceEvent:IsPostPlayerLogin()
+	return self.playerLogin or false
+end
+
 function AceEvent:activate(oldLib, oldDeactivate)
 	AceEvent = self
 
@@ -370,7 +374,8 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.registry = oldLib.registry
 		self.frame = oldLib.frame
 		self.debugTable = oldLib.debugTable
-		self.postInit = oldLib.postInit or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
+		self.playerLogin = oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
+		self.postInit = oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
 	end
 	if not self.registry then
 		self.registry = {}
@@ -391,6 +396,12 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	self:UnregisterAllEvents()
 	self:CancelAllScheduledEvents()
 	
+	if not self.playerLogin then
+		self:RegisterEvent("PLAYER_LOGIN", function()
+			self.playerLogin = true
+		end, true)
+	end
+	
 	if not self.postInit then
 		local isReload = true
 		local function func()
@@ -400,6 +411,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 			self:UnregisterEvent("SPELLS_CHANGED")
 		end
 		self:RegisterEvent("MEETINGSTONE_CHANGED", function()
+			self.playerLogin = true
 			self:ScheduleEvent("AceEvent_FullyInitialized", func, isReload and 1 or 4)
 		end, true)
 		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE", function()
