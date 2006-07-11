@@ -202,7 +202,33 @@ if stage <= 2 then
 	end
 end
 
-local function ScheduleEvent(self, repeat, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+local function ScheduleEvent(self, repeat, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	local id
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			local i = 0
+			while true do
+				i = i + 1
+				local v = delayRegistry[i]
+				if not v then
+					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+					return
+				elseif v == event then
+					break
+				end
+			end
+		end
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "number", "string", "function")
+			AceEvent:argCheck(a1, 4, "number")
+			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
+			self:CancelScheduledEvent(id)
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
+	
 	if not AceEvent.delayRegistry then
 		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
 		delayRegistry = AceEvent.delayRegistry
@@ -249,61 +275,11 @@ local function ScheduleEvent(self, repeat, id, event, delay, a1, a2, a3, a4, a5,
 end
 
 function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	local id
-	if type(event) == "string" or type(event) == "table" then
-		if type(event) == "table" then
-			local i = 0
-			while true do
-				i = i + 1
-				local v = delayRegistry[i]
-				if not v then
-					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
-					return
-				elseif v == event then
-					break
-				end
-			end
-		end
-		if type(delay) ~= "number" then
-			AceEvent:argCheck(delay, 3, "number", "string", "function")
-			AceEvent:argCheck(a1, 4, "number")
-			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
-			self:CancelScheduledEvent(id)
-		end
-	else
-		AceEvent:argCheck(event, 2, "string", "function")
-		AceEvent:argCheck(delay, 3, "number")
-	end
-	ScheduleEvent(self, false, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	return ScheduleEvent(self, false, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 function AceEvent:ScheduleRepeatingEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	local id
-	if type(event) == "string" or type(event) == "table" then
-		if type(event) == "table" then
-			local i = 0
-			while true do
-				i = i + 1
-				local v = delayRegistry[i]
-				if not v then
-					AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
-					return
-				elseif v == event then
-					break
-				end
-			end
-		end
-		if type(delay) ~= "number" then
-			AceEvent:argCheck(delay, 3, "number", "string", "function")
-			AceEvent:argCheck(a1, 4, "number")
-			id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
-			self:CancelScheduledEvent(id)
-		end
-	else
-		AceEvent:argCheck(event, 2, "string", "function")
-		AceEvent:argCheck(delay, 3, "number")
-	end
-	ScheduleEvent(self, true, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	return ScheduleEvent(self, true, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 function AceEvent:CancelScheduledEvent(t)
