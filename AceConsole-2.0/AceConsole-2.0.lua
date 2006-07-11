@@ -884,7 +884,7 @@ local function handlerFunc(self, chat, msg, options)
 				
 				if type(options.step) == "number" and step > 0 then
 					local step = options.step
-					arg = math.floor((x - min) / step + 0.5) * step + min
+					arg = math.floor((arg - min) / step + 0.5) * step + min
 					if arg > max then
 						arg = max
 					elseif arg < min then
