@@ -113,20 +113,19 @@ function AceAddon:ADDON_LOADED(name)
 end
 
 local function RegisterOnEnable(self)
-	if type(self.OnEnable) == "function" then
-		if (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
-			if AceAddon.playerLoginFired then
-				self:OnEnable()
-			elseif DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
-				AceAddon.playerLoginFired = true
-				self:OnEnable()
-			else
-				if not AceAddon.addonsToOnEnable then
-					AceAddon.addonsToOnEnable = {}
-				end
-				table.insert(AceAddon.addonsToOnEnable, self)
-			end
+	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
+		AceAddon.playerLoginFired = true
+	end
+	if AceAddon.playerLoginFired then
+		AceAddon.addonsStarted[self] = true
+		if type(self.OnEnable) == "function" and (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
+			self:OnEnable()
 		end
+	else
+		if not AceAddon.addonsToOnEnable then
+			AceAddon.addonsToOnEnable = {}
+		end
+		table.insert(AceAddon.addonsToOnEnable, self)
 	end
 end
 
@@ -254,10 +253,9 @@ function AceAddon:PLAYER_LOGIN()
 	if self.addonsToOnEnable then
 		while table.getn(self.addonsToOnEnable) > 0 do
 			local addon = table.remove(self.addonsToOnEnable, 1)
-			if type(addon.OnEnable) == "function" then
-				if (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
-					addon:OnEnable()
-				end
+			self.addonsStarted[addon] = true
+			if type(addon.OnEnable) == "function" and (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
+				addon:OnEnable()
 			end
 		end
 		self.addonsToOnEnable = nil
@@ -654,12 +652,16 @@ local function activate(self, oldLib, oldDeactivate)
 		self.addonsToOnEnable = oldLib.addonsToOnEnable
 		self.addons = oldLib.addons
 		self.nextAddon = oldLib.nextAddon
+		self.addonsStarted = oldLib.addonsStarted
 	end
 	if not self.addons then
 		self.addons = {}
 	end
 	if not self.nextAddon then
 		self.nextAddon = {}
+	end
+	if not self.addonsStarted then
+		self.addonsStarted = {}
 	end
 	if oldDeactivate then
 		oldDeactivate(oldLib)

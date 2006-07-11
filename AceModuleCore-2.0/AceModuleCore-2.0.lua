@@ -255,6 +255,12 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		end
 		self.disabledModules[module.name] = disable or nil
 	end
+	if AceOO.inherits(module, "AceAddon-2.0") then
+		local AceAddon = AceLibrary("AceAddon-2.0")
+		if not AceAddon.addonsStarted[module] then
+			return
+		end
+	end
 	if not disable then
 		if type(module.OnEnable) == "function" then
 			module:OnEnable()

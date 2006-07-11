@@ -582,6 +582,12 @@ function AceDB:SetProfile(name, copyFrom)
 	end
 	local newactive = self:IsActive()
 	if active ~= newactive then
+		if AceOO.inherits(self, "AceAddon-2.0") then
+			local AceAddon = AceLibrary("AceAddon-2.0")
+			if not AceAddon.addonsStarted[self] then
+				return
+			end
+		end
 		if newactive then
 			if type(self.OnEnable) == "function" then
 				self:OnEnable()
@@ -639,6 +645,12 @@ function AceDB:ToggleActive(state)
 		end
 	end
 	db.raw.disabled[profile] = disable or nil
+	if AceOO.inherits(self, "AceAddon-2.0") then
+		local AceAddon = AceLibrary("AceAddon-2.0")
+		if not AceAddon.addonsStarted[self] then
+			return
+		end
+	end
 	if not disable then
 		if type(self.OnEnable) == "function" then
 			self:OnEnable()
