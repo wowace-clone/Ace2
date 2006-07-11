@@ -202,7 +202,7 @@ if stage <= 2 then
 	end
 end
 
-local function ScheduleEvent(repeat, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+local function ScheduleEvent(self, repeat, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	if not AceEvent.delayRegistry then
 		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
 		delayRegistry = AceEvent.delayRegistry
@@ -274,7 +274,7 @@ function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9
 		AceEvent:argCheck(event, 2, "string", "function")
 		AceEvent:argCheck(delay, 3, "number")
 	end
-	ScheduleEvent(false, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	ScheduleEvent(self, false, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 function AceEvent:ScheduleRepeatingEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
@@ -303,7 +303,7 @@ function AceEvent:ScheduleRepeatingEvent(event, delay, a1, a2, a3, a4, a5, a6, a
 		AceEvent:argCheck(event, 2, "string", "function")
 		AceEvent:argCheck(delay, 3, "number")
 	end
-	ScheduleEvent(true, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	ScheduleEvent(self, true, id, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 function AceEvent:CancelScheduledEvent(t)
