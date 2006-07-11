@@ -234,7 +234,7 @@ function AceAddon.prototype:PrintAddonInfo()
 	end
 end
 
-localt options
+local options
 function AceAddon:GetAceOptionsDataTable(target)
 	if not options then
 		options = {
