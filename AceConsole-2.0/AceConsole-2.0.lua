@@ -882,9 +882,9 @@ local function handlerFunc(self, chat, msg, options)
 					good = true
 				end
 				
-				if type(options.step) == "number" and options.step > 0 then
+				if type(options.step) == "number" and step > 0 then
 					local step = options.step
-					arg = math.floor((arg - min) / step + 0.5) * step + min
+					arg = math.floor((x - min) / step + 0.5) * step + min
 					if arg > max then
 						arg = max
 					elseif arg < min then
@@ -1378,6 +1378,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 
 	if AceHook then
 		if not self.hooks then
+			AceConsole:HookScript(ChatFrameEditBox, "OnTabPressed")
 			AceConsole:Hook("ChatEdit_OnLoad")
 		end
 	end
