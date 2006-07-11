@@ -152,13 +152,13 @@ local delayRegistry
 local function OnUpdate()
 	local t = GetTime()
 	local last = nil
-	for v in pairs(delayRegistry) do
+	for k,v in pairs(delayRegistry) do
 		if v.time <= t then
 			if v.repeatDelay then
 				v.time = t + v.repeatDelay
-				last = v
+				last = k
 			else
-				delayRegistry[v] = nil
+				delayRegistry[k] = nil
 			end
 			local event = v.event
 			if type(event) == "function" then
@@ -169,9 +169,9 @@ local function OnUpdate()
 			if not v.repeatDelay and Compost then
 				Compost:Reclaim(v)
 			end
-			v = last
+			k = last
 		else
-			last = v
+			last = k
 		end
 	end
 	if not next(delayRegistry) then
@@ -326,12 +326,12 @@ end
 
 function AceEvent:CancelAllScheduledEvents()
 	if AceEvent.delayRegistry then
-		for v in pairs(AceEvent.delayRegistry) do
+		for k,v in pairs(AceEvent.delayRegistry) do
 			if v.self == target then
 				if Compost then
 					Compost:Reclaim(v)
 				end
-				AceEvent.delayRegistry[v] = nil
+				AceEvent.delayRegistry[k] = nil
 			end
 		end
 	end
