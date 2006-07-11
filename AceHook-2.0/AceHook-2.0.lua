@@ -32,7 +32,6 @@ local AceHook = AceOO.Mixin {
 								"HookReport",
 								"IsHooked",
 								"HookScript",
-								"UnhookScript",
 							}
 
 --[[---------------------------------------------------------------------------------
