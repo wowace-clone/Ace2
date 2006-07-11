@@ -827,30 +827,32 @@ function AceDB:AcquireDBNamespace(name)
 	return db.namespaces[name]
 end
 
+local options
 function AceDB:GetAceOptionsDataTable(target)
-	return {
-		standby = {
-			cmdName = STATE,
-			guiName = ACTIVE,
-			name = ACTIVE,
-			desc = TOGGLE_ACTIVE,
-			type = "toggle",
-			get = "IsActive",
-			set = "ToggleActive",
-			map = MAP_ACTIVESUSPENDED,
-			handler = target,
-		},
-		profile = {
-			name = PROFILE,
-			desc = SET_PROFILE,
-			get = "GetProfile",
-			set = "SetProfile",
-			usage = SET_PROFILE_USAGE,
-			type = "text",
-			validate = function(x) return not tonumber(x) end,
-			handler = target,
+	if not options then
+		options = {
+			standby = {
+				cmdName = STATE,
+				guiName = ACTIVE,
+				name = ACTIVE,
+				desc = TOGGLE_ACTIVE,
+				type = "toggle",
+				get = "IsActive",
+				set = "ToggleActive",
+				map = MAP_ACTIVESUSPENDED,
+			},
+			profile = {
+				name = PROFILE,
+				desc = SET_PROFILE,
+				get = "GetProfile",
+				set = "SetProfile",
+				usage = SET_PROFILE_USAGE,
+				type = "text",
+				validate = function(x) return not tonumber(x) end,
+			}
 		}
-	}
+	end
+	return options
 end
 
 local function activate(self, oldLib, oldDeactivate)

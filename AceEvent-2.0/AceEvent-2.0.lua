@@ -385,7 +385,6 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		local function func()
 			self.postInit = true
 			self:TriggerEvent("AceEvent_FullyInitialized")
-			DEFAULT_CHAT_FRAME:AddMessage("alpha")
 			self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 			self:UnregisterEvent("SPELLS_CHANGED")
 		end

@@ -234,16 +234,19 @@ function AceAddon.prototype:PrintAddonInfo()
 	end
 end
 
+localt options
 function AceAddon:GetAceOptionsDataTable(target)
-	return {
-		about = {
-			name = ABOUT,
-			desc = PRINT_ADDON_INFO,
-			type = "execute",
-			func = "PrintAddonInfo",
-			handler = target,
+	if not options then
+		options = {
+			about = {
+				name = ABOUT,
+				desc = PRINT_ADDON_INFO,
+				type = "execute",
+				func = "PrintAddonInfo",
+			}
 		}
-	}
+	end
+	return options
 end
 
 function AceAddon:PLAYER_LOGIN()

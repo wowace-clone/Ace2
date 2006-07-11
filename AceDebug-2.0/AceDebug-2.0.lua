@@ -97,17 +97,20 @@ function AceDebug:SetDebugging(debugging)
 	self.debugging = debugging
 end
 
+local options
 function AceDebug:GetAceOptionsDataTable(target)
-	return {
-		debug = {
-			name = DEBUGGING,
-			desc = TOGGLE_DEBUGGING,
-			type = "toggle",
-			get = "IsDebugging",
-			set = "SetDebugging",
-			handler = target,
+	if not options then
+		options = {
+			debug = {
+				name = DEBUGGING,
+				desc = TOGGLE_DEBUGGING,
+				type = "toggle",
+				get = "IsDebugging",
+				set = "SetDebugging",
+			}
 		}
-	}
+	end
+	return options
 end
 AceLibrary:Register(AceDebug, MAJOR_VERSION, MINOR_VERSION, AceDebug.activate)
 AceDebug = AceLibrary(MAJOR_VERSION)

@@ -8,7 +8,7 @@ Documentation: http://wiki.wowace.com/index.php/AceModuleCore-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceModuleCore-2.0
 Description: Mixin to provide a module system so that modules or plugins can
              use an addon as its core.
-Dependencies: AceLibrary, AceOO-2.0, AceAddon-2.0
+Dependencies: AceLibrary, AceOO-2.0, AceAddon-2.0, Compost-2.0 (optional)
 ]]
 
 local MAJOR_VERSION = "AceModuleCore-2.0"
@@ -31,6 +31,8 @@ local AceModuleCore = AceOO.Mixin {
 									"IsModuleActive",
 									"ToggleModuleActive"
 								  }
+
+local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
 
 local function getlibrary(lib)
 	if type(lib) == "string" then
@@ -172,7 +174,7 @@ function AceModuleCore:SetModuleMixins(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 		AceModuleCore:error('Cannot call "SetModuleMixins" after "NewModule" has been called.')
 	end
 
-	self.moduleMixins = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
+	self.moduleMixins = Compost and Compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
 	for k,v in ipairs(self.moduleMixins) do
 		self.moduleMixins[k] = getlibrary(v)
 	end
@@ -224,11 +226,11 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			AceModuleCore:error("Cannot toggle a module until `RegisterDB' has been called and `ADDON_LOADED' has been fireed.")
 		end
 		if type(self.db.raw.disabledModules) ~= "table" then
-			self.db.raw.disabledModules = {}
+			self.db.raw.disabledModules = Compost and Compost:Acquire() or {}
 		end
 		local _,profile = self:GetProfile()
 		if type(self.db.raw.disabledModules[profile]) ~= "table" then
-			self.db.raw.disabledModules[profile] = {}
+			self.db.raw.disabledModules[profile] = Compost and Compost:Acquire() or {}
 		end
 		if type(self.db.raw.disabledModules[profile][module.name]) ~= "table" then
 			self.db.raw.disabledModules[profile][module.name] = disable or nil
@@ -249,7 +251,7 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		end
 	else
 		if type(self.disabledModules) ~= "table" then
-			self.disabledModules = {}
+			self.disabledModules = Compost and Compost:Acquire() or {}
 		end
 		self.disabledModules[module.name] = disable or nil
 	end
@@ -317,7 +319,7 @@ function AceModuleCore:OnInstanceInit(target)
 	if target.modules then
 		AceModuleCore:error("OnInstanceInit cannot be called twice")
 	end
-	target.modules = {}
+	target.modules = Compost and Compost:Acquire() or {}
 
 	target.moduleClass = AceOO.Class("AceAddon-2.0")
 	target.modulePrototype = target.moduleClass.prototype
@@ -335,6 +337,12 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 	if not self.totalModules then
 		self.totalModules = {}
+	end
+end
+
+local function external(self, major, instance)
+	if major == "Compost-2.0" then
+		Compost = instance
 	end
 end
 
