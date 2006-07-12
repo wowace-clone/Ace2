@@ -799,7 +799,7 @@ function AceDB:PLAYER_LOGOUT()
 				end
 			end
 			if db.raw.disabled then
-				if not next(db.raw.diabled) then
+				if not next(db.raw.disabled) then
 					db.raw.disabled = nil
 				end
 			end
