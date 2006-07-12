@@ -439,7 +439,7 @@ local colorCancelFunc
 
 local order
 
-local function printUsage(self, realOptions, options, path, args, quiet, filter)
+local function printUsage(self, handler, realOptions, options, path, args, quiet, filter)
 	if filter then
 		filter = "^" .. string.gsub(filter, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 	end
@@ -860,7 +860,7 @@ local function handlerFunc(self, chat, msg, options)
 				print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)), realOptions.cmdName or realOptions.name or self)
 			end
 		else
-			printUsage(self, realOptions, options, path, args)
+			printUsage(self, handler, realOptions, options, path, args)
 		end
 	elseif kind == "execute" then
 		if passTable then
@@ -1031,7 +1031,7 @@ local function handlerFunc(self, chat, msg, options)
 			end
 			print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)), realOptions.cmdName or realOptions.name or self)
 		else
-			printUsage(self, realOptions, options, path, args)
+			printUsage(self, handler, realOptions, options, path, args)
 		end
 	elseif kind == "color" then
 		if table.getn(args) > 0 then
@@ -1325,7 +1325,7 @@ local function handlerFunc(self, chat, msg, options)
 		end
 	elseif kind == "group" then
 		if table.getn(args) == 0 then
-			printUsage(self, realOptions, options, path, args)
+			printUsage(self, handler, realOptions, options, path, args)
 		else
 			-- invalid argument
 			print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, args[1], path), realOptions.cmdName or realOptions.name or self)
@@ -1595,7 +1595,7 @@ function AceConsole:OnTabPressed()
 	if not validArgs then return self.hooks[this].OnTabPressed.orig() end
 	
 	if not validArgs.args then
-		printUsage(validArgs.handler, realOptions, validArgs, path, argwork)
+		printUsage(self, validArgs.handler, realOptions, validArgs, path, argwork)
 	else
 		local matches = {}
 		for arg in validArgs.args do
@@ -1610,11 +1610,11 @@ function AceConsole:OnTabPressed()
 				this:Insert(matches[1])
 				this:Insert(" ")
 			elseif numMatches > 1 then
-				printUsage(validArgs.handler, realOptions, validArgs, path, argwork, true, LCS(matches))
+				printUsage(self, validArgs.handler, realOptions, validArgs, path, argwork, true, LCS(matches))
 				this:HighlightText(left - 1, left + string.len(word))
 				this:Insert(LCS(matches))
 			else
-				printUsage(validArgs.handler, realOptions, validArgs, path, argwork)
+				printUsage(self, validArgs.handler, realOptions, validArgs, path, argwork)
 			end
 		end
 	end
