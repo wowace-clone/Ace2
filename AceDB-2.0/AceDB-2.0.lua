@@ -824,7 +824,7 @@ function AceDB:AcquireDBNamespace(name)
 	AceDB:argCheck(name, 2, "string")
 	local db = self.db
 	if not db then
-		self:error("Cannot call `AcquireDBNamespace' before `RegisterDB' has been called.")
+		AceDB:error("Cannot call `AcquireDBNamespace' before `RegisterDB' has been called.", 2)
 	end
 	if not db.namespaces then
 		rawset(db, 'namespaces', {})
