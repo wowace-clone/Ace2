@@ -58,6 +58,9 @@ local function inheritDefaults(t, defaults)
 			if type(v) == "table" then
 				setmetatable(t, {
 					__index = function(self, key)
+						if key == nil then
+							return nil
+						end
 						self[key] = {}
 						inheritDefaults(self[key], v)
 						return self[key]
@@ -66,6 +69,9 @@ local function inheritDefaults(t, defaults)
 			else
 				setmetatable(t, {
 					__index = function(self, key)
+						if key == nil then
+							return nil
+						end
 						self[key] = v
 						return self[key]
 					end
@@ -107,6 +113,9 @@ AceDB.CLASS_ID = classID
 
 local caseInsensitive_mt = {
 	__index = function(self, key)
+		if type(key) ~= "string" then
+			return nil
+		end
 		local lowerKey = string.lower(key)
 		for k,v in pairs(self) do
 			if string.lower(k) == lowerKey then
@@ -115,6 +124,9 @@ local caseInsensitive_mt = {
 		end
 	end,
 	__newindex = function(self, key, value)
+		if type(key) ~= "string" then
+			return error("table index is nil", 2)
+		end
 		local lowerKey = string.lower(key)
 		for k in pairs(self) do
 			if string.lower(k) == lowerKey then
