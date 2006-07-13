@@ -36,6 +36,7 @@ local Mixin = AceOO.Mixin
 local AceDB = Mixin {
 						"RegisterDB",
 						"RegisterDefaults",
+						"ResetDB",
 						"SetProfile",
 						"GetProfile",
 						"ToggleActive",
@@ -429,6 +430,91 @@ function AceDB:RegisterDefaults(kind, defaults, a3)
 	db.defaults[kind] = defaults
 	if rawget(db, kind) then
 		inheritDefaults(db[kind], defaults)
+	end
+end
+
+function AceDB:ResetDB(kind)
+	AceDB:checkArg(kind, 2, "nil", "string")
+	if not self.db or not self.db.raw then
+		AceDB:error("Cannot call \"ResetDB\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
+	end
+	local db = self.db
+	if kind == nil then
+		if db.charName then
+			_G[db.charName] = nil
+		end
+		_G[db.name] = nil
+		rawset(db, 'raw', nil)
+		AceDB.InitializeDB(self)
+		for name,v in pairs(db.namespaces) do
+			rawset(v, 'account', nil)
+			rawset(v, 'char', nil)
+			rawset(v, 'class', nil)
+			rawset(v, 'profile', nil)
+			rawset(v, 'realm', nil)
+		end
+	elseif kind == "account" then
+		db.raw.account = nil
+		rawset(db, 'account', nil)
+		for name,v in pairs(db.namespaces) do
+			rawset(v, 'account', nil)
+		end
+	elseif kind == "char" then
+		if db.charName then
+			_G[db.charName] = nil
+		else
+			db.raw.chars[charID] = nil
+			for name,v in pairs(db.raw.namespaces) do
+				if v.chars then
+					v.chars[charID] = nil
+				end
+			end
+		end
+		rawset(db, 'char', nil)
+		for name,v in pairs(db.namespaces) do
+			rawset(v, 'char', nil)
+		end
+	elseif kind == "realm" then
+		db.raw.realms[realmID] = nil
+		rawset(db, 'realm', nil)
+		for name,v in pairs(db.raw.namespaces) do
+			if v.realms then
+				v.realms[realmID] = nil
+			end
+		end
+		for name,v in pairs(db.namespaces) do
+			rawset(v, 'realm', nil)
+		end
+	elseif kind == "class" then
+		db.raw.realms[classID] = nil
+		rawset(db, 'class', nil)
+		for name,v in pairs(db.raw.namespaces) do
+			if v.classes then
+				v.classes[classID] = nil
+			end
+		end
+		for name,v in pairs(db.namespaces) do
+			rawset(v, 'class', nil)
+		end
+	elseif kind == "profile" then
+		local id = db.raw.currentProfile[charID]
+		if id == "char" then
+			id = "char/" .. charID
+		elseif id == "class" then
+			id = "class/" .. classID
+		elseif id == "realm" then
+			id = "realm/" .. realmID
+		end
+		db.raw.profiles[id] = nil
+		rawset(db, 'profile', nil)
+		for name,v in pairs(db.raw.namespaces) do
+			if v.profiles then
+				v.profiles[id] = nil
+			end
+		end
+		for name,v in pairs(db.namespaces) do
+			rawset(v, 'profile', nil)
+		end
 	end
 end
 
