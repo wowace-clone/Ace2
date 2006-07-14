@@ -104,12 +104,17 @@ else
 	faction = FACTION_ALLIANCE
 end
 local charID = string.format(PLAYER_OF_REALM, UnitName("player"), (string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1")))
-local realmID = string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1") .. " - " .. faction
+local realm = string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1")
+local realmID = realm .. " - " .. faction
 local classID = UnitClass("player")
 
 AceDB.CHAR_ID = charID
 AceDB.REALM_ID = realmID
 AceDB.CLASS_ID = classID
+
+AceDB.FACTION = faction
+AceDB.REALM = realm
+AceDB.NAME = UnitName("player")
 
 local caseInsensitive_mt = {
 	__index = function(self, key)
