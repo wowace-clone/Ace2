@@ -1,0 +1,22 @@
+---------------------
+--Some sample modules
+---------------------
+--Autocomplete frame names on Visor's commandline
+AceLibrary("AceTab-2.0"):RegisterCompletion("VisorFrames", {"p=", "pr=", "f="}, function()
+		local r={}
+		local f = EnumerateFrames()
+		while f do
+			table.insert(r, f:GetName())
+			f = EnumerateFrames(f)
+		end 
+		return "Frames", r
+	end)
+
+--Autocomplete words in TinyPad from the list of other words in the TinyPad editbox
+AceLibrary("AceTab-2.0"):RegisterCompletion("TinyPad", ".*", function(text)
+		local r={}
+		for i in string.gfind(text, "(%w+)") do
+			table.insert(r, i)
+		end
+		return "TinyPad", r
+	end, TinyPadEditBox)
