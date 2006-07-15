@@ -202,7 +202,7 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.website = GetAddOnMetadata(name, "X-Website")
 		end
 	end
-	local current = self.class
+	local current = addon.class
 	while true do
 		if current == AceOO.Class then
 			break
@@ -210,7 +210,7 @@ function AceAddon:InitializeAddon(addon, name)
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedInitialize) == "function" then
-					mixin:OnEmbedInitialize(self)
+					mixin:OnEmbedInitialize(addon)
 				end
 			end
 		end
@@ -285,7 +285,7 @@ function AceAddon:PLAYER_LOGIN()
 			local addon = table.remove(self.addonsToOnEnable, 1)
 			self.addonsStarted[addon] = true
 			if (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
-				local current = self.class
+				local current = addon.class
 				while true do
 					if current == AceOO.Class then
 						break
@@ -293,7 +293,7 @@ function AceAddon:PLAYER_LOGIN()
 					if current.mixins then
 						for mixin in pairs(current.mixins) do
 							if type(mixin.OnEmbedEnable) == "function" then
-								mixin:OnEmbedEnable(self)
+								mixin:OnEmbedEnable(addon)
 							end
 						end
 					end
