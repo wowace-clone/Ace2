@@ -210,14 +210,14 @@ function AceAddon:InitializeAddon(addon, name)
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedInitialize) == "function" then
-					mixin:OnEmbedInitialize(addon)
+					mixin:OnEmbedInitialize(addon, name)
 				end
 			end
 		end
 		current = current.super
 	end
 	if type(addon.OnInitialize) == "function" then
-		addon:OnInitialize()
+		addon:OnInitialize(name)
 	end
 	RegisterOnEnable(addon)
 end
