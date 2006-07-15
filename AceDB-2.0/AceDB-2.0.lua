@@ -720,6 +720,20 @@ function AceDB:SetProfile(name, copyFrom)
 			end
 		end
 		if newactive then
+			local current = self.class
+			while true do
+				if current == AceOO.Class then
+					break
+				end
+				if current.mixins then
+					for mixin in pairs(current.mixins) do
+						if type(mixin.OnEmbedEnable) == "function" then
+							mixin:OnEmbedEnable(self)
+						end
+					end
+				end
+				current = current.super
+			end
 			if type(self.OnEnable) == "function" then
 				self:OnEnable()
 			end
@@ -783,6 +797,20 @@ function AceDB:ToggleActive(state)
 		end
 	end
 	if not disable then
+		local current = self.class
+		while true do
+			if current == AceOO.Class then
+				break
+			end
+			if current.mixins then
+				for mixin in pairs(current.mixins) do
+					if type(mixin.OnEmbedEnable) == "function" then
+						mixin:OnEmbedEnable(self)
+					end
+				end
+			end
+			current = current.super
+		end
 		if type(self.OnEnable) == "function" then
 			self:OnEnable()
 		end

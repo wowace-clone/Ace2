@@ -118,8 +118,24 @@ local function RegisterOnEnable(self)
 	end
 	if AceAddon.playerLoginFired then
 		AceAddon.addonsStarted[self] = true
-		if type(self.OnEnable) == "function" and (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
-			self:OnEnable()
+		if (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
+			local current = self.class
+			while true do
+				if current == AceOO.Class then
+					break
+				end
+				if current.mixins then
+					for mixin in pairs(current.mixins) do
+						if type(mixin.OnEmbedEnable) == "function" then
+							mixin:OnEmbedEnable(self)
+						end
+					end
+				end
+				current = current.super
+			end
+			if type(self.OnEnable) == "function" then
+				self:OnEnable()
+			end
 		end
 	else
 		if not AceAddon.addonsToOnEnable then
@@ -254,8 +270,24 @@ function AceAddon:PLAYER_LOGIN()
 		while table.getn(self.addonsToOnEnable) > 0 do
 			local addon = table.remove(self.addonsToOnEnable, 1)
 			self.addonsStarted[addon] = true
-			if type(addon.OnEnable) == "function" and (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
-				addon:OnEnable()
+			if (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
+				local current = self.class
+				while true do
+					if current == AceOO.Class then
+						break
+					end
+					if current.mixins then
+						for mixin in pairs(current.mixins) do
+							if type(mixin.OnEmbedEnable) == "function" then
+								mixin:OnEmbedEnable(self)
+							end
+						end
+					end
+					current = current.super
+				end
+				if type(addon.OnEnable) == "function" then
+					addon:OnEnable()
+				end
 			end
 		end
 		self.addonsToOnEnable = nil
