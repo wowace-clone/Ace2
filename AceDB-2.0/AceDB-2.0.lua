@@ -388,6 +388,10 @@ function AceDB:InitializeDB(addonName)
 	setmetatable(db, db_mt)
 end
 
+function AceDB:OnEmbedInitialize(target, name)
+	self.InitializeDB(target, name)
+end
+
 function AceDB:RegisterDB(name, charName)
 	AceDB:argCheck(name, 2, "string")
 	AceDB:argCheck(charName, 3, "string", "nil")

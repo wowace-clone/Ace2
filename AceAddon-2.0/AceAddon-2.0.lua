@@ -146,10 +146,6 @@ local function RegisterOnEnable(self)
 end
 
 function AceAddon:InitializeAddon(addon, name)
-	if AceDB and AceOO.inherits(addon, AceDB) then
-		AceDB.InitializeDB(addon, name)
-	end
-	
 	if addon.name == nil then
 		addon.name = name
 	end
@@ -210,14 +206,14 @@ function AceAddon:InitializeAddon(addon, name)
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedInitialize) == "function" then
-					mixin:OnEmbedInitialize(addon, name)
+					mixin:OnEmbedInitialize(addon)
 				end
 			end
 		end
 		current = current.super
 	end
 	if type(addon.OnInitialize) == "function" then
-		addon:OnInitialize(name)
+		addon:OnInitialize()
 	end
 	RegisterOnEnable(addon)
 end
