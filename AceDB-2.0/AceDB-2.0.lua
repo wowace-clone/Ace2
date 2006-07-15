@@ -451,7 +451,7 @@ function AceDB:RegisterDefaults(kind, defaults, a3)
 end
 
 function AceDB:ResetDB(kind)
-	AceDB:checkArg(kind, 2, "nil", "string")
+	AceDB:argCheck(kind, 2, "nil", "string")
 	if not self.db or not self.db.raw then
 		AceDB:error("Cannot call \"ResetDB\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
@@ -463,57 +463,80 @@ function AceDB:ResetDB(kind)
 		_G[db.name] = nil
 		rawset(db, 'raw', nil)
 		AceDB.InitializeDB(self)
-		for name,v in pairs(db.namespaces) do
-			rawset(v, 'account', nil)
-			rawset(v, 'char', nil)
-			rawset(v, 'class', nil)
-			rawset(v, 'profile', nil)
-			rawset(v, 'realm', nil)
+		if db.namespaces then
+			for name,v in pairs(db.namespaces) do
+				rawset(v, 'account', nil)
+				rawset(v, 'char', nil)
+				rawset(v, 'class', nil)
+				rawset(v, 'profile', nil)
+				rawset(v, 'realm', nil)
+			end
 		end
 	elseif kind == "account" then
 		db.raw.account = nil
 		rawset(db, 'account', nil)
-		for name,v in pairs(db.namespaces) do
-			rawset(v, 'account', nil)
+		if db.namespaces then
+			for name,v in pairs(db.namespaces) do
+				rawset(v, 'account', nil)
+			end
 		end
 	elseif kind == "char" then
 		if db.charName then
 			_G[db.charName] = nil
 		else
-			db.raw.chars[charID] = nil
-			for name,v in pairs(db.raw.namespaces) do
-				if v.chars then
-					v.chars[charID] = nil
+			if db.raw.chars then
+				db.raw.chars[charID] = nil
+			end
+			if db.raw.namespaces then
+				for name,v in pairs(db.raw.namespaces) do
+					if v.chars then
+						v.chars[charID] = nil
+					end
 				end
 			end
 		end
 		rawset(db, 'char', nil)
-		for name,v in pairs(db.namespaces) do
-			rawset(v, 'char', nil)
+		if db.namespaces then
+			for name,v in pairs(db.namespaces) do
+				rawset(v, 'char', nil)
+			end
 		end
 	elseif kind == "realm" then
-		db.raw.realms[realmID] = nil
+		if db.raw.realms then
+			db.raw.realms[realmID] = nil
+		end
 		rawset(db, 'realm', nil)
-		for name,v in pairs(db.raw.namespaces) do
-			if v.realms then
-				v.realms[realmID] = nil
+		if db.raw.namespaces then
+			for name,v in pairs(db.raw.namespaces) do
+				if v.realms then
+					v.realms[realmID] = nil
+				end
 			end
 		end
-		for name,v in pairs(db.namespaces) do
-			rawset(v, 'realm', nil)
+		if db.namespaces then
+			for name,v in pairs(db.namespaces) do
+				rawset(v, 'realm', nil)
+			end
 		end
 	elseif kind == "class" then
-		db.raw.realms[classID] = nil
+		if db.raw.realms then
+			db.raw.realms[classID] = nil
+		end
 		rawset(db, 'class', nil)
-		for name,v in pairs(db.raw.namespaces) do
-			if v.classes then
-				v.classes[classID] = nil
+		if db.raw.namespaces then
+			for name,v in pairs(db.raw.namespaces) do
+				if v.classes then
+					v.classes[classID] = nil
+				end
 			end
 		end
-		for name,v in pairs(db.namespaces) do
-			rawset(v, 'class', nil)
+		if db.namespaces then
+			for name,v in pairs(db.namespaces) do
+				rawset(v, 'class', nil)
+			end
 		end
 	elseif kind == "profile" then
+		if db.raw.currentProfile
 		local id = db.raw.currentProfile[charID]
 		if id == "char" then
 			id = "char/" .. charID
@@ -522,15 +545,21 @@ function AceDB:ResetDB(kind)
 		elseif id == "realm" then
 			id = "realm/" .. realmID
 		end
-		db.raw.profiles[id] = nil
+		if db.raw.profiles then
+			db.raw.profiles[id] = nil
+		end
 		rawset(db, 'profile', nil)
-		for name,v in pairs(db.raw.namespaces) do
-			if v.profiles then
-				v.profiles[id] = nil
+		if db.raw.namespaces then
+			for name,v in pairs(db.raw.namespaces) do
+				if v.profiles then
+					v.profiles[id] = nil
+				end
 			end
 		end
-		for name,v in pairs(db.namespaces) do
-			rawset(v, 'profile', nil)
+		if db.namespaces then
+			for name,v in pairs(db.namespaces) do
+				rawset(v, 'profile', nil)
+			end
 		end
 	end
 end
