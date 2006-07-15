@@ -100,7 +100,6 @@ local function print(text)
 	DEFAULT_CHAT_FRAME:AddMessage(text)
 end
 
-local AceDB
 function AceAddon:ADDON_LOADED(name)
 	while table.getn(self.nextAddon) > 0 do
 		local addon = table.remove(self.nextAddon, 1)
@@ -672,8 +671,6 @@ local function external(self, major, instance)
 				}
 			}
 		})
-	elseif major == "AceDB-2.0" then
-		AceDB = instance
 	elseif major == "AceModuleCore-2.0" then
 		AceModuleCore = instance
 	end
