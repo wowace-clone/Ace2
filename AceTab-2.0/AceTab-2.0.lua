@@ -4,7 +4,7 @@ Revision: $Rev: 1$
 Author(s): hyperactiveChipmunk (hyperactiveChipmunk@gmail.com)
 Website: http://www.wowace.com/
 Documentation: http://wiki.wowace.com/index.php/AceTab-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceConsole
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceTab-2.0
 Description: Tab-completion functionality
 Dependencies: AceLibrary
 ]]
