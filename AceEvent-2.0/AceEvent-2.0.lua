@@ -47,14 +47,14 @@ function AceEvent:RegisterEvent(event, method, once)
 	if type(method) == "string" and type(self[method]) ~= "function" then
 		AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
 	end
-	
+
 	if not AceEvent.registry[event] then
 		AceEvent.registry[event] = Compost and Compost:Acquire() or {}
 		AceEvent.frame:RegisterEvent(event)
 	end
-	
+
 	AceEvent.registry[event][self] = method
-	
+
 	if once then
 		if not AceEvent.onceRegistry then
 			AceEvent.onceRegistry = Compost and Compost:Acquire() or {}
@@ -221,7 +221,7 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 		AceEvent:argCheck(event, 2, "string", "function")
 		AceEvent:argCheck(delay, 3, "number")
 	end
-	
+
 	if not AceEvent.delayRegistry then
 		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
 		delayRegistry = AceEvent.delayRegistry
@@ -327,7 +327,7 @@ end
 function AceEvent:CancelAllScheduledEvents()
 	if AceEvent.delayRegistry then
 		for k,v in pairs(AceEvent.delayRegistry) do
-			if v.self == target then
+			if v.self == self then
 				if Compost then
 					Compost:Reclaim(v)
 				end
@@ -392,16 +392,16 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		delayRegistry = self.delayRegistry
 		self.frame:SetScript("OnUpdate", OnUpdate)
 	end
-	
+
 	self:UnregisterAllEvents()
 	self:CancelAllScheduledEvents()
-	
+
 	if not self.playerLogin then
 		self:RegisterEvent("PLAYER_LOGIN", function()
 			self.playerLogin = true
 		end, true)
 	end
-	
+
 	if not self.postInit then
 		local isReload = true
 		local function func()
@@ -421,7 +421,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 			isReload = false
 		end)
 	end
-	
+
 	self.super.activate(self, oldLib, oldDeactivate)
 	if oldLib then
 		oldDeactivate(oldLib)
