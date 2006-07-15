@@ -42,6 +42,7 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 		table.setn(tmp, 0)
 	end
 	
+	tmp.n = 0
 	if a1 ~= nil then table.insert(tmp, a1)
 	if a2 ~= nil then table.insert(tmp, a2)
 	if a3 ~= nil then table.insert(tmp, a3)
@@ -72,8 +73,11 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 		local _,_,second = string.find(stack, "\n(.-)\n")
 		message = "error raised! " .. second
 	else
-		for i,v in ipairs(tmp) do
-			tmp[i] = tostring(v)
+		for i = 1,table.getn(tmp) do
+			tmp[i] = tostring(tmp[i])
+		end
+		for i = 1,10 do
+			table.insert(tmp, "nil")
 		end
 		message = string.format(message, unpack(tmp))
 	end
