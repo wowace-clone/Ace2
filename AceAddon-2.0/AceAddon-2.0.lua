@@ -202,7 +202,21 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.website = GetAddOnMetadata(name, "X-Website")
 		end
 	end
-	if type(addon.OnInitialize) == "function" and addon.OnInitialize ~= self.prototype.OnInitialize then
+	local current = self.class
+	while true do
+		if current == AceOO.Class then
+			break
+		end
+		if current.mixins then
+			for mixin in pairs(current.mixins) do
+				if type(mixin.OnEmbedInitialize) == "function" then
+					mixin:OnEmbedInitialize(self)
+				end
+			end
+		end
+		current = current.super
+	end
+	if type(addon.OnInitialize) == "function" then
 		addon:OnInitialize()
 	end
 	RegisterOnEnable(addon)
