@@ -657,7 +657,7 @@ function AceDB:SetProfile(name, copyFrom)
 			lowerCopyFrom = string.lower(copyFrom)
 			if stage == 2 then
 				local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-				DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/. This will cause an error on July 20, 2006.")
+				DEFAULT_CHAT_FRAME:AddMessage(line .. " - Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/. This will cause an error on July 20, 2006.")
 			end
 		else
 			AceDB:error("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/.")
@@ -812,14 +812,14 @@ if stage <= 2 then
 	function AceDB:IsEnabled()
 		if stage == 2 then
 			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - :IsEnabled() has been replaced by :IsActive(). This will cause an error on July 21, 2006.")
+			DEFAULT_CHAT_FRAME:AddMessage(line .. " - :IsEnabled() has been replaced by :IsActive(). This will cause an error on July 21, 2006.")
 		end
 		return self:IsActive()
 	end
 	function AceDB:ToggleStandby()
 		if stage == 2 then
 			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - :ToggleStandby() has been replaced by :ToggleActive([state]). This will cause an error on July 21, 2006.")
+			DEFAULT_CHAT_FRAME:AddMessage(line .. " - :ToggleStandby() has been replaced by :ToggleActive([state]). This will cause an error on July 21, 2006.")
 		end
 		return self:ToggleActive()
 	end
