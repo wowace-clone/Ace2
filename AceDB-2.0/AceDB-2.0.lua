@@ -536,8 +536,7 @@ function AceDB:ResetDB(kind)
 			end
 		end
 	elseif kind == "profile" then
-		if db.raw.currentProfile
-		local id = db.raw.currentProfile[charID]
+		local id = db.raw.currentProfile and db.raw.currentProfile[charID] or "default"
 		if id == "char" then
 			id = "char/" .. charID
 		elseif id == "class" then
