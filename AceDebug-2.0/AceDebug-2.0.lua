@@ -47,7 +47,7 @@ function AceDebug:CustomDebug(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7,
 		-- This block dynamically rebuilds the tmp array stopping on the first nil.
 		table.insert(tmp, output)
 		
-		table.insert(tmp, a1)
+		table.insert(tmp, tostring(a1))
 		table.insert(tmp, a2)
 		table.insert(tmp, a3)
 		table.insert(tmp, a4)
