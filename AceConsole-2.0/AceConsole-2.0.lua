@@ -1394,7 +1394,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			local class = self.class
 			while class and class ~= AceOO.Class do
 				if type(class.GetAceOptionsDataTable) == "function" then
-					local t = class:GetAceOptionsDataTable()
+					local t = class:GetAceOptionsDataTable(self)
 					for k,v in pairs(t) do
 						if type(options.args) ~= "table" then
 							options.args = {}
@@ -1408,7 +1408,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 				if mixins then
 					for mixin in pairs(mixins) do
 						if type(mixin.GetAceOptionsDataTable) == "function" then
-							local t = mixin:GetAceOptionsDataTable()
+							local t = mixin:GetAceOptionsDataTable(self)
 							for k,v in pairs(t) do
 								if type(options.args) ~= "table" then
 									options.args = {}
