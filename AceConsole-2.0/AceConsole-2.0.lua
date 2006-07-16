@@ -1523,7 +1523,7 @@ function AceConsole:PLAYER_LOGIN()
 	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, ReloadUI, "RELOAD")
 	local tmp
 	self:RegisterChatCommand({ "/print" }, function(text)
-		RunScript("local function func(...) for k,v in ipairs(arg) do arg[k] = tostring(v) end DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg, ' ')) end func(" .. text .. ")")
+		RunScript("local function func(...) for k = 1,table.getn(arg) do arg[k] = tostring(arg[k]) end DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg, ' ')) end func(" .. text .. ")")
 	end, "PRINT")
 end
 
