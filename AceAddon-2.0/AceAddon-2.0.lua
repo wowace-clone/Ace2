@@ -1,6 +1,6 @@
 --[[
 Name: AceAddon-2.0
-Revision: $Rev: 4953 $
+Revision: $Rev$
 Author(s): ckknight (ckknight@gmail.com)
 Inspired By: Ace 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
@@ -11,7 +11,7 @@ Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0, (optional) AceConsole-2.0
 ]]
 
 local MAJOR_VERSION = "AceAddon-2.0"
-local MINOR_VERSION = "$Revision: 4953 $"
+local MINOR_VERSION = "$Revision$"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end

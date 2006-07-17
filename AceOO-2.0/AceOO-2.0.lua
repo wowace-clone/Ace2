@@ -1,6 +1,6 @@
 --[[
 Name: AceOO-2.0
-Revision: $Rev: 4524 $
+Revision: $Rev$
 Author(s): ckknight (ckknight@gmail.com)
            kergoth (kergoth@handhelds.org)
 Website: http://www.wowace.com/
@@ -11,7 +11,7 @@ Dependencies: AceLibrary, Compost-2.0 (optional)
 ]]
 
 local MAJOR_VERSION = "AceOO-2.0"
-local MINOR_VERSION = "$Revision: 4524 $"
+local MINOR_VERSION = "$Revision$"
 
 -- This ensures the code is only executed if the libary doesn't already exist, or is a newer version
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end

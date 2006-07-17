@@ -1,6 +1,6 @@
 --[[
 Name: AceLibrary
-Revision: $Rev: 4943 $
+Revision: $Rev$
 Author(s): ckknight (ckknight@gmail.com)
            cladhaire (cladhaire@gmail.com)
 Inspired By: Iriel (iriel@vigilance-committee.org)
@@ -17,7 +17,7 @@ Dependencies: None
 ]]
 
 local ACELIBRARY_MAJOR = "AceLibrary"
-local ACELIBRARY_MINOR = "$Revision: 4943 $"
+local ACELIBRARY_MINOR = "$Revision$"
 
 -- CHANGE DEBUG TO ``false`` ON RELEASE -------------------
 local DEBUG = true
