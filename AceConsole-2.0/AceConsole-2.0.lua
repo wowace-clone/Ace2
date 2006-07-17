@@ -1535,7 +1535,8 @@ local function TabCompleteInfo(cmdpath)
 	end
 end
 
-AceLibrary("AceTab-2.0"):RegisterTabCompletion("AceConsole", "%/.*", function(cmdpath)
+if AceLibrary:HasInstance("AceTab-2.0") then
+	AceLibrary("AceTab-2.0"):RegisterTabCompletion("AceConsole", "%/.*", function(cmdpath)
 		local name, cmd, path = TabCompleteInfo(cmdpath)
 		local validArgs = findTableLevel(self, AceConsole.registry[name], cmd, path)
 		return "AceConsole", validArgs.args
@@ -1548,6 +1549,7 @@ AceLibrary("AceTab-2.0"):RegisterTabCompletion("AceConsole", "%/.*", function(cm
 			printUsage(self, validArgs.handler, AceConsole.registry[name], validArgs, path2, argwork)
 		end
 	end)
+end
 
 function external(self, major, instance)
 	if major == "AceEvent-2.0" then
