@@ -38,7 +38,7 @@ local OPTION_IS_DISABLED = "Option %q is disabled."
 local NONE = NONE or "None"
 
 local AceOO = AceLibrary("AceOO-2.0")
-local AceEvent, AceHook
+local AceEvent
 
 local AceConsole = AceOO.Mixin { "Print", "CustomPrint", "RegisterChatCommand" }
 
@@ -1492,17 +1492,6 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		end
 	end
 	
-	if not AceHook and AceLibrary:HasInstance("AceHook-2.0") then
-		external(AceConsole, "AceHook-2.0", AceLibrary("AceHook-2.0"))
-	end
-
-	if AceHook then
-		if not self.hooks then
-			AceConsole:HookScript(ChatFrameEditBox, "OnTabPressed")
-			AceConsole:Hook("ChatEdit_OnLoad")
-		end
-	end
-		
 	AceConsole.registry[name] = options
 end
 
@@ -1527,98 +1516,38 @@ function AceConsole:PLAYER_LOGIN()
 	end, "PRINT")
 end
 
-function AceConsole:ChatEdit_OnLoad()
-	AceConsole:HookScript(this, "OnTabPressed")
-end
+local function TabCompleteInfo(cmdpath)
+	local cmd = "/" .. string.find(cmdpath, "(%S+)")
+	local path = string.sub(cmdpath, string.len(cmd) + 2)
 
-local function LCS(strings) --returns Least Common Substring
-	local len = 0
-	local numStrings = table.getn(strings)
-	
-	for _, s in strings do
-		len = string.len(s) > len and string.len(s) or len
-	end
-	
-	for i = 1, len do
-		local c = string.sub(strings[1], i, i)
-		for j = 2, numStrings do
-			if string.sub(strings[j], i, i) ~= c then
-				return string.sub(strings[1], 0, i-1)
-			end
-		end
-	end
-	return strings[1]
-end
-
-function AceConsole:OnTabPressed()
-	--Get the position of the cursor
-	local ost = this:GetScript("OnTextSet")
-	if ost then this:SetScript("OnTextSet", nil) end
-	this:Insert("\1")
-	local pos = string.find(this:GetText(), "\1", 1) - 1
-	this:HighlightText(pos, pos+1)
-	this:Insert("\0")
-	if ost then this:SetScript("OnTextSet", ost) end
-	
-	local text = this:GetText()
-	
-	local _, _, cmd  = string.find(text, "^([%S]+)")
-	if not cmd then return self.hooks[this].OnTabPressed.orig() end
-	
-	local left = string.find(string.sub(text, 0, pos), "[%S]+$") or string.len(cmd)
-	
-	local _, _, word = string.find(string.sub(text, left, pos), "^([%S]+)")
-	
-	local realOptions, validArgs, path, argwork
-	if string.sub(cmd, 1, 1) == "/" then
-		if left == 1 and word == cmd then
-			return self.hooks[this].OnTabPressed.orig()
-		else
-			for name in pairs(SlashCmdList) do --global
-				if AceConsole.registry[name] then
-					local i = 0
-					local scmd
-					while true do
-						i = i + 1
-						scmd = _G["SLASH_"..name..i]
-						if not scmd then break end
-						if cmd == scmd then
-							realOptions = AceConsole.registry[name]
-							validArgs, path, argwork = findTableLevel(self, AceConsole.registry[name], cmd, string.sub(this:GetText(), string.len(cmd)+2, pos))
-						end
-					end
+	for name in pairs(SlashCmdList) do --global
+		if AceConsole.registry[name] then
+			local i = 0
+			while true do
+				i = i + 1
+				local scmd = _G["SLASH_"..name..i]
+				if not scmd then break end
+				if cmd == scmd then
+					return name, cmd, path
 				end
 			end
 		end
 	end
-	
-	if not validArgs then return self.hooks[this].OnTabPressed.orig() end
-	
-	if not validArgs.args then
-		printUsage(self, validArgs.handler, realOptions, validArgs, path, argwork)
-	else
-		local matches = {}
-		for arg in validArgs.args do
-			if string.find(string.lower(arg), string.lower(word), nil, 1) == 1 then
-				table.insert(matches, arg)
-			end	
-		end
-		local numMatches = table.getn(matches)
-		if validArgs.type == "group" then
-			if numMatches == 1 then
-				this:HighlightText(left - 1, left + string.len(word))
-				this:Insert(matches[1])
-				this:Insert(" ")
-			elseif numMatches > 1 then
-				printUsage(self, validArgs.handler, realOptions, validArgs, path, argwork, true, LCS(matches))
-				this:HighlightText(left - 1, left + string.len(word))
-				this:Insert(LCS(matches))
-			else
-				printUsage(self, validArgs.handler, realOptions, validArgs, path, argwork)
-			end
-		end
-	end
 end
+
+AceLibrary("AceTab-2.0"):RegisterTabCompletion("AceConsole", "%/.*", function(cmdpath)
+		local name, cmd, path = TabCompleteInfo(cmdpath)
+		local validArgs = findTableLevel(self, AceConsole.registry[name], cmd, path)
+		return "AceConsole", validArgs.args
+	end, function(match, cmdpath)
+		local name, cmd, path = TabCompleteInfo(cmdpath)
+		local validArgs, path2, argwork = findTableLevel(self, AceConsole.registry[name], cmd, path)
+		if match then
+			printUsage(self, validArgs.handler, AceConsole.registry[name], validArgs, path2, argwork, true, match)
+		else
+			printUsage(self, validArgs.handler, AceConsole.registry[name], validArgs, path2, argwork)
+		end
+	end)
 
 function external(self, major, instance)
 	if major == "AceEvent-2.0" then
@@ -1626,12 +1555,6 @@ function external(self, major, instance)
 			AceEvent = instance
 			
 			AceEvent:embed(self)
-		end
-	elseif major == "AceHook-2.0" then
-		if not AceHook then
-			AceHook = instance
-			
-			AceHook:embed(self)
 		end
 	end
 end

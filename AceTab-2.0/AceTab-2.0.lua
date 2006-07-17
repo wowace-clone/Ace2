@@ -20,26 +20,31 @@ local AceTab = {}
 local dump=DevTools_Dump
 local _G = getfenv()
 
-function AceTab:RegisterCompletion(descriptor, regex, compfunc, editframes, usagefunc)
+function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, editframes)
 	AceTab:argCheck(descriptor, 2, "string")
 	AceTab:argCheck(regex, 3, "string", "table")
 	AceTab:argCheck(compfunc, 4, "string", "function", "nil")
-	AceTab:argCheck(editframe, 5, "string", "table", "nil")
-	AceTab:argCheck(usagefunc, 6, "string", "function", "nil")
+	AceTab:argCheck(usagefunc, 5, "string", "function", "nil")
+	AceTab:argCheck(editframe, 6, "string", "table", "nil")
+
 	if type(regex) == "string" then regex = {regex} end
-	
+
 	if type(compfunc) == "string" and type(self[compfunc]) ~= "function" then
 		AceTab:error("Cannot register function %q; it does not exist", compfunc)
 	end
-	
+
+	if type(usagefunc) == "string" and type(self[usagefunc]) ~= "function" then
+		AceTab:error("Cannot register usage function %q; it does not exist", usagefunc)
+	end
+
 	if not editframes then editframes = {ChatFrameEditBox} end
-	
+
 	if type(editframes) == "string" then
 		editframes = _G[editframes]
 	end
-	
+
 	if editframes.Show then editframes = {editframes} end
-	
+
 	for i, frame in pairs(editframes) do
 		if type(frame) == "string" then
 			if type(self[frame]) ~= "table" then
@@ -58,10 +63,6 @@ function AceTab:RegisterCompletion(descriptor, regex, compfunc, editframes, usag
 		end
 	end
 	
-	if type(usagefunc) == "string" and type(self[usagefunc]) ~= "function" then
-		AceTab:error("Cannot register usage function %q; it does not exist", usagefunc)
-	end
-	
 	if not AceTab.registry[descriptor] then
 		AceTab.registry[descriptor] = Compost and Compost:Acquire() or {}
 	end
@@ -70,10 +71,10 @@ function AceTab:RegisterCompletion(descriptor, regex, compfunc, editframes, usag
 		AceTab.registry[descriptor][self] = Compost and Compost:Acquire() or {}
 	end
 	
-	AceTab.registry[descriptor][self] = {patterns = regex, compfunc = compfunc, frames = editframes, usage = usagefunc}
+	AceTab.registry[descriptor][self] = {patterns = regex, compfunc = compfunc,  usage = usagefunc, frames = editframes}
 end
 
-function AceTab:IsCompletionRegistered(descriptor)
+function AceTab:IsTabCompletionRegistered(descriptor)
 	AceTab:argCheck(descriptor, 2, "string")
 	if AceTab.registry[descriptor] and AceTab.registry[descriptor][self] then
 		return true, AceTab.registry[descriptor][self].completion
@@ -81,7 +82,7 @@ function AceTab:IsCompletionRegistered(descriptor)
 	return false, nil
 end
 
-function AceTab:UnregisterCompletion(descriptor)
+function AceTab:UnregisterTabCompletion(descriptor)
 	AceTab:argCheck(descriptor, 2, "string")
 	if AceTab.registry[description] and AceTab.registry[description][self] then
 		AceTab.registry[descriptor][self].completion = nil
@@ -124,17 +125,13 @@ function AceTab:OnTabPressed()
 	
 	local left = string.find(string.sub(text, 1, pos), "%w+$") or pos
 	if not left then return self.hooks[this].OnTabPressed.orig() end
-	
 	for _, comps in pairs(AceTab.registry) do
 		for _, s in pairs(comps) do
 			for _, f in s.frames do
-				dump(f)
-				dump(this)
 				if f == this then
 					for _, regex in ipairs(s.patterns) do
 						if string.find(string.sub(text, 1, left), regex, nil, 1) then
 							hdr, cand = s.compfunc(string.sub(text, 1, left-1))
-							dump(cand)
 							if cand then
 								table.insert(completions, { header = hdr, candidates = cand, usage = s.usage })
 							end
@@ -173,7 +170,7 @@ function AceTab:OnTabPressed()
 		for i, comp in ipairs(completions) do
 			print(comp.header)
 			for _, match in mSorted do
-				local usageString = comp.usage and comp.usage(match)
+				local usageString = comp.usage and comp.usage(match, text)
 				if usageString then
 					print(usageString)
 				else
