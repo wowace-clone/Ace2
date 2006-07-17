@@ -1,6 +1,6 @@
 --[[
 Name: AceConsole-2.0
-Revision: $Rev$
+Revision: $Rev: 4961 $
 Author(s): ckknight (ckknight@gmail.com)
            cladhaire (cladhaire@gmail.com)
            hyperactiveChipmunk (hyperactiveChipmunk@gmail.com)
@@ -15,7 +15,7 @@ Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceConsole-2.0"
-local MINOR_VERSION = "$Revision$"
+local MINOR_VERSION = "$Revision: 4961 $"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
