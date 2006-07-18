@@ -111,8 +111,6 @@ local function LCS(strings) --returns Least Common Substring.  Yoinked wholesale
 end
 
 function AceTab:OnTabPressed()
-	local completions = compost and compost:Erase() or {}
-	--get position of the cursor
 	local ost = this:GetScript("OnTextSet")
 	if ost then this:SetScript("OnTextSet", nil) end
 	this:Insert("\255")
@@ -121,66 +119,62 @@ function AceTab:OnTabPressed()
 	this:Insert("\0")
 	if ost then this:SetScript("OnTextSet", ost) end
 
-	local text = string.sub(this:GetText(), 0, pos)
-	
+	local text = string.sub(this:GetText(), 0, pos) or ""
+
 	local left = string.find(string.sub(text, 1, pos), "%w+$") or pos
 	if not left then return self.hooks[this].OnTabPressed.orig() end
-	for _, comps in pairs(AceTab.registry) do
-		for _, s in pairs(comps) do
+
+	local _, _, word = string.find(string.sub(text, left, pos), "(%S+)")
+	if not word then word = "" end
+	
+	local completions = compost and compost:Erase() or {}
+	local matches = compost and compost:Erase() or {}
+	local numMatches = 0
+	
+	for desc, entry in pairs(AceTab.registry) do
+		for _, s in pairs(entry) do
 			for _, f in s.frames do
 				if f == this then
 					for _, regex in ipairs(s.patterns) do
-						if string.find(string.sub(text, 1, left), regex, nil, 1) then
-							hdr, cand = s.compfunc(string.sub(text, 1, left-1))
-							if cand then
-								table.insert(completions, { header = hdr, candidates = cand, usage = s.usage })
+						matches[desc] = compost and compost:Erase() or {}
+						s.cands = compost and compost:Erase() or {}
+						if string.find(string.sub(text, 1, left), regex) then
+							s.compfunc(s.cands, string.sub(text, 1, left-1))
+						end
+						for _, cand in ipairs(s.cands) do
+							if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 then
+								table.insert(matches[desc], cand)
+								numMatches = numMatches + 1
 							end
 						end
+						if matches[desc][1] then matches[desc].usage = s.usage end
 					end
 				end
 			end
 		end
 	end
-	if not next(completions) then return self.hooks[this].OnTabPressed.orig() end
-
-	local _, _, word = string.find(string.sub(text, left, pos), "^(%S+)")
-	word = word or ""
-
-	local matches = compost and compost:Erase() or {}
-	for _, completion in ipairs(completions) do
-		for _, cand in ipairs(completion.candidates) do
-			if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 and not matches[cand] then
-				matches[cand] = true
-			end	
-		end
-	end
-	if not next(matches) then return self.hooks[this].OnTabPressed.orig() end
-
-	local mSorted = compost and compost:Erase() or {}
-	for match in pairs(matches) do
-		table.insert(mSorted, match)
-	end
-	table.sort(mSorted)
 	
+	if numMatches == 0 then return self.hooks[this].OnTabPressed.orig() end
 	this:HighlightText(left-1, left + string.len(word)-1)
-	if table.getn(mSorted) == 1 then
-		this:Insert(mSorted[1])
+	if numMatches == 1 then
+		local _, c = next(matches)
+		this:Insert(c[1])
 		this:Insert(" ")
 	else
-		for i, comp in ipairs(completions) do
-			print(comp.header)
-			for _, match in mSorted do
-				local usageString = comp.usage and comp.usage(match, text)
-				if usageString then
-					print(usageString)
+		local matchlist = compost and compost:Erase() or {}
+		for h, c in pairs(matches) do
+			print(h..":")
+			for _, m in ipairs(c) do
+				table.insert(matchlist, m)
+				if c.usage then
+					c.usage(m)
 				else
-					print(match)
+					print(m)
 				end
 			end
 		end
-		this:Insert(LCS(mSorted))
+		this:Insert(LCS(matchlist))
 	end
-
 end
 
 local function external(self, major, instance)
