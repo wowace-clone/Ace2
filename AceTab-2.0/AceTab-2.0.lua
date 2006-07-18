@@ -163,11 +163,11 @@ function AceTab:OnTabPressed()
 	else
 		local matchlist = compost and compost:Erase() or {}
 		for h, c in pairs(matches) do
-			print(h..":")
+			if not c.usage then print(h..":") end
 			for _, m in ipairs(c) do
 				table.insert(matchlist, m)
 				if c.usage then
-					c.usage(m)
+					c.usage(m, text)
 				else
 					print(m)
 				end
