@@ -271,8 +271,8 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 	local kind = options.type
 	if type(kind) ~= "string" then
 		return '"type" must be a string.', position
-	elseif kind ~= "group" and kind ~= "range" and kind ~= "text" and kind ~= "execute" and kind ~= "toggle" and kind ~= "color" then
-		return '"type" must either be "range", "text", "group", "toggle", "execute", or "color".', position
+	elseif kind ~= "group" and kind ~= "range" and kind ~= "text" and kind ~= "execute" and kind ~= "toggle" and kind ~= "color" and kind ~= "header" then
+		return '"type" must either be "range", "text", "group", "toggle", "execute", "color", or "header".', position
 	end
 	if options.aliases then
 		if type(options.aliases) ~= "table" and type(options.aliases) ~= "string" then
