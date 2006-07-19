@@ -313,7 +313,8 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 		end
 	end
 	if options ~= baseOptions then
-		if type(options.desc) ~= "string" then
+		if kind == "header" then
+		elseif type(options.desc) ~= "string" then
 			return '"desc" must be a string', position
 		elseif string.len(options.desc) == 0 then
 			return '"desc" cannot be a 0-length string', position
@@ -1335,34 +1336,34 @@ end
 local external
 function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	if type(slashCommands) ~= "table" and slashCommands ~= false then
-		error(string.format("Bad argument #2 to `RegisterInputCommand' (expected table, got %s)", tostring(type(slashCommands))), 2)
+		AceConsole:error("Bad argument #2 to `RegisterInputCommand' (expected table, got %s)", type(slashCommands))
 	end
 	if not slashCommands and type(name) ~= "string" then
-		error(string.format("Bad argument #4 to `RegisterInputCommand' (expected string, got %s)", tostring(type(name))), 2)
+		AceConsole:error("Bad argument #4 to `RegisterInputCommand' (expected string, got %s)", type(name))
 	end
 	if type(options) ~= "table" and type(options) ~= "function" and options ~= nil then
-		error(string.format("Bad argument #3 to `RegisterInputCommand' (expected table, function, or nil, got %s)", tostring(type(options))), 2)
+		AceConsole:error("Bad argument #3 to `RegisterInputCommand' (expected table, function, or nil, got %s)", type(options))
 	end
 	if name then
 		if type(name) ~= "string" then
-			error(string.format("Bad argument #4 to `RegisterInputCommand' (expected string or nil, got %s)", tostring(type(name))), 2)
+			AceConsole:error("Bad argument #4 to `RegisterInputCommand' (expected string or nil, got %s)", type(name))
 		elseif not string.find(name, "^%w+$") or string.upper(name) ~= name or string.len(name) == 0 then
-			error("Argument #4 must be an uppercase, letters-only string with at least 1 character", 2)
+			AceConsole:error("Argument #4 must be an uppercase, letters-only string with at least 1 character")
 		end
 	end
 	if slashCommands then
 		if table.getn(slashCommands) == 0 then
-			error("Argument #2 must include at least one string")
+			AceConsole:error("Argument #2 to `RegisterInputCommand' must include at least one string")
 		end
 		
 		for k,v in pairs(slashCommands) do
 			if type(k) ~= "number" then
-				error("All keys in argument #2 must be numbers", 2)
+				AceConsole:error("All keys in argument #2 to `RegisterInputCommand' must be numbers")
 			end
 			if type(v) ~= "string" then
-				error("All values in argument #2 must be strings", 2)
+				AceConsole:error("All values in argument #2 to `RegisterInputCommand' must be strings")
 			elseif not string.find(v, "^/[A-Za-z][A-Za-z0-9_]*$") then
-				error("All values in argument #2 must be in the form of \"/word\"", 2)
+				AceConsole:error("All values in argument #2 to `RegisterInputCommand' must be in the form of \"/word\"")
 			end
 		end
 	end
@@ -1379,9 +1380,9 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		local err, position = validateOptions(self, options)
 		if err then
 			if position then
-				error(position .. ": " .. err, 2)
+				AceConsole:error(position .. ": " .. err)
 			else
-				error(err, 2)
+				AceConsole:error(err)
 			end
 		end
 		
