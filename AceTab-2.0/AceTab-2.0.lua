@@ -52,13 +52,13 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 		end
 
 		if type(Gframe) ~= "table" or not Gframe.Show then
-			AceTab:Print("Cannot register frame %q; it does not exist", frame)
+			AceTab:error("Cannot register frame %q; it does not exist", frame)
 			frame = nil
 		end
 		
 		if frame then
 			if Gframe:GetFrameType() ~= "EditBox" then
-				print("Cannot register frame %q; it is not an EditBox", frame)
+				AceTab:error("Cannot register frame %q; it is not an EditBox", frame)
 				frame = nil
 			else
 				if not self.hookLock and not self:IsHooked(GFrame, "OnTabPressed") then
@@ -198,7 +198,6 @@ end
 function AceTab:AceEvent_FullyInitialized()
 	self.hookLock = nil
 	for frame in pairs(hookedFrames) do
-		print(_G[frame]:GetName())
 		self:HookScript(_G[frame], "OnTabPressed")
 	end
 end
