@@ -110,9 +110,10 @@ end
 local function LCS(strings) --returns Least Common Substring.  Yoinked wholesale from Tem.
 	local len = 0
 	local numStrings = table.getn(strings)
-	
 	for _, s in strings do
-		len = string.len(s) > len and string.len(s) or len
+		if type(s) == "string" then
+			len = string.len(s) > len and string.len(s) or len
+		end
 	end
 	
 	for i = 1, len do
@@ -180,14 +181,13 @@ function AceTab:OnTabPressed()
 		local matchlist = compost and compost:Erase() or {}
 		for h, c in pairs(matches) do
 			if next(c) then
-				if not c.usage then print(h..":") end
-				for _, m in ipairs(c) do
-					table.insert(matchlist, m)
-					if c.usage then
-						c.usage(m, text)
-					else
+				if not c.usage then
+					print(h..":")
+					for _, m in ipairs(c) do
 						print(m)
 					end
+				else
+					c.usage(c, LCS(c), text)
 				end
 			end
 		end
