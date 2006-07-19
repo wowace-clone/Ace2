@@ -1015,6 +1015,7 @@ function AceDB:GetAceOptionsDataTable(target)
 				get = "IsActive",
 				set = "ToggleActive",
 				map = MAP_ACTIVESUSPENDED,
+				order = -3,
 			},
 			profile = {
 				name = PROFILE,
@@ -1023,7 +1024,7 @@ function AceDB:GetAceOptionsDataTable(target)
 				set = "SetProfile",
 				usage = SET_PROFILE_USAGE,
 				type = "text",
-				validate = function(x) return not tonumber(x) end,
+				order = -4,
 			}
 		}
 	end
