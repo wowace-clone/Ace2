@@ -1537,18 +1537,22 @@ if AceLibrary:HasInstance("AceTab-2.0") then
 	AceLibrary("AceTab-2.0"):RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath)
 		local ac = AceLibrary("AceConsole-2.0")
 		local name, cmd, path = ac:TabCompleteInfo(cmdpath)
-		local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
-		for arg in pairs(validArgs.args) do
-			table.insert(t, arg)
+		if ac.registry[name] then
+			local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
+			for arg in pairs(validArgs.args) do
+				table.insert(t, arg)
+			end
 		end
 	end, function(match, cmdpath)
 		local ac = AceLibrary("AceConsole-2.0")
 		local name, cmd, path = ac:TabCompleteInfo(cmdpath)
-		local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
-		if match then
-			printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, match)
-		else
-			printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork)
+		if ac.registry[name] then
+			local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
+			if match then
+				printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, match)
+			else
+				printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork)
+			end
 		end
 	end)
 end
