@@ -555,12 +555,21 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	
 	-- This is an update
 	local oldInstance = new()
-	if AceLibrary == newInstance then
+	
+	addToPositions(newInstance, major)
+	local isAceLibrary = (AceLibrary == newInstance)
+	local old_error, old_assert, old_argCheck, old_pcall
+	if isAceLibrary then
 		self = instance
 		AceLibrary = instance
+		
+		old_error = instance.error
+		old_assert = instance.assert
+		old_argCheck = instance.argCheck
+		old_pcall = instance.pcall
+	else
+		deepTransfer(instance, newInstance, oldInstance, major)
 	end
-	addToPositions(newInstance, major)
-	deepTransfer(instance, newInstance, oldInstance, major)
 	crawlReplace(instance, instance, newInstance)
 	local oldDeactivateFunc = data.deactivateFunc
 	data.minor = minor
@@ -580,6 +589,25 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	end
 	if not instance.pcall then
 		instance.pcall = pcall
+	end
+	if isAceLibrary then
+		for _,v in pairs(self.libs) do
+			local i = type(v) == "table" and v.instance
+			if type(i) == "table" then
+				if i.error == old_error then
+					i.error = error
+				end
+				if i.assert == old_assert or not i.assert then
+					i.assert = assert
+				end
+				if i.argCheck == old_argCheck or not i.argCheck then
+					i.argCheck = argCheck
+				end
+				if i.pcall == old_pcall or not i.pcall then
+					i.pcall = pcall
+				end
+			end
+		end
 	end
 	if activateFunc then
 		activateFunc(instance, oldInstance, oldDeactivateFunc)
