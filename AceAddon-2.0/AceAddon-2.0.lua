@@ -267,6 +267,7 @@ function AceAddon:GetAceOptionsDataTable(target)
 				desc = PRINT_ADDON_INFO,
 				type = "execute",
 				func = "PrintAddonInfo",
+				order = -1,
 			}
 		}
 	end
