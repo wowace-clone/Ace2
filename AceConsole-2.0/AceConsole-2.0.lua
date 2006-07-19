@@ -349,6 +349,11 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 	if options.current and type(options.current) ~= "string" then
 		return '"current" must be a string or nil', position
 	end
+	if options.order then
+		if type(options.order) ~= "number" or (-1 < options.order and options.order < 1) then
+			return '"order" must be a non-zero number or nil', position
+		end
+	end
 	if options.disabled then
 		if type(options.disabled) ~= "function" and type(options.disabled) ~= "string" and options.disabled ~= true then
 			return '"disabled" must be a function, string, or boolean', position
@@ -438,6 +443,9 @@ local colorFunc
 local colorCancelFunc
 
 local order
+
+local mysort_args
+local mysort
 
 local function printUsage(self, handler, realOptions, options, path, args, quiet, filter)
 	if filter then
@@ -586,7 +594,33 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					table.insert(order, k)
 				end
 			end
-			table.sort(order)
+			if not mysort then
+				mysort = function(a, b)
+					local alpha, bravo = mysort_args[a], mysort_args[b]
+					local alpha_order = alpha.order or 100
+					local bravo_order = bravo.order or 100
+					if alpha_order == bravo_order then
+						return tostring(a) < tostring(b)
+					else
+						if alpha_order < 0 then
+							if bravo_order > 0 then
+								return false
+							end
+						else
+							if bravo_order < 0 then
+								return true
+							end
+						end
+						if alpha_order > 0 and bravo_order > 0 then
+							return tostring(a) < tostring(b)
+						end
+						return alpha_order < bravo_order
+					end
+				end
+			end
+			mysort_args = options.args
+			table.sort(order, mysort)
+			mysort_args = nil
 			if not quiet then
 				if options == realOptions then
 					if options.desc then
