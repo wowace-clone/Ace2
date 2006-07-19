@@ -21,7 +21,6 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
-
 -- localize --
 local MAP_ONOFF = { [false] = "|cffff0000Off|r", [true] = "|cff00ff00On|r" }
 local USAGE = "Usage"
@@ -1516,12 +1515,11 @@ function AceConsole:PLAYER_LOGIN()
 	end, "PRINT")
 end
 
-local function TabCompleteInfo(cmdpath)
-	local cmd = "/" .. string.find(cmdpath, "(%S+)")
+function AceConsole:TabCompleteInfo(cmdpath)
+	local _, _, cmd =  string.find(cmdpath, "(/%S+)")
 	local path = string.sub(cmdpath, string.len(cmd) + 2)
-
 	for name in pairs(SlashCmdList) do --global
-		if AceConsole.registry[name] then
+		if self.registry[name] then
 			local i = 0
 			while true do
 				i = i + 1
@@ -1537,17 +1535,20 @@ end
 
 if AceLibrary:HasInstance("AceTab-2.0") then
 	AceLibrary("AceTab-2.0"):RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath)
-		local name, cmd, path = TabCompleteInfo(cmdpath)
-		local validArgs = findTableLevel(self, AceConsole.registry[name], cmd, path)
-		t = validArgs.args
-		dump(t)
+		local ac = AceLibrary("AceConsole-2.0")
+		local name, cmd, path = ac:TabCompleteInfo(cmdpath)
+		local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
+		for arg in pairs(validArgs.args) do
+			table.insert(t, arg)
+		end
 	end, function(match, cmdpath)
-		local name, cmd, path = TabCompleteInfo(cmdpath)
-		local validArgs, path2, argwork = findTableLevel(self, AceConsole.registry[name], cmd, path)
+		local ac = AceLibrary("AceConsole-2.0")
+		local name, cmd, path = ac:TabCompleteInfo(cmdpath)
+		local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
 		if match then
-			printUsage(self, validArgs.handler, AceConsole.registry[name], validArgs, path2, argwork, true, match)
+			printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, match)
 		else
-			printUsage(self, validArgs.handler, AceConsole.registry[name], validArgs, path2, argwork)
+			printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork)
 		end
 	end)
 end
