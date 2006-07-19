@@ -139,7 +139,7 @@ function AceTab:OnTabPressed()
 						matches[desc] = compost and compost:Erase() or {}
 						s.cands = compost and compost:Erase() or {}
 						if string.find(string.sub(text, 1, left), regex) then
-							s.compfunc(s.cands, text, left-1))
+							s.compfunc(s.cands, text, left-1)
 						end
 						for _, cand in ipairs(s.cands) do
 							if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 then
@@ -163,13 +163,15 @@ function AceTab:OnTabPressed()
 	else
 		local matchlist = compost and compost:Erase() or {}
 		for h, c in pairs(matches) do
-			if not c.usage then print(h..":") end
-			for _, m in ipairs(c) do
-				table.insert(matchlist, m)
-				if c.usage then
-					c.usage(m, text)
-				else
-					print(m)
+			if next(c) then
+				if not c.usage then print(h..":") end
+				for _, m in ipairs(c) do
+					table.insert(matchlist, m)
+					if c.usage then
+						c.usage(m, text)
+					else
+						print(m)
+					end
 				end
 			end
 		end
