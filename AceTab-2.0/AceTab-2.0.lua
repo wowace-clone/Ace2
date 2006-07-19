@@ -15,10 +15,11 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-local AceHook
-local AceTab = {}
-local dump=DevTools_Dump
+local AceHook, AceEvent
+local AceTab = {hookLock=true}
 local _G = getfenv()
+
+local hookedFrames = compost and compost:Acquire() or {}
 
 function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, editframes)
 	AceTab:argCheck(descriptor, 2, "string")
@@ -37,28 +38,34 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 		AceTab:error("Cannot register usage function %q; it does not exist", usagefunc)
 	end
 
-	if not editframes then editframes = {ChatFrameEditBox} end
+	if not editframes then editframes = {"ChatFrameEditBox"} end
 
-	if type(editframes) == "string" then
-		editframes = _G[editframes]
-	end
-
-	if editframes.Show then editframes = {editframes} end
-
-	for i, frame in pairs(editframes) do
-		if type(frame) == "string" then
-			if type(self[frame]) ~= "table" then
-				AceTab:Print("Cannot register frame %q; it does not exist", frame)
-			else
-				frame = _G[frame]
-			end
+	if type(editframes) == "table" and editframes.Show then editframes = {editframes:GetName()} end
+	
+	for _, frame in pairs(editframes) do
+		local Gframe
+		if type(frame) == "table" then
+			Gframe = frame
+			frame  = frame:GetName()
+		else
+			Gframe = _G[frame]
 		end
+
+		if type(Gframe) ~= "table" or not Gframe.Show then
+			AceTab:Print("Cannot register frame %q; it does not exist", frame)
+			frame = nil
+		end
+		
 		if frame then
-			if frame:GetFrameType() ~= "EditBox" then
+			if Gframe:GetFrameType() ~= "EditBox" then
 				print("Cannot register frame %q; it is not an EditBox", frame)
 				frame = nil
-			elseif not AceTab.hooks or not AceTab.hooks[frame] then
-				self:HookScript(frame, "OnTabPressed")
+			else
+				if not self.hookLock and not self:IsHooked(GFrame, "OnTabPressed") then
+					self:HookScript(Gframe, "OnTabPressed")
+				else
+					hookedFrames[frame] = true
+				end
 			end
 		end
 	end
@@ -70,8 +77,17 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 	if not AceTab.registry[descriptor][self] then
 		AceTab.registry[descriptor][self] = Compost and Compost:Acquire() or {}
 	end
-	
+	foo = Geditframes
 	AceTab.registry[descriptor][self] = {patterns = regex, compfunc = compfunc,  usage = usagefunc, frames = editframes}
+	
+	if not AceEvent and AceLibrary:HasInstance("AceEvent-2.0") then
+		external(AceTab, "AceEvent-2.0", AceLibrary("AceEvent-2.0"))
+	end
+	if AceEvent then
+		if not self.finalHook then
+			AceTab:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
+		end
+	end
 end
 
 function AceTab:IsTabCompletionRegistered(descriptor)
@@ -134,7 +150,7 @@ function AceTab:OnTabPressed()
 	for desc, entry in pairs(AceTab.registry) do
 		for _, s in pairs(entry) do
 			for _, f in s.frames do
-				if f == this then
+				if _G[f] == this then
 					for _, regex in ipairs(s.patterns) do
 						matches[desc] = compost and compost:Erase() or {}
 						s.cands = compost and compost:Erase() or {}
@@ -179,11 +195,26 @@ function AceTab:OnTabPressed()
 	end
 end
 
+function AceTab:AceEvent_FullyInitialized()
+	self.hookLock = nil
+	for frame in pairs(hookedFrames) do
+		print(_G[frame]:GetName())
+		self:HookScript(_G[frame], "OnTabPressed")
+	end
+end
+			
+
 local function external(self, major, instance)
 	if major == "AceHook-2.0" then
 		if not AceHook then
 			AceHook = instance
 			AceHook:embed(self)
+		end
+	elseif major == "AceEvent-2.0" then
+		if not AceEvent then
+			AceEvent = instance
+			
+			AceEvent:embed(self)
 		end
 	end
 end
