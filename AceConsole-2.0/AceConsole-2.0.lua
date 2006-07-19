@@ -597,8 +597,8 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			if not mysort then
 				mysort = function(a, b)
 					local alpha, bravo = mysort_args[a], mysort_args[b]
-					local alpha_order = alpha.order or 100
-					local bravo_order = bravo.order or 100
+					local alpha_order = alpha and alpha.order or 100
+					local bravo_order = bravo and bravo.order or 100
 					if alpha_order == bravo_order then
 						return tostring(a) < tostring(b)
 					else
@@ -1568,30 +1568,6 @@ function AceConsole:TabCompleteInfo(cmdpath)
 	end
 end
 
-if AceLibrary:HasInstance("AceTab-2.0") then
-	AceLibrary("AceTab-2.0"):RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath)
-		local ac = AceLibrary("AceConsole-2.0")
-		local name, cmd, path = ac:TabCompleteInfo(cmdpath)
-		if ac.registry[name] then
-			local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
-			for arg in pairs(validArgs.args) do
-				table.insert(t, arg)
-			end
-		end
-	end, function(match, cmdpath)
-		local ac = AceLibrary("AceConsole-2.0")
-		local name, cmd, path = ac:TabCompleteInfo(cmdpath)
-		if ac.registry[name] then
-			local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
-			if match then
-				printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, match)
-			else
-				printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork)
-			end
-		end
-	end)
-end
-
 function external(self, major, instance)
 	if major == "AceEvent-2.0" then
 		if not AceEvent then
@@ -1609,13 +1585,13 @@ function external(self, major, instance)
 					table.insert(t, arg)
 				end
 			end
-		end, function(match, cmdpath)
+		end, function(matches, lcm, cmdpath)
 			local ac = AceLibrary("AceConsole-2.0")
 			local name, cmd, path = ac:TabCompleteInfo(cmdpath)
 			if ac.registry[name] then
 				local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
 				if match then
-					printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, match)
+					printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, lcm)
 				else
 					printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork)
 				end
