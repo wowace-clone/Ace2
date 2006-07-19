@@ -107,6 +107,7 @@ function AceDebug:GetAceOptionsDataTable(target)
 				type = "toggle",
 				get = "IsDebugging",
 				set = "SetDebugging",
+				order = -2,
 			}
 		}
 	end
