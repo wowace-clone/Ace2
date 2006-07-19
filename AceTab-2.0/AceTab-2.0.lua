@@ -139,7 +139,7 @@ function AceTab:OnTabPressed()
 						matches[desc] = compost and compost:Erase() or {}
 						s.cands = compost and compost:Erase() or {}
 						if string.find(string.sub(text, 1, left), regex) then
-							s.compfunc(s.cands, string.sub(text, 1, left-1))
+							s.compfunc(s.cands, text, left-1))
 						end
 						for _, cand in ipairs(s.cands) do
 							if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 then
