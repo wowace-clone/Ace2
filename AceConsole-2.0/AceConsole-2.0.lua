@@ -1519,7 +1519,7 @@ function AceConsole:TabCompleteInfo(cmdpath)
 	local _, _, cmd =  string.find(cmdpath, "(/%S+)")
 	local path = string.sub(cmdpath, string.len(cmd) + 2)
 	for name in pairs(SlashCmdList) do --global
-		if self.registry[name] then
+		if AceConsole.registry[name] then
 			local i = 0
 			while true do
 				i = i + 1
@@ -1564,6 +1564,28 @@ function external(self, major, instance)
 			
 			AceEvent:embed(self)
 		end
+	elseif major == "AceTab-2.0" then
+		instance:RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath)
+			local ac = AceLibrary("AceConsole-2.0")
+			local name, cmd, path = ac:TabCompleteInfo(cmdpath)
+			if ac.registry[name] then
+				local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
+				for arg in pairs(validArgs.args) do
+					table.insert(t, arg)
+				end
+			end
+		end, function(match, cmdpath)
+			local ac = AceLibrary("AceConsole-2.0")
+			local name, cmd, path = ac:TabCompleteInfo(cmdpath)
+			if ac.registry[name] then
+				local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
+				if match then
+					printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, match)
+				else
+					printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork)
+				end
+			end
+		end)
 	end
 end
 
