@@ -315,7 +315,7 @@ function AceEvent:UnregisterEvent(event)
 	if AceEvent.registry[event] and AceEvent.registry[event][self] then
 		AceEvent.registry[event][self] = nil
 	else
-		AceEvent:error("Cannot unregister an event that you are not registered with.")
+		AceEvent:error("Cannot unregister event %q. %q is not registered with it.", event, self)
 	end
 end
 
