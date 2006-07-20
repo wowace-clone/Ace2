@@ -153,7 +153,7 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 			t = nil
 		end
 		func = nil
-		collectgarbage()
+--		collectgarbage()
 		return
 	end
 	local t = func()
@@ -187,7 +187,7 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 		self.translationTables[locale] = t
 	end
 	t = nil
-	collectgarbage()
+--	collectgarbage()
 end
 
 function AceLocale.prototype:SetStrictness(strict)
