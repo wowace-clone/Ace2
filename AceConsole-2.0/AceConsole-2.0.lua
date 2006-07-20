@@ -350,7 +350,7 @@ local function validateOptions(options, position, baseOptions, fromPass)
 		return '"current" must be a string or nil', position
 	end
 	if options.order then
-		if type(options.order) ~= "number" or (-1 < options.order and options.order < 1) then
+		if type(options.order) ~= "number" or (-1 < options.order and options.order < 0.999) then
 			return '"order" must be a non-zero number or nil', position
 		end
 	end
