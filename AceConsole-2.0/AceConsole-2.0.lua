@@ -634,7 +634,9 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						end
 					end
 				else
-					table.insert(order, k)
+					if v.type ~= "header" then
+						table.insert(order, k)
+					end
 				end
 			end
 			if not mysort then
