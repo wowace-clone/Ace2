@@ -45,6 +45,7 @@ local AceDB = Mixin {
 						"ToggleStandby", -- remove at 2006-07-21
 						"IsEnabled", -- remove at 2006-07-21
 					}
+local Dewdrop = AceLibrary:HasInstance("Dewdrop-2.0") and AceLibrary("Dewdrop-2.0")
 
 local _G = getfenv(0)
 
@@ -380,10 +381,53 @@ function AceDB:InitializeDB(addonName)
 		db.raw.currentProfile = {}
 	end
 	if not db.raw.currentProfile[charID] then
-		db.raw.currentProfile[charID] = "default"
+		db.raw.currentProfile[charID] = "Default"
 	end
 	if db.raw.disabled then
 		setmetatable(db.raw.disabled, caseInsensitive_mt)
+	end
+	if self['acedb-profile-copylist'] then
+		local t = self['acedb-profile-copylist']
+		for k,v in pairs(t) do
+			t[k] = nil
+		end
+		if db.raw.profiles then
+			for k in pairs(db.raw.profiles) do
+				if string.find(k, '^char/') then
+					local name = string.sub(k, 6)
+					if name ~= charID then
+						t[k] =  'Character: ' .. name
+					end
+				elseif string.find(k, '^realm/') then
+					local name = string.sub(k, 7)
+					if name ~= realmID then
+						t[k] =  'Realm: ' .. name
+					end
+				elseif string.find(k, '^class/') then
+					local name = string.sub(k, 7)
+					if name ~= classID then
+						t[k] =  'Class: ' .. name
+					end
+				end
+			end
+		end
+	end
+	if self['acedb-profile-list'] then
+		local t = self['acedb-profile-list']
+		for k,v in pairs(t) do
+			t[k] = nil
+		end
+		t.char = 'Character: ' .. charID
+		t.realm = 'Realm: ' .. realmID
+		t.class = 'Class: ' .. classID
+		t.Default = "Default"
+		if db.raw.profiles then
+			for k in pairs(db.raw.profiles) do
+				if not string.find(k, '^char/') and not string.find(k, '^realm/') and not string.find(k, '^class/') then
+					t[k] = k
+				end
+			end
+		end
 	end
 	setmetatable(db, db_mt)
 end
@@ -540,7 +584,7 @@ function AceDB:ResetDB(kind)
 			end
 		end
 	elseif kind == "profile" then
-		local id = db.raw.currentProfile and db.raw.currentProfile[charID] or "default"
+		local id = db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"
 		if id == "char" then
 			id = "char/" .. charID
 		elseif id == "class" then
@@ -633,13 +677,6 @@ local function copyTable(to, from)
 	return to
 end
 
-local stage = 3
-if tonumber(date("%Y%m%d")) < 20060713 then
-	stage = 1
-elseif tonumber(date("%Y%m%d")) < 20060720 then
-	stage = 2
-end
-
 function AceDB:SetProfile(name, copyFrom)
 	AceDB:argCheck(name, 2, "string")
 	AceDB:argCheck(copyFrom, 3, "string", "nil")
@@ -651,21 +688,13 @@ function AceDB:SetProfile(name, copyFrom)
 	local lowerName = string.lower(name)
 	local lowerCopyFrom = copyFrom and string.lower(copyFrom)
 	if string.sub(lowerName, 1, 5) == "char/" or string.sub(lowerName, 1, 6) == "realm/" or string.sub(lowerName, 1, 6) == "class/" then
-		if stage <= 2 then
-			if string.sub(lowerName, 1, 5) == "char/" then
-				name, copyFrom = "char", name
-			else
-				name, copyFrom = string.sub(lowerName, 1, 5), name
-			end
-			lowerName = string.lower(name)
-			lowerCopyFrom = string.lower(copyFrom)
-			if stage == 2 then
-				local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-				DEFAULT_CHAT_FRAME:AddMessage(line .. " - Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/. This will cause an error on July 20, 2006.")
-			end
+		if string.sub(lowerName, 1, 5) == "char/" then
+			name, copyFrom = "char", name
 		else
-			AceDB:error("Bad argument #2 to `SetProfile'. Cannot start with char/, realm/, or class/.")
+			name, copyFrom = string.sub(lowerName, 1, 5), name
 		end
+		lowerName = string.lower(name)
+		lowerCopyFrom = string.lower(copyFrom)
 	end
 	if copyFrom then
 		if string.sub(lowerCopyFrom, 1, 5) == "char/" then
@@ -760,6 +789,18 @@ function AceDB:SetProfile(name, copyFrom)
 				self:OnDisable()
 			end
 		end
+	end
+	if self['acedb-profile-list'] then
+		if not self['acedb-profile-list'][name] then
+			self['acedb-profile-list'][name] = name
+		end
+	end
+	if Dewdrop then
+		Dewdrop:Refresh(1)
+		Dewdrop:Refresh(2)
+		Dewdrop:Refresh(3)
+		Dewdrop:Refresh(4)
+		Dewdrop:Refresh(5)
 	end
 end
 
@@ -908,7 +949,7 @@ function AceDB:PLAYER_LOGOUT()
 				db.raw.account = nil
 			end
 			if db.profile and cleanDefaults(db.profile, db.defaults and db.defaults.profile) then
-				db.raw.profiles[db.raw.currentProfile[charID] or "default"] = nil
+				db.raw.profiles[db.raw.currentProfile[charID] or "Default"] = nil
 				if not next(db.raw.profiles) then
 					db.raw.profiles = nil
 				end
@@ -948,7 +989,7 @@ function AceDB:PLAYER_LOGOUT()
 						db.raw.namespaces[name].account = nil
 					end
 					if v.profile and cleanDefaults(v.profile, v.defaults and v.defaults.profile) then
-						db.raw.namespaces[name].profiles[db.raw.currentProfile[charID] or "default"] = nil
+						db.raw.namespaces[name].profiles[db.raw.currentProfile[charID] or "Default"] = nil
 						if not next(db.raw.namespaces[name].profiles) then
 							db.raw.namespaces[name].profiles = nil
 						end
@@ -1004,6 +1045,55 @@ end
 
 local options
 function AceDB:GetAceOptionsDataTable(target)
+	if not target['acedb-profile-list'] then
+		target['acedb-profile-list'] = setmetatable({}, caseInsensitive_mt)
+		local t = target['acedb-profile-list']
+		for k,v in pairs(t) do
+			t[k] = nil
+		end
+		t.char = 'Character: ' .. charID
+		t.realm = 'Realm: ' .. realmID
+		t.class = 'Class: ' .. classID
+		t.Default = "Default"
+		if target.db and target.db.raw then
+			local db = target.db
+			if db.raw.profiles then
+				for k in pairs(db.raw.profiles) do
+					if not string.find(k, '^char/') and not string.find(k, '^realm/') and not string.find(k, '^class/') then
+						t[k] = k
+					end
+				end
+			end
+		end
+	end
+	if not target['acedb-profile-copylist'] then
+		target['acedb-profile-copylist'] = setmetatable({}, caseInsensitive_mt)
+		if target.db and target.db.raw then
+			local t = target['acedb-profile-copylist']
+			local db = target.db
+			
+			if db.raw.profiles then
+				for k in pairs(db.raw.profiles) do
+					if string.find(k, '^char/') then
+						local name = string.sub(k, 6)
+						if name ~= charID then
+							t[k] =  'Character: ' .. name
+						end
+					elseif string.find(k, '^realm/') then
+						local name = string.sub(k, 7)
+						if name ~= realmID then
+							t[k] =  'Realm: ' .. name
+						end
+					elseif string.find(k, '^class/') then
+						local name = string.sub(k, 7)
+						if name ~= classID then
+							t[k] =  'Class: ' .. name
+						end
+					end
+				end
+			end
+		end
+	end
 	if not options then
 		options = {
 			standby = {
@@ -1018,14 +1108,43 @@ function AceDB:GetAceOptionsDataTable(target)
 				order = -3,
 			},
 			profile = {
+				type = 'group',
 				name = PROFILE,
 				desc = SET_PROFILE,
-				get = "GetProfile",
-				set = "SetProfile",
-				usage = SET_PROFILE_USAGE,
-				type = "text",
-				order = -4,
-			}
+				order = -3.5,
+				args = {
+					choose = {
+						guiName = "Choose",
+						cmdName = PROFILE,
+						desc = "Choose a profile",
+						type = 'text',
+						get = "GetProfile",
+						set = "SetProfile",
+						validate = target['acedb-profile-list']
+					},
+					copy = {
+						guiName = "Copy",
+						cmdName = PROFILE,
+						desc = "Copy a profile",
+						type = 'text',
+						get = "GetProfile",
+						set = "SetProfile",
+						validate = target['acedb-profile-copylist'],
+						disabled = function()
+							return not next(target['acedb-profile-copylist'])
+						end,
+					},
+					other = {
+						guiName = "Other",
+						cmdName = PROFILE,
+						desc = "Choose another profile",
+						usage = "<profile name>",
+						type = 'text',
+						get = "GetProfile",
+						set = "SetProfile",
+					}
+				}
+			},
 		}
 	end
 	return options
@@ -1076,6 +1195,8 @@ local function external(self, major, instance)
 		
 		self:RegisterEvent("ADDON_LOADED")
 		self:RegisterEvent("PLAYER_LOGOUT")
+	elseif major == "Dewdrop-2.0" then
+		Dewdrop = instance
 	end
 end
 
