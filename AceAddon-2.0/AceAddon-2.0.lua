@@ -377,7 +377,8 @@ local function external(self, major, instance)
 		AceConsole = instance
 		
 		local slashCommands = { "/ace2" }
-		if not IsAddOnLoaded("Ace") then
+		local _,_,_,enabled,loadable = GetAddOnInfo("Ace")
+		if not enabled or not loadable then
 			table.insert(slashCommands, "/ace")
 		end
 		local function listAddon(addon, depth)
