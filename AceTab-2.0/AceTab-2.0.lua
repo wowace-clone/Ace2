@@ -22,20 +22,20 @@ local _G = getfenv()
 local hookedFrames = compost and compost:Acquire() or {}
 
 function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, editframes)
-	AceTab:argCheck(descriptor, 2, "string")
-	AceTab:argCheck(regex, 3, "string", "table")
-	AceTab:argCheck(compfunc, 4, "string", "function", "nil")
-	AceTab:argCheck(usagefunc, 5, "string", "function", "nil")
-	AceTab:argCheck(editframe, 6, "string", "table", "nil")
+	self:argCheck(descriptor, 2, "string")
+	self:argCheck(regex, 3, "string", "table")
+	self:argCheck(compfunc, 4, "string", "function", "nil")
+	self:argCheck(usagefunc, 5, "string", "function", "nil")
+	self:argCheck(editframe, 6, "string", "table", "nil")
 
 	if type(regex) == "string" then regex = {regex} end
 
 	if type(compfunc) == "string" and type(self[compfunc]) ~= "function" then
-		AceTab:error("Cannot register function %q; it does not exist", compfunc)
+		self:error("Cannot register function %q; it does not exist", compfunc)
 	end
 
 	if type(usagefunc) == "string" and type(self[usagefunc]) ~= "function" then
-		AceTab:error("Cannot register usage function %q; it does not exist", usagefunc)
+		self:error("Cannot register usage function %q; it does not exist", usagefunc)
 	end
 
 	if not editframes then editframes = {"ChatFrameEditBox"} end
@@ -52,13 +52,13 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 		end
 
 		if type(Gframe) ~= "table" or not Gframe.Show then
-			AceTab:error("Cannot register frame %q; it does not exist", frame)
+			self:error("Cannot register frame %q; it does not exist", frame)
 			frame = nil
 		end
 		
 		if frame then
 			if Gframe:GetFrameType() ~= "EditBox" then
-				AceTab:error("Cannot register frame %q; it is not an EditBox", frame)
+				self:error("Cannot register frame %q; it is not an EditBox", frame)
 				frame = nil
 			else
 				if not self.hookLock and not self:IsHooked(GFrame, "OnTabPressed") then
@@ -70,40 +70,40 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 		end
 	end
 	
-	if not AceTab.registry[descriptor] then
-		AceTab.registry[descriptor] = Compost and Compost:Acquire() or {}
+	if not self.registry[descriptor] then
+		self.registry[descriptor] = Compost and Compost:Acquire() or {}
 	end
 	
-	if not AceTab.registry[descriptor][self] then
-		AceTab.registry[descriptor][self] = Compost and Compost:Acquire() or {}
+	if not self.registry[descriptor][self] then
+		self.registry[descriptor][self] = Compost and Compost:Acquire() or {}
 	end
 	foo = Geditframes
-	AceTab.registry[descriptor][self] = {patterns = regex, compfunc = compfunc,  usage = usagefunc, frames = editframes}
+	self.registry[descriptor][self] = {patterns = regex, compfunc = compfunc,  usage = usagefunc, frames = editframes}
 	
 	if not AceEvent and AceLibrary:HasInstance("AceEvent-2.0") then
 		external(AceTab, "AceEvent-2.0", AceLibrary("AceEvent-2.0"))
 	end
 	if AceEvent then
 		if not self.finalHook then
-			AceTab:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
+			self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
 		end
 	end
 end
 
 function AceTab:IsTabCompletionRegistered(descriptor)
-	AceTab:argCheck(descriptor, 2, "string")
-	if AceTab.registry[descriptor] and AceTab.registry[descriptor][self] then
-		return true, AceTab.registry[descriptor][self].completion
+	self:argCheck(descriptor, 2, "string")
+	if self.registry[descriptor] and self.registry[descriptor][self] then
+		return true, self.registry[descriptor][self].completion
 	end
 	return false, nil
 end
 
 function AceTab:UnregisterTabCompletion(descriptor)
-	AceTab:argCheck(descriptor, 2, "string")
-	if AceTab.registry[description] and AceTab.registry[description][self] then
-		AceTab.registry[descriptor][self].completion = nil
+	self:argCheck(descriptor, 2, "string")
+	if self.registry[description] and self.registry[description][self] then
+		self.registry[descriptor][self].completion = nil
 	else
-		AceTab:error("Cannot unregister a tab completion that you have not registered.")
+		self:error("Cannot unregister a tab completion that you have not registered.")
 	end
 end
 
@@ -148,7 +148,7 @@ function AceTab:OnTabPressed()
 	local matches = compost and compost:Erase() or {}
 	local numMatches = 0
 	
-	for desc, entry in pairs(AceTab.registry) do
+	for desc, entry in pairs(self.registry) do
 		for _, s in pairs(entry) do
 			for _, f in s.frames do
 				if _G[f] == this then
