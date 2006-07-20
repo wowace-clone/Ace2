@@ -61,7 +61,7 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 				AceTab:error("Cannot register frame %q; it is not an EditBox", frame)
 				frame = nil
 			else
-				if AceEvent:IsFullyInitialized() and not self:IsHooked(GFrame, "OnTabPressed") then
+				if AceEvent:IsFullyInitialized() and not self:IsHooked(Gframe, "OnTabPressed") then
 					self:HookScript(Gframe, "OnTabPressed")
 				else
 					hookedFrames[frame] = true
