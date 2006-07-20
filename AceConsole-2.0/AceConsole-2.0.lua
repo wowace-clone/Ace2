@@ -261,7 +261,7 @@ local function validateOptionsMethods(self, options, position)
 	end
 end
 
-local function validateOptions(self, options, position, baseOptions, fromPass)
+local function validateOptions(options, position, baseOptions, fromPass)
 	if not baseOptions then
 		baseOptions = options
 	end
@@ -366,11 +366,33 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 	end
 	if kind == "text" then
 		if type(options.validate) == "table" then
+			local t = options.validate
+			local iTable = nil
+			for k,v in pairs(t) do
+				if type(k) == "number" then
+					if iTable == nil then
+						iTable = true
+					elseif not iTable then
+						return '"validate" must either have all keys be indexed numbers or strings', position
+					elseif k < 1 or k > table.getn(t) then
+						return '"validate" numeric keys must be indexed properly. >= 1 and <= table.getn', position
+					end
+				else
+					if iTable == nil then
+						iTable = false
+					elseif iTable then
+						return '"validate" must either have all keys be indexed numbers or strings', position
+					end
+				end
+				if type(v) ~= "string" then
+					return '"validate" values must all be strings', position
+				end
+			end
 		else
 			if type(options.usage) ~= "string" then
 				return '"usage" must be a string', position
 			elseif options.validate and type(options.validate) ~= "string" and type(options.validate) ~= "function" then
-				return '"validate" must be a string or function', position
+				return '"validate" must be a string, function, or table', position
 			end
 		end
 	elseif kind == "range" then
@@ -417,9 +439,10 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 		for k,v in pairs(options.args) do
 			if type(k) ~= "string" then
 				return '"args" keys must be strings', position
-			end
-			if not string.find(k, "^%w+$") then
-				return string.format('"args" keys must be standard strings. %q is not appropriate.', k), position
+			elseif string.find(k, "%s") then
+				return string.format('"args" keys must not include spaces. %q is not appropriate.', k), position
+			elseif string.len(k) == 0 then
+				return '"args" keys must not be 0-length strings.', position
 			end
 			if type(v) ~= "table" then
 				return '"args" values must be tables', position and position .. "." .. k or k
@@ -430,7 +453,7 @@ local function validateOptions(self, options, position, baseOptions, fromPass)
 			else
 				newposition = "args." .. k
 			end
-			local err, pos = validateOptions(self, v, newposition, baseOptions, options.pass)
+			local err, pos = validateOptions(v, newposition, baseOptions, options.pass)
 			if err then
 				return err, pos
 			end
@@ -507,9 +530,15 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				if not order then
 					order = {}
 				end
-				for _,v in ipairs(options.validate) do
-					if string.find(k, filter) then
-						table.insert(order, k)
+				for k,v in pairs(options.validate) do
+					if type(k) == "number" then
+						if string.find(v, filter) then
+							table.insert(order, v)
+						end
+					else
+						if string.find(k, filter) then
+							table.insert(order, k)
+						end
 					end
 				end
 				usage = "{" .. table.concat(order, " || ") .. "}"
@@ -518,7 +547,21 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				end
 				table.setn(order, 0)
 			else
-				usage = "{" .. table.concat(options.validate, " || ") .. "}"
+				if not order then
+					order = {}
+				end
+				for k,v in pairs(options.validate) do
+					if type(k) == "number" then
+						table.insert(order, v)
+					else
+						table.insert(order, k)
+					end
+				end
+				usage = "{" .. table.concat(order, " || ") .. "}"
+				for k in pairs(order) do
+					order[k] = nil
+				end
+				table.setn(order, 0)
 			end
 		else
 			usage = options.usage or "<value>"
@@ -814,15 +857,12 @@ local function handlerFunc(self, chat, msg, options)
 					good = options.validate(unpack(args))
 				elseif type(options.validate) == "table" then
 					local arg = args[1]
-					arg = type(arg) == "string" and string.lower(arg) or arg
-					for _,v in ipairs(options.validate) do
-						if type(arg) == "string" then
-							if string.lower(v) == arg then
-								args[1] = v
-								good = true
-								break
-							end
-						elseif v == arg then
+					arg = string.lower(tostring(arg))
+					for k,v in pairs(options.validate) do
+						local bit
+						bit = type(k) == "number" and v or k
+						if string.lower(bit) == arg then
+							args[1] = bit
 							good = true
 							break
 						end
@@ -836,7 +876,21 @@ local function handlerFunc(self, chat, msg, options)
 				if not good then
 					local usage
 					if type(options.validate) == "table" then
+						if not order then
+							order = {}
+						end
+						for k,v in pairs(options.validate) do
+							if type(k) == "number" then
+								table.insert(order, v)
+							else
+								table.insert(order, k)
+							end
+						end
 						usage = "{" .. table.concat(options.validate, " || ") .. "}"
+						for k in pairs(order) do
+							order[k] = nil
+						end
+						table.setn(order, 0)
 					else
 						usage = options.usage or "<value>"
 					end
@@ -1411,7 +1465,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	end
 	
 	if type(options) == "table" then
-		local err, position = validateOptions(self, options)
+		local err, position = validateOptions(options)
 		if err then
 			if position then
 				AceConsole:error(position .. ": " .. err)
