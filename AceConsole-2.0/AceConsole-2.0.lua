@@ -507,6 +507,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			elseif type(passTable.get) == "function" then
 				var = passTable.get(passValue)
 			else
+				local handler = passTable.handler or handler
 				if type(handler[passTable.get]) ~= "function" then
 					AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
 				end
@@ -517,6 +518,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			elseif type(options.get) == "function" then
 				var = options.get()
 			else
+				local handler = options.handler or handler
 				if type(handler[options.get]) ~= "function" then
 					AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
 				end
@@ -578,6 +580,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			if type(passTable.get) == "function" then
 				var = passTable.get(passValue)
 			else
+				local handler = passTable.handler or handler
 				if type(handler[passTable.get]) ~= "function" then
 					AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
 				end
@@ -587,7 +590,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			if type(options.get) == "function" then
 				var = options.get()
 			else
-				local handler = options.handler or self
+				local handler = options.handler or handler
 				if type(handler[options.get]) ~= "function" then
 					AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
 				end
@@ -693,7 +696,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					if type(hidden) == "function" then
 						hidden = hidden()
 					elseif type(hidden) == "string" then
-						local handler = v.handler or self
+						local handler = v.handler or handler
 						if type(handler[hidden]) ~= "function" then
 							AceConsole:error(OPTION_HANDLER_NOT_FOUND, hidden)
 						end
@@ -706,7 +709,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					if type(disabled) == "function" then
 						disabled = disabled()
 					elseif type(disabled) == "string" then
-						local handler = v.handler or self
+						local handler = v.handler or handler
 						if type(handler[disabled]) ~= "function" then
 							AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
 						end
@@ -727,7 +730,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							a1,a2,a3,a4 = v.get()
 						end
 					else
-						local handler = v.handler or self
+						local handler = v.handler or handler
 						if type(handler[v.get]) ~= "function" then
 							AceConsole:error(OPTION_HANDLER_NOT_FOUND, v.get)
 						end
