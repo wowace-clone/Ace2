@@ -321,7 +321,8 @@ local function validateOptions(options, position, baseOptions, fromPass)
 		end
 	end
 	if options ~= baseOptions or kind == "range" or kind == "text" or kind == "toggle" or kind == "color" then
-		if options.cmdName then
+		if options.type == "header" and not options.cmdName and not options.name then
+		elseif options.cmdName then
 			if type(options.cmdName) ~= "string" then
 				return '"cmdName" must be a string or nil', position
 			elseif string.len(options.cmdName) == 0 then
