@@ -1636,25 +1636,24 @@ function external(self, major, instance)
 			AceEvent:embed(self)
 		end
 	elseif major == "AceTab-2.0" then
-		instance:RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath)
+		instance:RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath, pos)
 			local ac = AceLibrary("AceConsole-2.0")
-			local name, cmd, path = ac:TabCompleteInfo(cmdpath)
+			local name, cmd, path = ac:TabCompleteInfo(string.sub(cmdpath, 1, pos))
+
 			if ac.registry[name] then
 				local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
-				for arg in pairs(validArgs.args) do
-					table.insert(t, arg)
+				if validArgs.args then
+					for arg in pairs(validArgs.args) do
+						table.insert(t, arg)
+					end
 				end
 			end
-		end, function(matches, lcm, cmdpath)
+		end, function(matches, gcs, cmdpath)
 			local ac = AceLibrary("AceConsole-2.0")
 			local name, cmd, path = ac:TabCompleteInfo(cmdpath)
 			if ac.registry[name] then
 				local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
-				if match then
-					printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, true, lcm)
-				else
-					printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork)
-				end
+				printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, not gcs or gcs ~= "", gcs)
 			end
 		end)
 	end
