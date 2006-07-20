@@ -621,23 +621,23 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				order = {}
 			end
 			for k,v in pairs(options.args) do
-				if filter then
-					if string.find(k, filter) then
-						table.insert(order, k)
-					elseif type(v.aliases) == "table" then
-						for _,bit in ipairs(v.aliases) do
+				if v.type ~= "header" then
+					if filter then
+						if string.find(k, filter) then
+							table.insert(order, k)
+						elseif type(v.aliases) == "table" then
+							for _,bit in ipairs(v.aliases) do
+								if string.find(v.aliases, filter) then
+									table.insert(order, k)
+									break
+								end
+							end
+						elseif type(v.aliases) == "string" then
 							if string.find(v.aliases, filter) then
 								table.insert(order, k)
-								break
 							end
 						end
-					elseif type(v.aliases) == "string" then
-						if string.find(v.aliases, filter) then
-							table.insert(order, k)
-						end
-					end
-				else
-					if v.type ~= "header" then
+					else
 						table.insert(order, k)
 					end
 				end
