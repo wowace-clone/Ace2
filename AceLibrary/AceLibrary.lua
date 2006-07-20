@@ -197,25 +197,26 @@ end
 local crawlReplace
 do
 	local recurse = {}
-	function crawlReplace(t, to, from)
+	local function func(t, to, from)
+		if recurse[t] then
+			return
+		end
+		recurse[t] = true
 		local mt = getmetatable(t)
 		setmetatable(t, nil)
 		t[from], t[to] = nil, t[from]
-		t[recurse] = true
 		for k,v in pairs(t) do
-			if k ~= recurse then
-				if v == from then
-					t[k] = to
-				elseif type(v) == "table" then
-					if not rawget(v, recurse) then
-						crawlReplace(v, to, from)
-					end
+			if v == from then
+				t[k] = to
+			elseif type(v) == "table" then
+				if not recurse[v] then
+					func(v, to, from)
 				end
-				
-				if type(k) == "table" then
-					if not rawget(k, recurse) then
-						crawlReplace(k, to, from)
-					end
+			end
+			
+			if type(k) == "table" then
+				if not recurse[k] then
+					func(k, to, from)
 				end
 			end
 		end
@@ -223,11 +224,16 @@ do
 		if mt then
 			if mt == from then
 				setmetatable(t, to)
-			else
-				crawlReplace(mt, to, from)
+			elseif not recurse[mt] then
+				func(mt, to, from)
 			end
 		end
-		t[recurse] = nil
+	end
+	function crawlReplace(t, to, from)
+		func(t, to, from)
+		for k in pairs(recurse) do
+			recurse[k] = nil
+		end
 	end
 end
 
@@ -552,7 +558,6 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		end
 		return instance
 	end
-	
 	-- This is an update
 	local oldInstance = new()
 	
