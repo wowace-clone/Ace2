@@ -167,8 +167,9 @@ function AceTab:OnTabPressed()
 		end
 	end
 	
-	this:HighlightText(left-1, left + string.len(word)-1)
+	if numMatches == 0 and this.chatType == "WHISPER" then return self.hooks[this].OnTabPressed.orig() end
 
+	this:HighlightText(left-1, left + string.len(word)-1)
 	if numMatches == 1 then
 		local _, c = next(matches)
 		this:Insert(c[1])
