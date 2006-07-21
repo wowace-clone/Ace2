@@ -3,6 +3,7 @@
 ## Url: http://www.wowace.com
 ## Title: Ace |cffff00002|r
 ## Notes: AddOn development framework
+## X-Category: Library
 AceLibrary\AceLibrary.lua
 AceOO-2.0\AceOO-2.0.lua
 
