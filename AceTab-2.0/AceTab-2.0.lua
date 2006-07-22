@@ -125,6 +125,7 @@ end
 function AceTab:OnTabPressed()
 	local ost = this:GetScript("OnTextSet")
 	if ost then this:SetScript("OnTextSet", nil) end
+	if this:GetText() == "" then return self.hooks[this].OnTabPressed.orig() end
 	this:Insert("\255")
 	local pos = string.find(this:GetText(), "\255", 1) - 1
 	this:HighlightText(pos, pos+1)
@@ -149,9 +150,10 @@ function AceTab:OnTabPressed()
 			for _, f in s.frames do
 				if _G[f] == this then
 					for _, regex in ipairs(s.patterns) do
-						matches[desc] = compost and compost:Erase() or {}
 						local cands = compost and compost:Erase() or {}
 						if string.find(string.sub(text, 1, left), regex) then
+							matches[desc] = matches[desc] or compost and compost:Erase() or {}
+							matches[desc].usage = s.usage
 							s.compfunc(cands, string.sub(text, 1, left-1) .. string.sub(text, 1, left-1+string.len(word)), left-1)
 						end
 						for _, cand in ipairs(cands) do
@@ -160,15 +162,14 @@ function AceTab:OnTabPressed()
 								numMatches = numMatches + 1
 							end
 						end
-						matches[desc].usage = s.usage
 					end
 				end
 			end
 		end
 	end
 	
-	if numMatches == 0 and this.chatType == "WHISPER" then return self.hooks[this].OnTabPressed.orig() end
-
+	if not next(matches) then return self.hooks[this].OnTabPressed.orig() end
+	
 	this:HighlightText(left-1, left + string.len(word)-1)
 	if numMatches == 1 then
 		local _, c = next(matches)
@@ -187,7 +188,10 @@ function AceTab:OnTabPressed()
 				end
 			end
 			gcs = GCS(gcs, gcs2)
-			if u then u(c, gcs2, string.sub(text, 1, left-1)) end
+			local us = u and u(c, gcs2, string.sub(text, 1, left-1))
+			if type(us) == "string" then
+				print(us)
+			end
 		end
 		this:Insert(gcs)
 	end
