@@ -300,9 +300,6 @@ function AceEvent:IsEventScheduled(t)
 	if AceEvent.delayRegistry then
 		local v = AceEvent.delayRegistry[t]
 		if v then
-			if Compost then
-				Compost:Reclaim(v)
-			end
 			return true, v.time - GetTime()
 		end
 	end
