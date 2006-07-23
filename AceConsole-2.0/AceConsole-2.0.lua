@@ -1640,7 +1640,9 @@ function external(self, major, instance)
 			local ac = AceLibrary("AceConsole-2.0")
 			local name, cmd, path = ac:TabCompleteInfo(string.sub(cmdpath, 1, pos))
 
-			if ac.registry[name] then
+			if not ac.registry[name] then
+				return false
+			else
 				local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
 				if validArgs.args then
 					for arg in pairs(validArgs.args) do
