@@ -338,6 +338,7 @@ end
 
 function AceLocale.prototype:HasTranslation(text, sublevel)
 	AceLocale.argCheck(self, text, 1, "string")
+	AceLocale.assert(self, self.translations, "No translations registered")
 	if sublevel then
 		AceLocale.argCheck(self, sublevel, 2, "string", "nil")
 		return type(self.translations[text]) == "table" and self.translations[text][sublevel] and true
@@ -346,6 +347,7 @@ function AceLocale.prototype:HasTranslation(text, sublevel)
 end
 
 function AceLocale.prototype:HasReverseTranslation(text)
+	AceLocale.assert(self, self.translations, "No translations registered")
 	if not self.reverseTranslations then
 		initReverse(self)
 	end
