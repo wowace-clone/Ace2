@@ -155,15 +155,19 @@ function AceTab:OnTabPressed()
 						if string.find(string.sub(text, 1, left), regex.."$") then
 							local c = s.compfunc(cands, string.sub(text, 1, left) .. string.sub(text, 1, pos), left)
 							if c ~= false then
+								local mtemp = compost and compost:Erase() or {}
 								matches[desc] = matches[desc] or compost and compost:Erase() or {}
-								matches[desc].usage = s.usage
 								for _, cand in ipairs(cands) do
 									if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 then
-										table.insert(matches[desc], cand)
+										mtemp[cand] = true
 										numMatches = numMatches + 1
 										if numMatches == 1 then firstMatch = cand end
 									end
 								end
+								for i in pairs(mtemp) do
+									table.insert(matches[desc], i)
+								end
+								matches[desc].usage = s.usage
 							end
 						end
 					end
@@ -171,6 +175,7 @@ function AceTab:OnTabPressed()
 			end
 		end
 	end
+
 	local _, set = next(matches)
 	if not set or not set.usage and numMatches == 0 then return self.hooks[this].OnTabPressed.orig() end
 	
@@ -194,9 +199,13 @@ function AceTab:OnTabPressed()
 			local us = u and u(c, gcs2, string.sub(text, 1, left))
 			if type(us) == "string" then
 				print(us)
+			elseif type(us) == "table" and numMatches > 0 then
+				for _, v in ipairs(c) do
+					if us[v] then print(string.format("%s - %s", v, us[v])) end
+				end
 			end
 		end
-		this:Insert(gcs)
+		this:Insert(gcs or word)
 	end
 end
 
