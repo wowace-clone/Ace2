@@ -91,18 +91,15 @@ end
 
 function AceTab:IsTabCompletionRegistered(descriptor)
 	self:argCheck(descriptor, 2, "string")
-	if self.registry[descriptor] and self.registry[descriptor][self] then
-		return true, self.registry[descriptor][self].completion
-	end
-	return false, nil
+	return self.registry[descriptor] and self.registry[descriptor][self] then
 end
 
 function AceTab:UnregisterTabCompletion(descriptor)
 	self:argCheck(descriptor, 2, "string")
-	if self.registry[description] and self.registry[description][self] then
-		self.registry[descriptor][self].completion = nil
+	if self.registry[descriptor] and self.registry[descriptor][self] then
+		self.registry[descriptor][self] = nil
 	else
-		self:error("Cannot unregister a tab completion that you have not registered.")
+		self:error("Cannot unregister a tab completion (%s) that you have not registered.", descriptor)
 	end
 end
 
