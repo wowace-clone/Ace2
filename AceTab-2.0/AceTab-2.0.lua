@@ -91,7 +91,7 @@ end
 
 function AceTab:IsTabCompletionRegistered(descriptor)
 	self:argCheck(descriptor, 2, "string")
-	return self.registry[descriptor] and self.registry[descriptor][self] then
+	return self.registry[descriptor] and self.registry[descriptor][self] end
 end
 
 function AceTab:UnregisterTabCompletion(descriptor)
