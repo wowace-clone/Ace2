@@ -21,11 +21,11 @@ local _G = getfenv()
 
 local hookedFrames = compost and compost:Acquire() or {}
 
-function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, editframes)
+function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usage, editframes)
 	self:argCheck(descriptor, 2, "string")
 	self:argCheck(regex, 3, "string", "table")
 	self:argCheck(compfunc, 4, "string", "function", "nil")
-	self:argCheck(usagefunc, 5, "string", "function", "nil")
+	self:argCheck(usage, 5, "string", "function", "boolean", "nil")
 	self:argCheck(editframe, 6, "string", "table", "nil")
 
 	if type(regex) == "string" then regex = {regex} end
@@ -34,8 +34,8 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 		self:error("Cannot register function %q; it does not exist", compfunc)
 	end
 
-	if type(usagefunc) == "string" and type(self[usagefunc]) ~= "function" then
-		self:error("Cannot register usage function %q; it does not exist", usagefunc)
+	if type(usage) == "string" and type(self[usage]) ~= "function" then
+		self:error("Cannot register usage function %q; it does not exist", usage)
 	end
 
 	if not editframes then editframes = {"ChatFrameEditBox"} end
@@ -77,13 +77,13 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usagefunc, ed
 	if not self.registry[descriptor][self] then
 		self.registry[descriptor][self] = Compost and Compost:Acquire() or {}
 	end
-	self.registry[descriptor][self] = {patterns = regex, compfunc = compfunc,  usage = usagefunc, frames = editframes}
+	self.registry[descriptor][self] = {patterns = regex, compfunc = compfunc,  usage = usage, frames = editframes}
 	
 	if not AceEvent and AceLibrary:HasInstance("AceEvent-2.0") then
 		external(AceTab, "AceEvent-2.0", AceLibrary("AceEvent-2.0"))
 	end
 	if AceEvent then
-		if not self.finalHook then
+		if not self:IsEventRegistered("AceEvent_FullyInitialized") then
 			self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
 		end
 	end
@@ -196,12 +196,16 @@ function AceTab:OnTabPressed()
 				end
 			end
 			gcs = GCS(gcs, gcs2)
-			local us = u and u(c, gcs2, string.sub(text, 1, left))
-			if type(us) == "string" then
-				print(us)
-			elseif type(us) == "table" and numMatches > 0 then
-				for _, v in ipairs(c) do
-					if us[v] then print(string.format("%s - %s", v, us[v])) end
+			if u then
+				if type(u) == "function" then
+					local us = u(c, gcs2, string.sub(text, 1, left))
+					if type(us) == "string" then
+						print(us)
+					elseif type(us) == "table" and numMatches > 0 then
+						for _, v in ipairs(c) do
+							if us[v] then print(string.format("%s - %s", v, us[v])) end
+						end
+					end
 				end
 			end
 		end
