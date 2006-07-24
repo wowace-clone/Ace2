@@ -122,29 +122,23 @@ local function assert(self, condition, message, a1, a2, a3, a4, a5, a6, a7, a8, 
 end
 
 local function argCheck(self, arg, num, kind, kind2, kind3, kind4)
-	if tostring(type(arg)) ~= kind then
-		if kind2 then
-			if tostring(type(arg)) ~= kind2 then
-				if kind3 then
-					if tostring(type(arg)) ~= kind3 then
-						if kind4 then
-							if tostring(type(arg)) ~= kind4 then
-								local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-								error(self, "Bad argument #%s to `%s' (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, type(arg))
-							end
-						else
-							local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-							error(self, "Bad argument #%s to `%s' (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, type(arg))
-						end
-					end
-				else
-					local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-					error(self, "Bad argument #%s to `%s' (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, type(arg))
-				end
-			end
+	if type(num) ~= "number" then
+		error(self, "Bad argument #3 to `argCheck' (number expected, got %s)", type(num))
+	elseif type(kind) ~= "string" then
+		error(self, "Bad argument #4 to `argCheck' (string expected, got %s)", type(kind))
+	end
+	local errored = false
+	arg = tostring(type(arg))
+	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 then
+		local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
+		if kind4 then
+			error(self, "Bad argument #%s to `%s' (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, arg)
+		elseif kind3 then
+			error(self, "Bad argument #%s to `%s' (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, arg)
+		elseif kind2 then
+			error(self, "Bad argument #%s to `%s' (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, arg)
 		else
-			local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
-			error(self, "Bad argument #%s to `%s' (%s expected, got %s)", tonumber(num) or 0/0, func, tostring(kind), type(arg))
+			error(self, "Bad argument #%s to `%s' (%s expected, got %s)", tonumber(num) or 0/0, func, kind, arg)
 		end
 	end
 end
