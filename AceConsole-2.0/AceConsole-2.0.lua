@@ -144,7 +144,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 	end
 	
 	if type(options.args) == "table" then
-		local disabled, hidden = options.disabled, options.hidden
+		local disabled, hidden = options.disabled, options.cmdHidden or options.hidden
 		if hidden then
 			if type(hidden) == "function" then
 				hidden = hidden()
@@ -239,6 +239,12 @@ local function validateOptionsMethods(self, options, position)
 	end
 	if options.disabled and type(options.disabled) == "string" and type(self[options.disabled]) ~= "function" then
 		return string.format("%q is not a proper function", options.disabled), position
+	end
+	if options.cmdHidden and type(options.cmdHidden) == "string" and type(self[options.cmdHidden]) ~= "function" then
+		return string.format("%q is not a proper function", options.cmdHidden), position
+	end
+	if options.guiHidden and type(options.guiHidden) == "string" and type(self[options.guiHidden]) ~= "function" then
+		return string.format("%q is not a proper function", options.guiHidden), position
 	end
 	if options.hidden and type(options.hidden) == "string" and type(self[options.hidden]) ~= "function" then
 		return string.format("%q is not a proper function", options.hidden), position
@@ -360,6 +366,16 @@ local function validateOptions(options, position, baseOptions, fromPass)
 			return '"disabled" must be a function, string, or boolean', position
 		end
 	end
+	if options.cmdHidden then
+		if type(options.cmdHidden) ~= "function" and type(options.cmdHidden) ~= "string" and options.cmdHidden ~= true then
+			return '"cmdHidden" must be a function, string, or boolean', position
+		end
+	end
+	if options.guiHidden then
+		if type(options.guiHidden) ~= "function" and type(options.guiHidden) ~= "string" and options.guiHidden ~= true then
+			return '"guiHidden" must be a function, string, or boolean', position
+		end
+	end
 	if options.hidden then
 		if type(options.hidden) ~= "function" and type(options.hidden) ~= "string" and options.hidden ~= true then
 			return '"hidden" must be a function, string, or boolean', position
@@ -475,7 +491,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 	if filter then
 		filter = "^" .. string.gsub(filter, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 	end
-	local hidden, disabled = options.hidden, options.disabled
+	local hidden, disabled = options.cmdHidden or options.hidden, options.disabled
 	if hidden then
 		if type(hidden) == "function" then
 			hidden = hidden()
@@ -692,7 +708,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			end
 			for _,k in ipairs(order) do
 				local v = options.args[k]
-				local hidden, disabled = v.hidden, v.disabled
+				local hidden, disabled = v.cmdHidden or v.hidden, v.disabled
 				if hidden then
 					if type(hidden) == "function" then
 						hidden = hidden()
@@ -821,7 +837,7 @@ local function handlerFunc(self, chat, msg, options)
 	local realOptions = options
 	local options, path, args, handler, passTable, passValue = findTableLevel(self, options, chat, msg)
 	
-	local hidden, disabled = options.hidden, options.disabled
+	local hidden, disabled = options.cmdHidden or options.hidden, options.disabled
 	if hidden then
 		if type(hidden) == "function" then
 			hidden = hidden()
