@@ -21,109 +21,27 @@ local AceLocale = {}
 local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
 
-local stage = 3
-if tonumber(date("%Y%m%d")) < 20060714 then
-	stage = 1
-elseif tonumber(date("%Y%m%d")) < 20060721 then
-	stage = 2
-end
-
-if stage <= 2 then
-	function AceLocale:new(name, strict, baseLocale)
-		self:argCheck(name, 2, "string")
-		self:argCheck(strict, 3, "boolean", "nil")
-		self:argCheck(baseLocale, 4, "string", "nil")
-		
-		if self.registry[name] and type(self.registry[name].GetLibraryVersion) ~= "function" then
-			return self.registry[name]
-		end
-		
-		local self = setmetatable({}, {
-			__index = self.prototype,
-			__call = strict and self.prototype.GetTranslationStrict or self.prototype.GetTranslation,
-			__tostring = function(self)
-				if type(self.GetLibraryVersion) == "function" then
-					return self:GetLibraryVersion()
-				else
-					return "AceLocale(" .. name .. ")"
-				end
-			end
-		})
-		
-		if not baseLocale then
-			baseLocale = DEFAULT_LOCALE
-		end
-		if type(_G[name .. "_Locale_" .. baseLocale]) ~= "function" then
-			AceLocale.registry[name] = self
-			return self -- ;-)
-		end
-		local locale = GetLocale()
-		local func = _G[name .. "_Locale_" .. locale]
-		if strict then
-			if type(func) == "function" then
-				self.translations = func()
-			elseif func == nil then
-				self.translations = {}
-			end
-		else
-			if type(func) ~= "function" then
-				func = _G[name .. "_Locale_" .. baseLocale]
-			end
-			self.translations = func()
-		end
-		if type(self.translations) ~= "table" then
-			AceLocale.error(self, "You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
-		end
-		if func == _G[name .. "_Locale_" .. baseLocale] then
-			self.baseTranslations = self.translations
-		else
-			self.baseTranslations = _G[name .. "_Locale_" .. baseLocale]()
-		end
-		if type(self.baseTranslations) ~= "table" then
-			AceLocale.error(self, "You have not provided adequate translations. You must at least have global function %s that returns a translation table.", name .. "_Locale_" .. baseLocale)
-		end
-		
-		if locale ~= baseLocale then
-			for key in pairs(self.translations) do
-				if not self.baseTranslations[key] then
-					AceLocale.error(self, "Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
-					break
-				end
-			end
-		end
-		_G[name .. "_Locale_enUS"] = nil
-		_G[name .. "_Locale_deDE"] = nil
-		_G[name .. "_Locale_frFR"] = nil
-		_G[name .. "_Locale_zhCN"] = nil
-		_G[name .. "_Locale_zhTW"] = nil
-		_G[name .. "_Locale_koKR"] = nil
-		
-		AceLocale.registry[name] = self
-		return self
+function AceLocale:new(name)
+	self:argCheck(name, 2, "string")
+	
+	if self.registry[name] and type(self.registry[name].GetLibraryVersion) ~= "function" then
+		return self.registry[name]
 	end
-else
-	function AceLocale:new(name)
-		self:argCheck(name, 2, "string")
-		
-		if self.registry[name] and type(self.registry[name].GetLibraryVersion) ~= "function" then
-			return self.registry[name]
-		end
-		
-		local self = setmetatable({}, {
-			__index = self.prototype,
-			__call = self.prototype.GetTranslation,
-			__tostring = function(self)
-				if type(self.GetLibraryVersion) == "function" then
-					return self:GetLibraryVersion()
-				else
-					return "AceLocale(" .. name .. ")"
-				end
+	
+	local self = setmetatable({}, {
+		__index = self.prototype,
+		__call = self.prototype.GetTranslation,
+		__tostring = function(self)
+			if type(self.GetLibraryVersion) == "function" then
+				return self:GetLibraryVersion()
+			else
+				return "AceLocale(" .. name .. ")"
 			end
-		})
-		
-		AceLocale.registry[name] = self
-		return self
-	end
+		end
+	})
+	
+	AceLocale.registry[name] = self
+	return self
 end
 
 setmetatable(AceLocale, { __call = AceLocale.new })
