@@ -40,6 +40,7 @@ local AceOO = AceLibrary("AceOO-2.0")
 local AceEvent
 
 local AceConsole = AceOO.Mixin { "Print", "CustomPrint", "RegisterChatCommand" }
+local Dewdrop
 
 local _G = getfenv(0)
 
@@ -1441,6 +1442,13 @@ local function handlerFunc(self, chat, msg, options)
 			print(string.format(options.error or IS_NOT_A_VALID_OPTION_FOR, args[1], path), realOptions.cmdName or realOptions.name or self)
 		end
 	end
+	if Dewdrop then
+		Dewdrop:Refresh(1)
+		Dewdrop:Refresh(2)
+		Dewdrop:Refresh(3)
+		Dewdrop:Refresh(4)
+		Dewdrop:Refresh(5)
+	end
 end
 
 local external
@@ -1674,6 +1682,8 @@ function external(self, major, instance)
 				printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, not gcs or gcs ~= "", gcs)
 			end
 		end)
+	elseif major == "Dewdrop-2.0" then
+		Dewdrop = instance
 	end
 end
 
