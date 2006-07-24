@@ -1445,34 +1445,34 @@ end
 local external
 function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	if type(slashCommands) ~= "table" and slashCommands ~= false then
-		AceConsole:error("Bad argument #2 to `RegisterInputCommand' (expected table, got %s)", type(slashCommands))
+		AceConsole:error("Bad argument #2 to `RegisterChatCommand' (expected table, got %s)", type(slashCommands))
 	end
 	if not slashCommands and type(name) ~= "string" then
-		AceConsole:error("Bad argument #4 to `RegisterInputCommand' (expected string, got %s)", type(name))
+		AceConsole:error("Bad argument #4 to `RegisterChatCommand' (expected string, got %s)", type(name))
 	end
 	if type(options) ~= "table" and type(options) ~= "function" and options ~= nil then
-		AceConsole:error("Bad argument #3 to `RegisterInputCommand' (expected table, function, or nil, got %s)", type(options))
+		AceConsole:error("Bad argument #3 to `RegisterChatCommand' (expected table, function, or nil, got %s)", type(options))
 	end
 	if name then
 		if type(name) ~= "string" then
-			AceConsole:error("Bad argument #4 to `RegisterInputCommand' (expected string or nil, got %s)", type(name))
+			AceConsole:error("Bad argument #4 to `RegisterChatCommand' (expected string or nil, got %s)", type(name))
 		elseif not string.find(name, "^%w+$") or string.upper(name) ~= name or string.len(name) == 0 then
 			AceConsole:error("Argument #4 must be an uppercase, letters-only string with at least 1 character")
 		end
 	end
 	if slashCommands then
 		if table.getn(slashCommands) == 0 then
-			AceConsole:error("Argument #2 to `RegisterInputCommand' must include at least one string")
+			AceConsole:error("Argument #2 to `RegisterChatCommand' must include at least one string")
 		end
 		
 		for k,v in pairs(slashCommands) do
 			if type(k) ~= "number" then
-				AceConsole:error("All keys in argument #2 to `RegisterInputCommand' must be numbers")
+				AceConsole:error("All keys in argument #2 to `RegisterChatCommand' must be numbers")
 			end
 			if type(v) ~= "string" then
-				AceConsole:error("All values in argument #2 to `RegisterInputCommand' must be strings")
+				AceConsole:error("All values in argument #2 to `RegisterChatCommand' must be strings")
 			elseif not string.find(v, "^/[A-Za-z][A-Za-z0-9_]*$") then
-				AceConsole:error("All values in argument #2 to `RegisterInputCommand' must be in the form of \"/word\"")
+				AceConsole:error("All values in argument #2 to `RegisterChatCommand' must be in the form of \"/word\"")
 			end
 		end
 	end
