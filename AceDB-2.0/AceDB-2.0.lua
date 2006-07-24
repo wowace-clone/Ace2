@@ -42,8 +42,6 @@ local AceDB = Mixin {
 						"ToggleActive",
 						"IsActive",
 						"AcquireDBNamespace",
-						"ToggleStandby", -- remove at 2006-07-21
-						"IsEnabled", -- remove at 2006-07-21
 					}
 local Dewdrop = AceLibrary:HasInstance("Dewdrop-2.0") and AceLibrary("Dewdrop-2.0")
 
@@ -804,13 +802,6 @@ function AceDB:SetProfile(name, copyFrom)
 	end
 end
 
-local stage = 3
-if tonumber(date("%Y%m%d")) < 20060714 then
-	stage = 1
-elseif tonumber(date("%Y%m%d")) < 20060721 then
-	stage = 2
-end
-
 function AceDB:IsActive()
 	return not self.db or not self.db.raw or not self.db.raw.disabled or not self.db.raw.disabled[self.db.raw.currentProfile[charID]]
 end
@@ -879,23 +870,6 @@ function AceDB:ToggleActive(state)
 		end
 	end
 	return not disable
-end
-
-if stage <= 2 then
-	function AceDB:IsEnabled()
-		if stage == 2 then
-			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-			DEFAULT_CHAT_FRAME:AddMessage(line .. " - :IsEnabled() has been replaced by :IsActive(). This will cause an error on July 21, 2006.")
-		end
-		return self:IsActive()
-	end
-	function AceDB:ToggleStandby()
-		if stage == 2 then
-			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-			DEFAULT_CHAT_FRAME:AddMessage(line .. " - :ToggleStandby() has been replaced by :ToggleActive([state]). This will cause an error on July 21, 2006.")
-		end
-		return self:ToggleActive()
-	end
 end
 
 function AceDB:embed(target)
