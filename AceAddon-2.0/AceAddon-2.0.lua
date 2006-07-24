@@ -197,18 +197,6 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.website = GetAddOnMetadata(name, "X-Website")
 		end
 	end
-	if addon['aceaddon-options-header'] then
-		local t = addon['aceaddon-options-header']
-		for k in pairs(t) do
-			t[k] = nil
-		end
-		local name = tostring(addon.title or addon.name)
-		name = string.gsub(name, "|c%x%x%x%x%x%x%x%x(.-)|r", "%1")
-		t.name = name
-		t.desc = name
-		t.type = 'header'
-		t.order = 0.999
-	end
 	local current = addon.class
 	while true do
 		if current == AceOO.Class then
@@ -272,29 +260,18 @@ end
 
 local options
 function AceAddon:GetAceOptionsDataTable(target)
-	if not target['aceaddon-options-header'] then
-		local name = tostring(target.title or target.name)
-		name = string.gsub(name, "|c%x%x%x%x%x%x%x%x(.-)|r", "%1")
-		target['aceaddon-options-header'] = {
-			name = name,
-			desc = name,
-			type = 'header',
-			order = 0.999,
-		}
-	end
 	if not options then
 		options = {
-			name = ABOUT,
-			desc = PRINT_ADDON_INFO,
-			type = "execute",
-			func = "PrintAddonInfo",
-			order = -1,
+			about = {
+				name = ABOUT,
+				desc = PRINT_ADDON_INFO,
+				type = "execute",
+				func = "PrintAddonInfo",
+				order = -1,
+			}
 		}
 	end
-	return {
-		['aceaddon-options-header'] = target['aceaddon-options-header'],
-		about = options
-	}
+	return options
 end
 
 function AceAddon:PLAYER_LOGIN()
