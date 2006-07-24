@@ -31,7 +31,7 @@ local IS_NOT_A_VALID_VALUE_FOR = "[|cffffff7f%s|r] is not a valid value for |cff
 local NO_OPTIONS_AVAILABLE = "No options available"
 local OPTION_HANDLER_NOT_FOUND = "Option handler |cffffff7f%q|r not found."
 local OPTION_HANDLER_NOT_VALID = "Option handler not valid."
-local OPTION_IS_DISABLED = "Option %q is disabled."
+local OPTION_IS_DISABLED = "Option |cffffff7f%s|r is disabled."
 -- localize --
 
 local NONE = NONE or "None"
@@ -712,85 +712,81 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						hidden = handler[hidden](handler)
 					end
 				end
-				if hidden then
-					disabled = true
-				elseif disabled then
-					if type(disabled) == "function" then
-						disabled = disabled()
-					elseif type(disabled) == "string" then
-						local handler = v.handler or handler
-						if type(handler[disabled]) ~= "function" then
-							AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
-						end
-						disabled = handler[disabled](handler)
-					end
-				end
-				if type(v.aliases) == "table" then
-					k = k .. " || " .. table.concat(v.aliases, " || ")
-				elseif type(v.aliases) == "string" then
-					k = k .. " || " .. v.aliases
-				end
-				if v.get and v.type ~= "group" and v.type ~= "pass" and v.type ~= "execute" then
-					local a1,a2,a3,a4
-					if type(v.get) == "function" then
-						if options.pass then
-							a1,a2,a3,a4 = v.get(k)
-						else
-							a1,a2,a3,a4 = v.get()
-						end
-					else
-						local handler = v.handler or handler
-						if type(handler[v.get]) ~= "function" then
-							AceConsole:error(OPTION_HANDLER_NOT_FOUND, v.get)
-						end
-						if options.pass then
-							a1,a2,a3,a4 = handler[v.get](handler, k)
-						else
-							a1,a2,a3,a4 = handler[v.get](handler)
+				if not hidden then
+					if disabled then
+						if type(disabled) == "function" then
+							disabled = disabled()
+						elseif type(disabled) == "string" then
+							local handler = v.handler or handler
+							if type(handler[disabled]) ~= "function" then
+								AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
+							end
+							disabled = handler[disabled](handler)
 						end
 					end
-					if v.type == "color" then
-						if v.hasAlpha then
-							if not a1 or not a2 or not a3 or not a4 then
-								s = NONE
+					if type(v.aliases) == "table" then
+						k = k .. " || " .. table.concat(v.aliases, " || ")
+					elseif type(v.aliases) == "string" then
+						k = k .. " || " .. v.aliases
+					end
+					if v.get then
+						local a1,a2,a3,a4
+						if type(v.get) == "function" then
+							if options.pass then
+								a1,a2,a3,a4 = v.get(k)
 							else
-								s = string.format("|c%02x%02x%02x%02x%02x%02x%02x%02x|r", a4*255, a1*255, a2*255, a3*255, a4*255, a1*255, a2*255, a3*255)
+								a1,a2,a3,a4 = v.get()
 							end
 						else
-							if not a1 or not a2 or not a3 then
-								s = NONE
+							local handler = v.handler or handler
+							if type(handler[v.get]) ~= "function" then
+								AceConsole:error(OPTION_HANDLER_NOT_FOUND, v.get)
+							end
+							if options.pass then
+								a1,a2,a3,a4 = handler[v.get](handler, k)
 							else
-								s = string.format("|cff%02x%02x%02x%02x%02x%02x|r", a1*255, a2*255, a3*255, a1*255, a2*255, a3*255)
+								a1,a2,a3,a4 = handler[v.get](handler)
 							end
 						end
-					elseif v.type == "toggle" then
-						if v.map then
-							s = tostring(v.map[a1 or false] or NONE)
+						if v.type == "color" then
+							if v.hasAlpha then
+								if not a1 or not a2 or not a3 or not a4 then
+									s = NONE
+								else
+									s = string.format("|c%02x%02x%02x%02x%02x%02x%02x%02x|r", a4*255, a1*255, a2*255, a3*255, a4*255, a1*255, a2*255, a3*255)
+								end
+							else
+								if not a1 or not a2 or not a3 then
+									s = NONE
+								else
+									s = string.format("|cff%02x%02x%02x%02x%02x%02x|r", a1*255, a2*255, a3*255, a1*255, a2*255, a3*255)
+								end
+							end
+						elseif v.type == "toggle" then
+							if v.map then
+								s = tostring(v.map[a1 or false] or NONE)
+							else
+								s = tostring(MAP_ONOFF[a1 or false] or NONE)
+							end
+						elseif v.type == "range" then
+							if v.isPercent then
+								s = tostring(a1 * 100) .. "%"
+							else
+								s = tostring(a1)
+							end
+						elseif v.type == "text" and type(v.validate) == "table" then
+							s = tostring(v.validate[a1] or a1)
 						else
-							s = tostring(MAP_ONOFF[a1 or false] or NONE)
+							s = tostring(a1 or NONE)
 						end
-					elseif v.type == "range" then
-						if v.isPercent then
-							s = tostring(a1 * 100) .. "%"
-						else
-							s = tostring(a1)
-						end
-					elseif v.type == "text" and type(v.validate) == "table" then
-						s = tostring(v.validate[a1] or a1)
-					else
-						s = tostring(a1 or NONE)
-					end
-					if not hidden then
 						if disabled then
 							local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
 							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-							print(string.format("|cffcfcfcf - %s: [%s]|r %s", k, s, desc))
+							print(string.format("|cffcfcfcf - %s: [%s] %s|r", k, s, desc))
 						else
 							print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
 						end
-					end
-				else
-					if not hidden then
+					else
 						if disabled then
 							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
 							print(string.format("|cffcfcfcf - %s: %s", k, desc))
@@ -876,9 +872,12 @@ local function handlerFunc(self, chat, msg, options)
 					arg = string.lower(tostring(arg))
 					for k,v in pairs(options.validate) do
 						local bit
-						bit = v
-						if string.lower(bit) == arg then
-							args[1] = bit
+						if string.lower(v) == arg then
+							args[1] = v
+							good = true
+							break
+						elseif type(k) == "string" and string.lower(k) == arg then
+							args[1] = k
 							good = true
 							break
 						end
@@ -898,7 +897,7 @@ local function handlerFunc(self, chat, msg, options)
 						for k,v in pairs(options.validate) do
 							table.insert(order, v)
 						end
-						usage = "{" .. table.concat(options.validate, " || ") .. "}"
+						usage = "{" .. table.concat(order, " || ") .. "}"
 						for k in pairs(order) do
 							order[k] = nil
 						end
