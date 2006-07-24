@@ -30,8 +30,6 @@ local AceEvent = Mixin {
 						"ScheduleRepeatingEvent",
 						"CancelScheduledEvent",
 						"CancelAllScheduledEvents",
-						"TriggerDelayedEvent", -- remove on July 23
-						"CancelDelayedEvent", -- remove on July 23
 						"IsEventRegistered",
 						"IsEventScheduled",
 					   }
@@ -177,30 +175,6 @@ local function OnUpdate()
 	end
 	if not next(delayRegistry) then
 		AceEvent.frame:Hide()
-	end
-end
-
-local stage = 3
-if tonumber(date("%Y%m%d")) < 20060716 then
-	stage = 1
-elseif tonumber(date("%Y%m%d")) < 20060723 then
-	stage = 2
-end
-
-if stage <= 2 then
-	function AceEvent:TriggerDelayedEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-		if stage == 2 then
-			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - `TriggerDelayedEvent' has been replaced with `ScheduleEvent'. This will cause an error on July 23, 2006.")
-		end
-		self:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	end
-	function AceEvent:CancelDelayedEvent(t)
-		if stage == 2 then
-			local line = string.gsub(debugstack(), ".-\n(.-)\n.*", "%1")
-			DEFAULT_CHAT_MESSAGE:AddMessage(line .. " - `CancelDelayedEvent' has been replaced with `CancelScheduledEvent'. This will cause an error on July 23, 2006.")
-		end
-		self:CancelScheduledEvent(t)
 	end
 end
 
