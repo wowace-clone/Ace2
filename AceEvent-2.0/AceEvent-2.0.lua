@@ -154,7 +154,7 @@ local function OnUpdate()
 	for k,v in pairs(delayRegistry) do
 		if v.time <= t then
 			if v.repeatDelay then
-				v.time = t + v.repeatDelay
+				v.time = v.time + v.repeatDelay
 				last = k
 			else
 				delayRegistry[k] = nil
