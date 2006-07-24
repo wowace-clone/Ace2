@@ -551,14 +551,8 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					order = {}
 				end
 				for k,v in pairs(options.validate) do
-					if type(k) == "number" then
-						if string.find(v, filter) then
-							table.insert(order, v)
-						end
-					else
-						if string.find(k, filter) then
-							table.insert(order, k)
-						end
+					if string.find(v, filter) then
+						table.insert(order, v)
 					end
 				end
 				usage = "{" .. table.concat(order, " || ") .. "}"
@@ -571,11 +565,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					order = {}
 				end
 				for k,v in pairs(options.validate) do
-					if type(k) == "number" then
-						table.insert(order, v)
-					else
-						table.insert(order, k)
-					end
+					table.insert(order, v)
 				end
 				usage = "{" .. table.concat(order, " || ") .. "}"
 				for k in pairs(order) do
@@ -583,6 +573,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				end
 				table.setn(order, 0)
 			end
+			var = options.validate[var] or var
 		else
 			usage = options.usage or "<value>"
 		end
@@ -784,6 +775,8 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						else
 							s = tostring(a1)
 						end
+					elseif v.type == "text" and type(v.validate) == "table" then
+						s = tostring(v.validate[a1] or a1)
 					else
 						s = tostring(a1 or NONE)
 					end
@@ -883,7 +876,7 @@ local function handlerFunc(self, chat, msg, options)
 					arg = string.lower(tostring(arg))
 					for k,v in pairs(options.validate) do
 						local bit
-						bit = type(k) == "number" and v or k
+						bit = v
 						if string.lower(bit) == arg then
 							args[1] = bit
 							good = true
@@ -903,11 +896,7 @@ local function handlerFunc(self, chat, msg, options)
 							order = {}
 						end
 						for k,v in pairs(options.validate) do
-							if type(k) == "number" then
-								table.insert(order, v)
-							else
-								table.insert(order, k)
-							end
+							table.insert(order, v)
 						end
 						usage = "{" .. table.concat(options.validate, " || ") .. "}"
 						for k in pairs(order) do
@@ -966,6 +955,9 @@ local function handlerFunc(self, chat, msg, options)
 					end
 					var = handler[options.get](handler)
 				end
+			end
+			if type(options.validate) == "table" then
+				var = options.validate[var] or var
 			end
 			if (passTable and passTable.get) or options.get then
 				print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), tostring(var or NONE)), realOptions.cmdName or realOptions.name or self)
