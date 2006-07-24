@@ -1112,6 +1112,7 @@ function AceDB:GetAceOptionsDataTable(target)
 				name = PROFILE,
 				desc = SET_PROFILE,
 				order = -3.5,
+				get = "GetProfile",
 				args = {
 					choose = {
 						guiName = "Choose",
