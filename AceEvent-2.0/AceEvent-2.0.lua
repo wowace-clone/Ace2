@@ -73,7 +73,9 @@ local _G = getfenv(0)
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string")
 	local _G_event = _G.event
+	local _G_arg1, _G_arg2, _G_arg3, _G_arg4, _G_arg5, _G_arg6, _G_arg7, _G_arg8, _G_arg9 = _G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9
 	_G.event = event
+	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = a1, a2, a3, a4, a5, a6, a7, a8, a9
 
 	if AceEvent.registry[event] then
 		if AceEvent.onceRegistry and AceEvent.onceRegistry[event] then
@@ -144,6 +146,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		end
 	end
 	_G.event = _G_event
+	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = _G_arg1, _G_arg2, _G_arg3, _G_arg4, _G_arg5, _G_arg6, _G_arg7, _G_arg8, _G_arg9
 end
 
 local GetTime = GetTime
