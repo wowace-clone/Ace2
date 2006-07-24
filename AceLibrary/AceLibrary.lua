@@ -601,7 +601,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		for _,v in pairs(self.libs) do
 			local i = type(v) == "table" and v.instance
 			if type(i) == "table" then
-				if i.error == old_error then
+				if i.error == old_error or not i.error then
 					i.error = error
 				end
 				if i.assert == old_assert or not i.assert then
