@@ -131,6 +131,15 @@ local function argCheck(self, arg, num, kind, kind2, kind3, kind4)
 	arg = tostring(type(arg))
 	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 then
 		local _,_,func = string.find(debugstack(), "\n.-\n.-`(.-)'\n")
+		if not func then
+			_,_,func = string.find(debugstack(), "`argCheck'.-`(.-)'")
+			if not func then
+				_,_,func = string.find(debugstack(), "\n.-`(.-)'\n")
+				if not func then
+					_,_,func = string.find(debugstack(), "`(.-)'")
+				end
+			end
+		end
 		if kind4 then
 			error(self, "Bad argument #%s to `%s' (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, arg)
 		elseif kind3 then
