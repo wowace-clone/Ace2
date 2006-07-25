@@ -65,9 +65,6 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 	table.insert(tmp, a20)
 	
 	local stack = debugstack()
-	local first = string.gsub(stack, "\n.*", "")
-	local file = string.gsub(first, "^\s*(.*).lua:%d+: .*", "%1")
-	file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 	if not message then
 		local _,_,second = string.find(stack, "\n(.-)\n")
 		message = "error raised! " .. second
@@ -80,6 +77,7 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 		end
 		message = string.format(message, unpack(tmp))
 	end
+	
 	if getmetatable(self) and getmetatable(self).__tostring then
 		message = string.format("%s: %s", tostring(self), message)
 	elseif type(self.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
@@ -87,19 +85,25 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 	elseif type(self.class) == "table" and type(self.class.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
 		message = string.format("%s: %s", self.class:GetLibraryVersion(), message)
 	end
-	local i = 1
+	
+	local first = string.gsub(stack, "\n.*", "")
+	local file = string.gsub(first, ".*\\(.*).lua:%d+: .*", "%1")
+	file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
+	
+	local i = 0
 	for s in string.gfind(stack, "\n([^\n]*)") do
 		i = i + 1
 		if not string.find(s, file .. "%.lua:%d+:") then
-			file = string.gsub(s, "^\s*(.*).lua:%d+: .*", "%1")
+			file = string.gsub(s, "^.*\\(.*).lua:%d+: .*", "%1")
 			file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 			break
 		end
 	end
+	local j = 0
 	for s in string.gfind(stack, "\n([^\n]*)") do
-		i = i + 1
-		if not string.find(s, file .. "%.lua:%d+:") then
-			_G.error(message, i)
+		j = j + 1
+		if j > i and not string.find(s, file .. "%.lua:%d+:") then
+			_G.error(message, j + 1)
 			return
 		end
 	end
@@ -568,9 +572,13 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		old_assert = instance.assert
 		old_argCheck = instance.argCheck
 		old_pcall = instance.pcall
-	else
-		deepTransfer(instance, newInstance, oldInstance, major)
+		
+		self.error = error
+		self.assert = assert
+		self.argCheck = argCheck
+		self.pcall = pcall
 	end
+	deepTransfer(instance, newInstance, oldInstance, major)
 	crawlReplace(instance, instance, newInstance)
 	local oldDeactivateFunc = data.deactivateFunc
 	data.minor = minor
