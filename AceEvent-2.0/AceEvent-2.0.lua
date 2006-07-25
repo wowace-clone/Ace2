@@ -2,6 +2,7 @@
 Name: AceEvent-2.0
 Revision: $Rev$
 Author(s): ckknight (ckknight@gmail.com)
+	facboy (<email here>)
 Inspired By: AceEvent 1.x by Turan (<email here>)
 Website: http://www.wowace.com/
 Documentation: http://wiki.wowace.com/index.php/AceEvent-2.0
@@ -47,24 +48,27 @@ function AceEvent:RegisterEvent(event, method, once)
 		AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
 	end
 
-	if not AceEvent.registry[event] then
-		AceEvent.registry[event] = Compost and Compost:Acquire() or {}
+	local AceEvent_registry = AceEvent.registry
+	if not AceEvent_registry[event] then
+		AceEvent_registry[event] = Compost and Compost:Acquire() or {}
 		AceEvent.frame:RegisterEvent(event)
 	end
 
-	AceEvent.registry[event][self] = method
+	AceEvent_registry[event][self] = method
 
 	if once then
-		if not AceEvent.onceRegistry then
+		local AceEvent_onceRegistry = AceEvent.onceRegistry
+		if not AceEvent_onceRegistry then
 			AceEvent.onceRegistry = Compost and Compost:Acquire() or {}
+			AceEvent_onceRegistry = AceEvent.onceRegistry
 		end
-		if not AceEvent.onceRegistry[event] then
-			AceEvent.onceRegistry[event] = Compost and Compost:Acquire() or {}
+		if not AceEvent_onceRegistry[event] then
+			AceEvent_onceRegistry[event] = Compost and Compost:Acquire() or {}
 		end
-		AceEvent.onceRegistry[event][self] = true
+		AceEvent_onceRegistry[event][self] = true
 	else
-		if AceEvent.onceRegistry and AceEvent.onceRegistry[event] then
-			AceEvent.onceRegistry[event][self] = nil
+		if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
+			AceEvent_onceRegistry[event][self] = nil
 		end
 	end
 end
@@ -77,16 +81,19 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 	_G.event = event
 	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = a1, a2, a3, a4, a5, a6, a7, a8, a9
 
-	if AceEvent.registry[event] then
-		if AceEvent.onceRegistry and AceEvent.onceRegistry[event] then
-			for obj in pairs(AceEvent.onceRegistry[event]) do
+	local AceEvent_registry = AceEvent.registry
+	if AceEvent_registry[event] then
+		local AceEvent_onceRegistry = AceEvent.onceRegistry
+		local AceEvent_debugTable = AceEvent.debugTable
+		if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
+			for obj in pairs(AceEvent_onceRegistry[event]) do
 				local mem, time
-				if AceEvent.debugTable then
-					if not AceEvent.debugTable[event] then
-						AceEvent.debugTable[event] = Compost and Compost:Acquire() or {}
+				if AceEvent_debugTable then
+					if not AceEvent_debugTable[event] then
+						AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
 					end
-					if not AceEvent.debugTable[event][obj] then
-						AceEvent.debugTable[event][obj] = Compost and Compost:AcquireHash(
+					if not AceEvent_debugTable[event][obj] then
+						AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
 							'mem', 0,
 							'time', 0
 						) or {
@@ -96,32 +103,33 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					end
 					mem, time = gcinfo(), GetTime()
 				end
-				local method = AceEvent.registry[event][obj]
-				AceEvent.registry[event][obj] = nil
-				AceEvent.onceRegistry[event][obj] = nil
+				local method = AceEvent_registry[event][obj]
+				AceEvent_registry[event][obj] = nil
+				AceEvent_onceRegistry[event][obj] = nil
 				if type(method) == "string" then
-					if obj[method] then
-						obj[method](obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+					local obj_method = obj[method]
+					if obj_method then
+						obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 					end
 				elseif method then -- function
 					method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 				end
-				if AceEvent.debugTable then
+				if AceEvent_debugTable then
 					mem, time = mem - gcinfo(), time - GetTime()
-					AceEvent.debugTable[event][obj].mem = AceEvent.debugTable[event][obj].mem + mem
-					AceEvent.debugTable[event][obj].time = AceEvent.debugTable[event][obj].time + time
+					AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
+					AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 				end
 				obj = nil
 			end
 		end
-		for obj, method in pairs(AceEvent.registry[event]) do
+		for obj, method in pairs(AceEvent_registry[event]) do
 			local mem, time
-			if AceEvent.debugTable then
-				if not AceEvent.debugTable[event] then
-					AceEvent.debugTable[event] = Compost and Compost:Acquire() or {}
+			if AceEvent_debugTable then
+				if not AceEvent_debugTable[event] then
+					AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
 				end
-				if not AceEvent.debugTable[event][obj] then
-					AceEvent.debugTable[event][obj] = Compost and Compost:AcquireHash(
+				if not AceEvent_debugTable[event][obj] then
+					AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
 						'mem', 0,
 						'time', 0
 					) or {
@@ -132,16 +140,17 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				mem, time = gcinfo(), GetTime()
 			end
 			if type(method) == "string" then
-				if obj[method] then
-					obj[method](obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+				local obj_method = obj[method]
+				if obj_method then
+					obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 				end
 			else -- function
 				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 			end
-			if AceEvent.debugTable then
+			if AceEvent_debugTable then
 				mem, time = mem - gcinfo(), time - GetTime()
-				AceEvent.debugTable[event][obj].mem = AceEvent.debugTable[event][obj].mem + mem
-				AceEvent.debugTable[event][obj].time = AceEvent.debugTable[event][obj].time + time
+				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
+				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
 		end
 	end
@@ -149,34 +158,160 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = _G_arg1, _G_arg2, _G_arg3, _G_arg4, _G_arg5, _G_arg6, _G_arg7, _G_arg8, _G_arg9
 end
 
-local GetTime = GetTime
-local delayRegistry
-local function OnUpdate()
-	local t = GetTime()
-	local last = nil
-	for k,v in pairs(delayRegistry) do
-		if v.time <= t then
-			if v.repeatDelay then
-				v.time = v.time + v.repeatDelay
-				last = k
-			else
-				delayRegistry[k] = nil
-			end
-			local event = v.event
-			if type(event) == "function" then
-				event(unpack(v))
-			else
-				AceEvent:TriggerEvent(event, unpack(v))
-			end
-			if not v.repeatDelay and Compost then
-				Compost:Reclaim(v)
-			end
-			k = last
+--------------------
+-- schedule heap management
+--------------------
+
+-- weak-value metatable
+local weakV_mt = Compost and Compost:AcquireHash("__mode", "v") or {__mode="v"}
+
+-- local accessors
+local getn = table.getn
+local setn = table.setn
+local tinsert = table.insert
+local tremove = table.remove
+local floor = math.floor
+
+--------------------
+-- sifting functions
+local function hSiftUp(heap, pos, schedule)
+	schedule = schedule or heap[pos]
+	local scheduleTime = schedule.time
+	
+	local curr, i = pos, floor(pos/2)
+	local parent = heap[i]
+	while i > 0 and scheduleTime < parent.time do
+		heap[curr], parent.i = parent, curr
+		curr, i = i, floor(i/2)
+		parent = heap[i]
+	end
+	heap[curr], schedule.i = schedule, curr
+	return pos ~= curr
+end
+
+local function hSiftDown(heap, pos, schedule, size)
+	schedule, size = schedule or heap[pos], size or getn(heap)
+	local scheduleTime = schedule.time
+	
+	local curr = pos
+	repeat
+		local child, childTime, c
+		-- determine the child to compare with
+		local j = 2 * curr
+		if j > size then
+			break
+		end
+		local k = j + 1
+		if k > size then
+			child = heap[j]
+			childTime, c = child.time, j
 		else
-			last = k
+			local childj, childk = heap[j], heap[k]
+			local jTime, kTime = childj.time, childk.time
+			if jTime < kTime then
+				child, childTime, c = childj, jTime, j
+			else
+				child, childTime, c = childk, kTime, k
+			end
+		end
+		-- do the comparison
+		if scheduleTime <= childTime then
+			break
+		end
+		heap[curr], child.i = child, curr
+		curr = c
+	until false
+	heap[curr], schedule.i = schedule, curr
+	return pos ~= curr
+end
+
+--------------------
+-- heap functions
+local function hMaintain(heap, pos, schedule, size)
+	schedule, size = schedule or heap[pos], size or getn(heap)
+	if not hSiftUp(heap, pos, schedule) then
+		hSiftDown(heap, pos, schedule, size)
+	end
+end
+
+local function hPush(heap, schedule)
+	tinsert(heap, schedule)
+	hSiftUp(heap, getn(heap), schedule)
+end
+
+local function hPop(heap)
+	local head, tail = heap[1], tremove(heap)
+	local size = getn(heap)
+	
+	if size == 1 then
+		heap[1], tail.i = tail, 1
+	elseif size > 1 then
+		hSiftDown(heap, 1, tail, size)
+	end
+	return head
+end
+
+local function hDelete(heap, pos)
+	local size = getn(heap)
+	local tail = tremove(heap)
+	if pos < size then
+		local size = size - 1
+		if size == 1 then
+			heap[1], tail.i = tail, 1
+		elseif size > 1 then
+			heap[pos] = tail
+			hMaintain(heap, pos, tail, size)
 		end
 	end
-	if not next(delayRegistry) then
+end
+
+local GetTime = GetTime
+local delayRegistry
+local delayHeap
+local gcChecker = Compost and setmetatable(Compost:AcquireHash(Compost:Acquire(), true), Compost:AcquireHash('__mode', "k")) or setmetatable({[{}]=true}, {__mode = "k"})
+local function OnUpdate()
+	if not next(gcChecker) then
+		gcChecker[Compost and Compost:Acquire() or {}] = true
+		local i = 1
+		local n = delayHeap.n
+		while i <= n do
+			if not delayHeap[i] then
+				tremove(delayHeap, i)
+				n = n - 1
+			else
+				i = i + 1
+			end
+		end
+	end
+	local t = GetTime()
+	-- peek at top of heap
+	local v = delayHeap[1]
+	local v_time = v and v.time
+	while v and v_time <= t do
+		local v_repeatDelay = v.repeatDelay
+		if v_repeatDelay then
+			-- use the event time, not the current time, else timing inaccuracies add up over time
+			v.time = v_time + v_repeatDelay
+			-- re-arrange the heap
+			hSiftDown(delayHeap, 1, v)
+		else
+			-- pop the event off the heap, and delete it from the registry
+			hPop(delayHeap)
+			delayRegistry[k] = nil
+		end
+		local event = v.event
+		if type(event) == "function" then
+			event(unpack(v))
+		else
+			AceEvent:TriggerEvent(event, unpack(v))
+		end
+		if not v_repeatDelay and Compost then
+			Compost:Reclaim(v)
+		end
+		v = delayHeap[1]
+		v_time = v.time
+	end
+	if not v then
 		AceEvent.frame:Hide()
 	end
 end
@@ -185,7 +320,7 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 	local id
 	if type(event) == "string" or type(event) == "table" then
 		if type(event) == "table" then
-			if not delayRegistry[event] then
+			if not delayRegistry or not delayRegistry[event] then
 				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
 			end
 		end
@@ -200,9 +335,12 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 		AceEvent:argCheck(delay, 3, "number")
 	end
 
-	if not AceEvent.delayRegistry then
-		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
+	if not delayRegistry then
+		AceEvent.delayRegistry = setmetatable(Compost and Compost:Acquire() or {}, weakV_mt)
+		AceEvent.delayHeap = Compost and Compost:Acquire() or {}
+		AceEvent.delayHeap.n = 0
 		delayRegistry = AceEvent.delayRegistry
+		delayHeap = AceEvent.delayHeap
 		AceEvent.frame:SetScript("OnUpdate", OnUpdate)
 	end
 	local t
@@ -216,32 +354,34 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 		t = Compost and Compost:Acquire() or {}
 	end
 	t.n = 0
-	table.insert(t, a1)
-	table.insert(t, a2)
-	table.insert(t, a3)
-	table.insert(t, a4)
-	table.insert(t, a5)
-	table.insert(t, a6)
-	table.insert(t, a7)
-	table.insert(t, a8)
-	table.insert(t, a9)
-	table.insert(t, a10)
-	table.insert(t, a11)
-	table.insert(t, a12)
-	table.insert(t, a13)
-	table.insert(t, a14)
-	table.insert(t, a15)
-	table.insert(t, a16)
-	table.insert(t, a17)
-	table.insert(t, a18)
-	table.insert(t, a19)
-	table.insert(t, a20)
+	tinsert(t, a1)
+	tinsert(t, a2)
+	tinsert(t, a3)
+	tinsert(t, a4)
+	tinsert(t, a5)
+	tinsert(t, a6)
+	tinsert(t, a7)
+	tinsert(t, a8)
+	tinsert(t, a9)
+	tinsert(t, a10)
+	tinsert(t, a11)
+	tinsert(t, a12)
+	tinsert(t, a13)
+	tinsert(t, a14)
+	tinsert(t, a15)
+	tinsert(t, a16)
+	tinsert(t, a17)
+	tinsert(t, a18)
+	tinsert(t, a19)
+	tinsert(t, a20)
 	t.event = event
 	t.time = GetTime() + delay
 	t.self = self
 	t.id = id or t
 	t.repeatDelay = repeating and delay
-	AceEvent.delayRegistry[t.id] = t
+	delayRegistry[t.id] = t
+	-- insert into heap
+	hPush(delayHeap, t)
 	AceEvent.frame:Show()
 	return t.id
 end
@@ -256,14 +396,15 @@ end
 
 function AceEvent:CancelScheduledEvent(t)
 	AceEvent:argCheck(t, 2, "string", "table")
-	if AceEvent.delayRegistry then
-		local v = AceEvent.delayRegistry[t]
+	if delayRegistry then
+		local v = delayRegistry[t]
 		if v then
-			AceEvent.delayRegistry[t] = nil
+			hDelete(delayHeap, v.i)
+			delayRegistry[t] = nil
 			if Compost then
 				Compost:Reclaim(v)
 			end
-			if not next(AceEvent.delayRegistry) then
+			if not next(delayRegistry) then
 				AceEvent.frame:Hide()
 			end
 			return true
@@ -274,8 +415,8 @@ end
 
 function AceEvent:IsEventScheduled(t)
 	AceEvent:argCheck(t, 2, "string", "table")
-	if AceEvent.delayRegistry then
-		local v = AceEvent.delayRegistry[t]
+	if delayRegistry then
+		local v = delayRegistry[t]
 		if v then
 			return true, v.time - GetTime()
 		end
@@ -285,9 +426,9 @@ end
 
 function AceEvent:UnregisterEvent(event)
 	AceEvent:argCheck(event, 2, "string")
-
-	if AceEvent.registry[event] and AceEvent.registry[event][self] then
-		AceEvent.registry[event][self] = nil
+	local AceEvent_registry = AceEvent.registry
+	if AceEvent_registry[event] and AceEvent_registry[event][self] then
+		AceEvent_registry[event][self] = nil
 	else
 		AceEvent:error("Cannot unregister event %q. %q is not registered with it.", event, self)
 	end
@@ -300,13 +441,14 @@ function AceEvent:UnregisterAllEvents()
 end
 
 function AceEvent:CancelAllScheduledEvents()
-	if AceEvent.delayRegistry then
-		for k,v in pairs(AceEvent.delayRegistry) do
+	if delayRegistry then
+		for k,v in pairs(delayRegistry) do
 			if v.self == self then
+				delayHeap[v.i] = nil
 				if Compost then
 					Compost:Reclaim(v)
 				end
-				AceEvent.delayRegistry[k] = nil
+				delayRegistry[k] = nil
 			end
 		end
 	end
@@ -314,8 +456,9 @@ end
 
 function AceEvent:IsEventRegistered(event)
 	AceEvent:argCheck(event, 2, "string")
-	if AceEvent.registry[event] and AceEvent.registry[event][self] then
-		return true, AceEvent.registry[event][self]
+	local AceEvent_registry = AceEvent.registry
+	if AceEvent_registry[event] and AceEvent_registry[event][self] then
+		return true, AceEvent_registry[event][self]
 	end
 	return false, nil
 end
@@ -328,7 +471,7 @@ end
 
 function AceEvent:EnableDebugging()
 	if not self.debugTable then
-		self.debugTable = {}
+		self.debugTable = Compost and Compost:Acquire() or {}
 	end
 end
 
@@ -346,6 +489,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	if oldLib then
 		self.onceRegistry = oldLib.onceRegistry
 		self.delayRegistry = oldLib.delayRegistry
+		self.delayHeap = oldLib.delayHeap
 		self.registry = oldLib.registry
 		self.frame = oldLib.frame
 		self.debugTable = oldLib.debugTable
@@ -353,7 +497,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.postInit = oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
 	end
 	if not self.registry then
-		self.registry = {}
+		self.registry = Compost and Compost:Acquire() or {}
 	end
 	if not self.frame then
 		self.frame = CreateFrame("Frame")
@@ -365,6 +509,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	end)
 	if self.delayRegistry then
 		delayRegistry = self.delayRegistry
+		delayHeap = self.delayHeap
 		self.frame:SetScript("OnUpdate", OnUpdate)
 	end
 
