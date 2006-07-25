@@ -297,7 +297,7 @@ local function OnUpdate()
 		else
 			-- pop the event off the heap, and delete it from the registry
 			hPop(delayHeap)
-			delayRegistry[k] = nil
+			delayRegistry[v.id] = nil
 		end
 		local event = v.event
 		if type(event) == "function" then
