@@ -711,6 +711,9 @@ function AceDB:SetProfile(name, copyFrom)
 		end
 	end
 	local oldName = db.raw.currentProfile[charID]
+	if string.lower(oldName) == string.lower(name) then
+		return
+	end
 	if type(self.OnProfileDisable) == "function" then
 		self:OnProfileDisable()
 	end
