@@ -312,8 +312,8 @@ function AceAddon.prototype:Inject(t)
 end
 
 function AceAddon.prototype:init()
-	if not AceEvent then
-		AceAddon:error(MAJOR_VERSION .. " requires AceEvent-2.0")
+	if true or not AceEvent then
+		error(MAJOR_VERSION .. " requires AceEvent-2.0", 4)
 	end
 	AceAddon.super.prototype.init(self)
 	
