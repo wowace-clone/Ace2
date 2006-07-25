@@ -129,7 +129,6 @@ local function argCheck(self, arg, num, kind, kind2, kind3, kind4)
 	local errored = false
 	arg = tostring(type(arg))
 	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 then
-		DEFAULT_CHAT_FRAME:AddMessage(debugstack())
 		local _,_,func = string.find(debugstack(), "`argCheck'.-([`<].-['>])")
 		if not func then
 			_,_,func = string.find(debugstack(), "([`<].-['>])")
