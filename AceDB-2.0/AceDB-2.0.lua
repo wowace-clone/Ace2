@@ -737,7 +737,7 @@ function AceDB:SetProfile(name, copyFrom)
 		inheritDefaults(db.profile, db.defaults and db.defaults.profile)
 	end
 	if type(self.OnProfileEnable) == "function" then
-		self:OnProfileEnable(oldName, oldProfileData)
+		self:OnProfileEnable(oldName, oldProfileData, copyFrom)
 	end
 	if cleanDefaults(oldProfileData, db.defaults and db.defaults.profile) then
 		db.raw.profiles[oldName] = nil
