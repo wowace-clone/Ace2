@@ -309,7 +309,7 @@ local function OnUpdate()
 			Compost:Reclaim(v)
 		end
 		v = delayHeap[1]
-		v_time = v.time
+		v_time = v and v.time
 	end
 	if not v then
 		AceEvent.frame:Hide()
