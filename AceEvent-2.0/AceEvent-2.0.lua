@@ -39,12 +39,13 @@ local AceEvent = Mixin {
 
 local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
 
+local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
 	if string.find(event, '^F') then
 		DEFAULT_CHAT_FRAME:AddMessage("Register " .. event)
 	end
-	if self == AceEvent then
+	if self == AceEvent and not registeringFromAceEvent then
 		AceEvent:argCheck(method, 3, "function")
 		self = method
 	else
@@ -440,7 +441,11 @@ function AceEvent:UnregisterEvent(event)
 	if AceEvent_registry[event] and AceEvent_registry[event][self] then
 		AceEvent_registry[event][self] = nil
 	else
-		AceEvent:error("Cannot unregister event %q. %q is not registered with it.", event, self)
+		if self == AceEvent then
+			error(string.format("Cannot unregister event %q. Improperly unregistering from AceEvent-2.0.", event), 2)
+		else
+			AceEvent:error("Cannot unregister event %q. %q is not registered with it.", event, self)
+		end
 	end
 end
 
@@ -530,9 +535,11 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	self:CancelAllScheduledEvents()
 
 	if not self.playerLogin then
+		registeringFromAceEvent = true
 		self:RegisterEvent("PLAYER_LOGIN", function()
 			self.playerLogin = true
 		end, true)
+		registeringFromAceEvent = nil
 	end
 
 	if not self.postInit then
@@ -543,6 +550,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 			self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 			self:UnregisterEvent("SPELLS_CHANGED")
 		end
+		registeringFromAceEvent = true
 		self:RegisterEvent("MEETINGSTONE_CHANGED", function()
 			self.playerLogin = true
 			self:ScheduleEvent("AceEvent_FullyInitialized", func, isReload and 1 or 4)
@@ -553,6 +561,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self:RegisterEvent("SPELLS_CHANGED", function()
 			isReload = false
 		end)
+		registeringFromAceEvent = nil
 	end
 
 	self.super.activate(self, oldLib, oldDeactivate)
