@@ -255,7 +255,7 @@ local function hDelete(heap, pos)
 	local size = getn(heap)
 	local tail = tremove(heap)
 	if pos < size then
-		local size = size - 1
+		size = size - 1
 		if size == 1 then
 			heap[1], tail.i = tail, 1
 		elseif size > 1 then
@@ -444,13 +444,16 @@ function AceEvent:CancelAllScheduledEvents()
 	if delayRegistry then
 		for k,v in pairs(delayRegistry) do
 			if v.self == self then
-				delayHeap[v.i] = nil
+				hDelete(delayHeap, v.i)
 				if Compost then
 					Compost:Reclaim(v)
 				end
 				delayRegistry[k] = nil
 			end
 		end
+	end
+	if not next(delayRegistry) then
+		AceEvent.frame:Hide()
 	end
 end
 
