@@ -451,9 +451,9 @@ function AceEvent:CancelAllScheduledEvents()
 				delayRegistry[k] = nil
 			end
 		end
-	end
-	if not next(delayRegistry) then
-		AceEvent.frame:Hide()
+		if not next(delayRegistry) then
+			AceEvent.frame:Hide()
+		end
 	end
 end
 
