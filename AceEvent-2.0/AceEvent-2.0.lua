@@ -20,6 +20,8 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
+DEFAULT_CHAT_FRAME:AddMessage("alpha bravo")
+
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local Mixin = AceOO.Mixin
 local AceEvent = Mixin {
@@ -39,7 +41,15 @@ local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.
 
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
-	AceEvent:argCheck(method, 3, "string", "function", "nil")
+	if string.find(event, '^F') then
+		DEFAULT_CHAT_FRAME:AddMessage("Register " .. event)
+	end
+	if self == AceEvent then
+		AceEvent:argCheck(method, 3, "function")
+		self = method
+	else
+		AceEvent:argCheck(method, 3, "string", "function", "nil")
+	end
 	AceEvent:argCheck(once, 4, "boolean", "nil")
 	if not method then
 		method = event
@@ -53,9 +63,9 @@ function AceEvent:RegisterEvent(event, method, once)
 		AceEvent_registry[event] = Compost and Compost:Acquire() or {}
 		AceEvent.frame:RegisterEvent(event)
 	end
-
+	
 	AceEvent_registry[event][self] = method
-
+	
 	if once then
 		local AceEvent_onceRegistry = AceEvent.onceRegistry
 		if not AceEvent_onceRegistry then
