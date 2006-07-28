@@ -1649,7 +1649,7 @@ function AceConsole:InjectAceOptionsTable(handler, options)
 	end
 	while class and class ~= AceOO.Class do
 		if type(class.GetAceOptionsDataTable) == "function" then
-			local t = class:GetAceOptionsDataTable(self)
+			local t = class:GetAceOptionsDataTable(handler)
 			for k,v in pairs(t) do
 				if type(options.args) ~= "table" then
 					options.args = {}
@@ -1663,7 +1663,7 @@ function AceConsole:InjectAceOptionsTable(handler, options)
 		if mixins then
 			for mixin in pairs(mixins) do
 				if type(mixin.GetAceOptionsDataTable) == "function" then
-					local t = mixin:GetAceOptionsDataTable(self)
+					local t = mixin:GetAceOptionsDataTable(handler)
 					for k,v in pairs(t) do
 						if type(options.args) ~= "table" then
 							options.args = {}
