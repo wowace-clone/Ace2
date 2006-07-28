@@ -931,7 +931,7 @@ function AceDB:PLAYER_LOGOUT()
 					db.raw.profiles = nil
 				end
 			end
-			if db.namespaces then
+			if db.namespaces and db.raw.namespaces then
 				for name,v in pairs(db.namespaces) do
 					setmetatable(v, nil)
 					if v.char and cleanDefaults(v.char, v.defaults and v.defaults.char) then
@@ -971,7 +971,7 @@ function AceDB:PLAYER_LOGOUT()
 							db.raw.namespaces[name].profiles = nil
 						end
 					end
-					if not next(db.raw.namespaces[name]) then
+					if db.raw.namespaces[name] and not next(db.raw.namespaces[name]) then
 						db.raw.namespaces[name] = nil
 					end
 				end
