@@ -1559,37 +1559,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		end
 		
 		if options.handler == self and string.lower(options.type) == "group" then
-			local class = self.class
-			while class and class ~= AceOO.Class do
-				if type(class.GetAceOptionsDataTable) == "function" then
-					local t = class:GetAceOptionsDataTable(self)
-					for k,v in pairs(t) do
-						if type(options.args) ~= "table" then
-							options.args = {}
-						end
-						if options.args[k] == nil then
-							options.args[k] = v
-						end
-					end
-				end
-				local mixins = class.mixins
-				if mixins then
-					for mixin in pairs(mixins) do
-						if type(mixin.GetAceOptionsDataTable) == "function" then
-							local t = mixin:GetAceOptionsDataTable(self)
-							for k,v in pairs(t) do
-								if type(options.args) ~= "table" then
-									options.args = {}
-								end
-								if options.args[k] == nil then
-									options.args[k] = v
-								end
-							end
-						end
-					end
-				end
-				class = class.super
-			end
+			AceConsole:InjectAceOptionsTable(self, options)
 		end
 	end
 	
@@ -1661,6 +1631,53 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	end
 	
 	AceConsole.registry[name] = options
+end
+
+function AceConsole:InjectAceOptionsTable(handler, options)
+	self:argCheck(handler, 2, "table")
+	self:argCheck(options, 3, "table")
+	if string.lower(options.type) ~= "group" then
+		self:error('Cannot inject into options table argument #3 if its type is not "group"')
+	end
+	if options.handler ~= nil and options.handler ~= handler then
+		self:error("Cannot inject into options table argument #3 if it has a different handler than argument #2")
+	end
+	options.handler = handler
+	local class = handler.class
+	if not class then
+		self:error("Cannot retrieve AceOptions tables from a non-object argument #2")
+	end
+	while class and class ~= AceOO.Class do
+		if type(class.GetAceOptionsDataTable) == "function" then
+			local t = class:GetAceOptionsDataTable(self)
+			for k,v in pairs(t) do
+				if type(options.args) ~= "table" then
+					options.args = {}
+				end
+				if options.args[k] == nil then
+					options.args[k] = v
+				end
+			end
+		end
+		local mixins = class.mixins
+		if mixins then
+			for mixin in pairs(mixins) do
+				if type(mixin.GetAceOptionsDataTable) == "function" then
+					local t = mixin:GetAceOptionsDataTable(self)
+					for k,v in pairs(t) do
+						if type(options.args) ~= "table" then
+							options.args = {}
+						end
+						if options.args[k] == nil then
+							options.args[k] = v
+						end
+					end
+				end
+			end
+		end
+		class = class.super
+	end
+	return options
 end
 
 function AceConsole:PLAYER_LOGIN()
