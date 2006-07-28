@@ -1558,7 +1558,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			options.handler = self
 		end
 		
-		if options.handler == self and string.lower(options.type) == "group" then
+		if options.handler == self and string.lower(options.type) == "group" and self.class then
 			AceConsole:InjectAceOptionsTable(self, options)
 		end
 	end
