@@ -535,8 +535,12 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		local function func()
 			self.postInit = true
 			self:TriggerEvent("AceEvent_FullyInitialized")
-			self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
-			self:UnregisterEvent("SPELLS_CHANGED")
+			if self:IsEventRegistered("CHAT_MSG_CHANNEL_NOTICE") then
+				self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+			end
+			if self:IsEventRegistered("SPELLS_CHANGED") then
+				self:UnregisterEvent("SPELLS_CHANGED")
+			end
 		end
 		registeringFromAceEvent = true
 		self:RegisterEvent("MEETINGSTONE_CHANGED", function()
