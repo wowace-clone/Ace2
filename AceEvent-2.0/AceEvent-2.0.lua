@@ -20,8 +20,6 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
-DEFAULT_CHAT_FRAME:AddMessage("alpha bravo")
-
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local Mixin = AceOO.Mixin
 local AceEvent = Mixin {
