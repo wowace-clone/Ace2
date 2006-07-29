@@ -369,7 +369,7 @@ local function _unhookMeth(self, obj, method)
 	end
 end
 
-function AceHook:OnEmbedInitialize(object)
+function AceHook:OnInstanceInit(object)
 	if not object.hooks then
 		object.hooks = new()
 	end
@@ -396,6 +396,8 @@ function AceHook:OnEmbedInitialize(object)
 	
 	object.hooks.name = name
 end
+
+AceHook.OnManualEmbed = AceHook.OnInstanceInit
 
 --[[----------------------------------------------------------------------
 	AceHook:Hook
