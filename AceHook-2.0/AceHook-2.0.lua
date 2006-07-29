@@ -369,11 +369,7 @@ local function _unhookMeth(self, obj, method)
 	end
 end
 
---[[----------------------------------------------------------------------
-	AceHook:embed
-		AceHook:embed(object)
--------------------------------------------------------------------------]]		
-function AceHook:embed(object)
+function AceHook:OnEmbedInitialize(object)
 	if not object.hooks then
 		object.hooks = new()
 	end
@@ -399,7 +395,6 @@ function AceHook:embed(object)
 	end
 	
 	object.hooks.name = name
-	AceHook.super.embed(self, object)
 end
 
 --[[----------------------------------------------------------------------
@@ -411,7 +406,6 @@ function AceHook:Hook(arg1, arg2, arg3)
 	if type(arg1)== "string" then
 		if protFuncs[arg1] then
  			if self.hooks.name then
-				string.format("%s tried to hook %q, which is a Blizzard protected function.", self.hooks.name, arg1)
 				AceHook:error("%s tried to hook %q, which is a Blizzard protected function.", self.hooks.name, arg1)
 			else
 				_debug(self, string.format("An Addon tried to hook %q, which is a Blizzard protected function.", arg1))
