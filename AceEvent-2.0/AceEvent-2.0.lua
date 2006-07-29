@@ -182,9 +182,6 @@ end
 -- schedule heap management
 --------------------
 
--- weak-value metatable
-local weakV_mt = Compost and Compost:AcquireHash("__mode", "v") or {__mode="v"}
-
 -- local accessors
 local getn = table.getn
 local setn = table.setn
@@ -288,21 +285,7 @@ end
 local GetTime = GetTime
 local delayRegistry
 local delayHeap
-local gcChecker = Compost and setmetatable(Compost:AcquireHash(Compost:Acquire(), true), Compost:AcquireHash('__mode', "k")) or setmetatable({[{}]=true}, {__mode = "k"})
 local function OnUpdate()
-	if not next(gcChecker) then
-		gcChecker[Compost and Compost:Acquire() or {}] = true
-		local i = 1
-		local n = delayHeap.n
-		while i <= n do
-			if not delayHeap[i] then
-				tremove(delayHeap, i)
-				n = n - 1
-			else
-				i = i + 1
-			end
-		end
-	end
 	local t = GetTime()
 	-- peek at top of heap
 	local v = delayHeap[1]
@@ -356,7 +339,7 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 	end
 
 	if not delayRegistry then
-		AceEvent.delayRegistry = setmetatable(Compost and Compost:Acquire() or {}, weakV_mt)
+		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
 		AceEvent.delayHeap = Compost and Compost:Acquire() or {}
 		AceEvent.delayHeap.n = 0
 		delayRegistry = AceEvent.delayRegistry
