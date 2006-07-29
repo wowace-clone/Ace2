@@ -40,9 +40,6 @@ local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.
 local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
-	if string.find(event, '^F') then
-		DEFAULT_CHAT_FRAME:AddMessage("Register " .. event)
-	end
 	if self == AceEvent and not registeringFromAceEvent then
 		AceEvent:argCheck(method, 3, "function")
 		self = method
