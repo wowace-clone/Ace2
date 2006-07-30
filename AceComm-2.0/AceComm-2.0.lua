@@ -168,6 +168,14 @@ local function SwitchChannel(former, latter)
 	end
 end
 
+local zoneCache
+local function GetCurrentZoneChannel()
+	if not zoneCache then
+		zoneCache = "AceCommZone" .. CheckSum(GetRealZoneText())
+	end
+	return zoneCache
+end
+
 local myFunc = function(k)
 	if not IsInChannel(k.latter) then
 		AceComm.channels[k.latter] = true
@@ -184,6 +192,11 @@ function AceComm:CHAT_MSG_CHANNEL_NOTICE(kind, _, _, deadName, _, _, _, num, cha
 				self:ScheduleEvent(myFunc, 0, k)
 			end
 		end
+		if channel == GetCurrentZoneChannel() then
+			self:TriggerEvent("AceComm_LeftChannel", "ZONE")
+		elseif channel == "AceComm" then
+			self:TriggerEvent("AceComm_LeftChannel", "GLOBAL")
+		end
 	elseif kind == "YOU_JOINED" then
 		if num == 0 then
 			self:ScheduleEvent(LeaveChannelByName, 0, deadName)
@@ -191,6 +204,10 @@ function AceComm:CHAT_MSG_CHANNEL_NOTICE(kind, _, _, deadName, _, _, _, num, cha
 			t.former = deadName
 			t.latter = deadName
 			switches[t] = true
+		elseif channel == GetCurrentZoneChannel() then
+			self:TriggerEvent("AceComm_JoinedChannel", "ZONE")
+		elseif channel == "AceComm" then
+			self:TriggerEvent("AceComm_JoinedChannel", "GLOBAL")
 		end
 	end
 end
@@ -370,12 +387,25 @@ local function GetCurrentGroupDistribution()
 	end
 end
 
-local zoneCache
-local function GetCurrentZoneChannel()
-	if not zoneCache then
-		zoneCache = "AceCommZone" .. CheckSum(GetRealZoneText())
+local function IsInDistribution(dist)
+	if dist == "GROUP" then
+		return GetCurrentGroupDistribution() and true or false
+	elseif dist == "BATTLEGROUND" then
+		return MiniMapBattlefieldFrame.status == "active"
+	elseif dist == "RAID" then
+		return UnitInRaid("player") == 1
+	elseif dist == "PARTY" then
+		return UnitInPart("player") == 1
+	elseif dist == "GUILD" then
+		return IsInGuild() == 1
+	elseif dist == "GLOBAL" then
+		return IsInChannel("AceComm")
+	elseif dist == "ZONE" then
+		return IsInChannel(GetCurrentZoneChannel())
+	elseif dist == "WHISPER" then
+		return true
 	end
-	return zoneCache
+	error("unknown distribution: " .. dist, 2)
 end
 
 function AceComm:RegisterComm(prefix, distribution, method)
@@ -547,10 +577,13 @@ local function encodedChar(x)
 end
 
 local function SendMessage(prefix, priority, distribution, person, message)
+	if not IsInDistribution(distribution) then
+		return false
+	end
 	if distribution == "GROUP" then
 		distribution = GetCurrentGroupDistribution()
 		if not distribution then
-			return
+			return false
 		end
 	end
 	if id == byte_Z then
@@ -586,6 +619,7 @@ local function SendMessage(prefix, priority, distribution, person, message)
 	if max > 1 then
 		local segment = math.floor(messageLen / max + 0.5)
 		local last = 0
+		local good = true
 		for i = 1, max do
 			local bit
 			if i == max then
@@ -612,16 +646,20 @@ local function SendMessage(prefix, priority, distribution, person, message)
 				local index = GetChannelName(channel)
 				if index then
 					ChatThrottleLib:SendChatMessage(priority, prefix, bit, "CHANNEL", nil, index)
+				else
+					good = false
 				end
 			else
 				bit = id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit
 				ChatThrottleLib:SendAddonMessage(priority, prefix, bit, distribution)
 			end
 		end
+		return good
 	else
 		if distribution == "WHISPER" then
 			message = "/" .. prefix .. "\t" .. id .. string.char(1) .. string.char(1) .. "\t" .. message .. "°"
 			ChatThrottleLib:SendChatMessage(priority, prefix, message, "WHISPER", nil, person)
+			return true
 		elseif distribution == "GLOBAL" or distribution == "ZONE" then
 			message = prefix .. "\t" .. id .. string.char(1) .. string.char(1) .. "\t" .. message .. "°"
 			local channel
@@ -633,12 +671,15 @@ local function SendMessage(prefix, priority, distribution, person, message)
 			local index = GetChannelName(channel)
 			if index then
 				ChatThrottleLib:SendChatMessage(priority, prefix, message, "CHANNEL", nil, index)
+				return true
 			end
 		else
 			message = id .. string.char(1) .. string.char(1) .. "\t" .. message
 			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution)
+			return true
 		end
 	end
+	return false
 end
 
 function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
@@ -692,7 +733,13 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 		end end end end end end end end end end end end end end end end end end end end
 	end
 	
-	SendMessage(prefix, priority, distribution, person, message)
+	local ret = SendMessage(prefix, priority, distribution, person, message)
+	
+	if message ~= a1 then
+		message = del(message)
+	end
+	
+	return ret
 end
 
 function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
@@ -715,12 +762,10 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 	end
 	
 	local message
-	local remember = false
 	if a2 == nil and type(a1) ~= "table" then
 		message = a1
 	else
 		message = new()
-		remember = true
 		if a1 ~= nil then table.insert(message, a1)
 		if a2 ~= nil then table.insert(message, a2)
 		if a3 ~= nil then table.insert(message, a3)
@@ -746,11 +791,13 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 	
 	local priority = self.commPriority or "NORMAL"
 	
-	SendMessage(prefix, priority, distribution, person, message)
+	local ret = SendMessage(prefix, priority, distribution, person, message)
 	
-	if remember then
+	if message ~= a1 then
 		message = del(message)
 	end
+	
+	return ret
 end
 
 function AceComm:SetDefaultCommPriority(priority)
