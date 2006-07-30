@@ -38,20 +38,22 @@ do
 	
 	function new()
 		local t = next(list)
-		if not t then
-			return {}
+		if t then
+			list[t] = nil
+		else
+			t = {}
 		end
-		list[t] = nil
 		return t
 	end
 	
 	function del(t)
 		setmetatable(t, nil)
-		table.setn(t, 0)
 		for k in pairs(t) do
 			t[k] = nil
 		end
+		table.setn(t, 0)
 		list[t] = true
+		return nil
 	end
 end
 
@@ -258,6 +260,13 @@ do
 				curr = m
 				t[key] = value
 			end
+			if type(t.n) ~= "number" then
+				local i = 1
+				while t[i] ~= nil do
+					i = i + 1
+				end
+				table.setn(t, i - 1)
+			end
 			return t, finish
 		else
 			error("Improper serialized value provided")
@@ -266,9 +275,9 @@ do
 	
 	function Deserialize(value)
 		local ret,msg = pcall(_Deserialize, value)
-		--if not ret then
+		if not ret then
 			return msg
-		--end
+		end
 	end
 end
 
@@ -426,7 +435,7 @@ local function encodedChar(x)
 	return string.char(x)
 end
 
-local function SendMessage(prefix, priority, message, distribution, person)
+local function SendMessage(prefix, priority, distribution, person, message)
 	if distribution == "GROUP" then
 		distribution = GetCurrentGroupDistribution()
 		if not distribution then
@@ -509,16 +518,16 @@ local function SendMessage(prefix, priority, message, distribution, person)
 	end
 end
 
-function AceComm:SendPrioritizedCommMessage(priority, message, distribution, person)
+function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceComm:argCheck(priority, 2, "string")
 	if priority ~= "NORMAL" or priority ~= "BULK" or priority ~= "ALERT" then
 		AceComm:error('Argument #2 to `SendPrioritizedCommMessage\' must be either "NORMAL", "BULK", or "ALERT"')
 	end
-	AceComm:argCheck(distribution, 4, "string")
+	AceComm:argCheck(distribution, 3, "string")
 	if distribution == "WHISPER" then
-		AceComm:argCheck(person, 5, "string")
+		AceComm:argCheck(person, 4, "string")
 	else
-		AceComm:argCheck(person, 5, "nil")
+		a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19
 	end
 	if self == AceComm then
 		AceComm:error("Cannot send a comm message from AceComm directly.")
@@ -532,21 +541,49 @@ function AceComm:SendPrioritizedCommMessage(priority, message, distribution, per
 		AceComm:error("self.commPrefix or self.name must be available to act as the prefix.")
 	end
 	
-	return SendMessage(prefix, priority, message, distribution, person)
+	local message
+	if a2 == nil and type(a1) ~= "table" then
+		message = a1
+	else
+		message = new()
+		if a1 ~= nil then table.insert(message, a1)
+		if a2 ~= nil then table.insert(message, a2)
+		if a3 ~= nil then table.insert(message, a3)
+		if a4 ~= nil then table.insert(message, a4)
+		if a5 ~= nil then table.insert(message, a5)
+		if a6 ~= nil then table.insert(message, a6)
+		if a7 ~= nil then table.insert(message, a7)
+		if a8 ~= nil then table.insert(message, a8)
+		if a9 ~= nil then table.insert(message, a9)
+		if a10 ~= nil then table.insert(message, a10)
+		if a11 ~= nil then table.insert(message, a11)
+		if a12 ~= nil then table.insert(message, a12)
+		if a13 ~= nil then table.insert(message, a13)
+		if a14 ~= nil then table.insert(message, a14)
+		if a15 ~= nil then table.insert(message, a15)
+		if a16 ~= nil then table.insert(message, a16)
+		if a17 ~= nil then table.insert(message, a17)
+		if a18 ~= nil then table.insert(message, a18)
+		if a19 ~= nil then table.insert(message, a19)
+		if a20 ~= nil then table.insert(message, a20)
+		end end end end end end end end end end end end end end end end end end end end
+	end
+	
+	SendMessage(prefix, priority, distribution, person, message)
 end
 
-function AceComm:SendCommMessage(message, distribution, person)
-	AceComm:argCheck(distribution, 3, "string")
+function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	AceComm:argCheck(distribution, 2, "string")
 	if distribution == "WHISPER" then
-		AceComm:argCheck(person, 4, "string")
+		AceComm:argCheck(person, 3, "string")
 	else
-		AceComm:argCheck(person, 4, "nil")
+		a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19
 	end
 	if self == AceComm then
 		AceComm:error("Cannot send a comm message from AceComm directly.")
 	end
 	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" then
-		AceComm:error('Argument #3 to `SendCommMessage\' must be either nil, "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND" or "GROUP". %q is not appropriate', distribution)
+		AceComm:error('Argument #2 to `SendCommMessage\' must be either nil, "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND" or "GROUP". %q is not appropriate', distribution)
 	end
 	
 	local prefix = self.commPrefix or self.name
@@ -554,7 +591,41 @@ function AceComm:SendCommMessage(message, distribution, person)
 		AceComm:error("self.commPrefix or self.name must be available to act as the prefix.")
 	end
 	
-	return SendMessage(prefix, self.commPriority or "NORMAL", message, distribution, person)
+	local message
+	local remember = false
+	if a2 == nil and type(a1) ~= "table" then
+		message = a1
+	else
+		message = new()
+		remember = true
+		if a1 ~= nil then table.insert(message, a1)
+		if a2 ~= nil then table.insert(message, a2)
+		if a3 ~= nil then table.insert(message, a3)
+		if a4 ~= nil then table.insert(message, a4)
+		if a5 ~= nil then table.insert(message, a5)
+		if a6 ~= nil then table.insert(message, a6)
+		if a7 ~= nil then table.insert(message, a7)
+		if a8 ~= nil then table.insert(message, a8)
+		if a9 ~= nil then table.insert(message, a9)
+		if a10 ~= nil then table.insert(message, a10)
+		if a11 ~= nil then table.insert(message, a11)
+		if a12 ~= nil then table.insert(message, a12)
+		if a13 ~= nil then table.insert(message, a13)
+		if a14 ~= nil then table.insert(message, a14)
+		if a15 ~= nil then table.insert(message, a15)
+		if a16 ~= nil then table.insert(message, a16)
+		if a17 ~= nil then table.insert(message, a17)
+		if a18 ~= nil then table.insert(message, a18)
+		if a19 ~= nil then table.insert(message, a19)
+		if a20 ~= nil then table.insert(message, a20)
+		end end end end end end end end end end end end end end end end end end end end
+	end
+	
+	SendMessage(prefix, self.commPriority or "NORMAL", distribution, person, message)
+	
+	if remember then
+		message = del(message)
+	end
 end
 
 local DeepReclaim
@@ -618,6 +689,7 @@ local function HandleMessage(prefix, message, distribution, sender)
 		chunk.time = GetTime()
 		chunk[current] = message
 		if current == max then
+			chunk.n = max
 			message = table.concat(chunk)
 			queue[x] = del(queue[x])
 		else
@@ -625,25 +697,46 @@ local function HandleMessage(prefix, message, distribution, sender)
 		end
 	end
 	message = Deserialize(message)
+	local isTable = type(message) == "table"
 	if AceComm.registry[distribution] then
-		for k,v in pairs(AceComm.registry[distribution][prefix]) do
-			if type(v) == "string" then
-				k[v](k, prefix, sender, message, distribution)
-			else -- function
-				v(prefix, sender, message, distribution)
+		if isTable then
+			for k,v in pairs(AceComm.registry[distribution][prefix]) do
+				if type(v) == "string" then
+					k[v](k, prefix, sender, distribution, unpack(message))
+				else -- function
+					v(prefix, sender, distribution, unpack(message))
+				end
+			end
+		else
+			for k,v in pairs(AceComm.registry[distribution][prefix]) do
+				if type(v) == "string" then
+					k[v](k, prefix, sender, distribution, message)
+				else -- function
+					v(prefix, sender, distribution, message)
+				end
 			end
 		end
 	end
 	if isGroup and AceComm.registry.GROUP then
-		for k,v in pairs(AceComm.registry.GROUP[prefix]) do
-			if type(v) == "string" then
-				k[v](k, prefix, sender, message, "GROUP")
-			else -- function
-				v(prefix, sender, message, "GROUP")
+		if isTable then
+			for k,v in pairs(AceComm.registry.GROUP[prefix]) do
+				if type(v) == "string" then
+					k[v](k, prefix, sender, "GROUP", unpack(message))
+				else -- function
+					v(prefix, sender, "GROUP", unpack(message))
+				end
+			end
+		else
+			for k,v in pairs(AceComm.registry.GROUP[prefix]) do
+				if type(v) == "string" then
+					k[v](k, prefix, sender, "GROUP", message)
+				else -- function
+					v(prefix, sender, "GROUP", message)
+				end
 			end
 		end
 	end
-	if type(message) == "table" then
+	if isTable then
 		DeepReclaim(message)
 	end
 end
