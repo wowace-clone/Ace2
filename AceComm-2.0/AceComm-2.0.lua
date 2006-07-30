@@ -1150,11 +1150,6 @@ end
 
 AceLibrary:Register(AceComm, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 
-local frame = CreateFrame("Frame")
-frame:RegisterAllEvents()
-frame:SetScript("OnEvent", function()
-	AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, event, ": 1:", arg1, "2:", arg2, "3:", arg3, "4:", arg4, "5:", arg5, "6:", arg6, "7:", arg7, "8:", arg8, "9:", arg9)
-end)
 
 
 
