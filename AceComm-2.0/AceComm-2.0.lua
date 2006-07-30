@@ -306,7 +306,7 @@ function AceComm:RegisterComm(prefix, distribution, method)
 		AceComm:argCheck(method, 4, "string", "function", "nil")
 	end
 	if not method then
-		method = prefix
+		method = "OnCommReceive"
 	end
 	if type(method) == "string" and type(self[method]) ~= "function" then
 		AceEvent:error("Cannot register comm %q to method %q, it does not exist", prefix, method)
@@ -536,9 +536,9 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 		AceComm:error('Argument #4 to `SendPrioritizedCommMessage\' must be either nil, "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", or "GROUP". %q is not appropriate', distribution)
 	end
 	
-	local prefix = self.commPrefix or self.name
-	if not prefix then
-		AceComm:error("self.commPrefix or self.name must be available to act as the prefix.")
+	local prefix = self.commPrefix
+	if type(prefix) ~= "string" then
+		AceComm:error("self.commPrefix must be available to act as the prefix.")
 	end
 	
 	local message
@@ -586,9 +586,9 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 		AceComm:error('Argument #2 to `SendCommMessage\' must be either nil, "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND" or "GROUP". %q is not appropriate', distribution)
 	end
 	
-	local prefix = self.commPrefix or self.name
-	if not prefix then
-		AceComm:error("self.commPrefix or self.name must be available to act as the prefix.")
+	local prefix = self.commPrefix
+	if type(prefix) ~= "string" then
+		AceComm:error("self.commPrefix must be available to act as the prefix.")
 	end
 	
 	local message
@@ -621,7 +621,13 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 		end end end end end end end end end end end end end end end end end end end end
 	end
 	
-	SendMessage(prefix, self.commPriority or "NORMAL", distribution, person, message)
+	local priority = self.commPriority or "NORMAL"
+	
+	if priority ~= "NORMAL" or priority ~= "BULK" or priority ~= "ALERT" then
+		AceComm:error('self.commPriority must be either "NORMAL", "BULK", or "ALERT"')
+	end
+	
+	SendMessage(prefix, priority, distribution, person, message)
 	
 	if remember then
 		message = del(message)
