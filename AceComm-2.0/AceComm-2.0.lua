@@ -625,31 +625,27 @@ local function HandleMessage(prefix, message, distribution, sender)
 		end
 	end
 	message = Deserialize(message)
-	local _G_commDistribution = _G.commDistribution
-	local _G_commPrefix = _G.commPrefix
 	if AceComm.registry[distribution] then
 		for k,v in pairs(AceComm.registry[distribution][prefix]) do
 			if type(v) == "string" then
-				k[v](k, sender, message)
+				k[v](k, prefix, sender, message, distribution)
 			else -- function
-				v(sender, message)
+				v(prefix, sender, message, distribution)
 			end
 		end
 	end
 	if isGroup and AceComm.registry.GROUP then
 		for k,v in pairs(AceComm.registry.GROUP[prefix]) do
 			if type(v) == "string" then
-				k[v](k, sender, message)
+				k[v](k, prefix, sender, message, "GROUP")
 			else -- function
-				v(sender, message)
+				v(prefix, sender, message, "GROUP")
 			end
 		end
 	end
 	if type(message) == "table" then
 		DeepReclaim(message)
 	end
-	_G.commDistribution = _G_commDistribution
-	_G.commPrefix = _G_commPrefix
 end
 
 local player = UnitName("player")
