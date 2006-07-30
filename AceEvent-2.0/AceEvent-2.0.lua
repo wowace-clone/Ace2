@@ -60,6 +60,10 @@ function AceEvent:RegisterEvent(event, method, once)
 		AceEvent.frame:RegisterEvent(event)
 	end
 	
+	local remember = true
+	if AceEvent_registry[event][self] then
+		remember = false
+	end
 	AceEvent_registry[event][self] = method
 	
 	if once then
@@ -75,10 +79,16 @@ function AceEvent:RegisterEvent(event, method, once)
 	else
 		if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
 			AceEvent_onceRegistry[event][self] = nil
+			if Compost and not next(AceEvent_onceRegistry[event]) then
+				Compost:Reclaim(AceEvent_onceRegistry[event])
+				AceEvent_onceRegistry[event] = nil
+			end
 		end
 	end
 	
-	AceEvent:TriggerEvent("AceEvent_EventRegistered", self)
+	if remember then
+		AceEvent:TriggerEvent("AceEvent_EventRegistered", self)
+	end
 end
 
 local _G = getfenv(0)
@@ -122,8 +132,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				mem, time = gcinfo(), GetTime()
 			end
 			local method = AceEvent_registry[event][obj]
-			AceEvent_registry[event][obj] = nil
-			AceEvent_onceRegistry[event][obj] = nil
+			AceEvent.UnregisterEvent(obj, event)
 			if type(method) == "string" then
 				local obj_method = obj[method]
 				if obj_method then
@@ -430,6 +439,19 @@ function AceEvent:UnregisterEvent(event)
 	local AceEvent_registry = AceEvent.registry
 	if AceEvent_registry[event] and AceEvent_registry[event][self] then
 		AceEvent_registry[event][self] = nil
+		local AceEvent_onceRegistry = AceEvent.onceRegistry
+		if AceEvent_onceRegistry[event] and AceEvent_onceRegistry[event][self] then
+			AceEvent_onceRegistry[event][self] = nil
+			if Compost and not next(AceEvent_registry[event]) then
+				Compost:Reclaim(AceEvent_onceRegistry[event])
+				AceEvent_onceRegistry[event] = nil
+			end
+		end
+		if Compost and not next(AceEvent_registry[event]) then
+			Compost:Reclaim(AceEvent_registry[event])
+			AceEvent_registry[event] = nil
+			AceEvent.frame:UnregisterEvent(event)
+		end
 	else
 		if self == AceEvent then
 			error(string.format("Cannot unregister event %q. Improperly unregistering from AceEvent-2.0.", event), 2)
