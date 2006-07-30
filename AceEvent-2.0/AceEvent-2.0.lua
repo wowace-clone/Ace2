@@ -77,6 +77,8 @@ function AceEvent:RegisterEvent(event, method, once)
 			AceEvent_onceRegistry[event][self] = nil
 		end
 	end
+	
+	AceEvent:TriggerEvent("AceEvent_EventRegistered", self)
 end
 
 local _G = getfenv(0)
@@ -84,7 +86,7 @@ local triggerFromWoW
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
-	if not AceEvent_registry[event] then
+	if not AceEvent_registry[event] or not next(AceEvent_registry[event]) then
 		return
 	end
 	local _G_event = _G.event
@@ -435,6 +437,7 @@ function AceEvent:UnregisterEvent(event)
 			AceEvent:error("Cannot unregister event %q. %q is not registered with it.", event, self)
 		end
 	end
+	AceEvent:TriggerEvent("AceEvent_EventUnregistered", self)
 end
 
 function AceEvent:UnregisterAllEvents()
@@ -463,6 +466,9 @@ end
 function AceEvent:IsEventRegistered(event)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
+	if self == AceEvent then
+		return AceEvent_registry[event] and next(AceEvent_registry[event]) and true or false
+	end
 	if AceEvent_registry[event] and AceEvent_registry[event][self] then
 		return true, AceEvent_registry[event][self]
 	end
