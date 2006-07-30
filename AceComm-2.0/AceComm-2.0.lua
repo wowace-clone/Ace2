@@ -66,6 +66,31 @@ local byte_Z = string.byte('Z')
 local byte_h = string.byte('h')
 local byte_deg = string.byte('°')
 
+
+local Checksum
+do
+	local SOME_PRIME = 16777213
+	function CheckSum(text)
+		local counter = 1
+		local len = string.len(text)
+		for i = 1, len do
+				counter = counter + string.byte(text, i) * math.pow(31, len - i)
+		end
+		counter = math.mod(counter, SOME_PRIME)
+		return string.format("%06x", counter)
+	end
+end
+
+local function GetLatency()
+	local _,_,lag = GetNetStats()
+	return lag / 1000
+end
+
+local function IsInChannel(chan)
+	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
+	return chan == a or chan == b or chan == c or chan == d or chan == e or chan == f or chan == g or chan == h or chan == i or chan == j
+end
+
 -- Package a message for transmission
 local function Encode(text, drunk)
 	text = string.gsub(text, "°", "°±")
@@ -113,17 +138,67 @@ local function Decode(text, drunk)
 end
 
 local function JoinChannel(channel)
-	if AceComm.channels[channel] then
-		return
+	if not IsInChannel(channel) then
+		AceComm.channels[channel] = true
+		LeaveChannelByName(channel)
+		AceComm:ScheduleEvent(JoinChannelByName, 0, channel)
 	end
-	AceComm.channels[channel] = true
-	LeaveChannelByName(channel)
-	AceComm:ScheduleEvent(JoinChannelByName, 2, channel)
 end
 
 local function LeaveChannel(channel)
-	AceComm.channels[channel] = nil
-	LeaveChannelByName(channel)
+	if IsInChannel(channel) then
+		LeaveChannelByName(channel)
+	end
+end
+
+local switches = {}
+
+local function SwitchChannel(former, latter)
+	if IsInChannel(former) then
+		LeaveChannelByName(former)
+		local t = new()
+		t.former = former
+		t.latter = latter
+		switches[t] = true
+		return
+	end
+	if not IsInChannel(latter) then
+		AceComm.channels[latter] = true
+		JoinChannelByName(latter)
+	end
+end
+
+local myFunc = function(k)
+	if not IsInChannel(k.latter) then
+		AceComm.channels[k.latter] = true
+		JoinChannelByName(k.latter)
+	end
+	del(k)
+	switches[k] = nil
+end
+
+function AceComm:CHAT_MSG_CHANNEL_NOTICE(kind, _, _, deadName, _, _, _, num, channel)
+	if kind == "YOU_LEFT" then
+		for k in pairs(switches) do
+			if k.former == channel then
+				self:ScheduleEvent(myFunc, 0, k)
+			end
+		end
+	elseif kind == "YOU_JOINED" then
+		if num == 0 then
+			self:ScheduleEvent(LeaveChannelByName, 0, deadName)
+			local t = new()
+			t.former = deadName
+			t.latter = deadName
+			switches[t] = true
+		end
+	end
+end
+
+local function LeaveAllChannels()
+	for k in pairs(AceComm.channels) do
+		LeaveChannel(k)
+	end
 end
 
 local Serialize
@@ -277,7 +352,7 @@ do
 	
 	function Deserialize(value)
 		local ret,msg = pcall(_Deserialize, value)
-		if not ret then
+		if ret then
 			return msg
 		end
 	end
@@ -295,11 +370,19 @@ local function GetCurrentGroupDistribution()
 	end
 end
 
+local zoneCache
+local function GetCurrentZoneChannel()
+	if not zoneCache then
+		zoneCache = "AceCommZone" .. CheckSum(GetRealZoneText())
+	end
+	return zoneCache
+end
+
 function AceComm:RegisterComm(prefix, distribution, method)
 	AceComm:argCheck(prefix, 2, "string")
 	AceComm:argCheck(distribution, 3, "string")
-	if distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" then
-		AceComm:error('Argument #3 to `RegisterComm\' must be either "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", or "GROUP". %q is not appropriate', distribution)
+	if distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" and distribution ~= "ZONE" then
+		AceComm:error('Argument #3 to `RegisterComm\' must be either "GLOBAL", "ZONE", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", or "GROUP". %q is not appropriate', distribution)
 	end
 	if self == AceComm then
 		AceComm:argCheck(method, 4, "function")
@@ -322,11 +405,22 @@ function AceComm:RegisterComm(prefix, distribution, method)
 			if AceEvent:IsFullyInitialized() then
 				JoinChannel("AceComm")
 			end
-			AceComm:RegisterEvent("CHAT_MSG_CHANNEL")
+			if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
+				AceComm:RegisterEvent("CHAT_MSG_CHANNEL")
+			end
 		elseif distribution == "WHISPER" then
 			AceComm:RegisterEvent("CHAT_MSG_WHISPER")
-		elseif not AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
-			AceComm:RegisterEvent("CHAT_MSG_ADDON")
+		elseif distribution == "ZONE" then
+			if AceEvent:IsFullyInitialized() then
+				JoinChannel(GetCurrentZoneChannel())
+			end
+			if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
+				AceComm:RegisterEvent("CHAT_MSG_CHANNEL")
+			end
+		else
+			if not AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
+				AceComm:RegisterEvent("CHAT_MSG_ADDON")
+			end
 		end
 	end
 	if not registry[distribution][prefix] then
@@ -367,15 +461,30 @@ function AceComm:UnregisterComm(prefix, distribution)
 	if not next(registry[distribution]) then
 		registry[distribution] = del(registry[distribution])
 		
-		if distribution == "GLOBAL" then
+		if distribution == "GLOBAL" or distribution == "ZONE" then
+			local channel
+			if distribution == "GLOBAL" then
+				channel = "AceComm"
+			elseif distribution == "ZONE" then
+				channel = GetCurrentZoneChannel()
+			end
 			LeaveChannel("AceComm")
-			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL")
+			local has = false
+			for k in pairs(registry) do
+				if k == "GLOBAL" or k == "ZONE" then
+					has = true
+					break
+				end
+			end
+			if not has then
+				AceComm:UnregisterEvent("CHAT_MSG_CHANNEL")
+			end
 		elseif distribution == "WHISPER" then
 			AceComm:UnregisterEvent("CHAT_MSG_WHISPER")
 		else
 			local has = false
 			for k in pairs(registry) do
-				if k ~= "GLOBAL" or k ~= "WHISPER" then
+				if k ~= "GLOBAL" or k ~= "WHISPER" or k ~= "ZONE" then
 					has = true
 					break
 				end
@@ -401,8 +510,8 @@ end
 function AceComm:IsCommRegistered(prefix, distribution)
 	AceComm:argCheck(prefix, 2, "string")
 	AceComm:argCheck(distribution, 3, "string", "nil")
-	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" then
-		AceComm:error('Argument #3 to `RegisterComm\' must be either "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", "GROUP". %q is not appropriate', distribution)
+	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" and distribution ~= "ZONE" then
+		AceComm:error('Argument #3 to `RegisterComm\' must be either "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", "GROUP", "ZONE". %q is not appropriate', distribution)
 	end
 	local registry = AceComm.registry
 	if not distribution then
@@ -452,7 +561,7 @@ local function SendMessage(prefix, priority, distribution, person, message)
 		id = id + 1
 	end
 	local id = string.char(id)
-	local drunk = distribution == "GLOBAL" or distribution == "WHISPER"
+	local drunk = distribution == "GLOBAL" or distribution == "WHISPER" or distribution == "ZONE"
 	prefix = Encode(prefix, drunk)
 	message = Serialize(message)
 	message = Encode(message, drunk)
@@ -492,9 +601,15 @@ local function SendMessage(prefix, priority, distribution, person, message)
 			if distribution == "WHISPER" then
 				bit = "/" .. prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "°"
 				ChatThrottleLib:SendChatMessage(priority, prefix, bit, "WHISPER", nil, person)
-			elseif distribution == "GLOBAL" then
+			elseif distribution == "GLOBAL" or distribution == "ZONE" then
 				bit = prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "°"
-				local index = GetChannelName("AceComm")
+				local channel
+				if distribution == "GLOBAL" then
+					channel = "AceComm"
+				elseif distribution == "ZONE" then
+					channel = GetCurrentZoneChannel()
+				end
+				local index = GetChannelName(channel)
 				if index then
 					ChatThrottleLib:SendChatMessage(priority, prefix, bit, "CHANNEL", nil, index)
 				end
@@ -507,9 +622,15 @@ local function SendMessage(prefix, priority, distribution, person, message)
 		if distribution == "WHISPER" then
 			message = "/" .. prefix .. "\t" .. id .. string.char(1) .. string.char(1) .. "\t" .. message .. "°"
 			ChatThrottleLib:SendChatMessage(priority, prefix, message, "WHISPER", nil, person)
-		elseif distribution == "GLOBAL" then
+		elseif distribution == "GLOBAL" or distribution == "ZONE" then
 			message = prefix .. "\t" .. id .. string.char(1) .. string.char(1) .. "\t" .. message .. "°"
-			local index = GetChannelName("AceComm")
+			local channel
+			if distribution == "GLOBAL" then
+				channel = "AceComm"
+			elseif distribution == "ZONE" then
+				channel = GetCurrentZoneChannel()
+			end
+			local index = GetChannelName(channel)
 			if index then
 				ChatThrottleLib:SendChatMessage(priority, prefix, message, "CHANNEL", nil, index)
 			end
@@ -534,8 +655,8 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 	if self == AceComm then
 		AceComm:error("Cannot send a comm message from AceComm directly.")
 	end
-	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" then
-		AceComm:error('Argument #4 to `SendPrioritizedCommMessage\' must be either nil, "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", or "GROUP". %q is not appropriate', distribution)
+	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" and distribution ~= "ZONE" then
+		AceComm:error('Argument #4 to `SendPrioritizedCommMessage\' must be either nil, "GLOBAL", "ZONE", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", or "GROUP". %q is not appropriate', distribution)
 	end
 	
 	local prefix = self.commPrefix
@@ -584,8 +705,8 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 	if self == AceComm then
 		AceComm:error("Cannot send a comm message from AceComm directly.")
 	end
-	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" then
-		AceComm:error('Argument #2 to `SendCommMessage\' must be either nil, "GLOBAL", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND" or "GROUP". %q is not appropriate', distribution)
+	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" and distribution ~= "ZONE" then
+		AceComm:error('Argument #2 to `SendCommMessage\' must be either nil, "GLOBAL", "ZONE", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", or "GROUP". %q is not appropriate', distribution)
 	end
 	
 	local prefix = self.commPrefix
@@ -804,23 +925,74 @@ function AceComm:CHAT_MSG_WHISPER(text, sender)
 end
 
 function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
-	if channel ~= "AceComm" or sender == player then
+	if sender == player or not string.find(channel, "^AceComm") then
 		return
 	end
 	text = Decode(text, true)
-	return HandleMessage(text, nil, "GLOBAL", sender)
+	local distribution
+	if channel == "AceComm" then
+		distribution = "GLOBAL"
+	elseif channel == GetCurrentZoneChannel() then
+		distribution = "ZONE"
+	end
+	return HandleMessage(text, nil, distribution, sender)
 end
 
 function AceComm:AceEvent_FullyInitialized()
-	if not self.registry.GLOBAL or not next(self.registry.GLOBAL) then
-		LeaveChannel("AceComm")
-	else
+	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
+	local t = new()
+	table.insert(t, a)
+	table.insert(t, b)
+	table.insert(t, c)
+	table.insert(t, d)
+	table.insert(t, e)
+	table.insert(t, f)
+	table.insert(t, g)
+	table.insert(t, h)
+	table.insert(t, i)
+	table.insert(t, j)
+	for _,v in ipairs(t) do
+		if string.find(v, "^AceComm") then
+			if v == "AceComm" then
+				if not self.registry.GLOBAL or not next(self.registry.GLOBAL) then
+					LeaveChannel("AceComm")
+				end
+			elseif string.find(v, "^AceCommZone") then
+				if v == GetCurrentZoneChannel() then
+					if not self.registry.ZONE or not next(self.registry.ZONE) then
+						LeaveChannel(v)
+					end
+				else
+					LeaveChannel(v)
+				end
+			else
+				LeaveChannel(v)
+			end
+		end
+	end
+	if self.registry.GLOBAL and next(self.registry.GLOBAL) then
 		JoinChannel("AceComm")
+	end
+	if self.registry.ZONE and next(self.registry.ZONE) then
+		JoinChannel(GetCurrentZoneChannel())
 	end
 end
 
 function AceComm:PLAYER_LOGOUT()
-	LeaveChannel("AceComm")
+	LeaveAllChannels()
+end
+
+function AceComm:ZONE_CHANGED_NEW_AREA()
+	local lastZone = zoneCache
+	zoneCache = nil
+	local newZone = GetCurrentZoneChannel()
+	if self.registry.ZONE and next(self.registry.ZONE) then
+		if lastZone then
+			SwitchChannel(lastZone, newZone)
+		else
+			JoinChannel(newZone)
+		end
+	end
 end
 
 function AceComm:embed(target)
@@ -836,7 +1008,7 @@ function AceComm:ChatFrame_OnEvent(orig, event)
 			return
 		end
 	elseif event == "CHAT_MSG_CHANNEL" then
-		if arg9 == "AceComm" then
+		if string.find(arg9, "^AceComm") then
 			return
 		end
 	end
@@ -846,9 +1018,9 @@ end
 local id, loggingOut
 function AceComm:Logout(orig)
 	if IsResting() then
-		LeaveChannel("AceComm")
+		LeaveAllChannels()
 	else
-		id = self:ScheduleEvent(LeaveChannel, 15, "AceComm")
+		id = self:ScheduleEvent(LeaveAllChannels, 15)
 	end
 	loggingOut = true
 	return orig()
@@ -863,6 +1035,9 @@ function AceComm:CancelLogout(orig)
 		if self.registry.GLOBAL and next(self.registry.GLOBAL) then
 			JoinChannel("AceComm")
 		end
+		if self.registry.ZONE and next(self.registry.ZONE) then
+			JoinChannel(GetCurrentZoneChannel())
+		end
 	end
 	loggingOut = false
 	return orig()
@@ -870,9 +1045,9 @@ end
 
 function AceComm:Quit(orig)
 	if IsResting() then
-		LeaveChannel("AceComm")
+		LeaveAllChannels()
 	else
-		id = self:ScheduleEvent(LeaveChannel, 15, "AceComm")
+		id = self:ScheduleEvent(LeaveAllChannels, 15)
 	end
 	loggingOut = true
 	return orig()
@@ -962,6 +1137,14 @@ local function external(self, major, instance)
 		if not self:IsEventRegistered("PLAYER_LOGOUT") then
 			self:RegisterEvent("PLAYER_LOGOUT")
 		end
+		
+		if not self:IsEventRegistered("ZONE_CHANGED_NEW_AREA") then
+			self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+		end
+		
+		if not self:IsEventRegistered("CHAT_MSG_CHANNEL_NOTICE") then
+			self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+		end
 	end
 end
 
@@ -970,7 +1153,7 @@ AceLibrary:Register(AceComm, MAJOR_VERSION, MINOR_VERSION, activate, nil, extern
 local frame = CreateFrame("Frame")
 frame:RegisterAllEvents()
 frame:SetScript("OnEvent", function()
-	AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+	AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, event, ": 1:", arg1, "2:", arg2, "3:", arg3, "4:", arg4, "5:", arg5, "6:", arg6, "7:", arg7, "8:", arg8, "9:", arg9)
 end)
 
 
