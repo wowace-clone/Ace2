@@ -28,6 +28,8 @@ local AceComm = Mixin {
 						"UnregisterComm",
 						"UnregisterAllComms",
 						"IsCommRegistered",
+						"SetDefaultCommPriority",
+						"SetCommPrefix",
 					  }
 
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
@@ -538,7 +540,7 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 	
 	local prefix = self.commPrefix
 	if type(prefix) ~= "string" then
-		AceComm:error("self.commPrefix must be available to act as the prefix.")
+		AceComm:error("`SetCommPrefix' must be called before sending a message.")
 	end
 	
 	local message
@@ -588,7 +590,7 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 	
 	local prefix = self.commPrefix
 	if type(prefix) ~= "string" then
-		AceComm:error("self.commPrefix must be available to act as the prefix.")
+		AceComm:error("`SetCommPrefix' must be called before sending a message.")
 	end
 	
 	local message
@@ -623,15 +625,43 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 	
 	local priority = self.commPriority or "NORMAL"
 	
-	if priority ~= "NORMAL" or priority ~= "BULK" or priority ~= "ALERT" then
-		AceComm:error('self.commPriority must be either "NORMAL", "BULK", or "ALERT"')
-	end
-	
 	SendMessage(prefix, priority, distribution, person, message)
 	
 	if remember then
 		message = del(message)
 	end
+end
+
+function AceComm:SetDefaultCommPriority(priority)
+	AceComm:argCheck(priority, 2, "string")
+	if priority ~= "NORMAL" or priority ~= "BULK" or priority ~= "ALERT" then
+		AceComm:error('Argument #2 must be either "NORMAL", "BULK", or "ALERT"')
+	end
+	
+	if self.commPriority then
+		AceComm:error("Cannot call `SetDefaultCommPriority' more than once")
+	end
+	
+	self.commPriority = priority
+end
+
+function AceComm:SetCommPrefix(prefix)
+	AceComm:argCheck(prefix, 2, "string")
+	
+	if string.find(prefix, "\t") then
+		AceComm:error("Argument #2 cannot include the tab character.")
+	end
+	
+	if self.commPrefix then
+		AceComm:error("Cannot call `SetCommPrefix' more than once.")
+	end
+	
+	if AceComm.prefixes[prefix] then
+		AceComm:error("Cannot set prefix to %q, it is already in use.", prefix)
+	end
+	
+	AceComm.prefixes[prefix] = true
+	self.commPrefix = prefix
 end
 
 local DeepReclaim
@@ -856,6 +886,7 @@ local function activate(self, oldLib, oldDeactivate)
 		self.recvQueue = oldLib.recvQueue
 		self.registry = oldLib.registry
 		self.channels = oldLib.channels
+		self.prefixes = oldLib.prefixes
 	else
 		local old_ChatFrame_OnEvent = ChatFrame_OnEvent
 		function ChatFrame_OnEvent(event)
@@ -901,6 +932,9 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 	if not self.channels then
 		self.channels = {}
+	end
+	if not self.prefixes then
+		self.prefixes = {}
 	end
 	
 	if oldDeactivate then
