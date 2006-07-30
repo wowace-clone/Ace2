@@ -738,6 +738,16 @@ function AceComm:CancelLogout(orig)
 	return orig()
 end
 
+function AceComm:Quit(orig)
+	if IsResting() then
+		LeaveChannel("AceComm")
+	else
+		id = self:ScheduleEvent(LeaveChannel, 15, "AceComm")
+	end
+	loggingOut = true
+	return orig()
+end
+
 local function activate(self, oldLib, oldDeactivate)
 	AceComm = self
 	self:activate(oldLib, oldDeactivate)
@@ -771,6 +781,14 @@ local function activate(self, oldLib, oldDeactivate)
 				return self:CancelLogout(old_CancelLogout)
 			else
 				return old_CancelLogout()
+			end
+		end
+		local old_Quit = Quit
+		function Quit()
+			if self.Quit then
+				return self:Quit(old_Quit)
+			else
+				return old_Quit()
 			end
 		end
 	end
