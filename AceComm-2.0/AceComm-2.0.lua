@@ -652,7 +652,12 @@ local function HandleMessage(prefix, message, distribution, sender)
 	_G.commPrefix = _G_commPrefix
 end
 
+local player = UnitName("player")
+
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
+	if sender == player then
+		return
+	end
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	if not AceComm.registry[distribution] and (not isGroup or not AceComm.registry.GROUP) then
 		return
@@ -674,7 +679,7 @@ function AceComm:CHAT_MSG_WHISPER(text, sender)
 end
 
 function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
-	if channel ~= "AceComm" then
+	if channel ~= "AceComm" or sender == player then
 		return
 	end
 	text = Decode(text, true)
