@@ -149,35 +149,37 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			obj = nil
 		end
 	end
-	for obj, method in pairs(AceEvent_registry[event]) do
-		local mem, time
-		if AceEvent_debugTable then
-			if not AceEvent_debugTable[event] then
-				AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
+	if AceEvent_registry[event] then
+		for obj, method in pairs(AceEvent_registry[event]) do
+			local mem, time
+			if AceEvent_debugTable then
+				if not AceEvent_debugTable[event] then
+					AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
+				end
+				if not AceEvent_debugTable[event][obj] then
+					AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
+						'mem', 0,
+						'time', 0
+					) or {
+						mem = 0,
+						time = 0
+					}
+				end
+				mem, time = gcinfo(), GetTime()
 			end
-			if not AceEvent_debugTable[event][obj] then
-				AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
-					'mem', 0,
-					'time', 0
-				) or {
-					mem = 0,
-					time = 0
-				}
+			if type(method) == "string" then
+				local obj_method = obj[method]
+				if obj_method then
+					obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+				end
+			else -- function
+				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 			end
-			mem, time = gcinfo(), GetTime()
-		end
-		if type(method) == "string" then
-			local obj_method = obj[method]
-			if obj_method then
-				obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+			if AceEvent_debugTable then
+				mem, time = mem - gcinfo(), time - GetTime()
+				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
+				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
-		else -- function
-			method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-		end
-		if AceEvent_debugTable then
-			mem, time = mem - gcinfo(), time - GetTime()
-			AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
-			AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 		end
 	end
 	_G.event = _G_event
