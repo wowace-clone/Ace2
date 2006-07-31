@@ -641,7 +641,7 @@ local function cleanDefaults(t, defaults)
 			end
 		end
 	end
-	return not next(t)
+	return t and not next(t)
 end
 
 function AceDB:GetProfile()
@@ -932,7 +932,7 @@ function AceDB:PLAYER_LOGOUT()
 				db.raw.account = nil
 			end
 			if db.profile and cleanDefaults(db.profile, db.defaults and db.defaults.profile) then
-				db.raw.profiles[db.raw.currentProfile[charID] or "Default"] = nil
+				db.raw.profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"] = nil
 				if not next(db.raw.profiles) then
 					db.raw.profiles = nil
 				end
