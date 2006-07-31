@@ -131,6 +131,9 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				end
 				mem, time = gcinfo(), GetTime()
 			end
+			if not AceEvent_registry[event] or not AceEvent_registry[event][obj] then
+				break
+			end
 			local method = AceEvent_registry[event][obj]
 			AceEvent.UnregisterEvent(obj, event)
 			if type(method) == "string" then
@@ -172,7 +175,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				if obj_method then
 					obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 				end
-			else -- function
+			elseif method then -- function
 				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 			end
 			if AceEvent_debugTable then
