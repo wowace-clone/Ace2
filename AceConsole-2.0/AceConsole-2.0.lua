@@ -1624,9 +1624,11 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		if not AceConsole.nextAddon then
 			AceConsole.nextAddon = {}
 		end
-		AceConsole.nextAddon[self] = options
-		if not self.playerLogin then
-			AceConsole:RegisterEvent("PLAYER_LOGIN", "PLAYER_LOGIN", true)
+		if type(options) == "table" then
+			AceConsole.nextAddon[self] = options
+			if not self.playerLogin then
+				AceConsole:RegisterEvent("PLAYER_LOGIN", "PLAYER_LOGIN", true)
+			end
 		end
 	end
 	
