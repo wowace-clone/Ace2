@@ -136,6 +136,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			end
 			local method = AceEvent_registry[event][obj]
 			AceEvent.UnregisterEvent(obj, event)
+			local done = not AceEvent_onceRegistry[event] or not next(AceEvent_onceRegistry[event])
 			if type(method) == "string" then
 				local obj_method = obj[method]
 				if obj_method then
@@ -150,6 +151,9 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
 			obj = nil
+			if done then
+				break
+			end
 		end
 	end
 	if AceEvent_registry[event] then
