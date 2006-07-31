@@ -651,8 +651,8 @@ function AceDB:GetProfile()
 	if not self.db.raw.currentProfile then
 		self.db.raw.currentProfile = {}
 	end
-	if not db.raw.currentProfile[charID] then
-		db.raw.currentProfile[charID] = "Default"
+	if not self.db.raw.currentProfile[charID] then
+		self.db.raw.currentProfile[charID] = "Default"
 	end
 	local profile = self.db.raw.currentProfile[charID]
 	if profile == "char" then
