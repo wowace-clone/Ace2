@@ -474,6 +474,7 @@ end
 function AceEvent:UnregisterAllEvents()
 	for event, data in pairs(AceEvent.registry) do
 		data[self] = nil
+		AceEvent:TriggerEvent(event, self)
 	end
 end
 
