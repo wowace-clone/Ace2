@@ -648,6 +648,12 @@ function AceDB:GetProfile()
 	if not self.db or not self.db.raw then
 		return nil
 	end
+	if not self.db.raw.currentProfile then
+		self.db.raw.currentProfile = {}
+	end
+	if not db.raw.currentProfile[charID] then
+		db.raw.currentProfile[charID] = "Default"
+	end
 	local profile = self.db.raw.currentProfile[charID]
 	if profile == "char" then
 		return "char", "char/" .. charID
@@ -931,7 +937,7 @@ function AceDB:PLAYER_LOGOUT()
 					db.raw.profiles = nil
 				end
 			end
-			if db.namespaces and db.raw.namespaces then
+			if db.namespaces then
 				for name,v in pairs(db.namespaces) do
 					setmetatable(v, nil)
 					if v.char and cleanDefaults(v.char, v.defaults and v.defaults.char) then
@@ -971,7 +977,7 @@ function AceDB:PLAYER_LOGOUT()
 							db.raw.namespaces[name].profiles = nil
 						end
 					end
-					if db.raw.namespaces[name] and not next(db.raw.namespaces[name]) then
+					if not next(db.raw.namespaces[name]) then
 						db.raw.namespaces[name] = nil
 					end
 				end
