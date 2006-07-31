@@ -476,6 +476,11 @@ function AceEvent:UnregisterAllEvents()
 		data[self] = nil
 		AceEvent:TriggerEvent(event, self)
 	end
+	if AceEvent.onceRegistry then
+		for event, data in pairs(AceEvent.onceRegistry) do
+			data[self] = nil
+		end
+	end
 end
 
 function AceEvent:CancelAllScheduledEvents()
