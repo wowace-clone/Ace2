@@ -31,6 +31,7 @@ local AceComm = Mixin {
 						"SetDefaultCommPriority",
 						"SetCommPrefix",
 					  }
+AceComm.hooks = {}
 
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
 
@@ -87,8 +88,7 @@ local function GetLatency()
 end
 
 local function IsInChannel(chan)
-	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
-	return chan == a or chan == b or chan == c or chan == d or chan == e or chan == f or chan == g or chan == h or chan == i or chan == j
+	return GetChannelName(chan) ~= 0
 end
 
 -- Package a message for transmission
@@ -137,9 +137,15 @@ local function Decode(text, drunk)
     return text
 end
 
+local lastChannelJoined
+
+function AceComm.hooks:JoinChannelByName(orig, channel, a,b,c,d,e,f,g,h,i)
+	lastChannelJoined = channel
+	return orig(channel, a,b,c,d,e,f,g,h,i)
+end
+
 local function JoinChannel(channel)
 	if not IsInChannel(channel) then
-		AceComm.channels[channel] = true
 		LeaveChannelByName(channel)
 		AceComm:ScheduleEvent(JoinChannelByName, 0, channel)
 	end
@@ -163,10 +169,11 @@ local function SwitchChannel(former, latter)
 		return
 	end
 	if not IsInChannel(latter) then
-		AceComm.channels[latter] = true
 		JoinChannelByName(latter)
 	end
 end
+
+local shutdown = false
 
 local zoneCache
 local function GetCurrentZoneChannel()
@@ -176,45 +183,166 @@ local function GetCurrentZoneChannel()
 	return zoneCache
 end
 
-local myFunc = function(k)
-	if not IsInChannel(k.latter) then
-		AceComm.channels[k.latter] = true
-		JoinChannelByName(k.latter)
+local function SupposedToBeInChannel(chan)
+	if not string.find(chan, "^AceComm") then
+		return true
+	elseif shutdown then
+		return false
 	end
-	del(k)
-	switches[k] = nil
+	
+	if chan == "AceComm" then
+		return AceComm.registry.GLOBAL and next(AceComm.registry.GLOBAL) and true or false
+	elseif string.find(chan, "^AceCommZone%x%x%x%x%x%x$") then
+		if chan == GetCurrentZoneChannel() then
+			return AceComm.registry.ZONE and next(AceComm.registry.ZONE) and true or false
+		else
+			return false
+		end
+	else
+		return AceComm.registry.CUSTOM and AceComm.registry.CUSTOM[chan] and next(AceComm.registry.CUSTOM[chan]) and true or false
+	end
 end
 
-function AceComm:CHAT_MSG_CHANNEL_NOTICE(kind, _, _, deadName, _, _, _, num, channel)
-	if kind == "YOU_LEFT" then
-		for k in pairs(switches) do
-			if k.former == channel then
-				self:ScheduleEvent(myFunc, 0, k)
+local function LeaveAceCommChannels(all)
+	if all then
+		shutdown = true
+	end
+	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
+	local t = new()
+	t.n = 0
+	table.insert(t, a)
+	table.insert(t, b)
+	table.insert(t, c)
+	table.insert(t, d)
+	table.insert(t, e)
+	table.insert(t, f)
+	table.insert(t, g)
+	table.insert(t, h)
+	table.insert(t, i)
+	table.insert(t, j)
+	for _,v in ipairs(t) do
+		if v and string.find(v, "^AceComm") then
+			if not SupposedToBeInChannel(v) then
+				LeaveChannelByName(v)
 			end
 		end
-		if channel == GetCurrentZoneChannel() then
-			self:TriggerEvent("AceComm_LeftChannel", "ZONE")
-		elseif channel == "AceComm" then
-			self:TriggerEvent("AceComm_LeftChannel", "GLOBAL")
+	end
+	t = del(t)
+end
+
+local lastRefix = 0
+local function RefixAceCommChannelsAndEvents()
+	if GetTime() - lastRefix <= 5 then
+		AceComm:ScheduleEvent(RefixAceCommChannelsAndEvents, 1)
+		return
+	end
+	lastRefix = GetTime()
+	LeaveAceCommChannels(false)
+	
+	local channel = false
+	local whisper = false
+	local addon = false
+	if SupposedToBeInChannel("AceComm") then
+		JoinChannel("AceComm")
+		channel = true
+	end
+	if SupposedToBeInChannel(GetCurrentZoneChannel()) then
+		JoinChannel(GetCurrentZoneChannel())
+		channel = true
+	end
+	if AceComm.registry.CUSTOM then
+		for k,v in pairs(AceComm.registry.CUSTOM) do
+			if next(v) then
+				JoinChannel(k)
+				channel = true
+			end
 		end
-	elseif kind == "YOU_JOINED" then
-		if num == 0 then
-			self:ScheduleEvent(LeaveChannelByName, 0, deadName)
-			local t = new()
-			t.former = deadName
-			t.latter = deadName
-			switches[t] = true
-		elseif channel == GetCurrentZoneChannel() then
-			self:TriggerEvent("AceComm_JoinedChannel", "ZONE")
-		elseif channel == "AceComm" then
-			self:TriggerEvent("AceComm_JoinedChannel", "GLOBAL")
+	end
+	if AceComm.registry.WHISPER then
+		whisper = true
+	end
+	if AceComm.registry.GROUP or AceComm.registry.PARTY or AceComm.registry.RAID or AceComm.registry.BATTLEGROUND then
+		addon = true
+	end
+	
+	if channel then
+		if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
+			AceComm:RegisterEvent("CHAT_MSG_CHANNEL")
+		end
+	else
+		if AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
+			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL")
+		end
+	end
+	
+	if whisper then
+		if not AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
+			AceComm:RegisterEvent("CHAT_MSG_WHISPER")
+		end
+	else
+		if AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
+			AceComm:UnregisterEvent("CHAT_MSG_WHISPER")
+		end
+	end
+	
+	if addon then
+		if not AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
+			AceComm:RegisterEvent("CHAT_MSG_ADDON")
+		end
+	else
+		if AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
+			AceComm:UnregisterEvent("CHAT_MSG_ADDON")
 		end
 	end
 end
 
-local function LeaveAllChannels()
-	for k in pairs(AceComm.channels) do
-		LeaveChannel(k)
+
+do
+	local myFunc = function(k)
+		if not IsInChannel(k.latter) then
+			JoinChannelByName(k.latter)
+		end
+		del(k)
+		switches[k] = nil
+	end
+	
+	function AceComm:CHAT_MSG_CHANNEL_NOTICE(kind, _, _, deadName, _, _, _, num, channel)
+		if kind == "YOU_LEFT" then
+			if not string.find(channel, "^AceComm") then
+				return
+			end
+			for k in pairs(switches) do
+				if k.former == channel then
+					self:ScheduleEvent(myFunc, 0, k)
+				end
+			end
+			if channel == GetCurrentZoneChannel() then
+				self:TriggerEvent("AceComm_LeftChannel", "ZONE")
+			elseif channel == "AceComm" then
+				self:TriggerEvent("AceComm_LeftChannel", "GLOBAL")
+			end
+			if string.find(channel, "^AceComm") and SupposedToBeInChannel(channel)  then
+				self:ScheduleEvent(JoinChannel, 0, channel)
+			end
+		elseif kind == "YOU_JOINED" then
+			if num == 0 then
+				if not string.find(deadName, "^AceComm") then
+					return
+				end
+				self:ScheduleEvent(LeaveChannelByName, 0, deadName)
+				local t = new()
+				t.former = deadName
+				t.latter = deadName
+				switches[t] = true
+			elseif channel == GetCurrentZoneChannel() then
+				self:TriggerEvent("AceComm_JoinedChannel", "ZONE")
+			elseif channel == "AceComm" then
+				self:TriggerEvent("AceComm_JoinedChannel", "GLOBAL")
+			end
+			if num ~= 0 and not SupposedToBeInChannel(channel) then
+				LeaveChannel(channel)
+			end
+		end
 	end
 end
 
@@ -430,33 +558,13 @@ function AceComm:RegisterComm(prefix, distribution, method)
 	local registry = AceComm.registry
 	if not registry[distribution] then
 		registry[distribution] = new()
-		
-		if distribution == "GLOBAL" then
-			if AceEvent:IsFullyInitialized() then
-				JoinChannel("AceComm")
-			end
-			if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
-				AceComm:RegisterEvent("CHAT_MSG_CHANNEL")
-			end
-		elseif distribution == "WHISPER" then
-			AceComm:RegisterEvent("CHAT_MSG_WHISPER")
-		elseif distribution == "ZONE" then
-			if AceEvent:IsFullyInitialized() then
-				JoinChannel(GetCurrentZoneChannel())
-			end
-			if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
-				AceComm:RegisterEvent("CHAT_MSG_CHANNEL")
-			end
-		else
-			if not AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
-				AceComm:RegisterEvent("CHAT_MSG_ADDON")
-			end
-		end
 	end
 	if not registry[distribution][prefix] then
 		registry[distribution][prefix] = new()
 	end
 	registry[distribution][prefix][self] = method
+	
+	RefixAceCommChannelsAndEvents()
 end
 
 function AceComm:UnregisterComm(prefix, distribution)
@@ -490,40 +598,9 @@ function AceComm:UnregisterComm(prefix, distribution)
 	
 	if not next(registry[distribution]) then
 		registry[distribution] = del(registry[distribution])
-		
-		if distribution == "GLOBAL" or distribution == "ZONE" then
-			local channel
-			if distribution == "GLOBAL" then
-				channel = "AceComm"
-			elseif distribution == "ZONE" then
-				channel = GetCurrentZoneChannel()
-			end
-			LeaveChannel("AceComm")
-			local has = false
-			for k in pairs(registry) do
-				if k == "GLOBAL" or k == "ZONE" then
-					has = true
-					break
-				end
-			end
-			if not has then
-				AceComm:UnregisterEvent("CHAT_MSG_CHANNEL")
-			end
-		elseif distribution == "WHISPER" then
-			AceComm:UnregisterEvent("CHAT_MSG_WHISPER")
-		else
-			local has = false
-			for k in pairs(registry) do
-				if k ~= "GLOBAL" or k ~= "WHISPER" or k ~= "ZONE" then
-					has = true
-					break
-				end
-			end
-			if not has then
-				AceComm:UnregisterEvent("CHAT_MSG_ADDON")
-			end
-		end
 	end
+	
+	RefixAceCommChannelsAndEvents()
 end
 
 function AceComm:UnregisterAllComms()
@@ -644,7 +721,7 @@ local function SendMessage(prefix, priority, distribution, person, message)
 					channel = GetCurrentZoneChannel()
 				end
 				local index = GetChannelName(channel)
-				if index then
+				if index and index > 0 then
 					ChatThrottleLib:SendChatMessage(priority, prefix, bit, "CHANNEL", nil, index)
 				else
 					good = false
@@ -669,7 +746,7 @@ local function SendMessage(prefix, priority, distribution, person, message)
 				channel = GetCurrentZoneChannel()
 			end
 			local index = GetChannelName(channel)
-			if index then
+			if index and index > 0 then
 				ChatThrottleLib:SendChatMessage(priority, prefix, message, "CHANNEL", nil, index)
 				return true
 			end
@@ -857,10 +934,18 @@ do
 	end
 end
 
+local lastCheck = GetTime()
+local function CheckRefix()
+	if GetTime() - lastCheck >= 120 then
+		lastCheck = GetTime()
+		RefixAceCommChannelsAndEvents()
+	end
+end
+
 local function HandleMessage(prefix, message, distribution, sender)
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	if not AceComm.registry[distribution] and (not isGroup or not AceComm.registry.GROUP) then
-		return
+		return CheckRefix()
 	end
 	local _, id, current, max
 	if not message then
@@ -870,7 +955,7 @@ local function HandleMessage(prefix, message, distribution, sender)
 			_,_, prefix, id, current, max, message = string.find(prefix, "^(.-)\t(.)(.)(.)\t(.*)$")
 		end
 		if (not AceComm.registry[distribution] or not AceComm.registry[distribution][prefix]) and (not isGroup or not AceComm.registry.GROUP or not AceComm.registry.GROUP[prefix]) then
-			return
+			return CheckRefix()
 		end
 	else
 		_,_, id, current, max, message = string.find(message, "^(.)(.)(.)\t(.*)$")
@@ -953,11 +1038,11 @@ function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	end
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	if not AceComm.registry[distribution] and (not isGroup or not AceComm.registry.GROUP) then
-		return
+		return CheckRefix()
 	end
 	prefix = Decode(prefix)
 	if (not AceComm.registry[distribution] or not AceComm.registry[distribution][prefix]) and (not isGroup or not AceComm.registry.GROUP or not AceComm.registry.GROUP[prefix]) then
-		return
+		return CheckRefix()
 	end
 	message = Decode(message)
 	return HandleMessage(prefix, message, distribution, sender)
@@ -986,47 +1071,11 @@ function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
 end
 
 function AceComm:AceEvent_FullyInitialized()
-	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
-	local t = new()
-	table.insert(t, a)
-	table.insert(t, b)
-	table.insert(t, c)
-	table.insert(t, d)
-	table.insert(t, e)
-	table.insert(t, f)
-	table.insert(t, g)
-	table.insert(t, h)
-	table.insert(t, i)
-	table.insert(t, j)
-	for _,v in ipairs(t) do
-		if string.find(v, "^AceComm") then
-			if v == "AceComm" then
-				if not self.registry.GLOBAL or not next(self.registry.GLOBAL) then
-					LeaveChannel("AceComm")
-				end
-			elseif string.find(v, "^AceCommZone") then
-				if v == GetCurrentZoneChannel() then
-					if not self.registry.ZONE or not next(self.registry.ZONE) then
-						LeaveChannel(v)
-					end
-				else
-					LeaveChannel(v)
-				end
-			else
-				LeaveChannel(v)
-			end
-		end
-	end
-	if self.registry.GLOBAL and next(self.registry.GLOBAL) then
-		JoinChannel("AceComm")
-	end
-	if self.registry.ZONE and next(self.registry.ZONE) then
-		JoinChannel(GetCurrentZoneChannel())
-	end
+	RefixAceCommChannelsAndEvents()
 end
 
 function AceComm:PLAYER_LOGOUT()
-	LeaveAllChannels()
+	LeaveAceCommChannels(true)
 end
 
 function AceComm:ZONE_CHANGED_NEW_AREA()
@@ -1049,7 +1098,7 @@ function AceComm:embed(target)
 	end
 end
 
-function AceComm:ChatFrame_OnEvent(orig, event)
+function AceComm.hooks:ChatFrame_OnEvent(orig, event)
 	if event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM" then
 		if string.find(arg1, "^/") then
 			return
@@ -1063,41 +1112,96 @@ function AceComm:ChatFrame_OnEvent(orig, event)
 end
 
 local id, loggingOut
-function AceComm:Logout(orig)
+function AceComm.hooks:Logout(orig)
 	if IsResting() then
-		LeaveAllChannels()
+		LeaveAceCommChannels(true)
 	else
-		id = self:ScheduleEvent(LeaveAllChannels, 15)
+		id = self:ScheduleEvent(LeaveAceCommChannels, 15, true)
 	end
 	loggingOut = true
 	return orig()
 end
 
-function AceComm:CancelLogout(orig)
+function AceComm.hooks:CancelLogout(orig)
+	shutdown = false
 	if id then
 		self:CancelScheduledEvent(id)
 		id = nil
 	end
-	if loggingOut then
-		if self.registry.GLOBAL and next(self.registry.GLOBAL) then
-			JoinChannel("AceComm")
-		end
-		if self.registry.ZONE and next(self.registry.ZONE) then
-			JoinChannel(GetCurrentZoneChannel())
-		end
-	end
+	RefixAceCommChannelsAndEvents()
 	loggingOut = false
 	return orig()
 end
 
-function AceComm:Quit(orig)
+function AceComm.hooks:Quit(orig)
 	if IsResting() then
-		LeaveAllChannels()
+		LeaveAceCommChannels(true)
 	else
 		id = self:ScheduleEvent(LeaveAllChannels, 15)
 	end
 	loggingOut = true
 	return orig()
+end
+
+function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
+	for i = 1, arg.n, 2 do
+		if type(arg[i + 1]) == "string" and string.find(arg[i + 1], "^AceComm") then
+			table.remove(arg, i + 1)
+			table.remove(arg, i)
+			i = i - 2
+		end
+		if not arg[i] then
+			break
+		end
+	end
+	return orig(unpack(arg))
+end
+
+function AceComm:CHAT_MSG_SYSTEM(text)
+	if text ~= ERR_TOO_MANY_CHAT_CHANNELS then
+		return
+	end
+	
+	local chan = lastChannelJoined
+	if not chan then
+		return
+	end
+	if not string.find(lastChannelJoined, "^AceComm") then
+		return
+	end
+	
+	local text
+	if chan == "AceComm" then
+		local addon = self.registry.GLOBAL and next(self.registry.GLOBAL)
+		if not addon then
+			return
+		end
+		addon = tostring(addon)
+		text = string.format("%s has tried to join the AceComm global channel, but there are not enough channels available. %s may not work because of this", addon, addon)
+	elseif chan == GetCurrentZoneChannel() then
+		local addon = self.registry.ZONE and next(self.registry.ZONE)
+		if not addon then
+			return
+		end
+		addon = tostring(addon)
+		text = string.format("%s has tried to join the AceComm zone channel, but there are not enough channels available. %s may not work because of this", addon, addon)
+	else
+		local addon = self.registry.CUSTOM and self.registry.CUSTOM[chan] and next(self.registry.CUSTOM[chan])
+		if not addon then
+			return
+		end
+		addon = tostring(addon)
+		text = string.format("%s has tried to join the AceComm custom channel %s, but there are not enough channels available. %s may not work because of this", addon, chan, addon)
+	end
+	
+	StaticPopupDialogs["ACECOMM_TOO_MANY_CHANNELS"] = {
+		text = text,
+		button1 = CLOSE,
+		timeout = 0,
+		whileDead = 1,
+		hideOnEscape = 1,
+	}
+	StaticPopup_Show("ACECOMM_TOO_MANY_CHANNELS")
 end
 
 local function activate(self, oldLib, oldDeactivate)
@@ -1122,26 +1226,42 @@ local function activate(self, oldLib, oldDeactivate)
 		local loggingOut = false
 		local old_Logout = Logout
 		function Logout()
-			if self.Logout then
-				return self:Logout(old_Logout)
+			if self.hooks.Logout then
+				return self.hooks.Logout(self, old_Logout)
 			else
 				return old_Logout()
 			end
 		end
 		local old_CancelLogout = CancelLogout
 		function CancelLogout()
-			if self.CancelLogout then
-				return self:CancelLogout(old_CancelLogout)
+			if self.hooks.CancelLogout then
+				return self.hooks.CancelLogout(self, old_CancelLogout)
 			else
 				return old_CancelLogout()
 			end
 		end
 		local old_Quit = Quit
 		function Quit()
-			if self.Quit then
-				return self:Quit(old_Quit)
+			if self.hooks.Quit then
+				return self.hooks.Quit(self, old_Quit)
 			else
 				return old_Quit()
+			end
+		end
+		local old_FCFDropDown_LoadChannels = FCFDropDown_LoadChannels
+		function FCFDropDown_LoadChannels(...)
+			if self.hooks.FCFDropDown_LoadChannels then
+				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, unpack(arg))
+			else
+				return old_FCFDropDown_LoadChannels(unpack(arg))
+			end
+		end
+		local old_JoinChannelByName = JoinChannelByName
+		function JoinChannelByName(a,b,c,d,e,f,g,h,i,j)
+			if self.hooks.JoinChannelByName then
+				return self.hooks.JoinChannelByName(self, old_JoinChannelByName, a,b,c,d,e,f,g,h,i,j)
+			else
+				return old_JoinChannelByName(a,b,c,d,e,f,g,h,i,j)
 			end
 		end
 	end
@@ -1151,9 +1271,6 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 	if not self.registry then
 		self.registry = {}
-	end
-	if not self.channels then
-		self.channels = {}
 	end
 	if not self.prefixes then
 		self.prefixes = {}
@@ -1191,6 +1308,10 @@ local function external(self, major, instance)
 		
 		if not self:IsEventRegistered("CHAT_MSG_CHANNEL_NOTICE") then
 			self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+		end
+		
+		if not self:IsEventRegistered("CHAT_MSG_SYSTEM") then
+			self:RegisterEvent("CHAT_MSG_SYSTEM")
 		end
 	end
 end
