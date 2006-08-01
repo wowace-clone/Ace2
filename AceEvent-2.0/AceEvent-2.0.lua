@@ -406,10 +406,40 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 end
 
 function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			if not delayRegistry or not delayRegistry[event] then
+				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+			end
+		end
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "string", "function", --[[ so message is right ]] "number")
+			AceEvent:argCheck(a1, 4, "number")
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
+	
 	return ScheduleEvent(self, false, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 function AceEvent:ScheduleRepeatingEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			if not delayRegistry or not delayRegistry[event] then
+				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+			end
+		end
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "string", "function", --[[ so message is right ]] "number")
+			AceEvent:argCheck(a1, 4, "number")
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
+	
 	return ScheduleEvent(self, true, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
