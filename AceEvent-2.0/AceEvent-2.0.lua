@@ -579,10 +579,10 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		local function func()
 			self.postInit = true
 			self:TriggerEvent("AceEvent_FullyInitialized")
-			if self:IsEventRegistered("CHAT_MSG_CHANNEL_NOTICE") then
+			if self.registry["CHAT_MSG_CHANNEL_NOTICE"] and self.registry["CHAT_MSG_CHANNEL_NOTICE"][self] then
 				self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 			end
-			if self:IsEventRegistered("SPELLS_CHANGED") then
+			if self.registry["SPELLS_CHANGED"] and self.registry["SPELLS_CHANGED"][self] then
 				self:UnregisterEvent("SPELLS_CHANGED")
 			end
 		end
