@@ -1745,7 +1745,7 @@ function external(self, major, instance)
 					end
 				end
 			end
-		end, function(matches, gcs, cmdpath)
+		end, function(u, matches, gcs, cmdpath)
 			local ac = AceLibrary("AceConsole-2.0")
 			local name, cmd, path = ac:TabCompleteInfo(cmdpath)
 			if ac.registry[name] then
