@@ -184,6 +184,7 @@ function AceTab:OnTabPressed()
 		local gcs
 		for h, c in pairs(matches) do
 			local u = c.usage
+			local candUsage = u and (compost and compost:Acquire() or {})
 			local gcs2
 			if next(c) then
 				if not u then print(h..":") end
@@ -195,7 +196,8 @@ function AceTab:OnTabPressed()
 			gcs = GCS(gcs, gcs2)
 			if u then
 				if type(u) == "function" then
-					local us = u(c, gcs2, string.sub(text, 1, left))
+					local us = u(candUsage, c, gcs2, string.sub(text, 1, left))
+					if candUsage and next(candUsage) then us = candUsage end
 					if type(us) == "string" then
 						print(us)
 					elseif type(us) == "table" and numMatches > 0 then
