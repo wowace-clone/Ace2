@@ -977,18 +977,16 @@ function AceDB:PLAYER_LOGOUT()
 							db.raw.namespaces[name].profiles = nil
 						end
 					end
-					if not next(db.raw.namespaces[name]) then
+					if db.raw.namespaces[name] and not next(db.raw.namespaces[name]) then
 						db.raw.namespaces[name] = nil
 					end
 				end
-				if not next(db.raw.namespaces) then
+				if db.raw.namespaces and not next(db.raw.namespaces) then
 					db.raw.namespaces = nil
 				end
 			end
-			if db.raw.disabled then
-				if not next(db.raw.disabled) then
-					db.raw.disabled = nil
-				end
+			if db.raw.disabled and not next(db.raw.disabled) then
+				db.raw.disabled = nil
 			end
 			if db.raw.currentProfile then
 				for k,v in pairs(db.raw.currentProfile) do
@@ -1000,7 +998,7 @@ function AceDB:PLAYER_LOGOUT()
 					db.raw.currentProfile = nil
 				end
 			end
-			if not next(db.raw) then
+			if _G[db.name] and not next(_G[db.name]) then
 				_G[db.name] = nil
 			end
 		end
