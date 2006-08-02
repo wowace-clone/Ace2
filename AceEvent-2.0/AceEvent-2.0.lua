@@ -92,7 +92,6 @@ function AceEvent:RegisterEvent(event, method, once)
 end
 
 local _G = getfenv(0)
-local triggerFromWoW
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
@@ -100,21 +99,16 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		return
 	end
 	local _G_event = _G.event
-	local _G_arg1, _G_arg2, _G_arg3, _G_arg4, _G_arg5, _G_arg6, _G_arg7, _G_arg8, _G_arg9 = _G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9
-	local _G_eventDispatcher = _G.eventDispatcher
-	if triggerFromWoW then
-		triggerFromWoW = nil
-		_G.eventDispatcher = "WoW"
-	else
-		_G.eventDispatcher = self
-	end
-	_G.event = event
-	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = a1, a2, a3, a4, a5, a6, a7, a8, a9
 
 	local AceEvent_onceRegistry = AceEvent.onceRegistry
 	local AceEvent_debugTable = AceEvent.debugTable
 	if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
-		for obj in pairs(AceEvent_onceRegistry[event]) do
+		local obj
+		while true do
+			obj = next(AceEvent_onceRegistry[event])
+			if not obj then
+				return
+			end
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
@@ -131,12 +125,11 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				end
 				mem, time = gcinfo(), GetTime()
 			end
-			if not AceEvent_registry[event] or not AceEvent_registry[event][obj] then
+			local method = AceEvent_registry[event] and AceEvent_registry[event][obj]
+			if not method then
 				break
 			end
-			local method = AceEvent_registry[event][obj]
 			AceEvent.UnregisterEvent(obj, event)
-			local done = not AceEvent_onceRegistry[event] or not next(AceEvent_onceRegistry[event])
 			if type(method) == "string" then
 				local obj_method = obj[method]
 				if obj_method then
@@ -150,8 +143,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
-			obj = nil
-			if done then
+			if not AceEvent_onceRegistry[event] then
 				break
 			end
 		end
@@ -190,8 +182,6 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		end
 	end
 	_G.event = _G_event
-	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = _G_arg1, _G_arg2, _G_arg3, _G_arg4, _G_arg5, _G_arg6, _G_arg7, _G_arg8, _G_arg9
-	_G.eventDispatcher = _G_eventDispatcher
 end
 
 --------------------
@@ -583,7 +573,6 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	end
 	self.frame:SetScript("OnEvent", function()
 		if event then
-			triggerFromWoW = true
 			self:TriggerEvent(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 		end
 	end)
