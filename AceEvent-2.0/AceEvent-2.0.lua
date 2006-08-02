@@ -143,7 +143,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
-			if not AceEvent_onceRegistry[event] then
+			if not AceEvent_onceRegistry[event] or not next(AceEvent_onceRegistry[event]) then
 				break
 			end
 		end
