@@ -569,7 +569,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.registry = Compost and Compost:Acquire() or {}
 	end
 	if not self.frame then
-		self.frame = CreateFrame("Frame")
+		self.frame = CreateFrame("Frame", "AceEvent20Frame")
 	end
 	self.frame:SetScript("OnEvent", function()
 		if event then
