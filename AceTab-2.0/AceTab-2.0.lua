@@ -141,7 +141,7 @@ function AceTab:OnTabPressed()
 	local completions = compost and compost:Erase() or {}
 	local matches = compost and compost:Erase() or {}
 	local numMatches = 0
-	local firstMatch
+	local firstMatch, hasNonFallback
 	
 	for desc, entry in pairs(AceTab.registry) do
 		for _, s in pairs(entry) do
@@ -150,7 +150,7 @@ function AceTab:OnTabPressed()
 					for _, regex in ipairs(s.patterns) do
 						local cands = compost and compost:Erase() or {}
 						if string.find(string.sub(text, 1, left), regex.."$") then
-							local c = s.compfunc(cands, string.sub(text, 1, left) .. string.sub(text, 1, pos), left)
+							local c = s.compfunc(cands, string.sub(text, 1, left), left)
 							if c ~= false then
 								local mtemp = compost and compost:Erase() or {}
 								matches[desc] = matches[desc] or compost and compost:Erase() or {}
@@ -165,6 +165,10 @@ function AceTab:OnTabPressed()
 									table.insert(matches[desc], i)
 								end
 								matches[desc].usage = s.usage
+								if regex ~= "" and matches[desc][1] then
+									hasNonFallback = true
+									matches[desc].notFallback = true
+								end
 							end
 						end
 					end
@@ -183,7 +187,9 @@ function AceTab:OnTabPressed()
 	else
 		local gcs
 		for h, c in pairs(matches) do
+			if hasNonFallback and not c.notFallback then break end
 			local u = c.usage
+			c.usage = nil
 			local candUsage = u and (compost and compost:Acquire() or {})
 			local gcs2
 			if next(c) then
