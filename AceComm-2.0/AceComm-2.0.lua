@@ -352,25 +352,73 @@ do
 	end
 end
 
+local byte_b = string.byte('b')
+local byte_nil = string.byte('-')
+local byte_num = string.byte('#')
+local byte_d = string.byte('d')
+local byte_D = string.byte('D')
+local byte_e = string.byte('e')
+local byte_E = string.byte('E')
+local byte_s = string.byte('s')
+local byte_S = string.byte('S')
+local byte_t = string.byte('t')
+local byte_T = string.byte('T')
+local byte_i = string.byte('i')
+local byte_I = string.byte('I')
+local byte_j = string.byte('j')
+local byte_inf = string.byte('@')
+local byte_ninf = string.byte('$')
+local byte_nan = string.byte('!')
+
+local inf = 1/0
+local nan = 0/0
+
 local Serialize
 do
 	local recurse
-	local function _Serialize(value)
-		local kind = type(value)
+	local function _Serialize(v)
+		local kind = type(v)
 		if kind == "boolean" then
 			if value then
 				return "by"
 			else
 				return "bn"
 			end
-		elseif not value then
+		elseif not v then
 			return "-"
 		elseif kind == "number" then
-			local v = tostring(value)
+			if v == math.floor(v) then
+				if v <= 127 and v >= -128 then
+					if v < 0 then
+						v = v + 256
+					end
+					return string.char(byte_d, v)
+				elseif v <= 32767 and v >= -32768 then
+					if v < 0 then
+						v = v + 65536
+					end
+					return string.char(byte_D, v / 256, math.mod(v, 256))
+				elseif v <= 2147483647 and v >= -2147483648 then
+					if v < 0 then
+						v = v + 4294967296
+					end
+					return string.char(byte_e, v / 16777216, math.mod(v / 65536, 256), math.mod(v / 256, 256), math.mod(v, 256))
+				elseif v <= 9223372036854775807 and v >= -9223372036854775808 then
+					if v < 0 then
+						v = v + 18446744073709551616
+					end
+					return string.char(byte_E, v / 72057594037927936, math.mod(v / 281474976710656, 256), math.mod(v / 1099511627776, 256), math.mod(v / 4294967296, 256), math.mod(v / 16777216, 256), math.mod(v / 65536, 256), math.mod(v / 256, 256), math.mod(v, 256))
+				end
+			elseif v == inf then
+				return string.char(byte_inf)
+			elseif v == -inf then
+				return string.char(byte_ninf)
+			elseif v ~= v then
+				return string.char(byte_nan)
+			end
 			return "#" .. string.char(string.len(v)) .. v
 		elseif kind == "string" then
-			DEFAULT_CHAT_FRAME:AddMessage(string.format("serializing string %q", string.gsub(value, "|", "||")))
-			local _,_,A,B,C = string.find(value, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
+			local _,_,A,B,C = string.find(v, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
 			if A then
 				-- item link
 				A = tonumber(A)
@@ -378,37 +426,37 @@ do
 				C = tonumber(C)
 				if C ~= 0 then
 					if B ~= 0 then
-						return "I" .. string.char(math.mod(math.floor(A / 65536), 256)) .. string.char(math.mod(math.floor(A / 256), 256)) .. string.char(math.mod(A, 256)) .. string.char(math.mod(math.floor(B / 256), 256)) .. string.char(math.mod(B, 256)) .. string.char(math.mod(math.floor(C / 256), 256)) .. string.char(math.mod(C, 256))
+						return string.char(byte_I, math.mod(A / 65536, 256), math.mod(A / 256, 256), math.mod(A, 256), math.mod(B / 256, 256), math.mod(B, 256), math.mod(C / 256, 256), math.mod(C, 256))
 					else
-						return "j" .. string.char(math.mod(math.floor(A / 65536), 256)) .. string.char(math.mod(math.floor(A / 256), 256)) .. string.char(math.mod(A, 256)) .. string.char(math.mod(math.floor(C / 256), 256)) .. string.char(math.mod(C, 256))
+						return string.char(byte_j, math.mod(A / 65536, 256), math.mod(A / 256, 256), math.mod(A, 256), math.mod(C / 256, 256), math.mod(C, 256))
 					end
 				else
-					return "i" .. string.char(math.mod(math.floor(A / 65536), 256)) .. string.char(math.mod(math.floor(A / 256), 256)) .. string.char(math.mod(A, 256))
+					return string.char(byte_j, math.mod(A / 65536, 256), math.mod(A / 256, 256), math.mod(A, 256))
 				end
 			else
 				-- normal string
-				local len = string.len(value)
-				if len <= 127 then
-					return "s" .. string.char(len) .. value
+				local len = string.len(v)
+				if len <= 256 then
+					return "s" .. string.char(len) .. v
 				else
-					return "S" .. string.char(math.floor(len / 256)) .. string.char(math.mod(len, 256)) .. value
+					return "S" .. string.char(len / 256, math.mod(len, 256)) .. v
 				end
 			end
 		elseif kind == "function" then
 			AceComm:error("Cannot serialize a function")
 		elseif kind == "table" then
-			if recurse[value] then
+			if recurse[v] then
 				for k in pairs(recurse) do
 					recurse[k] = nil
 				end
 				AceComm:error("Cannot serialize a recursive table")
 				return
 			end
-			recurse[value] = true
+			recurse[v] = true
 			local t = new()
-			for k,v in pairs(value) do
+			for k,u in pairs(v) do
 				table.insert(t, _Serialize(k))
-				table.insert(t, _Serialize(v))
+				table.insert(t, _Serialize(u))
 			end
 			if not notFirst then
 				for k in pairs(recurse) do
@@ -417,10 +465,10 @@ do
 			end
 			local s = table.concat(t)
 			local len = string.len(s)
-			if len <= 127 then
+			if len <= 256 then
 				return "t" .. string.char(len) .. s
 			else
-				return "T" .. string.char(math.floor(len / 256)) .. string.char(math.mod(len, 256)) .. s
+				return "T" .. string.char(len / 256, math.mod(len, 256)) .. s
 			end
 			t = del(t)
 		end
@@ -440,23 +488,13 @@ end
 
 local Deserialize
 do
-	local byte_b = string.byte('b')
-	local byte_nil = string.byte('-')
-	local byte_num = string.byte('#')
-	local byte_s = string.byte('s')
-	local byte_S = string.byte('S')
-	local byte_t = string.byte('t')
-	local byte_T = string.byte('T')
-	local byte_i = string.byte('i')
-	local byte_I = string.byte('I')
-	local byte_j = string.byte('j')
-	
 	local function _Deserialize(value, position)
 		if not position then
 			position = 1
 		end
 		local x = string.byte(value, position)
 		if x == byte_b then
+			-- boolean
 			local v = string.byte(value, position + 1)
 			if v == "n" then
 				return false, position + 1
@@ -466,8 +504,10 @@ do
 				error("Improper serialized value provided")
 			end
 		elseif x == byte_nil then
+			-- nil
 			return nil, position
 		elseif x == byte_I then
+			-- 7-byte item link
 			local a1 = string.byte(value, position + 1)
 			local a2 = string.byte(value, position + 2)
 			local a3 = string.byte(value, position + 3)
@@ -487,6 +527,7 @@ do
 				return nil, position + 7
 			end
 		elseif x == byte_i then
+			-- 3-byte item link
 			local a1 = string.byte(value, position + 1)
 			local a2 = string.byte(value, position + 2)
 			local a3 = string.byte(value, position + 3)
@@ -500,6 +541,7 @@ do
 				return nil, position + 3
 			end
 		elseif x == byte_j then
+			-- 5-byte item link
 			local a1 = string.byte(value, position + 1)
 			local a2 = string.byte(value, position + 2)
 			local a3 = string.byte(value, position + 3)
@@ -516,15 +558,67 @@ do
 				return nil, position + 5
 			end
 		elseif x == byte_s then
+			-- 0-255-byte string
 			local len = string.byte(value, position + 1)
 			return string.sub(value, position + 2, position + 1 + len), position + 1 + len
 		elseif x == byte_S then
+			-- 256-65535-byte string
 			local len = string.byte(value, position + 1) * 256 + string.byte(value, position + 2)
 			return string.sub(value, position + 3, position + 2 + len), position + 2 + len
+		elseif x == byte_inf then
+			return inf, position
+		elseif x == byte_ninf then
+			return -inf, position
+		elseif x == byte_nan then
+			return nan, position
+		elseif x == byte_d then
+			-- 1-byte integer
+			local a = string.byte(value, position + 1)
+			if a >= 128 then
+				a = a - 128
+			end
+			return a, position + 1
+		elseif x == byte_D then
+			-- 2-byte integer
+			local a = string.byte(value, position + 1)
+			local b = string.byte(value, position + 2)
+			local N = a * 256 + b
+			if N >= 32768 then
+				N = N - 32768
+			end
+			return N, position + 2
+		elseif x == byte_e then
+			-- 4-byte integer
+			local a = string.byte(value, position + 1)
+			local b = string.byte(value, position + 2)
+			local c = string.byte(value, position + 3)
+			local d = string.byte(value, position + 4)
+			local N = a * 16777216 + b * 65536 + c * 256 + d
+			if N >= 2147483648 then
+				N = N - 2147483648
+			end
+			return N, position + 4
+		elseif x == byte_E then
+			-- 8-byte integer
+			local a = string.byte(value, position + 1)
+			local b = string.byte(value, position + 2)
+			local c = string.byte(value, position + 3)
+			local d = string.byte(value, position + 4)
+			local e = string.byte(value, position + 5)
+			local f = string.byte(value, position + 6)
+			local g = string.byte(value, position + 7)
+			local h = string.byte(value, position + 8)
+			local N = a * 72057594037927936 + b * 281474976710656 + c * 1099511627776 + d * 4294967296 + e * 16777216 + f * 65536 + g * 256 + h
+			if N >= 9223372036854775808 then
+				N = N - 9223372036854775808
+			end
+			return N, position + 8
 		elseif x == byte_num then
+			-- number
 			local len = string.byte(value, position + 1)
 			return tonumber(string.sub(value, position + 2, position + 1 + len)), position + 1 + len
 		elseif x == byte_t or x == byte_T then
+			-- table
 			local finish
 			local start
 			if x == byte_t then
