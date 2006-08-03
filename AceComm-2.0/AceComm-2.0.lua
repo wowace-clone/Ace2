@@ -1347,8 +1347,8 @@ local function activate(self, oldLib, oldDeactivate)
 	else
 		local old_ChatFrame_OnEvent = ChatFrame_OnEvent
 		function ChatFrame_OnEvent(event)
-			if self.ChatFrame_OnEvent then
-				return self:ChatFrame_OnEvent(old_ChatFrame_OnEvent, event)
+			if self.hooks.ChatFrame_OnEvent then
+				return self.hooks.ChatFrame_OnEvent(self, old_ChatFrame_OnEvent, event)
 			else
 				return old_ChatFrame_OnEvent(event)
 			end
