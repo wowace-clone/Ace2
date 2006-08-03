@@ -386,6 +386,8 @@ function AceLibrary:IsNewVersion(major, minor)
 		local m = svnRevisionToNumber(minor)
 		if m then
 			minor = m
+		else
+			_G.error(string.format("Bad argument #3 to  `IsNewVersion'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
 		end
 	end
 	argCheck(self, minor, 3, "number")
@@ -408,6 +410,8 @@ function AceLibrary:HasInstance(major, minor)
 			local m = svnRevisionToNumber(minor)
 			if m then
 				minor = m
+			else
+				_G.error(string.format("Bad argument #3 to  `HasInstance'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
 			end
 		end
 		argCheck(self, minor, 3, "number")
@@ -437,6 +441,8 @@ function AceLibrary:GetInstance(major, minor)
 			local m = svnRevisionToNumber(minor)
 			if m then
 				minor = m
+			else
+				_G.error(string.format("Bad argument #3 to  `GetInstance'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
 			end
 		end
 		argCheck(self, minor, 2, "number")
@@ -476,6 +482,8 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		local m = svnRevisionToNumber(minor)
 		if m then
 			minor = m
+		else
+			_G.error(string.format("Bad argument #4 to  `Register'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
 		end
 	end
 	argCheck(self, minor, 4, "number")
