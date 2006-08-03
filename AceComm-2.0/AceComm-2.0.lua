@@ -80,6 +80,8 @@ local byte_s = string_byte('s')
 local byte_S = string_byte('S')
 local byte_t = string_byte('t')
 local byte_T = string_byte('T')
+local byte_u = string_byte('u')
+local byte_U = string_byte('U')
 local byte_i = string_byte('i')
 local byte_I = string_byte('I')
 local byte_j = string_byte('j')
@@ -473,9 +475,26 @@ do
 			end
 			recurse[v] = true
 			local t = new()
-			for k,u in pairs(v) do
-				table_insert(t, _Serialize(k))
-				table_insert(t, _Serialize(u))
+			local islist = false
+			local n = table.getn(v)
+			if n >= 1 or n <= 40 then
+				islist = true
+				for k,u in pairs(v) do
+					if (type(k) ~= "number" or k > n or k < 1) and (k ~= "n" or type(v) ~= "number") then
+						islist = false
+						break
+					end
+				end
+			end
+			if islist then
+				for i = 1, n do
+					table_insert(t, _Serialize(v[i]))
+				end
+			else
+				for k,u in pairs(v) do
+					table_insert(t, _Serialize(k))
+					table_insert(t, _Serialize(u))
+				end
 			end
 			if not notFirst then
 				for k in pairs(recurse) do
@@ -484,10 +503,18 @@ do
 			end
 			local s = table_concat(t)
 			local len = string_len(s)
-			if len <= 256 then
-				return "t" .. string_char(len) .. s
+			if islist then
+				if len <= 256 then
+					return "u" .. string_char(len) .. s
+				else
+					return "U" .. string_char(len / 256, math_mod(len, 256)) .. s
+				end
 			else
-				return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
+				if len <= 256 then
+					return "t" .. string_char(len) .. s
+				else
+					return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
+				end
 			end
 			t = del(t)
 		end
@@ -637,6 +664,28 @@ do
 			local len = string_byte(value, position + 1)
 			local s = string_sub(value, position + 2, position + 1 + len)
 			return s, position + 1 + len
+		elseif x == byte_u or x == byte_U then
+			-- numerically-indexed table
+			local finish
+			local start
+			if x == byte_t then
+				local len = string_byte(value, position + 1)
+				finish = position + 1 + len
+				start = position + 2
+			else
+				local len = string_byte(value, position + 1) * 256 + string_byte(value, position + 2)
+				finish = position + 2 + len
+				start = position + 3
+			end
+			local t = new()
+			t.n = 0
+			local curr = start - 1
+			while curr < finish do
+				local v
+				v, curr = _Deserialize(value, curr + 1)
+				table_insert(t, v)
+			end
+			return t, finish
 		elseif x == byte_t or x == byte_T then
 			-- table
 			local finish
@@ -651,7 +700,7 @@ do
 				start = position + 3
 			end
 			local t = new()
-			local curr = start -  1
+			local curr = start - 1
 			while curr < finish do
 				local key, l = _Deserialize(value, curr + 1)
 				local value, m = _Deserialize(value, l + 1)
