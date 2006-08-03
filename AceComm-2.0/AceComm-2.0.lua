@@ -60,25 +60,61 @@ do
 	end
 end
 
-local byte_a = string.byte('a')
-local byte_z = string.byte('z')
-local byte_A = string.byte('A')
-local byte_Z = string.byte('Z')
-local byte_h = string.byte('h')
-local byte_deg = string.byte('°')
+local string_byte = string.byte
 
+local byte_a = string_byte('a')
+local byte_z = string_byte('z')
+local byte_A = string_byte('A')
+local byte_Z = string_byte('Z')
+local byte_h = string_byte('h')
+local byte_deg = string_byte('°')
+
+local byte_b = string_byte('b')
+local byte_nil = string_byte('-')
+local byte_num = string_byte('#')
+local byte_d = string_byte('d')
+local byte_D = string_byte('D')
+local byte_e = string_byte('e')
+local byte_E = string_byte('E')
+local byte_s = string_byte('s')
+local byte_S = string_byte('S')
+local byte_t = string_byte('t')
+local byte_T = string_byte('T')
+local byte_i = string_byte('i')
+local byte_I = string_byte('I')
+local byte_j = string_byte('j')
+local byte_inf = string_byte('@')
+local byte_ninf = string_byte('$')
+local byte_nan = string_byte('!')
+
+local inf = 1/0
+local nan = 0/0
+
+local math_floor = math.floor
+local math_mod = math.mod
+local string_char = string.char
+local string_len = string.len
+local string_format = string.format
+local string_gsub = string.gsub
+local string_find = string.find
+local table_insert = table.insert
+local string_sub = string.sub
+local table_concat = table.concat
+local table_setn = table.setn
+local GetItemInfo = GetItemInfo
+local GetItemQualityColor = GetItemQualityColor
 
 local Checksum
 do
 	local SOME_PRIME = 16777213
 	function CheckSum(text)
 		local counter = 1
-		local len = string.len(text)
+		local len = string_len(text)
 		for i = 1, len do
-				counter = counter + string.byte(text, i) * math.pow(31, len - i)
+				counter = counter + string_byte(text, i) * 31^(len - i)
 		end
-		counter = math.mod(counter, SOME_PRIME)
-		return string.format("%06x", counter)
+		counter = math_mod(counter, SOME_PRIME)
+		return string_format("%06x", counter)
 	end
 end
 
@@ -93,15 +129,15 @@ end
 
 -- Package a message for transmission
 local function Encode(text, drunk)
-	text = string.gsub(text, "°", "°±")
+	text = string_gsub(text, "°", "°±")
 	if drunk then
-		text = string.gsub(text, "h", "°h")
+		text = string_gsub(text, "h", "°h")
 		-- encode a hidden character in front of all the "h"s and the same hidden character
 	end
-	text = string.gsub(text, "\255", "°\254") -- \255 (this is here because \000 is more common)
-	text = string.gsub(text, "%z", "\255") -- \000
-	text = string.gsub(text, "\010", "°\011") -- \n
-	text = string.gsub(text, "\124", "°\125") -- |
+	text = string_gsub(text, "\255", "°\254") -- \255 (this is here because \000 is more common)
+	text = string_gsub(text, "%z", "\255") -- \000
+	text = string_gsub(text, "\010", "°\011") -- \n
+	text = string_gsub(text, "\124", "°\125") -- |
 	-- encode assorted prohibited characters
 	return text
 end
@@ -110,12 +146,12 @@ local func
 -- Clean a received message
 local function Decode(text, drunk)
 	if drunk then
-		text = string.gsub(text, "([Ss])h", "%1")
+		text = string_gsub(text, "([Ss])h", "%1")
 		-- find "h"s added to any "s", remove.
 	end
 	if drunk then
-		local _,x = string.find(text, "^.*°")
-		text = string.gsub(text, "^(.*)°.-$", "%1")
+		local _,x = string_find(text, "^.*°")
+		text = string_gsub(text, "^(.*)°.-$", "%1")
 		-- get rid of " ...hic!"
 	end
 	if not func then
@@ -133,8 +169,8 @@ local function Decode(text, drunk)
 			end
 		end
 	end
-	text = string.gsub(text, "\255", "\000")
-	text = string.gsub(text, drunk and "°([h±\254\011\125])" or "°([±\254\011\125])", func)
+	text = string_gsub(text, "\255", "\000")
+	text = string_gsub(text, drunk and "°([h±\254\011\125])" or "°([±\254\011\125])", func)
 	-- remove the hidden character and refix the prohibited characters.
 	return text
 end
@@ -185,23 +221,25 @@ local function GetCurrentZoneChannel()
 	return zoneCache
 end
 
+local AceComm_registry
+
 local function SupposedToBeInChannel(chan)
-	if not string.find(chan, "^AceComm") then
+	if not string_find(chan, "^AceComm") then
 		return true
 	elseif shutdown or not AceEvent:IsFullyInitialized() then
 		return false
 	end
 	
 	if chan == "AceComm" then
-		return AceComm.registry.GLOBAL and next(AceComm.registry.GLOBAL) and true or false
-	elseif string.find(chan, "^AceCommZone%x%x%x%x%x%x$") then
+		return AceComm_registry.GLOBAL and next(AceComm_registry.GLOBAL) and true or false
+	elseif string_find(chan, "^AceCommZone%x%x%x%x%x%x$") then
 		if chan == GetCurrentZoneChannel() then
-			return AceComm.registry.ZONE and next(AceComm.registry.ZONE) and true or false
+			return AceComm_registry.ZONE and next(AceComm_registry.ZONE) and true or false
 		else
 			return false
 		end
 	else
-		return AceComm.registry.CUSTOM and AceComm.registry.CUSTOM[chan] and next(AceComm.registry.CUSTOM[chan]) and true or false
+		return AceComm_registry.CUSTOM and AceComm_registry.CUSTOM[chan] and next(AceComm_registry.CUSTOM[chan]) and true or false
 	end
 end
 
@@ -212,18 +250,18 @@ local function LeaveAceCommChannels(all)
 	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
 	local t = new()
 	t.n = 0
-	table.insert(t, a)
-	table.insert(t, b)
-	table.insert(t, c)
-	table.insert(t, d)
-	table.insert(t, e)
-	table.insert(t, f)
-	table.insert(t, g)
-	table.insert(t, h)
-	table.insert(t, i)
-	table.insert(t, j)
+	table_insert(t, a)
+	table_insert(t, b)
+	table_insert(t, c)
+	table_insert(t, d)
+	table_insert(t, e)
+	table_insert(t, f)
+	table_insert(t, g)
+	table_insert(t, h)
+	table_insert(t, i)
+	table_insert(t, j)
 	for _,v in ipairs(t) do
-		if v and string.find(v, "^AceComm") then
+		if v and string_find(v, "^AceComm") then
 			if not SupposedToBeInChannel(v) then
 				LeaveChannelByName(v)
 			end
@@ -252,18 +290,18 @@ local function RefixAceCommChannelsAndEvents()
 		JoinChannel(GetCurrentZoneChannel())
 		channel = true
 	end
-	if AceComm.registry.CUSTOM then
-		for k,v in pairs(AceComm.registry.CUSTOM) do
+	if AceComm_registry.CUSTOM then
+		for k,v in pairs(AceComm_registry.CUSTOM) do
 			if next(v) then
 				JoinChannel(k)
 				channel = true
 			end
 		end
 	end
-	if AceComm.registry.WHISPER then
+	if AceComm_registry.WHISPER then
 		whisper = true
 	end
-	if AceComm.registry.GROUP or AceComm.registry.PARTY or AceComm.registry.RAID or AceComm.registry.BATTLEGROUND then
+	if AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND then
 		addon = true
 	end
 	
@@ -310,7 +348,7 @@ do
 	
 	function AceComm:CHAT_MSG_CHANNEL_NOTICE(kind, _, _, deadName, _, _, _, num, channel)
 		if kind == "YOU_LEFT" then
-			if not string.find(channel, "^AceComm") then
+			if not string_find(channel, "^AceComm") then
 				return
 			end
 			for k in pairs(switches) do
@@ -323,14 +361,14 @@ do
 			elseif channel == "AceComm" then
 				self:TriggerEvent("AceComm_LeftChannel", "GLOBAL")
 			else
-				self:TriggerEvent("AceComm_LeftChannel", "CUSTOM", string.sub(channel, 8))
+				self:TriggerEvent("AceComm_LeftChannel", "CUSTOM", string_sub(channel, 8))
 			end
-			if string.find(channel, "^AceComm") and SupposedToBeInChannel(channel) then
+			if string_find(channel, "^AceComm") and SupposedToBeInChannel(channel) then
 				self:ScheduleEvent(JoinChannel, 0, channel)
 			end
 		elseif kind == "YOU_JOINED" then
 			if num == 0 then
-				if not string.find(deadName, "^AceComm") then
+				if not string_find(deadName, "^AceComm") then
 					return
 				end
 				self:ScheduleEvent(LeaveChannelByName, 0, deadName)
@@ -343,7 +381,7 @@ do
 			elseif channel == "AceComm" then
 				self:TriggerEvent("AceComm_JoinedChannel", "GLOBAL")
 			else
-				self:TriggerEvent("AceComm_JoinedChannel", "CUSTOM", string.sub(channel, 8))
+				self:TriggerEvent("AceComm_JoinedChannel", "CUSTOM", string_sub(channel, 8))
 			end
 			if num ~= 0 and not SupposedToBeInChannel(channel) then
 				LeaveChannel(channel)
@@ -351,27 +389,6 @@ do
 		end
 	end
 end
-
-local byte_b = string.byte('b')
-local byte_nil = string.byte('-')
-local byte_num = string.byte('#')
-local byte_d = string.byte('d')
-local byte_D = string.byte('D')
-local byte_e = string.byte('e')
-local byte_E = string.byte('E')
-local byte_s = string.byte('s')
-local byte_S = string.byte('S')
-local byte_t = string.byte('t')
-local byte_T = string.byte('T')
-local byte_i = string.byte('i')
-local byte_I = string.byte('I')
-local byte_j = string.byte('j')
-local byte_inf = string.byte('@')
-local byte_ninf = string.byte('$')
-local byte_nan = string.byte('!')
-
-local inf = 1/0
-local nan = 0/0
 
 local Serialize
 do
@@ -387,38 +404,40 @@ do
 		elseif not v then
 			return "-"
 		elseif kind == "number" then
-			if v == math.floor(v) then
+			if v == math_floor(v) then
 				if v <= 127 and v >= -128 then
 					if v < 0 then
 						v = v + 256
 					end
-					return string.char(byte_d, v)
+					return string_char(byte_d, v)
 				elseif v <= 32767 and v >= -32768 then
 					if v < 0 then
 						v = v + 65536
 					end
-					return string.char(byte_D, v / 256, math.mod(v, 256))
+					return string_char(byte_D, v / 256, math_mod(v, 256))
 				elseif v <= 2147483647 and v >= -2147483648 then
 					if v < 0 then
 						v = v + 4294967296
 					end
-					return string.char(byte_e, v / 16777216, math.mod(v / 65536, 256), math.mod(v / 256, 256), math.mod(v, 256))
+					return string_char(byte_e, v / 16777216, math_mod(v / 65536, 256), math_mod(v / 256, 256), math_mod(v, 256))
 				elseif v <= 9223372036854775807 and v >= -9223372036854775808 then
 					if v < 0 then
 						v = v + 18446744073709551616
 					end
-					return string.char(byte_E, v / 72057594037927936, math.mod(v / 281474976710656, 256), math.mod(v / 1099511627776, 256), math.mod(v / 4294967296, 256), math.mod(v / 16777216, 256), math.mod(v / 65536, 256), math.mod(v / 256, 256), math.mod(v, 256))
+					return string_char(byte_E, v / 72057594037927936, math_mod(v / 281474976710656, 256), math_mod(v / 1099511627776, 256), math_mod(v / 4294967296, 256), math_mod(v / 16777216, 256), math_mod(v / 65536, 256), math_mod(v / 256, 256), math_mod(v, 256))
 				end
 			elseif v == inf then
-				return string.char(byte_inf)
+				return string_char(byte_inf)
 			elseif v == -inf then
-				return string.char(byte_ninf)
+				return string_char(byte_ninf)
 			elseif v ~= v then
-				return string.char(byte_nan)
+				return string_char(byte_nan)
 			end
-			return "#" .. string.char(string.len(v)) .. v
+			local s = tostring(v)
+			local len = string_len(s)
+			return string_char(byte_num, len) .. s
 		elseif kind == "string" then
-			local _,_,A,B,C = string.find(v, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
+			local _,_,A,B,C = string_find(v, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
 			if A then
 				-- item link
 				A = tonumber(A)
@@ -426,20 +445,20 @@ do
 				C = tonumber(C)
 				if C ~= 0 then
 					if B ~= 0 then
-						return string.char(byte_I, math.mod(A / 65536, 256), math.mod(A / 256, 256), math.mod(A, 256), math.mod(B / 256, 256), math.mod(B, 256), math.mod(C / 256, 256), math.mod(C, 256))
+						return string_char(byte_I, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256), math_mod(B / 256, 256), math_mod(B, 256), math_mod(C / 256, 256), math_mod(C, 256))
 					else
-						return string.char(byte_j, math.mod(A / 65536, 256), math.mod(A / 256, 256), math.mod(A, 256), math.mod(C / 256, 256), math.mod(C, 256))
+						return string_char(byte_j, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256), math_mod(C / 256, 256), math_mod(C, 256))
 					end
 				else
-					return string.char(byte_j, math.mod(A / 65536, 256), math.mod(A / 256, 256), math.mod(A, 256))
+					return string_char(byte_j, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256))
 				end
 			else
 				-- normal string
-				local len = string.len(v)
+				local len = string_len(v)
 				if len <= 256 then
-					return "s" .. string.char(len) .. v
+					return "s" .. string_char(len) .. v
 				else
-					return "S" .. string.char(len / 256, math.mod(len, 256)) .. v
+					return "S" .. string_char(len / 256, math_mod(len, 256)) .. v
 				end
 			end
 		elseif kind == "function" then
@@ -455,20 +474,20 @@ do
 			recurse[v] = true
 			local t = new()
 			for k,u in pairs(v) do
-				table.insert(t, _Serialize(k))
-				table.insert(t, _Serialize(u))
+				table_insert(t, _Serialize(k))
+				table_insert(t, _Serialize(u))
 			end
 			if not notFirst then
 				for k in pairs(recurse) do
 					recurse[k] = nil
 				end
 			end
-			local s = table.concat(t)
-			local len = string.len(s)
+			local s = table_concat(t)
+			local len = string_len(s)
 			if len <= 256 then
-				return "t" .. string.char(len) .. s
+				return "t" .. string_char(len) .. s
 			else
-				return "T" .. string.char(len / 256, math.mod(len, 256)) .. s
+				return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
 			end
 			t = del(t)
 		end
@@ -492,10 +511,10 @@ do
 		if not position then
 			position = 1
 		end
-		local x = string.byte(value, position)
+		local x = string_byte(value, position)
 		if x == byte_b then
 			-- boolean
-			local v = string.byte(value, position + 1)
+			local v = string_byte(value, position + 1)
 			if v == "n" then
 				return false, position + 1
 			elseif v == "y" then
@@ -508,13 +527,13 @@ do
 			return nil, position
 		elseif x == byte_I then
 			-- 7-byte item link
-			local a1 = string.byte(value, position + 1)
-			local a2 = string.byte(value, position + 2)
-			local a3 = string.byte(value, position + 3)
-			local b1 = string.byte(value, position + 4)
-			local b2 = string.byte(value, position + 5)
-			local c1 = string.byte(value, position + 6)
-			local c2 = string.byte(value, position + 7)
+			local a1 = string_byte(value, position + 1)
+			local a2 = string_byte(value, position + 2)
+			local a3 = string_byte(value, position + 3)
+			local b1 = string_byte(value, position + 4)
+			local b2 = string_byte(value, position + 5)
+			local c1 = string_byte(value, position + 6)
+			local c2 = string_byte(value, position + 7)
 			local A = a1 * 65536 + a2 * 256 + a3
 			local B = b1 * 256 + b2
 			local C = c1 * 256 + c2
@@ -528,9 +547,9 @@ do
 			end
 		elseif x == byte_i then
 			-- 3-byte item link
-			local a1 = string.byte(value, position + 1)
-			local a2 = string.byte(value, position + 2)
-			local a3 = string.byte(value, position + 3)
+			local a1 = string_byte(value, position + 1)
+			local a2 = string_byte(value, position + 2)
+			local a3 = string_byte(value, position + 3)
 			local A = a1 * 65536 + a2 * 256 + a3
 			local s = "item:" .. A .. ":0:0:0"
 			local name, code, quality = GetItemInfo(s)
@@ -542,11 +561,11 @@ do
 			end
 		elseif x == byte_j then
 			-- 5-byte item link
-			local a1 = string.byte(value, position + 1)
-			local a2 = string.byte(value, position + 2)
-			local a3 = string.byte(value, position + 3)
-			local c1 = string.byte(value, position + 4)
-			local c2 = string.byte(value, position + 5)
+			local a1 = string_byte(value, position + 1)
+			local a2 = string_byte(value, position + 2)
+			local a3 = string_byte(value, position + 3)
+			local c1 = string_byte(value, position + 4)
+			local c2 = string_byte(value, position + 5)
 			local A = a1 * 65536 + a2 * 256 + a3
 			local C = c1 * 256 + c2
 			local s = "item:" .. A .. ":0:" .. C .. ":0"
@@ -559,12 +578,12 @@ do
 			end
 		elseif x == byte_s then
 			-- 0-255-byte string
-			local len = string.byte(value, position + 1)
-			return string.sub(value, position + 2, position + 1 + len), position + 1 + len
+			local len = string_byte(value, position + 1)
+			return string_sub(value, position + 2, position + 1 + len), position + 1 + len
 		elseif x == byte_S then
 			-- 256-65535-byte string
-			local len = string.byte(value, position + 1) * 256 + string.byte(value, position + 2)
-			return string.sub(value, position + 3, position + 2 + len), position + 2 + len
+			local len = string_byte(value, position + 1) * 256 + string_byte(value, position + 2)
+			return string_sub(value, position + 3, position + 2 + len), position + 2 + len
 		elseif x == byte_inf then
 			return inf, position
 		elseif x == byte_ninf then
@@ -573,15 +592,15 @@ do
 			return nan, position
 		elseif x == byte_d then
 			-- 1-byte integer
-			local a = string.byte(value, position + 1)
+			local a = string_byte(value, position + 1)
 			if a >= 128 then
 				a = a - 128
 			end
 			return a, position + 1
 		elseif x == byte_D then
 			-- 2-byte integer
-			local a = string.byte(value, position + 1)
-			local b = string.byte(value, position + 2)
+			local a = string_byte(value, position + 1)
+			local b = string_byte(value, position + 2)
 			local N = a * 256 + b
 			if N >= 32768 then
 				N = N - 32768
@@ -589,10 +608,10 @@ do
 			return N, position + 2
 		elseif x == byte_e then
 			-- 4-byte integer
-			local a = string.byte(value, position + 1)
-			local b = string.byte(value, position + 2)
-			local c = string.byte(value, position + 3)
-			local d = string.byte(value, position + 4)
+			local a = string_byte(value, position + 1)
+			local b = string_byte(value, position + 2)
+			local c = string_byte(value, position + 3)
+			local d = string_byte(value, position + 4)
 			local N = a * 16777216 + b * 65536 + c * 256 + d
 			if N >= 2147483648 then
 				N = N - 2147483648
@@ -600,14 +619,14 @@ do
 			return N, position + 4
 		elseif x == byte_E then
 			-- 8-byte integer
-			local a = string.byte(value, position + 1)
-			local b = string.byte(value, position + 2)
-			local c = string.byte(value, position + 3)
-			local d = string.byte(value, position + 4)
-			local e = string.byte(value, position + 5)
-			local f = string.byte(value, position + 6)
-			local g = string.byte(value, position + 7)
-			local h = string.byte(value, position + 8)
+			local a = string_byte(value, position + 1)
+			local b = string_byte(value, position + 2)
+			local c = string_byte(value, position + 3)
+			local d = string_byte(value, position + 4)
+			local e = string_byte(value, position + 5)
+			local f = string_byte(value, position + 6)
+			local g = string_byte(value, position + 7)
+			local h = string_byte(value, position + 8)
 			local N = a * 72057594037927936 + b * 281474976710656 + c * 1099511627776 + d * 4294967296 + e * 16777216 + f * 65536 + g * 256 + h
 			if N >= 9223372036854775808 then
 				N = N - 9223372036854775808
@@ -615,18 +634,19 @@ do
 			return N, position + 8
 		elseif x == byte_num then
 			-- number
-			local len = string.byte(value, position + 1)
-			return tonumber(string.sub(value, position + 2, position + 1 + len)), position + 1 + len
+			local len = string_byte(value, position + 1)
+			local s = string_sub(value, position + 2, position + 1 + len)
+			return s, position + 1 + len
 		elseif x == byte_t or x == byte_T then
 			-- table
 			local finish
 			local start
 			if x == byte_t then
-				local len = string.byte(value, position + 1)
+				local len = string_byte(value, position + 1)
 				finish = position + 1 + len
 				start = position + 2
 			else
-				local len = string.byte(value, position + 1) * 256 + string.byte(value, position + 2)
+				local len = string_byte(value, position + 1) * 256 + string_byte(value, position + 2)
 				finish = position + 2 + len
 				start = position + 3
 			end
@@ -643,7 +663,7 @@ do
 				while t[i] ~= nil do
 					i = i + 1
 				end
-				table.setn(t, i - 1)
+				table_setn(t, i - 1)
 			end
 			return t, finish
 		else
@@ -704,7 +724,7 @@ function AceComm:RegisterComm(prefix, distribution, method, a4)
 	if distribution == "CUSTOM" then
 		customChannel, method = method, a4
 		AceComm:argCheck(customChannel, 4, "string")
-		if string.len(customChannel) == 0 then
+		if string_len(customChannel) == 0 then
 			AceComm:error('Argument #4 to `RegisterComm\' must be a non-zero-length string.')
 		end
 	end
@@ -721,7 +741,7 @@ function AceComm:RegisterComm(prefix, distribution, method, a4)
 		AceEvent:error("Cannot register comm %q to method %q, it does not exist", prefix, method)
 	end
 	
-	local registry = AceComm.registry
+	local registry = AceComm_registry
 	if not registry[distribution] then
 		registry[distribution] = new()
 	end
@@ -752,14 +772,14 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 	end
 	if distribution == "CUSTOM" then
 		AceComm:argCheck(customChannel, 3, "string")
-		if string.len(customChannel) == 0 then
+		if string_len(customChannel) == 0 then
 			AceComm:error('Argument #3 to `UnregisterComm\' must be a non-zero-length string.')
 		end
 	else
 		AceComm:argCheck(customChannel, 3, "nil")
 	end
 	
-	local registry = AceComm.registry
+	local registry = AceComm_registry
 	if not distribution then
 		for k,v in pairs(registry) do
 			if v[prefix] and v[prefix][self] then
@@ -770,9 +790,9 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 	end
 	if self == AceComm then
 		if distribution == "CUSTOM" then
-			error(string.format("Cannot unregister comm %q::%q. Improperly unregistering from AceComm-2.0.", distribution, customChannel), 2)
+			error(string_format("Cannot unregister comm %q::%q. Improperly unregistering from AceComm-2.0.", distribution, customChannel), 2)
 		else
-			error(string.format("Cannot unregister comm %q. Improperly unregistering from AceComm-2.0.", distribution), 2)
+			error(string_format("Cannot unregister comm %q. Improperly unregistering from AceComm-2.0.", distribution), 2)
 		end
 	end
 	if distribution == "CUSTOM" then
@@ -808,7 +828,7 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 end
 
 function AceComm:UnregisterAllComms()
-	local registry = AceComm.registry
+	local registry = AceComm_registry
 	for k,distribution in pairs(registry) do
 		for j,prefix in pairs(distribution) do
 			if prefix[self] then
@@ -832,7 +852,7 @@ function AceComm:IsCommRegistered(prefix, distribution, customChannel)
 	else
 		AceComm:argCheck(customChannel, 4, "nil")
 	end
-	local registry = AceComm.registry
+	local registry = AceComm_registry
 	if not distribution then
 		for k,v in pairs(registry) do
 			if distribution == "CUSTOM" then
@@ -875,7 +895,9 @@ local function encodedChar(x)
 	if x == 10 then
 		return "°\011"
 	elseif x == 0 then
-		return "°\001"
+		return "\255"
+	elseif x == 255 then
+		return "°\254"
 	elseif x == 124 then
 		return "°\125"
 	elseif x == byte_h then
@@ -883,7 +905,7 @@ local function encodedChar(x)
 	elseif x == byte_deg then
 		return "°±"
 	end
-	return string.char(x)
+	return string_char(x)
 end
 
 local function SendMessage(prefix, priority, distribution, person, message)
@@ -906,43 +928,43 @@ local function SendMessage(prefix, priority, distribution, person, message)
 	else
 		id = id + 1
 	end
-	local id = string.char(id)
+	local id = string_char(id)
 	local drunk = distribution == "GLOBAL" or distribution == "WHISPER" or distribution == "ZONE" or distribution == "CUSTOM"
 	prefix = Encode(prefix, drunk)
 	message = Serialize(message)
 	message = Encode(message, drunk)
-	local headerLen = string.len(prefix) + 6
-	local messageLen = string.len(message)
+	local headerLen = string_len(prefix) + 6
+	local messageLen = string_len(message)
 	local esses = 0
 	if drunk then
-		local _,alpha = string.gsub(prefix, "([Ss])", "%1")
-		local _,bravo = string.gsub(message, "([Ss])", "%1")
+		local _,alpha = string_gsub(prefix, "([Ss])", "%1")
+		local _,bravo = string_gsub(message, "([Ss])", "%1")
 		esses = alpha + bravo
 	end
 	local max
 	if esses > 0 then
 		if esses >= (250 - headerLen) then
-			max = math.floor((messageLen / (250 - headerLen) + 1)  * 2)
+			max = math_floor((messageLen / (250 - headerLen) + 1)  * 2)
 		else
-			max = math.floor((messageLen / (250 - headerLen) + 1)  * (esses / (250 - headerLen) + 1))
+			max = math_floor((messageLen / (250 - headerLen) + 1)  * (esses / (250 - headerLen) + 1))
 		end
 	else
-		max = math.floor(messageLen / (250 - headerLen) + 1)
+		max = math_floor(messageLen / (250 - headerLen) + 1)
 	end
 	if max > 1 then
-		local segment = math.floor(messageLen / max + 0.5)
+		local segment = math_floor(messageLen / max + 0.5)
 		local last = 0
 		local good = true
 		for i = 1, max do
 			local bit
 			if i == max then
-				bit = string.sub(message, last + 1)
+				bit = string_sub(message, last + 1)
 			else
 				local next = segment * i
-				if string.byte(message, next) == byte_deg then
+				if string_byte(message, next) == byte_deg then
 					next = next + 1
 				end
-				bit = string.sub(message, last + 1, next)
+				bit = string_sub(message, last + 1, next)
 				last = next
 			end
 			if distribution == "WHISPER" then
@@ -972,11 +994,11 @@ local function SendMessage(prefix, priority, distribution, person, message)
 		return good
 	else
 		if distribution == "WHISPER" then
-			message = "/" .. prefix .. "\t" .. id .. string.char(1) .. string.char(1) .. "\t" .. message .. "°"
+			message = "/" .. prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "°"
 			ChatThrottleLib:SendChatMessage(priority, prefix, message, "WHISPER", nil, person)
 			return true
 		elseif distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
-			message = prefix .. "\t" .. id .. string.char(1) .. string.char(1) .. "\t" .. message .. "°"
+			message = prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "°"
 			local channel
 			if distribution == "GLOBAL" then
 				channel = "AceComm"
@@ -991,7 +1013,7 @@ local function SendMessage(prefix, priority, distribution, person, message)
 				return true
 			end
 		else
-			message = id .. string.char(1) .. string.char(1) .. "\t" .. message
+			message = id .. string_char(1) .. string_char(1) .. "\t" .. message
 			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution)
 			return true
 		end
@@ -1007,7 +1029,7 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 	AceComm:argCheck(distribution, 3, "string")
 	if distribution == "WHISPER" or distribution == "CUSTOM" then
 		AceComm:argCheck(person, 4, "string")
-		if string.len(person) == 0 then
+		if string_len(person) == 0 then
 			AceComm:error("Argument #4 to `SendPrioritizedCommMessage' must be a non-zero-length string")
 		end
 	else
@@ -1030,26 +1052,26 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 		message = a1
 	else
 		message = new()
-		if a1 ~= nil then table.insert(message, a1)
-		if a2 ~= nil then table.insert(message, a2)
-		if a3 ~= nil then table.insert(message, a3)
-		if a4 ~= nil then table.insert(message, a4)
-		if a5 ~= nil then table.insert(message, a5)
-		if a6 ~= nil then table.insert(message, a6)
-		if a7 ~= nil then table.insert(message, a7)
-		if a8 ~= nil then table.insert(message, a8)
-		if a9 ~= nil then table.insert(message, a9)
-		if a10 ~= nil then table.insert(message, a10)
-		if a11 ~= nil then table.insert(message, a11)
-		if a12 ~= nil then table.insert(message, a12)
-		if a13 ~= nil then table.insert(message, a13)
-		if a14 ~= nil then table.insert(message, a14)
-		if a15 ~= nil then table.insert(message, a15)
-		if a16 ~= nil then table.insert(message, a16)
-		if a17 ~= nil then table.insert(message, a17)
-		if a18 ~= nil then table.insert(message, a18)
-		if a19 ~= nil then table.insert(message, a19)
-		if a20 ~= nil then table.insert(message, a20)
+		if a1 ~= nil then table_insert(message, a1)
+		if a2 ~= nil then table_insert(message, a2)
+		if a3 ~= nil then table_insert(message, a3)
+		if a4 ~= nil then table_insert(message, a4)
+		if a5 ~= nil then table_insert(message, a5)
+		if a6 ~= nil then table_insert(message, a6)
+		if a7 ~= nil then table_insert(message, a7)
+		if a8 ~= nil then table_insert(message, a8)
+		if a9 ~= nil then table_insert(message, a9)
+		if a10 ~= nil then table_insert(message, a10)
+		if a11 ~= nil then table_insert(message, a11)
+		if a12 ~= nil then table_insert(message, a12)
+		if a13 ~= nil then table_insert(message, a13)
+		if a14 ~= nil then table_insert(message, a14)
+		if a15 ~= nil then table_insert(message, a15)
+		if a16 ~= nil then table_insert(message, a16)
+		if a17 ~= nil then table_insert(message, a17)
+		if a18 ~= nil then table_insert(message, a18)
+		if a19 ~= nil then table_insert(message, a19)
+		if a20 ~= nil then table_insert(message, a20)
 		end end end end end end end end end end end end end end end end end end end end
 	end
 	
@@ -1066,7 +1088,7 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 	AceComm:argCheck(distribution, 2, "string")
 	if distribution == "WHISPER" or distribution == "CUSTOM" then
 		AceComm:argCheck(person, 3, "string")
-		if string.len(person) == 0 then
+		if string_len(person) == 0 then
 			AceComm:error("Argument #3 to `SendCommMessage' must be a non-zero-length string")
 		end
 	else
@@ -1089,26 +1111,26 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 		message = a1
 	else
 		message = new()
-		if a1 ~= nil then table.insert(message, a1)
-		if a2 ~= nil then table.insert(message, a2)
-		if a3 ~= nil then table.insert(message, a3)
-		if a4 ~= nil then table.insert(message, a4)
-		if a5 ~= nil then table.insert(message, a5)
-		if a6 ~= nil then table.insert(message, a6)
-		if a7 ~= nil then table.insert(message, a7)
-		if a8 ~= nil then table.insert(message, a8)
-		if a9 ~= nil then table.insert(message, a9)
-		if a10 ~= nil then table.insert(message, a10)
-		if a11 ~= nil then table.insert(message, a11)
-		if a12 ~= nil then table.insert(message, a12)
-		if a13 ~= nil then table.insert(message, a13)
-		if a14 ~= nil then table.insert(message, a14)
-		if a15 ~= nil then table.insert(message, a15)
-		if a16 ~= nil then table.insert(message, a16)
-		if a17 ~= nil then table.insert(message, a17)
-		if a18 ~= nil then table.insert(message, a18)
-		if a19 ~= nil then table.insert(message, a19)
-		if a20 ~= nil then table.insert(message, a20)
+		if a1 ~= nil then table_insert(message, a1)
+		if a2 ~= nil then table_insert(message, a2)
+		if a3 ~= nil then table_insert(message, a3)
+		if a4 ~= nil then table_insert(message, a4)
+		if a5 ~= nil then table_insert(message, a5)
+		if a6 ~= nil then table_insert(message, a6)
+		if a7 ~= nil then table_insert(message, a7)
+		if a8 ~= nil then table_insert(message, a8)
+		if a9 ~= nil then table_insert(message, a9)
+		if a10 ~= nil then table_insert(message, a10)
+		if a11 ~= nil then table_insert(message, a11)
+		if a12 ~= nil then table_insert(message, a12)
+		if a13 ~= nil then table_insert(message, a13)
+		if a14 ~= nil then table_insert(message, a14)
+		if a15 ~= nil then table_insert(message, a15)
+		if a16 ~= nil then table_insert(message, a16)
+		if a17 ~= nil then table_insert(message, a17)
+		if a18 ~= nil then table_insert(message, a18)
+		if a19 ~= nil then table_insert(message, a19)
+		if a20 ~= nil then table_insert(message, a20)
 		end end end end end end end end end end end end end end end end end end end end
 	end
 	
@@ -1139,7 +1161,7 @@ end
 function AceComm:SetCommPrefix(prefix)
 	AceComm:argCheck(prefix, 2, "string")
 	
-	if string.find(prefix, "\t") then
+	if string_find(prefix, "\t") then
 		AceComm:error("Argument #2 cannot include the tab character.")
 	end
 	
@@ -1191,34 +1213,34 @@ end
 local function HandleMessage(prefix, message, distribution, sender, customChannel)
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	local isCustom = distribution == "CUSTOM"
-	if (not AceComm.registry[distribution] and (not isGroup or not AceComm.registry.GROUP)) or (isCustom and not AceComm.registry.CUSTOM[customChannel]) then
+	if (not AceComm_registry[distribution] and (not isGroup or not AceComm_registry.GROUP)) or (isCustom and not AceComm_registry.CUSTOM[customChannel]) then
 		return CheckRefix()
 	end
 	local _, id, current, max
 	if not message then
 		if distribution == "WHISPER" then
-			_,_, prefix, id, current, max, message = string.find(prefix, "^/(.-)\t(.)(.)(.)\t(.*)$")
+			_,_, prefix, id, current, max, message = string_find(prefix, "^/(.-)\t(.)(.)(.)\t(.*)$")
 		else
-			_,_, prefix, id, current, max, message = string.find(prefix, "^(.-)\t(.)(.)(.)\t(.*)$")
+			_,_, prefix, id, current, max, message = string_find(prefix, "^(.-)\t(.)(.)(.)\t(.*)$")
 		end
 		if isCustom then
-			if not AceComm.registry.CUSTOM[customChannel][prefix] then
+			if not AceComm_registry.CUSTOM[customChannel][prefix] then
 				return CheckRefix()
 			end
 		else
-			if (not AceComm.registry[distribution] or not AceComm.registry[distribution][prefix]) and (not isGroup or not AceComm.registry.GROUP or not AceComm.registry.GROUP[prefix]) then
+			if (not AceComm_registry[distribution] or not AceComm_registry[distribution][prefix]) and (not isGroup or not AceComm_registry.GROUP or not AceComm_registry.GROUP[prefix]) then
 				return CheckRefix()
 			end
 		end
 	else
-		_,_, id, current, max, message = string.find(message, "^(.)(.)(.)\t(.*)$")
+		_,_, id, current, max, message = string_find(message, "^(.)(.)(.)\t(.*)$")
 	end
 	if not message then
 		return
 	end
-	local smallCustomChannel = customChannel and string.sub(customChannel, 8)
-	current = string.byte(current)
-	max = string.byte(max)
+	local smallCustomChannel = customChannel and string_sub(customChannel, 8)
+	current = string_byte(current)
+	max = string_byte(max)
 	if max > 1 then
 		local queue = AceComm.recvQueue
 		local x
@@ -1238,7 +1260,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 		chunk[current] = message
 		if current == max then
 			chunk.n = max
-			message = table.concat(chunk)
+			message = table_concat(chunk)
 			queue[x] = del(queue[x])
 		else
 			return
@@ -1246,10 +1268,10 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 	message = Deserialize(message)
 	local isTable = type(message) == "table"
-	if AceComm.registry[distribution] then
+	if AceComm_registry[distribution] then
 		if isTable then
 			if isCustom then
-				for k,v in pairs(AceComm.registry.CUSTOM[customChannel][prefix]) do
+				for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
 					if type(v) == "string" then
 						k[v](k, prefix, sender, distribution, smallCustomChannel, unpack(message))
 					else -- function
@@ -1257,7 +1279,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 					end
 				end
 			else
-				for k,v in pairs(AceComm.registry[distribution][prefix]) do
+				for k,v in pairs(AceComm_registry[distribution][prefix]) do
 					if type(v) == "string" then
 						k[v](k, prefix, sender, distribution, unpack(message))
 					else -- function
@@ -1267,7 +1289,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			end
 		else
 			if isCustom then
-				for k,v in pairs(AceComm.registry.CUSTOM[customChannel][prefix]) do
+				for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
 					if type(v) == "string" then
 						k[v](k, prefix, sender, distribution, smallCustomChannel, message)
 					else -- function
@@ -1275,7 +1297,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 					end
 				end
 			else
-				for k,v in pairs(AceComm.registry[distribution][prefix]) do
+				for k,v in pairs(AceComm_registry[distribution][prefix]) do
 					if type(v) == "string" then
 						k[v](k, prefix, sender, distribution, message)
 					else -- function
@@ -1285,9 +1307,9 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			end
 		end
 	end
-	if isGroup and AceComm.registry.GROUP then
+	if isGroup and AceComm_registry.GROUP then
 		if isTable then
-			for k,v in pairs(AceComm.registry.GROUP[prefix]) do
+			for k,v in pairs(AceComm_registry.GROUP[prefix]) do
 				if type(v) == "string" then
 					k[v](k, prefix, sender, "GROUP", unpack(message))
 				else -- function
@@ -1295,7 +1317,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 				end
 			end
 		else
-			for k,v in pairs(AceComm.registry.GROUP[prefix]) do
+			for k,v in pairs(AceComm_registry.GROUP[prefix]) do
 				if type(v) == "string" then
 					k[v](k, prefix, sender, "GROUP", message)
 				else -- function
@@ -1316,11 +1338,11 @@ function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 		return
 	end
 	local isGroup = GetCurrentGroupDistribution() == distribution
-	if not AceComm.registry[distribution] and (not isGroup or not AceComm.registry.GROUP) then
+	if not AceComm_registry[distribution] and (not isGroup or not AceComm_registry.GROUP) then
 		return CheckRefix()
 	end
 	prefix = Decode(prefix)
-	if (not AceComm.registry[distribution] or not AceComm.registry[distribution][prefix]) and (not isGroup or not AceComm.registry.GROUP or not AceComm.registry.GROUP[prefix]) then
+	if (not AceComm_registry[distribution] or not AceComm_registry[distribution][prefix]) and (not isGroup or not AceComm_registry.GROUP or not AceComm_registry.GROUP[prefix]) then
 		return CheckRefix()
 	end
 	message = Decode(message)
@@ -1328,7 +1350,7 @@ function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 end
 
 function AceComm:CHAT_MSG_WHISPER(text, sender)
-	if not string.find(text, "^/") then
+	if not string_find(text, "^/") then
 		return
 	end
 	text = Decode(text, true)
@@ -1336,7 +1358,7 @@ function AceComm:CHAT_MSG_WHISPER(text, sender)
 end
 
 function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
-	if sender == player or not string.find(channel, "^AceComm") then
+	if sender == player or not string_find(channel, "^AceComm") then
 		return
 	end
 	text = Decode(text, true)
@@ -1383,11 +1405,11 @@ end
 
 function AceComm.hooks:ChatFrame_OnEvent(orig, event)
 	if event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM" then
-		if string.find(arg1, "^/") then
+		if string_find(arg1, "^/") then
 			return
 		end
 	elseif event == "CHAT_MSG_CHANNEL" then
-		if string.find(arg9, "^AceComm") then
+		if string_find(arg9, "^AceComm") then
 			return
 		end
 	end
@@ -1431,7 +1453,7 @@ function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
 		if not arg[i] then
 			break
 		end
-		if type(arg[i + 1]) == "string" and string.find(arg[i + 1], "^AceComm") then
+		if type(arg[i + 1]) == "string" and string_find(arg[i + 1], "^AceComm") then
 			table.remove(arg, i + 1)
 			table.remove(arg, i)
 			i = i - 2
@@ -1449,32 +1471,32 @@ function AceComm:CHAT_MSG_SYSTEM(text)
 	if not chan then
 		return
 	end
-	if not string.find(lastChannelJoined, "^AceComm") then
+	if not string_find(lastChannelJoined, "^AceComm") then
 		return
 	end
 	
 	local text
 	if chan == "AceComm" then
-		local addon = self.registry.GLOBAL and next(self.registry.GLOBAL)
+		local addon = self.registry.GLOBAL and next(AceComm_registry.GLOBAL)
 		if not addon then
 			return
 		end
 		addon = tostring(addon)
-		text = string.format("%s has tried to join the AceComm global channel, but there are not enough channels available. %s may not work because of this", addon, addon)
+		text = string_format("%s has tried to join the AceComm global channel, but there are not enough channels available. %s may not work because of this", addon, addon)
 	elseif chan == GetCurrentZoneChannel() then
-		local addon = self.registry.ZONE and next(self.registry.ZONE)
+		local addon = AceComm_registry.ZONE and next(AceComm_registry.ZONE)
 		if not addon then
 			return
 		end
 		addon = tostring(addon)
-		text = string.format("%s has tried to join the AceComm zone channel, but there are not enough channels available. %s may not work because of this", addon, addon)
+		text = string_format("%s has tried to join the AceComm zone channel, but there are not enough channels available. %s may not work because of this", addon, addon)
 	else
-		local addon = self.registry.CUSTOM and self.registry.CUSTOM[chan] and next(self.registry.CUSTOM[chan])
+		local addon = AceComm_registry.CUSTOM and AceComm_registry.CUSTOM[chan] and next(AceComm_registry.CUSTOM[chan])
 		if not addon then
 			return
 		end
 		addon = tostring(addon)
-		text = string.format("%s has tried to join the AceComm custom channel %s, but there are not enough channels available. %s may not work because of this", addon, chan, addon)
+		text = string_format("%s has tried to join the AceComm custom channel %s, but there are not enough channels available. %s may not work because of this", addon, chan, addon)
 	end
 	
 	StaticPopupDialogs["ACECOMM_TOO_MANY_CHANNELS"] = {
@@ -1555,6 +1577,7 @@ local function activate(self, oldLib, oldDeactivate)
 	if not self.registry then
 		self.registry = {}
 	end
+	AceComm_registry = self.registry
 	if not self.prefixes then
 		self.prefixes = {}
 	end
