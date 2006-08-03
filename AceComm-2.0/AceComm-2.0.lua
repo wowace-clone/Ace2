@@ -70,8 +70,9 @@ local byte_h = string_byte('h')
 local byte_deg = string_byte('°')
 
 local byte_b = string_byte('b')
-local byte_nil = string_byte('-')
-local byte_num = string_byte('#')
+local byte_nil = string_byte('/')
+local byte_plus = string_byte('+')
+local byte_minus = string_byte('-')
 local byte_d = string_byte('d')
 local byte_D = string_byte('D')
 local byte_e = string_byte('e')
@@ -435,9 +436,23 @@ do
 			elseif v ~= v then
 				return string_char(byte_nan)
 			end
-			local s = tostring(v)
-			local len = string_len(s)
-			return string_char(byte_num, len) .. s
+--			do
+--				local s = tostring(v)
+--				local len = string_len(s)
+--				return string_char(byte_plus, len) .. s
+--			end
+			local sign = v < 0 or v == 0 and tostring(v) == "-0"
+			if sign then
+				v = -v
+			end
+			local m, exp = math.frexp(v)
+			m = m * 9007199254740992
+			local x = exp + 1023
+			local b = mod(m, 256)
+			local c = mod(floor(m / 256), 256)
+			m = floor(m / 65536)
+			m = m + x * 137438953472
+			return string_char(sign and byte_minus or byte_plus, math_mod(m / 1099511627776, 256), math_mod(m / 4294967296, 256), math_mod(m / 16777216, 256), math_mod(m / 65536, 256), math_mod(m / 256, 256), math_mod(m, 256), c, b)
 		elseif kind == "string" then
 			local _,_,A,B,C = string_find(v, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
 			if A then
@@ -659,11 +674,29 @@ do
 				N = N - 9223372036854775808
 			end
 			return N, position + 8
-		elseif x == byte_num then
-			-- number
-			local len = string_byte(value, position + 1)
-			local s = string_sub(value, position + 2, position + 1 + len)
-			return s, position + 1 + len
+--		elseif x == byte_plus then
+--			local len = string_byte(value, position + 1)
+--			local s = string_sub(value, position + 2, position + 1 + len)
+--			return s, position + 1 + len
+		elseif x == byte_plus or x == byte_minus then
+			local a = string_byte(value, position + 1)
+			local b = string_byte(value, position + 2)
+			local c = string_byte(value, position + 3)
+			local d = string_byte(value, position + 4)
+			local e = string_byte(value, position + 5)
+			local f = string_byte(value, position + 6)
+			local g = string_byte(value, position + 7)
+			local h = string_byte(value, position + 8)
+			local N = a * 1099511627776 + b * 4294967296 + c * 16777216 + d * 65536 + e * 256 + f
+			local x = math_floor(N / 137438953472)
+			local m = math_mod(N, 137438953472) * 65536 + g * 256 + h
+			local mantissa = m / 9007199254740992
+			local exp = x - 1023
+			local val = math.ldexp(mantissa, exp)
+			if x == byte_minus then
+				return -val, position + 8
+			end
+			return val, position + 8
 		elseif x == byte_u or x == byte_U then
 			-- numerically-indexed table
 			local finish
@@ -2111,3 +2144,12 @@ if(WOWB_VER) then
 end
 ]]
 
+
+function Test()
+	local t = GetTime()
+	for i = 1,100000 do
+		local n = math.random() / math.random()
+		Deserialize(Serialize(n))
+	end
+	AceLibrary("AceConsole-2.0"):Print(GetTime() - t)
+end
