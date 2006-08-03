@@ -97,11 +97,12 @@ local function Encode(text, drunk)
 	if drunk then
 		text = string.gsub(text, "h", "°h")
 		-- encode a hidden character in front of all the "h"s and the same hidden character
-    end
-    text = string.gsub(text, "%z", "°\001") -- \000
-    text = string.gsub(text, "\010", "°\011") -- \n
-    text = string.gsub(text, "\124", "°\125") -- |
-    -- encode assorted prohibited characters
+	end
+	text = string.gsub(text, "\255", "°\254") -- \255 (this is here because \000 is more common)
+	text = string.gsub(text, "%z", "\255") -- \000
+	text = string.gsub(text, "\010", "°\011") -- \n
+	text = string.gsub(text, "\124", "°\125") -- |
+	-- encode assorted prohibited characters
 	return text
 end
 
@@ -123,8 +124,8 @@ local function Decode(text, drunk)
 				return "h"
 			elseif text == "±" then
 				return "°"
-			elseif text == "\001" then
-				return "\000"
+			elseif text == "\254" then
+				return "\255"
 			elseif text == "\011" then
 				return "\010"
 			elseif text == "\125" then
@@ -132,9 +133,10 @@ local function Decode(text, drunk)
 			end
 		end
 	end
-    text = string.gsub(text, drunk and "°([h±\001\011\125])" or "°([±\001\011\125])", func)
+	text = string.gsub(text, "\255", "\000")
+	text = string.gsub(text, drunk and "°([h±\254\011\125])" or "°([±\254\011\125])", func)
 	-- remove the hidden character and refix the prohibited characters.
-    return text
+	return text
 end
 
 local lastChannelJoined
@@ -367,20 +369,33 @@ do
 			local v = tostring(value)
 			return "#" .. string.char(string.len(v)) .. v
 		elseif kind == "string" then
-			local len = string.len(value)
-			if len <= 127 then
-				return "s" .. string.char(len) .. value
+			DEFAULT_CHAT_FRAME:AddMessage(string.format("serializing string %q", string.gsub(value, "|", "||")))
+			local _,_,A,B,C = string.find(value, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
+			if A then
+				-- item link
+				A = tonumber(A)
+				B = tonumber(B)
+				C = tonumber(C)
+				if C ~= 0 then
+					if B ~= 0 then
+						return "I" .. string.char(math.mod(math.floor(A / 65536), 256)) .. string.char(math.mod(math.floor(A / 256), 256)) .. string.char(math.mod(A, 256)) .. string.char(math.mod(math.floor(B / 256), 256)) .. string.char(math.mod(B, 256)) .. string.char(math.mod(math.floor(C / 256), 256)) .. string.char(math.mod(C, 256))
+					else
+						return "j" .. string.char(math.mod(math.floor(A / 65536), 256)) .. string.char(math.mod(math.floor(A / 256), 256)) .. string.char(math.mod(A, 256)) .. string.char(math.mod(math.floor(C / 256), 256)) .. string.char(math.mod(C, 256))
+					end
+				else
+					return "i" .. string.char(math.mod(math.floor(A / 65536), 256)) .. string.char(math.mod(math.floor(A / 256), 256)) .. string.char(math.mod(A, 256))
+				end
 			else
-				return "S" .. string.char(math.floor(len / 256)) .. string.char(math.mod(len, 256)) .. value
+				-- normal string
+				local len = string.len(value)
+				if len <= 127 then
+					return "s" .. string.char(len) .. value
+				else
+					return "S" .. string.char(math.floor(len / 256)) .. string.char(math.mod(len, 256)) .. value
+				end
 			end
 		elseif kind == "function" then
-			local v = string.dump(value)
-			local len = string.len(v)
-			if len <= 127 then
-				return "f" .. string.char(len) .. v
-			else
-				return "F" .. string.char(math.floor(len / 256)) .. string.char(math.mod(len, 256)) .. v
-			end
+			AceComm:error("Cannot serialize a function")
 		elseif kind == "table" then
 			if recurse[value] then
 				for k in pairs(recurse) do
@@ -430,10 +445,11 @@ do
 	local byte_num = string.byte('#')
 	local byte_s = string.byte('s')
 	local byte_S = string.byte('S')
-	local byte_f = string.byte('f')
-	local byte_F = string.byte('F')
 	local byte_t = string.byte('t')
 	local byte_T = string.byte('T')
+	local byte_i = string.byte('i')
+	local byte_I = string.byte('I')
+	local byte_j = string.byte('j')
 	
 	local function _Deserialize(value, position)
 		if not position then
@@ -451,6 +467,54 @@ do
 			end
 		elseif x == byte_nil then
 			return nil, position
+		elseif x == byte_I then
+			local a1 = string.byte(value, position + 1)
+			local a2 = string.byte(value, position + 2)
+			local a3 = string.byte(value, position + 3)
+			local b1 = string.byte(value, position + 4)
+			local b2 = string.byte(value, position + 5)
+			local c1 = string.byte(value, position + 6)
+			local c2 = string.byte(value, position + 7)
+			local A = a1 * 65536 + a2 * 256 + a3
+			local B = b1 * 256 + b2
+			local C = c1 * 256 + c2
+			local s = "item:" .. A .. ":" .. B .. ":" .. C .. ":0"
+			local name, code, quality = GetItemInfo(s)
+			if name then
+				local _,_,_,color = GetItemQualityColor(quality)
+				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 7
+			else
+				return nil, position + 7
+			end
+		elseif x == byte_i then
+			local a1 = string.byte(value, position + 1)
+			local a2 = string.byte(value, position + 2)
+			local a3 = string.byte(value, position + 3)
+			local A = a1 * 65536 + a2 * 256 + a3
+			local s = "item:" .. A .. ":0:0:0"
+			local name, code, quality = GetItemInfo(s)
+			if name then
+				local _,_,_,color = GetItemQualityColor(quality)
+				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 3
+			else
+				return nil, position + 3
+			end
+		elseif x == byte_j then
+			local a1 = string.byte(value, position + 1)
+			local a2 = string.byte(value, position + 2)
+			local a3 = string.byte(value, position + 3)
+			local c1 = string.byte(value, position + 4)
+			local c2 = string.byte(value, position + 5)
+			local A = a1 * 65536 + a2 * 256 + a3
+			local C = c1 * 256 + c2
+			local s = "item:" .. A .. ":0:" .. C .. ":0"
+			local name, code, quality = GetItemInfo(s)
+			if name then
+				local _,_,_,color = GetItemQualityColor(quality)
+				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 5
+			else
+				return nil, position + 5
+			end
 		elseif x == byte_s then
 			local len = string.byte(value, position + 1)
 			return string.sub(value, position + 2, position + 1 + len), position + 1 + len
@@ -460,12 +524,6 @@ do
 		elseif x == byte_num then
 			local len = string.byte(value, position + 1)
 			return tonumber(string.sub(value, position + 2, position + 1 + len)), position + 1 + len
-		elseif x == byte_f then
-			local len = string.byte(value, position + 1)
-			return loadstring(string.sub(value, position + 2, position + 1 + len)), position + 1 + len
-		elseif x == byte_F then
-			local len = string.byte(value, position + 1) * 256 + string.byte(value, position + 2)
-			return loadstring(string.sub(value, position + 3, position + 2 + len)), position + 2 + len
 		elseif x == byte_t or x == byte_T then
 			local finish
 			local start
