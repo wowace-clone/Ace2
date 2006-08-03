@@ -88,7 +88,7 @@ function AceEvent:RegisterEvent(event, method, once)
 	end
 	
 	if remember then
-		AceEvent:TriggerEvent("AceEvent_EventRegistered", self)
+		AceEvent:TriggerEvent("AceEvent_EventRegistered", self, event)
 	end
 end
 
