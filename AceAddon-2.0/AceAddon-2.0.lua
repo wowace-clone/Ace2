@@ -372,8 +372,15 @@ local function external(self, major, instance)
 			end
 			print(s)
 			if type(addon.modules) == "table" then
+				local i = 0
 				for k,v in pairs(addon.modules) do
-					listAddon(v, depth + 1)
+					i = i + 1
+					if i == 6 then
+						print(string.rep("  ", depth + 1) .. " - more..."
+						break
+					else
+						listAddon(v, depth + 1)
+					end
 				end
 			end
 		end
