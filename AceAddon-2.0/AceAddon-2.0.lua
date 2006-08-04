@@ -376,7 +376,7 @@ local function external(self, major, instance)
 				for k,v in pairs(addon.modules) do
 					i = i + 1
 					if i == 6 then
-						print(string.rep("  ", depth + 1) .. " - more..."
+						print(string.rep("  ", depth + 1) .. " - more...")
 						break
 					else
 						listAddon(v, depth + 1)
