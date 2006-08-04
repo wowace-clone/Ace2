@@ -519,6 +519,19 @@ function AceEvent:IsEventScheduled(t)
 	return false, nil
 end
 
+
+function AceEvent:IsEventRegistered(event)
+	AceEvent:argCheck(event, 2, "string")
+	local AceEvent_registry = AceEvent.registry
+	if self == AceEvent then
+		return AceEvent_registry[event] and next(AceEvent_registry[event]) and true or false
+	end
+	if AceEvent_registry[event] and AceEvent_registry[event][self] then
+		return true, AceEvent_registry[event][self]
+	end
+	return false, nil
+end
+
 function AceEvent:UnregisterEvent(event)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
@@ -610,19 +623,6 @@ function AceEvent:CancelAllScheduledEvents()
 		end
 	end
 end
-
-function AceEvent:IsEventRegistered(event)
-	AceEvent:argCheck(event, 2, "string")
-	local AceEvent_registry = AceEvent.registry
-	if self == AceEvent then
-		return AceEvent_registry[event] and next(AceEvent_registry[event]) and true or false
-	end
-	if AceEvent_registry[event] and AceEvent_registry[event][self] then
-		return true, AceEvent_registry[event][self]
-	end
-	return false, nil
-end
-
 function AceEvent:OnEmbedDisable(target)
 	self.UnregisterAllEvents(target)
 
@@ -717,7 +717,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 			self:ScheduleEvent("AceEvent_FullyInitialized", func, 0.05)
 		end)
 		self:RegisterEvent("SPELLS_CHANGED", function()
-			if self:IsEventRegistered("MEETINGSTONE_CHANGED") then
+			if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
 				self:UnregisterEvent("MEETINGSTONE_CHANGED")
 				self:RegisterEvent("MINIMAP_ZONE_CHANGED", f, true)
 			end
