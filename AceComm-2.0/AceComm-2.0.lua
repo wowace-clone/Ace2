@@ -79,6 +79,8 @@ local byte_e = string_byte('e')
 local byte_E = string_byte('E')
 local byte_s = string_byte('s')
 local byte_S = string_byte('S')
+local byte_o = string_byte('o')
+local byte_O = string_byte('O')
 local byte_t = string_byte('t')
 local byte_T = string_byte('T')
 local byte_u = string_byte('u')
@@ -104,8 +106,7 @@ local table_insert = table.insert
 local string_sub = string.sub
 local table_concat = table.concat
 local table_setn = table.setn
-local GetItemInfo = GetItemInfo
-local GetItemQualityColor = GetItemQualityColor
+local table_remove = table.remove
 
 local Checksum
 do
@@ -489,6 +490,62 @@ do
 				return
 			end
 			recurse[v] = true
+			if AceOO.inherits(v, AceOO.Class) then
+				if not v.class then
+					AceComm:error("Cannot serialize an AceOO class, can only serialize objects")
+				elseif type(v.Serialize) ~= "function" then
+					AceComm:error("Cannot serialize an AceOO object without the `Serialize' method.")
+				elseif type(v.class.Deserialize) ~= "function" then
+					AceComm:error("Cannot serialize an AceOO object without the `Deserialize' static method.")
+				elseif type(v.class.GetLibraryVersion) ~= "function" or not AceLibrary:HasInstance(v.class:GetLibraryVersion()) then
+					AceComm:error("Cannot serialize an AceOO object if the class is not registered with AceLibrary.")
+				end
+				local className = v.class:GetLibraryVersion()
+				local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = v:Serialize()
+				local t = new()
+				t.n = 0
+				table_insert(t, className)
+				table_insert(t, a1)
+				table_insert(t, a2)
+				table_insert(t, a3)
+				table_insert(t, a4)
+				table_insert(t, a5)
+				table_insert(t, a6)
+				table_insert(t, a7)
+				table_insert(t, a8)
+				table_insert(t, a9)
+				table_insert(t, a10)
+				table_insert(t, a11)
+				table_insert(t, a12)
+				table_insert(t, a13)
+				table_insert(t, a14)
+				table_insert(t, a15)
+				table_insert(t, a16)
+				table_insert(t, a17)
+				table_insert(t, a18)
+				table_insert(t, a19)
+				table_insert(t, a20)
+				while t[t.n] == nil do
+					-- get rid of trailing nils (but keep inline nils)
+					table_remove(t)
+				end
+				for i = 1, t.n do
+					t[i] = _Serialize(t[i])
+				end
+				if not notFirst then
+					for k in pairs(recurse) do
+						recurse[k] = nil
+					end
+				end
+				local s = table_concat(t)
+				t = del(t)
+				local len = string_len(s)
+				if len <= 256 then
+					return "o" .. string_char(len) .. s
+				else
+					return "O" .. string_char(len / 256, math_mod(len, 256)) .. s
+				end
+			end
 			local t = new()
 			local islist = false
 			local n = table.getn(v)
@@ -517,6 +574,7 @@ do
 				end
 			end
 			local s = table_concat(t)
+			t = del(t)
 			local len = string_len(s)
 			if islist then
 				if len <= 256 then
@@ -531,7 +589,6 @@ do
 					return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
 				end
 			end
-			t = del(t)
 		end
 	end
 	
@@ -701,7 +758,7 @@ do
 			-- numerically-indexed table
 			local finish
 			local start
-			if x == byte_t then
+			if x == byte_u then
 				local len = string_byte(value, position + 1)
 				finish = position + 1 + len
 				start = position + 2
@@ -719,6 +776,39 @@ do
 				table_insert(t, v)
 			end
 			return t, finish
+		elseif x == byte_o or x == byte_O then
+			-- numerically-indexed table
+			local finish
+			local start
+			if x == byte_o then
+				local len = string_byte(value, position + 1)
+				finish = position + 1 + len
+				start = position + 2
+			else
+				local len = string_byte(value, position + 1) * 256 + string_byte(value, position + 2)
+				finish = position + 2 + len
+				start = position + 3
+			end
+			local curr = start - 1
+			local className
+			className, curr = _Deserialize(value, curr + 1)
+			if type(className) ~= "string" or not AceLibrary:HasInstance(className) then
+				return nil, finish
+			end
+			local class = AceLibrary(className)
+			if type(class.Deserialize) ~= "function" or type(class.prototype.Serialize) ~= "function" then
+				return nil, finish
+			end
+			local t = new()
+			t.n = 0
+			while curr < finish do
+				local v
+				v, curr = _Deserialize(value, curr + 1)
+				table_insert(t, v)
+			end
+			local object = class:Deserialize(unpack(t))
+			del(t)
+			return object, finish
 		elseif x == byte_t or x == byte_T then
 			-- table
 			local finish
@@ -745,7 +835,7 @@ do
 				while t[i] ~= nil do
 					i = i + 1
 				end
-				table_setn(t, i - 1)
+				table.setn(t, i - 1)
 			end
 			return t, finish
 		else
@@ -1408,12 +1498,12 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			end
 		end
 	end
-	if isTable then
+	if isTable and not AceOO.inherits(table, AceOO.Class) then
 		DeepReclaim(message)
 	end
 end
 
-local player = UnitName("player") and "monkey"
+local player = UnitName("player")
 
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	if sender == player then
