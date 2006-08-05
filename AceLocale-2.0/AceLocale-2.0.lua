@@ -131,7 +131,7 @@ function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 		local t = self.translations[text]
 		if type(t) ~= "table" then
 			if type(self.baseTranslations[text]) == "table" then
-				AceLocale.error(self, "%q::%q has not been translated into %q", text, sublevel, locale)
+				AceLocale.error(self, "%q::%q has not been translated into %q", text, sublevel, GetLocale())
 				return
 			else
 				AceLocale.error(self, "Translation for %q::%q does not exist", text, sublevel)
@@ -142,7 +142,7 @@ function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 		if type(translation) ~= "string" then
 			if type(self.baseTranslations[text]) == "table" then
 				if type(self.baseTranslations[text][sublevel]) == "string" then
-					AceLocale.error(self, "%q::%q has not been translated into %q", text, sublevel, locale)
+					AceLocale.error(self, "%q::%q has not been translated into %q", text, sublevel, GetLocale())
 					return
 				else
 					AceLocale.error(self, "Translation for %q::%q does not exist", text, sublevel)
@@ -158,7 +158,7 @@ function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 	local translation = self.translations[text]
 	if type(translation) ~= "string" then
 		if type(self.baseTranslations[text]) == "string" then
-			AceLocale.error(self, "%q has not been translated into %q", text, locale)
+			AceLocale.error(self, "%q has not been translated into %q", text, GetLocale())
 			return
 		else
 			AceLocale.error(self, "Translation for %q does not exist", text)
@@ -280,7 +280,7 @@ function AceLocale.prototype:GetTableStrict(key, key2)
 		local t = self.translations[key]
 		if type(t) ~= "table" then
 			if type(self.baseTranslations[key]) == "table" then
-				AceLocale.error(self, "%q::%q has not been translated into %q", key, key2, locale)
+				AceLocale.error(self, "%q::%q has not been translated into %q", key, key2, GetLocale())
 				return
 			else
 				AceLocale.error(self, "Translation table %q::%q does not exist", key, key2)
@@ -291,7 +291,7 @@ function AceLocale.prototype:GetTableStrict(key, key2)
 		if type(translation) ~= "table" then
 			if type(self.baseTranslations[key]) == "table" then
 				if type(self.baseTranslations[key][key2]) == "table" then
-					AceLocale.error(self, "%q::%q has not been translated into %q", key, key2, locale)
+					AceLocale.error(self, "%q::%q has not been translated into %q", key, key2, GetLocale())
 					return
 				else
 					AceLocale.error(self, "Translation table %q::%q does not exist", key, key2)
@@ -307,7 +307,7 @@ function AceLocale.prototype:GetTableStrict(key, key2)
 	local translation = self.translations[key]
 	if type(translation) ~= "table" then
 		if type(self.baseTranslations[key]) == "table" then
-			AceLocale.error(self, "%q has not been translated into %q", key, locale)
+			AceLocale.error(self, "%q has not been translated into %q", key, GetLocale())
 			return
 		else
 			AceLocale.error(self, "Translation table %q does not exist", key)
