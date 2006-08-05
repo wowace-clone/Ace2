@@ -103,7 +103,7 @@ end
 -- Level 3: Very verbose debugging, will dump everything and anything
 -- If set to nil, you will receive no debug information
 function AceDebug:SetDebugLevel(level)
-    AceDebug:argCheck(level, 1, "number", nil)
+    AceDebug:argCheck(level, 1, "number", "nil")
     if not level then
         self.debuglevel = nil
         return
