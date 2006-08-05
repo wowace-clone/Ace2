@@ -904,37 +904,45 @@ function AceDB:PLAYER_LOGOUT()
 		if db then
 			setmetatable(db, nil)
 			if db.char and cleanDefaults(db.char, db.defaults and db.defaults.char) then
-				if db.charName and _G[db.charName].global == db.char then
+				if db.charName and _G[db.charName] and _G[db.charName].global == db.char then
 					_G[db.charName].global = nil
 					if not next(_G[db.charName]) then
 						_G[db.charName] = nil
 					end
 				else
-					db.raw.chars[charID] = nil
-					if not next(db.raw.chars) then
-						db.raw.chars = nil
+					if db.raw.chars then
+						db.raw.chars[charID] = nil
+						if not next(db.raw.chars) then
+							db.raw.chars = nil
+						end
 					end
 				end
 			end
 			if db.realm and cleanDefaults(db.realm, db.defaults and db.defaults.realm) then
-				db.raw.realms[realmID] = nil
-				if not next(db.raw.realms) then
-					db.raw.realms = nil
+				if db.raw.realms then
+					db.raw.realms[realmID] = nil
+					if not next(db.raw.realms) then
+						db.raw.realms = nil
+					end
 				end
 			end
 			if db.class and cleanDefaults(db.class, db.defaults and db.defaults.class) then
-				db.raw.classes[classID] = nil
-				if not next(db.raw.classes) then
-					db.raw.classes = nil
+				if db.raw.classes then
+					db.raw.classes[classID] = nil
+					if not next(db.raw.classes) then
+						db.raw.classes = nil
+					end
 				end
 			end
 			if db.account and cleanDefaults(db.account, db.defaults and db.defaults.account) then
 				db.raw.account = nil
 			end
 			if db.profile and cleanDefaults(db.profile, db.defaults and db.defaults.profile) then
-				db.raw.profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"] = nil
-				if not next(db.raw.profiles) then
-					db.raw.profiles = nil
+				if db.raw.profiles then
+					db.raw.profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"] = nil
+					if not next(db.raw.profiles) then
+						db.raw.profiles = nil
+					end
 				end
 			end
 			if db.namespaces and db.raw.namespaces then
@@ -951,31 +959,39 @@ function AceDB:PLAYER_LOGOUT()
 									end
 								end
 							else
-								db.raw.namespaces[name].chars[charID] = nil
-								if not next(db.raw.namespaces[name].chars) then
-									db.raw.namespaces[name].chars = nil
+								if db.raw.namespaces[name].chars then
+									db.raw.namespaces[name].chars[charID] = nil
+									if not next(db.raw.namespaces[name].chars) then
+										db.raw.namespaces[name].chars = nil
+									end
 								end
 							end
 						end
 						if v.realm and cleanDefaults(v.realm, v.defaults and v.defaults.realm) then
-							db.raw.namespaces[name].realms[realmID] = nil
-							if not next(db.raw.namespaces[name].realms) then
-								db.raw.namespaces[name].realms = nil
+							if db.raw.namespaces[name].realms then
+								db.raw.namespaces[name].realms[realmID] = nil
+								if not next(db.raw.namespaces[name].realms) then
+									db.raw.namespaces[name].realms = nil
+								end
 							end
 						end
 						if v.class and cleanDefaults(v.class, v.defaults and v.defaults.class) then
-							db.raw.namespaces[name].classes[classID] = nil
-							if not next(db.raw.namespaces[name].classes) then
-								db.raw.namespaces[name].classes = nil
+							if db.raw.namespaces[name].classes then
+								db.raw.namespaces[name].classes[classID] = nil
+								if not next(db.raw.namespaces[name].classes) then
+									db.raw.namespaces[name].classes = nil
+								end
 							end
 						end
 						if v.account and cleanDefaults(v.account, v.defaults and v.defaults.account) then
 							db.raw.namespaces[name].account = nil
 						end
 						if v.profile and cleanDefaults(v.profile, v.defaults and v.defaults.profile) then
-							db.raw.namespaces[name].profiles[db.raw.currentProfile[charID] or "Default"] = nil
-							if not next(db.raw.namespaces[name].profiles) then
-								db.raw.namespaces[name].profiles = nil
+							if db.raw.namespaces[name].profiles then
+								db.raw.namespaces[name].profiles[db.raw.currentProfile[charID] or "Default"] = nil
+								if not next(db.raw.namespaces[name].profiles) then
+									db.raw.namespaces[name].profiles = nil
+								end
 							end
 						end
 						if not next(db.raw.namespaces[name]) then
