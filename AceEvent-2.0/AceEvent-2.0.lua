@@ -114,6 +114,7 @@ function AceEvent:RegisterAllEvents(method)
 end
 
 local _G = getfenv(0)
+local tmp = {}
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
@@ -173,6 +174,11 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 	end
 	if AceEvent_registry[event] then
 		for obj, method in pairs(AceEvent_registry[event]) do
+			tmp[obj] = method
+		end
+		local obj = next(tmp)
+		while obj do
+			local method = tmp[obj]
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
@@ -202,10 +208,17 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
+			tmp[obj] = nil
+			obj = next(tmp)
 		end
 	end
 	if AceEvent_registry[ALL_EVENTS] then
 		for obj, method in pairs(AceEvent_registry[ALL_EVENTS]) do
+			tmp[obj] = method
+		end
+		local obj = next(tmp)
+		while obj do
+			local method = tmp[obj]
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
@@ -235,6 +248,8 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
+			tmp[obj] = nil
+			obj = next(tmp)
 		end
 	end
 	_G.event = _G_event
