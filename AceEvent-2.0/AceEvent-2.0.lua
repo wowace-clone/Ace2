@@ -9,7 +9,7 @@ Documentation: http://wiki.wowace.com/index.php/AceEvent-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceEvent-2.0
 Description: Mixin to allow for event handling, scheduling, and inter-addon
              communication.
-Dependencies: AceLibrary, AceOO-2.0, Compost-2.0 (optional)
+Dependencies: AceLibrary, AceOO-2.0
 ]]
 
 local MAJOR_VERSION = "AceEvent-2.0"
@@ -36,7 +36,28 @@ local AceEvent = Mixin {
 						"IsEventScheduled",
 					   }
 
-local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
+local new, del
+do
+	local list = setmetatable({}, {__mode="k"})
+	function new()
+		local t = next(list)
+		if t then
+			list[t] = nil
+			return t
+		else
+			return {}
+		end
+	end
+	
+	function del(t)
+		setmetatable(t, nil)
+		for k in pairs(t) do
+			t[k] = nil
+		end
+		table.setn(t, 0)
+		list[t] = true
+	end
+end
 
 local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
@@ -57,7 +78,7 @@ function AceEvent:RegisterEvent(event, method, once)
 
 	local AceEvent_registry = AceEvent.registry
 	if not AceEvent_registry[event] then
-		AceEvent_registry[event] = Compost and Compost:Acquire() or {}
+		AceEvent_registry[event] = new()
 		AceEvent.frame:RegisterEvent(event)
 	end
 	
@@ -70,19 +91,18 @@ function AceEvent:RegisterEvent(event, method, once)
 	if once then
 		local AceEvent_onceRegistry = AceEvent.onceRegistry
 		if not AceEvent_onceRegistry then
-			AceEvent.onceRegistry = Compost and Compost:Acquire() or {}
+			AceEvent.onceRegistry = new()
 			AceEvent_onceRegistry = AceEvent.onceRegistry
 		end
 		if not AceEvent_onceRegistry[event] then
-			AceEvent_onceRegistry[event] = Compost and Compost:Acquire() or {}
+			AceEvent_onceRegistry[event] = new()
 		end
 		AceEvent_onceRegistry[event][self] = true
 	else
 		if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
 			AceEvent_onceRegistry[event][self] = nil
-			if Compost and not next(AceEvent_onceRegistry[event]) then
-				Compost:Reclaim(AceEvent_onceRegistry[event])
-				AceEvent_onceRegistry[event] = nil
+			if not next(AceEvent_onceRegistry[event]) then
+				AceEvent_onceRegistry[event] = del(AceEvent_onceRegistry[event])
 			end
 		end
 	end
@@ -106,7 +126,7 @@ function AceEvent:RegisterAllEvents(method)
 	end
 	
 	if not AceEvent.registry[ALL_EVENTS] then
-		AceEvent.registry[ALL_EVENTS] = Compost and Compost:Acquire() or {}
+		AceEvent.registry[ALL_EVENTS] = new()
 		AceEvent.frame:RegisterAllEvents()
 	end
 	
@@ -114,7 +134,6 @@ function AceEvent:RegisterAllEvents(method)
 end
 
 local _G = getfenv(0)
-local tmp = {}
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
@@ -136,16 +155,12 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
-					AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
+					AceEvent_debugTable[event] = new()
 				end
 				if not AceEvent_debugTable[event][obj] then
-					AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
-						'mem', 0,
-						'time', 0
-					) or {
-						mem = 0,
-						time = 0
-					}
+					AceEvent_debugTable[event][obj] = new()
+					AceEvent_debugTable[event][obj].mem = 0
+					AceEvent_debugTable[event][obj].time = 0
 				end
 				mem, time = gcinfo(), GetTime()
 			end
@@ -173,6 +188,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		end
 	end
 	if AceEvent_registry[event] then
+		local tmp = new()
 		for obj, method in pairs(AceEvent_registry[event]) do
 			tmp[obj] = method
 		end
@@ -182,16 +198,12 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
-					AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
+					AceEvent_debugTable[event] = new()
 				end
 				if not AceEvent_debugTable[event][obj] then
-					AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
-						'mem', 0,
-						'time', 0
-					) or {
-						mem = 0,
-						time = 0
-					}
+					AceEvent_debugTable[event][obj] = new()
+					AceEvent_debugTable[event][obj].mem = 0
+					AceEvent_debugTable[event][obj].time = 0
 				end
 				mem, time = gcinfo(), GetTime()
 			end
@@ -211,8 +223,10 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			tmp[obj] = nil
 			obj = next(tmp)
 		end
+		del(tmp)
 	end
 	if AceEvent_registry[ALL_EVENTS] then
+		local tmp = new()
 		for obj, method in pairs(AceEvent_registry[ALL_EVENTS]) do
 			tmp[obj] = method
 		end
@@ -222,16 +236,12 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
-					AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
+					AceEvent_debugTable[event] = new()
 				end
 				if not AceEvent_debugTable[event][obj] then
-					AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
-						'mem', 0,
-						'time', 0
-					) or {
-						mem = 0,
-						time = 0
-					}
+					AceEvent_debugTable[event][obj] = new()
+					AceEvent_debugTable[event][obj].mem = 0
+					AceEvent_debugTable[event][obj].time = 0
 				end
 				mem, time = gcinfo(), GetTime()
 			end
@@ -251,6 +261,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			tmp[obj] = nil
 			obj = next(tmp)
 		end
+		del(tmp)
 	end
 	_G.event = _G_event
 end
@@ -385,8 +396,8 @@ local function OnUpdate()
 		else
 			AceEvent:TriggerEvent(event, unpack(v))
 		end
-		if not v_repeatDelay and Compost then
-			Compost:Reclaim(v)
+		if not v_repeatDelay then
+			del(v)
 		end
 		v = delayHeap[1]
 		v_time = v and v.time
@@ -416,8 +427,8 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 	end
 
 	if not delayRegistry then
-		AceEvent.delayRegistry = Compost and Compost:Acquire() or {}
-		AceEvent.delayHeap = Compost and Compost:Acquire() or {}
+		AceEvent.delayRegistry = new()
+		AceEvent.delayHeap = new()
 		AceEvent.delayHeap.n = 0
 		delayRegistry = AceEvent.delayRegistry
 		delayHeap = AceEvent.delayHeap
@@ -431,7 +442,7 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 		table.setn(id, 0)
 		t = id
 	else
-		t = Compost and Compost:Acquire() or {}
+		t = new()
 	end
 	t.n = 0
 	tinsert(t, a1)
@@ -511,9 +522,7 @@ function AceEvent:CancelScheduledEvent(t)
 		if v then
 			hDelete(delayHeap, v.i)
 			delayRegistry[t] = nil
-			if Compost then
-				Compost:Reclaim(v)
-			end
+			del(v)
 			if not next(delayRegistry) then
 				AceEvent.frame:Hide()
 			end
@@ -555,12 +564,12 @@ function AceEvent:UnregisterEvent(event)
 		local AceEvent_onceRegistry = AceEvent.onceRegistry
 		if AceEvent_onceRegistry[event] and AceEvent_onceRegistry[event][self] then
 			AceEvent_onceRegistry[event][self] = nil
-			if Compost and not next(AceEvent_registry[event]) then
-				AceEvent_onceRegistry[event] = Compost:Reclaim(AceEvent_onceRegistry[event])
+			if not next(AceEvent_registry[event]) then
+				AceEvent_onceRegistry[event] = del(AceEvent_onceRegistry[event])
 			end
 		end
-		if Compost and not next(AceEvent_registry[event]) then
-			AceEvent_registry[event] = Compost:Reclaim(AceEvent_registry[event])
+		if not next(AceEvent_registry[event]) then
+			AceEvent_registry[event] = del(AceEvent_registry[event])
 			if not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS]) then
 				AceEvent.frame:UnregisterEvent(event)
 			end
@@ -579,8 +588,8 @@ function AceEvent:UnregisterAllEvents()
 	local AceEvent_registry = AceEvent.registry
 	if AceEvent_registry[ALL_EVENTS] and AceEvent_registry[ALL_EVENTS][self] then
 		AceEvent_registry[ALL_EVENTS][self] = nil
-		if Compost and not next(AceEvent_registry[ALL_EVENTS]) then
-			Compost:Reclaim(AceEvent_registry[ALL_EVENTS])
+		if not next(AceEvent_registry[ALL_EVENTS]) then
+			del(AceEvent_registry[ALL_EVENTS])
 			AceEvent.frame:UnregisterAllEvents()
 			for k,v in pairs(AceEvent_registry) do
 				if k ~= ALL_EVENTS then
@@ -602,8 +611,8 @@ function AceEvent:UnregisterAllEvents()
 		local x = data[self]
 		data[self] = nil
 		if x and event ~= ALL_EVENTS then
-			if Compost and not next(data) then
-				Compost:Reclaim(data)
+			if not next(data) then
+				del(data)
 				if not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS]) then
 					AceEvent.frame:UnregisterEvent(event)
 				end
@@ -627,9 +636,7 @@ function AceEvent:CancelAllScheduledEvents()
 		for k,v in pairs(delayRegistry) do
 			if v.self == self then
 				hDelete(delayHeap, v.i)
-				if Compost then
-					Compost:Reclaim(v)
-				end
+				del(v)
 				delayRegistry[k] = nil
 			end
 		end
@@ -682,14 +689,14 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 		end
 	end
 	if not AceEvent.buckets then
-		AceEvent.buckets = Compost and Compost:Acquire() or {}
+		AceEvent.buckets = new()
 	end
 	if not AceEvent.buckets[event] then
-		AceEvent.buckets[event] = Compost and Compost:Acquire() or {}
+		AceEvent.buckets[event] = new()
 	end
 	if not AceEvent.buckets[event][self] then
-		AceEvent.buckets[event][self] = Compost and Compost:Acquire() or {}
-		AceEvent.buckets[event][self].current = Compost and Compost:Acquire() or {}
+		AceEvent.buckets[event][self] = new()
+		AceEvent.buckets[event][self].current = new()
 		AceEvent.buckets[event][self].self = self
 	else
 		AceEvent:CancelScheduledEvent(AceEvent.buckets[event][self].id)
@@ -752,16 +759,10 @@ function AceEvent:UnregisterBucketEvent(event)
 	end
 	AceEvent:CancelScheduledEvent(bucket.id)
 	
-	if Compost then
-		Compost:Reclaim(bucket.current)
-		Compost:Reclaim(AceEvent.buckets[event][self])
-	end
-	AceEvent.buckets[event][self] = nil
+	del(bucket.current)
+	AceEvent.buckets[event][self] = del(AceEvent.buckets[event][self])
 	if not next(AceEvent.buckets[event]) then
-		if Compost then
-			Compost:Reclaim(AceEvent.buckets[event])
-		end
-		AceEvent.buckets[event] = nil
+		AceEvent.buckets[event] = del(AceEvent.buckets[event])
 	end
 end
 
@@ -787,7 +788,7 @@ end
 
 function AceEvent:EnableDebugging()
 	if not self.debugTable then
-		self.debugTable = Compost and Compost:Acquire() or {}
+		self.debugTable = new()
 	end
 end
 
@@ -815,7 +816,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.ALL_EVENTS = oldLib.ALL_EVENTS
 	end
 	if not self.registry then
-		self.registry = Compost and Compost:Acquire() or {}
+		self.registry = {}
 	end
 	if not self.frame then
 		self.frame = CreateFrame("Frame", "AceEvent20Frame")
@@ -888,11 +889,5 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	end
 end
 
-local function external(self, major, instance)
-	if major == "Compost-2.0" then
-		Compost = instance
-	end
-end
-
-AceLibrary:Register(AceEvent, MAJOR_VERSION, MINOR_VERSION, AceEvent.activate, nil, external)
+AceLibrary:Register(AceEvent, MAJOR_VERSION, MINOR_VERSION, AceEvent.activate)
 AceEvent = AceLibrary(MAJOR_VERSION)
