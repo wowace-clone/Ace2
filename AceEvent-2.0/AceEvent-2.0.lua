@@ -54,11 +54,9 @@ do
 	end
 	
 	function del(t)
-		setmetatable(t, nil)
 		for k in pairs(t) do
 			t[k] = nil
 		end
-		table.setn(t, 0)
 		list[t] = true
 	end
 end
@@ -669,7 +667,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 		for k,v in pairs(event) do
 			if type(k) ~= "number" then
 				AceEvent:error("All keys to argument #2 to `RegisterBucketEvent' must be numbers.")
-			elseif type(k) ~= "string" then
+			elseif type(v) ~= "string" then
 				AceEvent:error("All values to argument #2 to `RegisterBucketEvent' must be strings.")
 			end
 		end
