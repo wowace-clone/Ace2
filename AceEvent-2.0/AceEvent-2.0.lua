@@ -148,12 +148,12 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 	local AceEvent_onceRegistry = AceEvent.onceRegistry
 	local AceEvent_debugTable = AceEvent.debugTable
 	if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
-		local obj
-		while true do
-			obj = next(AceEvent_onceRegistry[event])
-			if not obj then
-				return
-			end
+		local tmp = new()
+		for obj, method in pairs(AceEvent_onceRegistry[event]) do
+			tmp[obj] = AceEvent_registry[event] and AceEvent_registry[event][obj] or nil
+		end
+		local obj = next(tmp)
+		while obj do
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
@@ -166,10 +166,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				end
 				mem, time = gcinfo(), GetTime()
 			end
-			local method = AceEvent_registry[event] and AceEvent_registry[event][obj]
-			if not method then
-				break
-			end
+			local method = tmp[obj]
 			AceEvent.UnregisterEvent(obj, event)
 			if type(method) == "string" then
 				local obj_method = obj[method]
@@ -184,10 +181,10 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
-			if not AceEvent_onceRegistry[event] or not next(AceEvent_onceRegistry[event]) then
-				break
-			end
+			tmp[obj] = nil
+			obj = next(tmp)
 		end
+		del(tmp)
 	end
 	if AceEvent_registry[event] then
 		local tmp = new()
