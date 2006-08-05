@@ -24,6 +24,7 @@ local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local Mixin = AceOO.Mixin
 local AceEvent = Mixin {
 						"RegisterEvent",
+						"RegisterAllEvents",
 						"UnregisterEvent",
 						"UnregisterAllEvents",
 						"TriggerEvent",
@@ -33,10 +34,6 @@ local AceEvent = Mixin {
 						"CancelAllScheduledEvents",
 						"IsEventRegistered",
 						"IsEventScheduled",
-						"RegisterBucketEvent",
-						"UnregisterBucketEvent",
-						"IsBucketEventRegistered",
-						"UnregisterAllBucketEvents",
 					   }
 
 local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
@@ -91,34 +88,50 @@ function AceEvent:RegisterEvent(event, method, once)
 	end
 	
 	if remember then
-		AceEvent:TriggerEvent("AceEvent_EventRegistered", self)
+		AceEvent:TriggerEvent("AceEvent_EventRegistered", self, event)
 	end
 end
 
+local ALL_EVENTS
+
+function AceEvent:RegisterAllEvents(method)
+	if self == AceEvent then
+		AceEvent:argCheck(method, 1, "function")
+		self = method
+	else
+		AceEvent:argCheck(method, 1, "string", "function")
+		if type(method) == "string" and type(self[method]) ~= "function" then
+			AceEvent:error("Cannot register all events to method %q, it does not exist", method)
+		end
+	end
+	
+	if not AceEvent.registry[ALL_EVENTS] then
+		AceEvent.registry[ALL_EVENTS] = Compost and Compost:Acquire() or {}
+		AceEvent.frame:RegisterAllEvents()
+	end
+	
+	AceEvent.registry[ALL_EVENTS][self] = method
+end
+
 local _G = getfenv(0)
-local triggerFromWoW
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
-	if not AceEvent_registry[event] or not next(AceEvent_registry[event]) then
+	if (not AceEvent_registry[event] or not next(AceEvent_registry[event])) and (not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS])) then
 		return
 	end
 	local _G_event = _G.event
-	local _G_arg1, _G_arg2, _G_arg3, _G_arg4, _G_arg5, _G_arg6, _G_arg7, _G_arg8, _G_arg9 = _G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9
-	local _G_eventDispatcher = _G.eventDispatcher
-	if triggerFromWoW then
-		triggerFromWoW = nil
-		_G.eventDispatcher = "WoW"
-	else
-		_G.eventDispatcher = self
-	end
 	_G.event = event
-	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = a1, a2, a3, a4, a5, a6, a7, a8, a9
 
 	local AceEvent_onceRegistry = AceEvent.onceRegistry
 	local AceEvent_debugTable = AceEvent.debugTable
 	if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
-		for obj in pairs(AceEvent_onceRegistry[event]) do
+		local obj
+		while true do
+			obj = next(AceEvent_onceRegistry[event])
+			if not obj then
+				return
+			end
 			local mem, time
 			if AceEvent_debugTable then
 				if not AceEvent_debugTable[event] then
@@ -135,12 +148,11 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				end
 				mem, time = gcinfo(), GetTime()
 			end
-			if not AceEvent_registry[event] or not AceEvent_registry[event][obj] then
+			local method = AceEvent_registry[event] and AceEvent_registry[event][obj]
+			if not method then
 				break
 			end
-			local method = AceEvent_registry[event][obj]
 			AceEvent.UnregisterEvent(obj, event)
-			local done = not AceEvent_onceRegistry[event] or not next(AceEvent_onceRegistry[event])
 			if type(method) == "string" then
 				local obj_method = obj[method]
 				if obj_method then
@@ -154,8 +166,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
-			obj = nil
-			if done then
+			if not AceEvent_onceRegistry[event] or not next(AceEvent_onceRegistry[event]) then
 				break
 			end
 		end
@@ -193,9 +204,40 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 			end
 		end
 	end
+	if AceEvent_registry[ALL_EVENTS] then
+		for obj, method in pairs(AceEvent_registry[ALL_EVENTS]) do
+			local mem, time
+			if AceEvent_debugTable then
+				if not AceEvent_debugTable[event] then
+					AceEvent_debugTable[event] = Compost and Compost:Acquire() or {}
+				end
+				if not AceEvent_debugTable[event][obj] then
+					AceEvent_debugTable[event][obj] = Compost and Compost:AcquireHash(
+						'mem', 0,
+						'time', 0
+					) or {
+						mem = 0,
+						time = 0
+					}
+				end
+				mem, time = gcinfo(), GetTime()
+			end
+			if type(method) == "string" then
+				local obj_method = obj[method]
+				if obj_method then
+					obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+				end
+			elseif method then -- function
+				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+			end
+			if AceEvent_debugTable then
+				mem, time = mem - gcinfo(), time - GetTime()
+				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
+				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
+			end
+		end
+	end
 	_G.event = _G_event
-	_G.arg1, _G.arg2, _G.arg3, _G.arg4, _G.arg5, _G.arg6, _G.arg7, _G.arg8, _G.arg9 = _G_arg1, _G_arg2, _G_arg3, _G_arg4, _G_arg5, _G_arg6, _G_arg7, _G_arg8, _G_arg9
-	_G.eventDispatcher = _G_eventDispatcher
 end
 
 --------------------
@@ -410,10 +452,40 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 end
 
 function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			if not delayRegistry or not delayRegistry[event] then
+				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+			end
+		end
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "string", "function", --[[ so message is right ]] "number")
+			AceEvent:argCheck(a1, 4, "number")
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
+	
 	return ScheduleEvent(self, false, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 function AceEvent:ScheduleRepeatingEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if type(event) == "string" or type(event) == "table" then
+		if type(event) == "table" then
+			if not delayRegistry or not delayRegistry[event] then
+				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
+			end
+		end
+		if type(delay) ~= "number" then
+			AceEvent:argCheck(delay, 3, "string", "function", --[[ so message is right ]] "number")
+			AceEvent:argCheck(a1, 4, "number")
+		end
+	else
+		AceEvent:argCheck(event, 2, "string", "function")
+		AceEvent:argCheck(delay, 3, "number")
+	end
+	
 	return ScheduleEvent(self, true, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
@@ -447,6 +519,19 @@ function AceEvent:IsEventScheduled(t)
 	return false, nil
 end
 
+
+function AceEvent:IsEventRegistered(event)
+	AceEvent:argCheck(event, 2, "string")
+	local AceEvent_registry = AceEvent.registry
+	if self == AceEvent then
+		return AceEvent_registry[event] and next(AceEvent_registry[event]) and true or false
+	end
+	if AceEvent_registry[event] and AceEvent_registry[event][self] then
+		return true, AceEvent_registry[event][self]
+	end
+	return false, nil
+end
+
 function AceEvent:UnregisterEvent(event)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
@@ -456,14 +541,14 @@ function AceEvent:UnregisterEvent(event)
 		if AceEvent_onceRegistry[event] and AceEvent_onceRegistry[event][self] then
 			AceEvent_onceRegistry[event][self] = nil
 			if Compost and not next(AceEvent_registry[event]) then
-				Compost:Reclaim(AceEvent_onceRegistry[event])
-				AceEvent_onceRegistry[event] = nil
+				AceEvent_onceRegistry[event] = Compost:Reclaim(AceEvent_onceRegistry[event])
 			end
 		end
 		if Compost and not next(AceEvent_registry[event]) then
-			Compost:Reclaim(AceEvent_registry[event])
-			AceEvent_registry[event] = nil
-			AceEvent.frame:UnregisterEvent(event)
+			AceEvent_registry[event] = Compost:Reclaim(AceEvent_registry[event])
+			if not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS]) then
+				AceEvent.frame:UnregisterEvent(event)
+			end
 		end
 	else
 		if self == AceEvent then
@@ -472,13 +557,48 @@ function AceEvent:UnregisterEvent(event)
 			AceEvent:error("Cannot unregister event %q. %q is not registered with it.", event, self)
 		end
 	end
-	AceEvent:TriggerEvent("AceEvent_EventUnregistered", self)
+	AceEvent:TriggerEvent("AceEvent_EventUnregistered", self, event)
 end
 
 function AceEvent:UnregisterAllEvents()
-	for event, data in pairs(AceEvent.registry) do
+	local AceEvent_registry = AceEvent.registry
+	if AceEvent_registry[ALL_EVENTS] and AceEvent_registry[ALL_EVENTS][self] then
+		AceEvent_registry[ALL_EVENTS][self] = nil
+		if Compost and not next(AceEvent_registry[ALL_EVENTS]) then
+			Compost:Reclaim(AceEvent_registry[ALL_EVENTS])
+			AceEvent.frame:UnregisterAllEvents()
+			for k,v in pairs(AceEvent_registry) do
+				if k ~= ALL_EVENTS then
+					AceEvent.frame:RegisterEvent(k)
+				end
+			end
+			AceEvent_registry[event] = nil
+		end
+	end
+	local first = true
+	for event, data in pairs(AceEvent_registry) do
+		if first then
+			if AceEvent_registry.AceEvent_EventUnregistered then
+				event = "AceEvent_EventUnregistered"
+			else
+				first = false
+			end
+		end
+		local x = data[self]
 		data[self] = nil
-		AceEvent:TriggerEvent("AceEvent_EventUnregistered", self)
+		if x and event ~= ALL_EVENTS then
+			if Compost and not next(data) then
+				Compost:Reclaim(data)
+				if not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS]) then
+					AceEvent.frame:UnregisterEvent(event)
+				end
+				AceEvent_registry[event] = nil
+			end
+			AceEvent:TriggerEvent("AceEvent_EventUnregistered", self, event)
+		end
+		if first then
+			event = nil
+		end
 	end
 	if AceEvent.onceRegistry then
 		for event, data in pairs(AceEvent.onceRegistry) do
@@ -602,7 +722,7 @@ end
 
 function AceEvent:UnregisterBucketEvent(event)
 	AceEvent:argCheck(event, 2, "string", "table")
-	if not AceEvent.buckets or not AceEvent.buckets[event] or not  then
+	if not AceEvent.buckets or not AceEvent.buckets[event] or not AceEvent.buckets[event][self] then
 		AceEvent:error("Cannot unregister bucket event %q. %q is not registered with it.", event, self)
 	end
 	
@@ -670,23 +790,27 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	if oldLib then
 		self.onceRegistry = oldLib.onceRegistry
 		self.delayRegistry = oldLib.delayRegistry
+		self.buckets = oldLib.buckets
 		self.delayHeap = oldLib.delayHeap
 		self.registry = oldLib.registry
-		self.buckets = oldLib.buckets
 		self.frame = oldLib.frame
 		self.debugTable = oldLib.debugTable
 		self.playerLogin = oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
 		self.postInit = oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
+		self.ALL_EVENTS = oldLib.ALL_EVENTS
 	end
 	if not self.registry then
 		self.registry = Compost and Compost:Acquire() or {}
 	end
 	if not self.frame then
-		self.frame = CreateFrame("Frame")
+		self.frame = CreateFrame("Frame", "AceEvent20Frame")
 	end
+	if not self.ALL_EVENTS then
+		self.ALL_EVENTS = {}
+	end
+	ALL_EVENTS = self.ALL_EVENTS
 	self.frame:SetScript("OnEvent", function()
 		if event then
-			triggerFromWoW = true
 			self:TriggerEvent(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 		end
 	end)
@@ -712,23 +836,33 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		local function func()
 			self.postInit = true
 			self:TriggerEvent("AceEvent_FullyInitialized")
-			if self:IsEventRegistered("CHAT_MSG_CHANNEL_NOTICE") then
+			if self.registry["CHAT_MSG_CHANNEL_NOTICE"] and self.registry["CHAT_MSG_CHANNEL_NOTICE"][self] then
 				self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 			end
-			if self:IsEventRegistered("SPELLS_CHANGED") then
+			if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
+				self:UnregisterEvent("MEETINGSTONE_CHANGED")
+			end
+			if self.registry["MINIMAP_ZONE_CHANGED"] and self.registry["MINIMAP_ZONE_CHANGED"][self] then
+				self:UnregisterEvent("MINIMAP_ZONE_CHANGED")
+			end
+			if self.registry["SPELLS_CHANGED"] and self.registry["SPELLS_CHANGED"][self] then
 				self:UnregisterEvent("SPELLS_CHANGED")
 			end
 		end
 		registeringFromAceEvent = true
-		self:RegisterEvent("MEETINGSTONE_CHANGED", function()
+		local f = function()
 			self.playerLogin = true
-			self:ScheduleEvent("AceEvent_FullyInitialized", func, isReload and 1 or 4)
-		end, true)
+			self:ScheduleEvent("AceEvent_FullyInitialized", func, 1)
+		end
+		self:RegisterEvent("MEETINGSTONE_CHANGED", f, true)
 		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE", function()
 			self:ScheduleEvent("AceEvent_FullyInitialized", func, 0.05)
 		end)
 		self:RegisterEvent("SPELLS_CHANGED", function()
-			isReload = false
+			if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
+				self:UnregisterEvent("MEETINGSTONE_CHANGED")
+				self:RegisterEvent("MINIMAP_ZONE_CHANGED", f, true)
+			end
 		end)
 		registeringFromAceEvent = nil
 	end
