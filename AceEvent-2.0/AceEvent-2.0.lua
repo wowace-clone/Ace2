@@ -34,6 +34,10 @@ local AceEvent = Mixin {
 						"CancelAllScheduledEvents",
 						"IsEventRegistered",
 						"IsEventScheduled",
+						"RegisterBucketEvent",
+						"UnregisterBucketEvent",
+						"UnregisterAllBucketEvents",
+						"IsBucketEventRegistered",
 					   }
 
 local new, del
