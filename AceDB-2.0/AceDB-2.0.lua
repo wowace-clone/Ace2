@@ -753,6 +753,7 @@ function AceDB:SetProfile(name, copyFrom)
 	end
 	local newactive = self:IsActive()
 	if active ~= newactive then
+		DEFAULT_CHAT_FRAME:AddMessage(tostring(self) .. ": switch active state to " .. tostring(newactive))
 		if AceOO.inherits(self, "AceAddon-2.0") then
 			local AceAddon = AceLibrary("AceAddon-2.0")
 			if not AceAddon.addonsStarted[self] then
@@ -792,7 +793,7 @@ function AceDB:SetProfile(name, copyFrom)
 				end
 				current = current.super
 			end
-			if type(self.OnDisabled) == "function" then
+			if type(self.OnDisable) == "function" then
 				self:OnDisable()
 			end
 		end
