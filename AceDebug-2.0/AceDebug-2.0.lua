@@ -103,9 +103,13 @@ end
 -- Level 3: Very verbose debugging, will dump everything and anything
 -- If set to nil, you will receive no debug information
 function AceDebug:SetDebugLevel(level)
-    AceDebug:argCheck(level, 1, "number")
+    AceDebug:argCheck(level, 1, "number", nil)
+    if not level then
+        self.debuglevel = nil
+        return
+    end
     if level < 1 or level > 3 then
-        AceModuleCore:error("Bad argument #1 to `SetDebugLevel`, must be a number 1-3")
+        AceDebug:error("Bad argument #1 to `SetDebugLevel`, must be a number 1-3")
     end
     self.debuglevel = level
 end
