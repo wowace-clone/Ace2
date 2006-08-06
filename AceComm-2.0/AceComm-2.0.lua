@@ -113,12 +113,15 @@ local CheckSum, BinaryCheckSum
 do
 	local SOME_PRIME = 16777213
 	local function RealCheckSum(text)
-		local counter = 0
+		local counter = 1
 		local len = string.len(text)
-		for i = 1, len do
-			counter = (counter*31) + string.byte(text, i)
+		for i = 1, len, 3 do
+		  counter = mod(counter*8257, 16777259) +
+			  (string.byte(text,i)) +
+			  ((string.byte(text,i+1) or 1)*127) +
+			  ((string.byte(text,i+2) or 2)*16383)
 		end
-		return math.mod(counter + 1, SOME_PRIME)
+		return mod(counter, SOME_PRIME)
 	end
 	
 	function CheckSum(text)
