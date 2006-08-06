@@ -109,17 +109,25 @@ local table_concat = table.concat
 local table_setn = table.setn
 local table_remove = table.remove
 
-local Checksum
+local CheckSum, BinaryCheckSum
 do
 	local SOME_PRIME = 16777213
-	function CheckSum(text)
+	local function RealCheckSum(text)
 		local counter = 1
 		local len = string_len(text)
 		for i = 1, len do
-				counter = counter + string_byte(text, i) * 31^(len - i)
+			counter = counter + string_byte(text, i) * 31^(len - i)
 		end
-		counter = math_mod(counter, SOME_PRIME)
-		return string_format("%06x", counter)
+		return math_mod(counter, SOME_PRIME)
+	end
+	
+	function CheckSum(text)
+		return string_format("%06x", RealCheckSum(text))
+	end
+	
+	function BinaryCheckSum(text)
+		local num = RealCheckSum(text)
+		return string_char(num / 65536, math_mod(num / 256, 256), math_mod(num, 256))
 	end
 end
 
@@ -501,11 +509,10 @@ do
 				elseif type(v.class.GetLibraryVersion) ~= "function" or not AceLibrary:HasInstance(v.class:GetLibraryVersion()) then
 					AceComm:error("Cannot serialize an AceOO object if the class is not registered with AceLibrary.")
 				end
-				local className = v.class:GetLibraryVersion()
+				local classHash = BinaryCheckSum(v.class:GetLibraryVersion())
 				local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = v:Serialize()
 				local t = new()
 				t.n = 0
-				table_insert(t, className)
 				table_insert(t, a1)
 				table_insert(t, a2)
 				table_insert(t, a3)
@@ -533,6 +540,7 @@ do
 				for i = 1, t.n do
 					t[i] = _Serialize(t[i])
 				end
+				table_insert(t, 1, classHash)
 				if not notFirst then
 					for k in pairs(recurse) do
 						recurse[k] = nil
@@ -679,11 +687,11 @@ do
 		elseif x == byte_s then
 			-- 0-255-byte string
 			local len = string_byte(value, position + 1)
-			return string_sub(value, position + 2, position + 1 + len), position + 1 + len
+			return string.sub(value, position + 2, position + 1 + len), position + 1 + len
 		elseif x == byte_S then
 			-- 256-65535-byte string
 			local len = string_byte(value, position + 1) * 256 + string_byte(value, position + 2)
-			return string_sub(value, position + 3, position + 2 + len), position + 2 + len
+			return string.sub(value, position + 3, position + 2 + len), position + 2 + len
 		elseif x == byte_inf then
 			return inf, position
 		elseif x == byte_ninf then
@@ -734,7 +742,7 @@ do
 			return N, position + 8
 --		elseif x == byte_plus then
 --			local len = string_byte(value, position + 1)
---			local s = string_sub(value, position + 2, position + 1 + len)
+--			local s = string.sub(value, position + 2, position + 1 + len)
 --			return s, position + 1 + len
 		elseif x == byte_plus or x == byte_minus then
 			local a = string_byte(value, position + 1)
@@ -790,13 +798,12 @@ do
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local curr = start - 1
-			local className
-			className, curr = _Deserialize(value, curr + 1)
-			if type(className) ~= "string" or not AceLibrary:HasInstance(className) then
+			local hash = string.sub(value, start, start + 2)
+			local curr = start + 2
+			if not AceComm.classes[hash] then
 				return nil, finish
 			end
-			local class = AceLibrary(className)
+			local class = AceComm.classes[hash]
 			if type(class.Deserialize) ~= "function" or type(class.prototype.Serialize) ~= "function" then
 				return nil, finish
 			end
@@ -1504,7 +1511,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 end
 
-local player = UnitName("player")
+local player = UnitName("player") and "monkey"
 
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	if sender == player then
@@ -1691,6 +1698,7 @@ local function activate(self, oldLib, oldDeactivate)
 		self.registry = oldLib.registry
 		self.channels = oldLib.channels
 		self.prefixes = oldLib.prefixes
+		self.classes = oldLib.classes
 	else
 		local old_ChatFrame_OnEvent = ChatFrame_OnEvent
 		function ChatFrame_OnEvent(event)
@@ -1754,6 +1762,13 @@ local function activate(self, oldLib, oldDeactivate)
 	if not self.prefixes then
 		self.prefixes = {}
 	end
+	if not self.classes then
+		self.classes = {}
+	else
+		for k in pairs(self.classes) do
+			self.classes[k] = nil
+		end
+	end
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
@@ -1777,20 +1792,13 @@ local function external(self, major, instance)
 			end
 		end
 		
-		if not self:IsEventRegistered("PLAYER_LOGOUT") then
-			self:RegisterEvent("PLAYER_LOGOUT")
-		end
-		
-		if not self:IsEventRegistered("ZONE_CHANGED_NEW_AREA") then
-			self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-		end
-		
-		if not self:IsEventRegistered("CHAT_MSG_CHANNEL_NOTICE") then
-			self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
-		end
-		
-		if not self:IsEventRegistered("CHAT_MSG_SYSTEM") then
-			self:RegisterEvent("CHAT_MSG_SYSTEM")
+		self:RegisterEvent("PLAYER_LOGOUT")
+		self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+		self:RegisterEvent("CHAT_MSG_SYSTEM")
+	else
+		if AceOO.inherits(instance, AceOO.Class) and not instance.class then
+			self.classes[BinaryCheckSum(major)] = instance
 		end
 	end
 end
