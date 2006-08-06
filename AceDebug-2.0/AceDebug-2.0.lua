@@ -126,8 +126,8 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, a2, a3, a4,
     end
     if level > self.debuglevel then return end
 
-	local output = string.format("|cff7fff7f(DEBUG-%d) %s:|r", level, tostring(self))
-	
+	local output = string.format("|cff7fff7f(DEBUG-%d) %s:[%s]|r", level, tostring(self), GetTime())
+    
 	if string.find(tostring(a1), "%%") then
 		output = output .. " " .. string.format(tostring(a1), tostring(a2), tostring(a3), tostring(a4), tostring(a5), tostring(a6), tostring(a7), tostring(a8), tostring(a9), tostring(a10), tostring(a11), tostring(a12), tostring(a13), tostring(a14), tostring(a15), tostring(a16), tostring(a17), tostring(a18), tostring(a19), tostring(a20))
 	else
