@@ -21,17 +21,17 @@ local _G = getfenv()
 
 local hookedFrames = compost and compost:Acquire() or {}
 
-function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usage, editframes)
+function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editframes)
 	self:argCheck(descriptor, 2, "string")
 	self:argCheck(regex, 3, "string", "table")
-	self:argCheck(compfunc, 4, "string", "function", "nil")
+	self:argCheck(wlfunc, 4, "string", "function", "nil")
 	self:argCheck(usage, 5, "string", "function", "boolean", "nil")
 	self:argCheck(editframe, 6, "string", "table", "nil")
 
 	if type(regex) == "string" then regex = {regex} end
 
-	if type(compfunc) == "string" and type(self[compfunc]) ~= "function" then
-		self:error("Cannot register function %q; it does not exist", compfunc)
+	if type(wlfunc) == "string" and type(self[wlfunc]) ~= "function" then
+		self:error("Cannot register function %q; it does not exist", wlfunc)
 	end
 
 	if type(usage) == "string" and type(self[usage]) ~= "function" then
@@ -77,7 +77,7 @@ function AceTab:RegisterTabCompletion(descriptor, regex, compfunc, usage, editfr
 	if not self.registry[descriptor][self] then
 		self.registry[descriptor][self] = Compost and Compost:Acquire() or {}
 	end
-	self.registry[descriptor][self] = {patterns = regex, compfunc = compfunc,  usage = usage, frames = editframes}
+	self.registry[descriptor][self] = {patterns = regex, wlfunc = wlfunc,  usage = usage, frames = editframes}
 	
 	if not AceEvent and AceLibrary:HasInstance("AceEvent-2.0") then
 		external(AceTab, "AceEvent-2.0", AceLibrary("AceEvent-2.0"))
@@ -128,8 +128,8 @@ function AceTab:OnTabPressed()
 	this:HighlightText(pos, pos+1)
 	this:Insert("\0")
 	if ost then this:SetScript("OnTextSet", ost) end
-
-	local text = string.sub(this:GetText(), 0, pos) or ""
+	local fulltext = this:GetText()
+	local text = string.sub(fulltext, 0, pos) or ""
 
 	local left = string.find(string.sub(text, 1, pos), "%w+$")
 	left = left and left-1 or pos
@@ -150,7 +150,7 @@ function AceTab:OnTabPressed()
 					for _, regex in ipairs(s.patterns) do
 						local cands = compost and compost:Erase() or {}
 						if string.find(string.sub(text, 1, left), regex.."$") then
-							local c = s.compfunc(cands, string.sub(text, 1, left), left)
+							local c = s.wlfunc(cands, fulltext, left)
 							if c ~= false then
 								local mtemp = compost and compost:Erase() or {}
 								matches[desc] = matches[desc] or compost and compost:Erase() or {}
