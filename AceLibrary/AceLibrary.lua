@@ -644,6 +644,21 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	return instance
 end
 
+local iter
+function AceLibrary:IterateLibraries()
+	if not iter then
+		local function iter(t, k)
+			k = next(t, k)
+			if not k then
+				return nil
+			else
+				return k, t[k].instance
+			end
+		end
+	end
+	return iter, self.libs, nil
+end
+
 -- @function            Activate
 -- @brief               The activateFunc for AceLibrary itself. Called when
 --                      AceLibrary properly registers.
