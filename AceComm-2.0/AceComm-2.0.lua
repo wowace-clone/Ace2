@@ -31,6 +31,7 @@ local AceComm = Mixin {
 						"IsCommRegistered",
 						"SetDefaultCommPriority",
 						"SetCommPrefix",
+						"RegisterMemoizations",
 					  }
 AceComm.hooks = {}
 
@@ -78,6 +79,7 @@ local byte_d = string_byte('d')
 local byte_D = string_byte('D')
 local byte_e = string_byte('e')
 local byte_E = string_byte('E')
+local byte_m = string_byte('m')
 local byte_s = string_byte('s')
 local byte_S = string_byte('S')
 local byte_o = string_byte('o')
@@ -109,27 +111,60 @@ local table_concat = table.concat
 local table_setn = table.setn
 local table_remove = table.remove
 
-local CheckSum, BinaryCheckSum
+local NumericCheckSum, HexCheckSum, BinaryCheckSum
+local TailoredNumericCheckSum, TailoredHexCheckSum, TailoredBinaryCheckSum
 do
 	local SOME_PRIME = 16777213
-	local function RealCheckSum(text)
+	function NumericCheckSum(text)
 		local counter = 1
-		local len = string.len(text)
+		local len = string_len(text)
 		for i = 1, len, 3 do
-		  counter = mod(counter*8257, 16777259) +
-			  (string.byte(text,i)) +
-			  ((string.byte(text,i+1) or 1)*127) +
-			  ((string.byte(text,i+2) or 2)*16383)
+			counter = math_mod(counter*8257, 16777259) +
+				(string_byte(text,i)) +
+				((string_byte(text,i+1) or 1)*127) +
+				((string_byte(text,i+2) or 2)*16383)
 		end
-		return mod(counter, SOME_PRIME)
+		return math_mod(counter, 16777213)
 	end
 	
-	function CheckSum(text)
-		return string_format("%06x", RealCheckSum(text))
+	function HexCheckSum(text)
+		return string_format("%06x", NumericCheckSum(text))
 	end
 	
 	function BinaryCheckSum(text)
-		local num = RealCheckSum(text)
+		local num = NumericCheckSum(text)
+		return string_char(num / 65536, math_mod(num / 256, 256), math_mod(num, 256))
+	end
+	
+	function TailoredNumericCheckSum(text)
+		local hash = NumericCheckSum(text)
+		local a = math_floor(hash / 65536)
+		local b = math_floor(math_mod(hash / 256, 256))
+		local c = math_mod(hash, 256)
+		if a == 0 or a == 10 or a == 124 or a == 176 or a == 104 then
+			a = a + 1
+		elseif a == 9 or a == 255 then
+			a = a - 1
+		end
+		if b == 0 or b == 10 or b == 124 or b == 176 or a == 104 then
+			b = b + 1
+		elseif b == 9 or b == 255 then
+			b = b - 1
+		end
+		if c == 0 or c == 10 or c == 124 or c == 176 or a == 104 then
+			c = c + 1
+		elseif c == 9 or c == 255 then
+			c = c - 1
+		end
+		return a * 65536 + b * 256 + c
+	end
+	
+	function TailoredHexCheckSum(text)
+		return string_format("%06x", TailoredNumericCheckSum(text))
+	end
+	
+	function TailoredBinaryCheckSum(text)
+		local num = TailoredNumericCheckSum(text)
 		return string_char(num / 65536, math_mod(num / 256, 256), math_mod(num, 256))
 	end
 end
@@ -232,7 +267,7 @@ local shutdown = false
 local zoneCache
 local function GetCurrentZoneChannel()
 	if not zoneCache then
-		zoneCache = "AceCommZone" .. CheckSum(GetRealZoneText())
+		zoneCache = "AceCommZone" .. HexCheckSum(GetRealZoneText())
 	end
 	return zoneCache
 end
@@ -409,7 +444,7 @@ end
 local Serialize
 do
 	local recurse
-	local function _Serialize(v)
+	local function _Serialize(v, textToHash)
 		local kind = type(v)
 		if kind == "boolean" then
 			if value then
@@ -461,12 +496,16 @@ do
 			local m, exp = math.frexp(v)
 			m = m * 9007199254740992
 			local x = exp + 1023
-			local b = mod(m, 256)
-			local c = mod(floor(m / 256), 256)
-			m = floor(m / 65536)
+			local b = math_mod(m, 256)
+			local c = math_mod(math_floor(m / 256), 256)
+			m = math_floor(m / 65536)
 			m = m + x * 137438953472
 			return string_char(sign and byte_minus or byte_plus, math_mod(m / 1099511627776, 256), math_mod(m / 4294967296, 256), math_mod(m / 16777216, 256), math_mod(m / 65536, 256), math_mod(m / 256, 256), math_mod(m, 256), c, b)
 		elseif kind == "string" then
+			local hash = textToHash and textToHash[v]
+			if hash then
+				return string_char(byte_m, hash / 65536, math_mod(hash / 256, 256), math_mod(hash, 256))
+			end
 			local _,_,A,B,C = string_find(v, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
 			if A then
 				-- item link
@@ -486,14 +525,15 @@ do
 				-- normal string
 				local len = string_len(v)
 				if len <= 256 then
-					return "s" .. string_char(len) .. v
+					return string_char(byte_s, len) .. v
 				else
-					return "S" .. string_char(len / 256, math_mod(len, 256)) .. v
+					return string_char(byte_S, len / 256, math_mod(len, 256)) .. v
 				end
 			end
 		elseif kind == "function" then
 			AceComm:error("Cannot serialize a function")
 		elseif kind == "table" then
+			local table_insert = table.insert
 			if recurse[v] then
 				for k in pairs(recurse) do
 					recurse[k] = nil
@@ -512,7 +552,7 @@ do
 				elseif type(v.class.GetLibraryVersion) ~= "function" or not AceLibrary:HasInstance(v.class:GetLibraryVersion()) then
 					AceComm:error("Cannot serialize an AceOO object if the class is not registered with AceLibrary.")
 				end
-				local classHash = BinaryCheckSum(v.class:GetLibraryVersion())
+				local classHash = TailoredBinaryCheckSum(v.class:GetLibraryVersion())
 				local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = v:Serialize()
 				local t = new()
 				t.n = 0
@@ -541,7 +581,7 @@ do
 					table_remove(t)
 				end
 				for i = 1, t.n do
-					t[i] = _Serialize(t[i])
+					t[i] = _Serialize(t[i], textToHash)
 				end
 				table_insert(t, 1, classHash)
 				if not notFirst then
@@ -549,13 +589,13 @@ do
 						recurse[k] = nil
 					end
 				end
-				local s = table_concat(t)
+				local s = table.concat(t)
 				t = del(t)
 				local len = string_len(s)
 				if len <= 256 then
-					return "o" .. string_char(len) .. s
+					return string_char(byte_o, len) .. s
 				else
-					return "O" .. string_char(len / 256, math_mod(len, 256)) .. s
+					return string_char(byte_O, len / 256, math_mod(len, 256)) .. s
 				end
 			end
 			local t = new()
@@ -572,12 +612,12 @@ do
 			end
 			if islist then
 				for i = 1, n do
-					table_insert(t, _Serialize(v[i]))
+					table_insert(t, _Serialize(v[i], textToHash))
 				end
 			else
 				for k,u in pairs(v) do
-					table_insert(t, _Serialize(k))
-					table_insert(t, _Serialize(u))
+					table_insert(t, _Serialize(k, textToHash))
+					table_insert(t, _Serialize(u, textToHash))
 				end
 			end
 			if not notFirst then
@@ -585,18 +625,18 @@ do
 					recurse[k] = nil
 				end
 			end
-			local s = table_concat(t)
+			local s = table.concat(t)
 			t = del(t)
 			local len = string_len(s)
 			if islist then
 				if len <= 256 then
-					return "u" .. string_char(len) .. s
+					return string_char(byte_u, len) .. s
 				else
 					return "U" .. string_char(len / 256, math_mod(len, 256)) .. s
 				end
 			else
 				if len <= 256 then
-					return "t" .. string_char(len) .. s
+					return string_char(byte_t, len) .. s
 				else
 					return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
 				end
@@ -604,11 +644,11 @@ do
 		end
 	end
 	
-	function Serialize(value)
+	function Serialize(value, textToHash)
 		if not recurse then
 			recurse = new()
 		end
-		local chunk = _Serialize(value)
+		local chunk = _Serialize(value, textToHash)
 		for k in pairs(recurse) do
 			recurse[k] = nil
 		end
@@ -618,7 +658,7 @@ end
 
 local Deserialize
 do
-	local function _Deserialize(value, position)
+	local function _Deserialize(value, position, hashToText)
 		if not position then
 			position = 1
 		end
@@ -687,6 +727,9 @@ do
 			else
 				return nil, position + 5
 			end
+		elseif x == byte_m then
+			local hash = string_byte(value, position + 1) * 65536 + string_byte(value, position + 2) * 256 + string_byte(value, position + 3)
+			return hashToText[hash], position + 3
 		elseif x == byte_s then
 			-- 0-255-byte string
 			local len = string_byte(value, position + 1)
@@ -757,8 +800,8 @@ do
 			local g = string_byte(value, position + 7)
 			local h = string_byte(value, position + 8)
 			local N = a * 1099511627776 + b * 4294967296 + c * 16777216 + d * 65536 + e * 256 + f
-			local x = math_floor(N / 137438953472)
-			local m = math_mod(N, 137438953472) * 65536 + g * 256 + h
+			local x = math.floor(N / 137438953472)
+			local m = math.mod(N, 137438953472) * 65536 + g * 256 + h
 			local mantissa = m / 9007199254740992
 			local exp = x - 1023
 			local val = math.ldexp(mantissa, exp)
@@ -784,7 +827,7 @@ do
 			local curr = start - 1
 			while curr < finish do
 				local v
-				v, curr = _Deserialize(value, curr + 1)
+				v, curr = _Deserialize(value, curr + 1, hashToText)
 				table_insert(t, v)
 			end
 			return t, finish
@@ -801,7 +844,7 @@ do
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local hash = string.sub(value, start, start + 2)
+			local hash = string_byte(value, start) * 65536 + string_byte(value, start + 1) * 256 + string_byte(value, start + 2)
 			local curr = start + 2
 			if not AceComm.classes[hash] then
 				return nil, finish
@@ -814,7 +857,7 @@ do
 			t.n = 0
 			while curr < finish do
 				local v
-				v, curr = _Deserialize(value, curr + 1)
+				v, curr = _Deserialize(value, curr + 1, hashToText)
 				table_insert(t, v)
 			end
 			local object = class:Deserialize(unpack(t))
@@ -836,8 +879,8 @@ do
 			local t = new()
 			local curr = start - 1
 			while curr < finish do
-				local key, l = _Deserialize(value, curr + 1)
-				local value, m = _Deserialize(value, l + 1)
+				local key, l = _Deserialize(value, curr + 1, hashToText)
+				local value, m = _Deserialize(value, l + 1, hashToText)
 				curr = m
 				t[key] = value
 			end
@@ -854,8 +897,8 @@ do
 		end
 	end
 	
-	function Deserialize(value)
-		local ret,msg = pcall(_Deserialize, value)
+	function Deserialize(value, hashToText)
+		local ret,msg = pcall(_Deserialize, value, nil, hashToText)
 		if ret then
 			return msg
 		end
@@ -1091,7 +1134,7 @@ local function encodedChar(x)
 	return string_char(x)
 end
 
-local function SendMessage(prefix, priority, distribution, person, message)
+local function SendMessage(prefix, priority, distribution, person, message, textToHash)
 	if distribution == "CUSTOM" then
 		person = "AceComm" .. person
 	end
@@ -1114,7 +1157,7 @@ local function SendMessage(prefix, priority, distribution, person, message)
 	local id = string_char(id)
 	local drunk = distribution == "GLOBAL" or distribution == "WHISPER" or distribution == "ZONE" or distribution == "CUSTOM"
 	prefix = Encode(prefix, drunk)
-	message = Serialize(message)
+	message = Serialize(message, textToHash)
 	message = Encode(message, drunk)
 	local headerLen = string_len(prefix) + 6
 	local messageLen = string_len(message)
@@ -1258,7 +1301,7 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 		end end end end end end end end end end end end end end end end end end end end
 	end
 	
-	local ret = SendMessage(prefix, priority, distribution, person, message)
+	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
 	if message ~= a1 then
 		message = del(message)
@@ -1319,7 +1362,7 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 	
 	local priority = self.commPriority or "NORMAL"
 	
-	local ret = SendMessage(prefix, priority, distribution, person, message)
+	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
 	if message ~= a1 then
 		message = del(message)
@@ -1344,10 +1387,6 @@ end
 function AceComm:SetCommPrefix(prefix)
 	AceComm:argCheck(prefix, 2, "string")
 	
-	if string_find(prefix, "\t") then
-		AceComm:error("Argument #2 cannot include the tab character.")
-	end
-	
 	if self.commPrefix then
 		AceComm:error("Cannot call `SetCommPrefix' more than once.")
 	end
@@ -1356,8 +1395,48 @@ function AceComm:SetCommPrefix(prefix)
 		AceComm:error("Cannot set prefix to %q, it is already in use.", prefix)
 	end
 	
+	local hash = TailoredBinaryCheckSum(prefix)
+	if AceComm.prefixHashToText[hash] then
+		AceComm:error("Cannot set prefix to %q, its hash is used by another prefix: %q", prefix, AceComm.prefixHashToText[hash])
+	end
+	
 	AceComm.prefixes[prefix] = true
 	self.commPrefix = prefix
+	AceComm.prefixHashToText[hash] = prefix
+	AceComm.prefixTextToHash[prefix] = hash
+end
+
+function AceComm:RegisterMemoizations(values)
+	AceComm:argCheck(values, 2, "table")
+	for k,v in pairs(values) do
+		if type(k) ~= "number" then
+			AceComm:error("Bad argument #2 to `RegisterMemoizations'. All keys must be numbers")
+		elseif type(v) ~= "string" then
+			AceComm:error("Bad argument #2 to `RegisterMemoizations'. All values must be strings")
+		end
+	end
+	if self.commMemoHashToText or self.commMemoTextToHash then
+		AceComm:error("You can only call `RegisterMemoizations' once.")
+	elseif not self.commPrefix then
+		AceComm:error("You can only call `RegisterCommPrefix' before calling `RegisterMemoizations'.")
+	elseif AceComm.prefixMemoizations[self.commPrefix] then
+		AceComm:error("Another addon with prefix %q has already registered memoizations.", self.commPrefix)
+	end
+	local hashToText = new()
+	local textToHash = new()
+	for _,text in ipairs(values) do
+		local hash = TailoredNumericCheckSum(text)
+		if hashToText[hash] then
+			AceComm:error("%q and %q have the same checksum. You must remove one of them for memoization to work properly", hashToText[hash], text)
+		else
+			textToHash[text] = hash
+			hashToText[hash] = text
+		end
+	end
+	values = del(values)
+	self.commMemoHashToText = hashToText
+	self.commMemoTextToHash = textToHash
+	AceComm.prefixMemoizations[self.commPrefix] = hashToText
 end
 
 local DeepReclaim
@@ -1406,6 +1485,10 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 		else
 			_,_, prefix, id, current, max, message = string_find(prefix, "^(.-)\t(.)(.)(.)\t(.*)$")
 		end
+		prefix = AceComm.prefixHashToText[prefix]
+		if not prefix then
+			return CheckRefix()
+		end
 		if isCustom then
 			if not AceComm_registry.CUSTOM[customChannel][prefix] then
 				return CheckRefix()
@@ -1449,7 +1532,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			return
 		end
 	end
-	message = Deserialize(message)
+	message = Deserialize(message, AceComm.prefixMemoizations[prefix])
 	local isTable = type(message) == "table"
 	if AceComm_registry[distribution] then
 		if isTable then
@@ -1519,6 +1602,10 @@ local player = UnitName("player") and "monkey"
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	if sender == player then
 		return
+	end
+	prefix = self.prefixHashToText[prefix]
+	if not prefix then
+		return CheckRefix()
 	end
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	if not AceComm_registry[distribution] and (not isGroup or not AceComm_registry.GROUP) then
@@ -1702,6 +1789,9 @@ local function activate(self, oldLib, oldDeactivate)
 		self.channels = oldLib.channels
 		self.prefixes = oldLib.prefixes
 		self.classes = oldLib.classes
+		self.prefixMemoizations = oldLib.prefixMemoizations
+		self.prefixHashToText = oldLib.prefixHashToText
+		self.prefixTextToHash = oldLib.prefixTextToHash
 	else
 		local old_ChatFrame_OnEvent = ChatFrame_OnEvent
 		function ChatFrame_OnEvent(event)
@@ -1772,6 +1862,15 @@ local function activate(self, oldLib, oldDeactivate)
 			self.classes[k] = nil
 		end
 	end
+	if not self.prefixMemoizations then
+		self.prefixMemoizations = {}
+	end
+	if not self.prefixHashToText then
+		self.prefixHashToText = {}
+	end
+	if not self.prefixTextToHash then
+		self.prefixTextToHash = {}
+	end
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
@@ -1801,7 +1900,7 @@ local function external(self, major, instance)
 		self:RegisterEvent("CHAT_MSG_SYSTEM")
 	else
 		if AceOO.inherits(instance, AceOO.Class) and not instance.class then
-			self.classes[BinaryCheckSum(major)] = instance
+			self.classes[TailoredNumericCheckSum(major)] = instance
 		end
 	end
 end
