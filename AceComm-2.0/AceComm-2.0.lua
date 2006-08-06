@@ -6,7 +6,8 @@ Website: http://www.wowace.com/
 Documentation: http://wiki.wowace.com/index.php/AceComm-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceComm-2.0
 Description: Mixin to allow for inter-player addon communications.
-Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0
+Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0,
+              ChatThrottleLib by Mikk (included)
 ]]
 
 local MAJOR_VERSION = "AceComm-2.0"
