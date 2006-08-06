@@ -115,6 +115,29 @@ AceDB.FACTION = faction
 AceDB.REALM = realm
 AceDB.NAME = UnitName("player")
 
+local new, del
+do
+	local list = setmetatable({}, {__mode="k"})
+	function new()
+		local t = next(list)
+		if t then
+			list[t] = nil
+			return t
+		else
+			return {}
+		end
+	end
+	
+	function del(t)
+		setmetatable(t, nil)
+		for k in pairs(t) do
+			t[k] = nil
+		end
+		table.setn(t, 0)
+		list[t] = true
+	end
+end
+
 local caseInsensitive_mt = {
 	__index = function(self, key)
 		if type(key) ~= "string" then
@@ -231,6 +254,98 @@ local db_mt = { __index = function(db, key)
 end, __newindex = function(db, key, value)
 	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
 end }
+
+local CrawlForSerialization
+local CrawlForDeserialization
+
+local function SerializeObject(o)
+	local t = { o:Serialize() }
+	t[0] = o.class:GetLibraryVersion()
+	CrawlForSerialization(t)
+	return t
+end
+
+local function DeserializeObject(t)
+	CrawlForDeserialization(t)
+	local className = t[0]
+	for i = 20, 1, -1 do
+		if t[i] then
+			t.n = i
+			break
+		end
+	end
+	local o = AceLibrary(className):Deserialize(unpack(t))
+	t.n = 0
+	return o
+end
+
+function IsSerializable(t)
+	return AceOO.inherits(t, AceOO.Class) and t.class and type(t.class.Deserialize) == "function" and type(t.Serialize) == "function" and type(t.class.GetLibraryVersion) == "function"
+end
+
+function CrawlForSerialization(t)
+	local tmp = new()
+	for k,v in pairs(t) do
+		tmp[k] = v
+	end
+	for k,v in pairs(tmp) do
+		if type(v) == "table" then
+			if IsSerializable(v) then
+				v = SerializeObject(v)
+				t[k] = v
+			else
+				AceLibrary("AceConsole-2.0"):Print('crawling', v)
+				CrawlForSerialization(v)
+			end
+		end
+		if type(k) == "table" then
+			if IsSerializable(k) then
+				t[k] = nil
+				t[SerializeObject(k)] = v
+			else
+				AceLibrary("AceConsole-2.0"):Print('crawling', k)
+				CrawlForSerialization(k)
+			end
+		end
+		tmp[k] = nil
+		k = nil
+	end
+	tmp = del(tmp)
+end
+
+local function IsDeserializable(t)
+	return type(t[0]) == "string" and AceLibrary:HasInstance(t[0])
+end
+
+function CrawlForDeserialization(t)
+	local tmp = new()
+	for k,v in pairs(t) do
+		tmp[k] = v
+	end
+	for k,v in pairs(tmp) do
+		if type(v) == "table" then
+			if IsDeserializable(v) then
+				t[k] = DeserializeObject(v)
+				del(v)
+				v = t[k]
+			else
+				CrawlForDeserialization(v)
+			end
+		end
+		if type(k) == "table" then
+			if IsDeserializable(k) then
+				t[k] = nil
+				t[DeserializeObject(k)] = v
+				del(k)
+			else
+				CrawlForDeserialization(k)
+			end
+		end
+		tmp[k] = nil
+		k = nil
+	end
+	tmp = del(tmp)
+end
 
 local namespace_mt = { __index = function(namespace, key)
 	local db = namespace.db
@@ -373,6 +488,11 @@ function AceDB:InitializeDB(addonName)
 	
 	if type(_G[db.name]) ~= "table" then
 		_G[db.name] = {}
+	else
+		CrawlForDeserialization(_G[db.name])
+	end
+	if type(_G[db.charName]) == "table" then
+		CrawlForDeserialization(_G[db.charName])
 	end
 	rawset(db, 'raw', _G[db.name])
 	if not db.raw.currentProfile then
@@ -904,6 +1024,10 @@ function AceDB:PLAYER_LOGOUT()
 		local db = addon.db
 		if db then
 			setmetatable(db, nil)
+			CrawlForSerialization(db.raw)
+			if type(_G[db.charName]) == "table" then
+				CrawlForSerialization(_G[db.charName])
+			end
 			if db.char and cleanDefaults(db.char, db.defaults and db.defaults.char) then
 				if db.charName and _G[db.charName] and _G[db.charName].global == db.char then
 					_G[db.charName].global = nil
