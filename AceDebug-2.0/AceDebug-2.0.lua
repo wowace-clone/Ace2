@@ -35,7 +35,7 @@ local tmp
 function AceDebug:CustomDebug(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	if not self.debugging then return end
 
-	local output = string.format("|cff7fff7f(DEBUG) %s:|r", tostring(self))
+	local output = string.format("|cff7fff7f(DEBUG) %s:[%s]|r",  tostring(self), date("%X"))
 	
 	if string.find(tostring(a1), "%%") then
 		output = output .. " " .. string.format(tostring(a1), tostring(a2), tostring(a3), tostring(a4), tostring(a5), tostring(a6), tostring(a7), tostring(a8), tostring(a9), tostring(a10), tostring(a11), tostring(a12), tostring(a13), tostring(a14), tostring(a15), tostring(a16), tostring(a17), tostring(a18), tostring(a19), tostring(a20))
