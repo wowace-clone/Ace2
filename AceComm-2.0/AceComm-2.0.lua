@@ -300,17 +300,16 @@ local function LeaveAceCommChannels(all)
 	end
 	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
 	local t = new()
-	t.n = 0
-	table_insert(t, a)
-	table_insert(t, b)
-	table_insert(t, c)
-	table_insert(t, d)
-	table_insert(t, e)
-	table_insert(t, f)
-	table_insert(t, g)
-	table_insert(t, h)
-	table_insert(t, i)
-	table_insert(t, j)
+	t[1] = a
+	t[2] = b
+	t[3] = c
+	t[4] = d
+	t[5] = e
+	t[6] = f
+	t[7] = g
+	t[8] = h
+	t[9] = i
+	t[10] = j
 	for _,v in ipairs(t) do
 		if v and string_find(v, "^AceComm") then
 			if not SupposedToBeInChannel(v) then
@@ -533,7 +532,6 @@ do
 		elseif kind == "function" then
 			AceComm:error("Cannot serialize a function")
 		elseif kind == "table" then
-			local table_insert = table.insert
 			if recurse[v] then
 				for k in pairs(recurse) do
 					recurse[k] = nil
@@ -555,40 +553,43 @@ do
 				local classHash = TailoredBinaryCheckSum(v.class:GetLibraryVersion())
 				local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = v:Serialize()
 				local t = new()
-				t.n = 0
-				table_insert(t, a1)
-				table_insert(t, a2)
-				table_insert(t, a3)
-				table_insert(t, a4)
-				table_insert(t, a5)
-				table_insert(t, a6)
-				table_insert(t, a7)
-				table_insert(t, a8)
-				table_insert(t, a9)
-				table_insert(t, a10)
-				table_insert(t, a11)
-				table_insert(t, a12)
-				table_insert(t, a13)
-				table_insert(t, a14)
-				table_insert(t, a15)
-				table_insert(t, a16)
-				table_insert(t, a17)
-				table_insert(t, a18)
-				table_insert(t, a19)
-				table_insert(t, a20)
-				while t[t.n] == nil do
-					-- get rid of trailing nils (but keep inline nils)
-					table_remove(t)
+				t[2] = a1
+				t[3] = a2
+				t[4] = a3
+				t[5] = a4
+				t[6] = a5
+				t[7] = a6
+				t[8] = a7
+				t[9] = a8
+				t[10] = a9
+				t[11] = a10
+				t[12] = a11
+				t[13] = a12
+				t[14] = a13
+				t[15] = a14
+				t[16] = a15
+				t[17] = a16
+				t[18] = a17
+				t[19] = a18
+				t[20] = a19
+				t[21] = a20
+				local n = 21
+				while n > 1 do
+					if t[i] ~= nil then
+						break
+					end
+					n = n - 1
 				end
-				for i = 1, t.n do
+				for i = 2, n do
 					t[i] = _Serialize(t[i], textToHash)
 				end
-				table_insert(t, 1, classHash)
+				t[1] = classHash
 				if not notFirst then
 					for k in pairs(recurse) do
 						recurse[k] = nil
 					end
 				end
+				table.setn(t, n)
 				local s = table.concat(t)
 				t = del(t)
 				local len = string_len(s)
@@ -612,13 +613,17 @@ do
 			end
 			if islist then
 				for i = 1, n do
-					table_insert(t, _Serialize(v[i], textToHash))
+					t[i] = _Serialize(v[i], textToHash)
 				end
+				table.setn(t, n)
 			else
+				local i = 1
 				for k,u in pairs(v) do
-					table_insert(t, _Serialize(k, textToHash))
-					table_insert(t, _Serialize(u, textToHash))
+					t[i] = _Serialize(k, textToHash)
+					t[i+1] = _Serialize(u, textToHash)
+					i = i + 2
 				end
+				table.setn(t, i - 1)
 			end
 			if not notFirst then
 				for k in pairs(recurse) do
@@ -823,13 +828,15 @@ do
 				start = position + 3
 			end
 			local t = new()
-			t.n = 0
+			local n = 0
 			local curr = start - 1
 			while curr < finish do
 				local v
 				v, curr = _Deserialize(value, curr + 1, hashToText)
-				table_insert(t, v)
+				n = n + 1
+				t[n] = v
 			end
+			table.setn(t, n)
 			return t, finish
 		elseif x == byte_o or x == byte_O then
 			-- numerically-indexed table
@@ -854,12 +861,14 @@ do
 				return nil, finish
 			end
 			local t = new()
-			t.n = 0
+			local n = 0
 			while curr < finish do
 				local v
 				v, curr = _Deserialize(value, curr + 1, hashToText)
-				table_insert(t, v)
+				n = n + 1
+				t[n] = v
 			end
+			table.setn(t, n)
 			local object = class:Deserialize(unpack(t))
 			del(t)
 			return object, finish
@@ -1167,6 +1176,9 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		local _,bravo = string_gsub(message, "([Ss])", "%1")
 		esses = alpha + bravo
 	end
+	if distribution == "WHISPER" then
+		AceComm.recentWhispers[string.lower(person)] = GetTime()
+	end
 	local max
 	if esses > 0 then
 		if esses >= (250 - headerLen) then
@@ -1278,27 +1290,34 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 		message = a1
 	else
 		message = new()
-		if a1 ~= nil then table_insert(message, a1)
-		if a2 ~= nil then table_insert(message, a2)
-		if a3 ~= nil then table_insert(message, a3)
-		if a4 ~= nil then table_insert(message, a4)
-		if a5 ~= nil then table_insert(message, a5)
-		if a6 ~= nil then table_insert(message, a6)
-		if a7 ~= nil then table_insert(message, a7)
-		if a8 ~= nil then table_insert(message, a8)
-		if a9 ~= nil then table_insert(message, a9)
-		if a10 ~= nil then table_insert(message, a10)
-		if a11 ~= nil then table_insert(message, a11)
-		if a12 ~= nil then table_insert(message, a12)
-		if a13 ~= nil then table_insert(message, a13)
-		if a14 ~= nil then table_insert(message, a14)
-		if a15 ~= nil then table_insert(message, a15)
-		if a16 ~= nil then table_insert(message, a16)
-		if a17 ~= nil then table_insert(message, a17)
-		if a18 ~= nil then table_insert(message, a18)
-		if a19 ~= nil then table_insert(message, a19)
-		if a20 ~= nil then table_insert(message, a20)
-		end end end end end end end end end end end end end end end end end end end end
+		message[1] = a1
+		message[2] = a2
+		message[3] = a3
+		message[4] = a4
+		message[5] = a5
+		message[6] = a6
+		message[7] = a7
+		message[8] = a8
+		message[9] = a9
+		message[10] = a10
+		message[11] = a11
+		message[12] = a12
+		message[13] = a13
+		message[14] = a14
+		message[15] = a15
+		message[16] = a16
+		message[17] = a17
+		message[18] = a18
+		message[19] = a19
+		message[20] = a20
+		local n = 20
+		while n > 0 do
+			if message[i] ~= nil then
+				break
+			end
+			n = n - 1
+		end
+		table.setn(message, n)
 	end
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
@@ -1337,27 +1356,34 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 		message = a1
 	else
 		message = new()
-		if a1 ~= nil then table_insert(message, a1)
-		if a2 ~= nil then table_insert(message, a2)
-		if a3 ~= nil then table_insert(message, a3)
-		if a4 ~= nil then table_insert(message, a4)
-		if a5 ~= nil then table_insert(message, a5)
-		if a6 ~= nil then table_insert(message, a6)
-		if a7 ~= nil then table_insert(message, a7)
-		if a8 ~= nil then table_insert(message, a8)
-		if a9 ~= nil then table_insert(message, a9)
-		if a10 ~= nil then table_insert(message, a10)
-		if a11 ~= nil then table_insert(message, a11)
-		if a12 ~= nil then table_insert(message, a12)
-		if a13 ~= nil then table_insert(message, a13)
-		if a14 ~= nil then table_insert(message, a14)
-		if a15 ~= nil then table_insert(message, a15)
-		if a16 ~= nil then table_insert(message, a16)
-		if a17 ~= nil then table_insert(message, a17)
-		if a18 ~= nil then table_insert(message, a18)
-		if a19 ~= nil then table_insert(message, a19)
-		if a20 ~= nil then table_insert(message, a20)
-		end end end end end end end end end end end end end end end end end end end end
+		message[1] = a1
+		message[2] = a2
+		message[3] = a3
+		message[4] = a4
+		message[5] = a5
+		message[6] = a6
+		message[7] = a7
+		message[8] = a8
+		message[9] = a9
+		message[10] = a10
+		message[11] = a11
+		message[12] = a12
+		message[13] = a13
+		message[14] = a14
+		message[15] = a15
+		message[16] = a16
+		message[17] = a17
+		message[18] = a18
+		message[19] = a19
+		message[20] = a20
+		local n = 20
+		while n > 0 do
+			if message[i] ~= nil then
+				break
+			end
+			n = n - 1
+		end
+		table.setn(message, n)
 	end
 	
 	local priority = self.commPriority or "NORMAL"
@@ -1678,6 +1704,11 @@ function AceComm.hooks:ChatFrame_OnEvent(orig, event)
 		if string_find(arg1, "^/") then
 			return
 		end
+	elseif event == "CHAT_MSG_AFK" or event == "CHAT_MSG_DND" then
+		local t = self.recentWhispers[string.lower(arg2)]
+		if t and GetTime() - t <= 15 then
+			return
+		end
 	elseif event == "CHAT_MSG_CHANNEL" then
 		if string_find(arg9, "^AceComm") then
 			return
@@ -1792,6 +1823,7 @@ local function activate(self, oldLib, oldDeactivate)
 		self.prefixMemoizations = oldLib.prefixMemoizations
 		self.prefixHashToText = oldLib.prefixHashToText
 		self.prefixTextToHash = oldLib.prefixTextToHash
+		self.recentWhispers = oldLib.recentWhispers
 	else
 		local old_ChatFrame_OnEvent = ChatFrame_OnEvent
 		function ChatFrame_OnEvent(event)
@@ -1871,6 +1903,9 @@ local function activate(self, oldLib, oldDeactivate)
 	if not self.prefixTextToHash then
 		self.prefixTextToHash = {}
 	end
+	if not self.recentWhispers then
+		self.recentWhispers = {}
+	end
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
@@ -1889,9 +1924,7 @@ local function external(self, major, instance)
 		if AceEvent:IsFullyInitialized() then
 			self:AceEvent_FullyInitialized()
 		else
-			if not self:IsEventRegistered("AceEvent_FullyInitialized") then
-				self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
-			end
+			self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
 		end
 		
 		self:RegisterEvent("PLAYER_LOGOUT")
