@@ -2344,13 +2344,3 @@ if(WOWB_VER) then
 	ChatThrottleLib.Frame:RegisterEvent("CHAT_MSG_SAY");
 end
 ]]
-
-
-function Test()
-	local t = GetTime()
-	for i = 1,100000 do
-		local n = math.random() / math.random()
-		Deserialize(Serialize(n))
-	end
-	AceLibrary("AceConsole-2.0"):Print(GetTime() - t)
-end
