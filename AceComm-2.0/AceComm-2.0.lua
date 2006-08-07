@@ -1481,9 +1481,9 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	local _, id, current, max
 	if not message then
 		if distribution == "WHISPER" then
-			_,_, prefix, id, current, max, message = string_find(prefix, "^/(.-)\t(.)(.)(.)\t(.*)$")
+			_,_, prefix, id, current, max, message = string_find(prefix, "^/(...)\t(.)(.)(.)\t(.*)$")
 		else
-			_,_, prefix, id, current, max, message = string_find(prefix, "^(.-)\t(.)(.)(.)\t(.*)$")
+			_,_, prefix, id, current, max, message = string_find(prefix, "^(...)\t(.)(.)(.)\t(.*)$")
 		end
 		prefix = AceComm.prefixHashToText[prefix]
 		if not prefix then
@@ -1597,7 +1597,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 end
 
-local player = UnitName("player") and "monkey"
+local player = UnitName("player")
 
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	if sender == player then
