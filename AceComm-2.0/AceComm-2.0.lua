@@ -1448,10 +1448,10 @@ do
 		end
 		recurse[t] = true
 		for k,v in pairs(t) do
-			if type(k) == "table" then
+			if type(k) == "table" and not AceOO.inherits(k, AceOO.Class) then
 				_DeepReclaim(k)
 			end
-			if type(v) == "table" then
+			if type(v) == "table" and not AceOO.inherits(v, AceOO.Class) then
 				_DeepReclaim(v)
 			end
 		end
@@ -1592,7 +1592,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			end
 		end
 	end
-	if isTable and not AceOO.inherits(table, AceOO.Class) then
+	if isTable then
 		DeepReclaim(message)
 	end
 end
