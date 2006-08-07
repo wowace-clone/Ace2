@@ -279,7 +279,7 @@ local function DeserializeObject(t)
 	return o
 end
 
-function IsSerializable(t)
+local function IsSerializable(t)
 	return AceOO.inherits(t, AceOO.Class) and t.class and type(t.class.Deserialize) == "function" and type(t.Serialize) == "function" and type(t.class.GetLibraryVersion) == "function"
 end
 
