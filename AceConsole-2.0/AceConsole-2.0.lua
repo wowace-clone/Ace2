@@ -327,6 +327,7 @@ local function validateOptions(options, position, baseOptions, fromPass)
 			return '"desc" cannot be a 0-length string', position
 		end
 	end
+
 	if options ~= baseOptions or kind == "range" or kind == "text" or kind == "toggle" or kind == "color" then
 		if options.type == "header" and not options.cmdName and not options.name then
 		elseif options.cmdName then
@@ -336,7 +337,9 @@ local function validateOptions(options, position, baseOptions, fromPass)
 				return '"cmdName" cannot be a 0-length string', position
 			end
 			if type(options.guiName) ~= "string" then
-				return '"guiName" must be a string or nil', position
+				if not options.guiNameIsMap then
+					return '"guiName" must be a string or nil', position
+				end
 			elseif string.len(options.guiName) == 0 then
 				return '"guiName" cannot be a 0-length string', position
 			end
@@ -346,6 +349,15 @@ local function validateOptions(options, position, baseOptions, fromPass)
 			elseif string.len(options.name) == 0 then
 				return '"name" cannot be a 0-length string', position
 			end
+		end
+	end
+	if options.guiNameIsMap then
+		if type(options.guiNameIsMap) ~= "boolean" then
+			return '"guiNameIsMap" must be a boolean or nil', position
+		elseif options.type ~= "toggle" then
+			return 'if "guiNameIsMap" is true, then "type" must be set to \'toggle\'', position
+		elseif type(options.map) ~= "table" then
+			return '"map" must be a table', position
 		end
 	end
 	if options.message and type(options.message) ~= "string" then
