@@ -441,10 +441,10 @@ do
 				AceComm.userRegistry[channel] = del(AceComm.userRegistry[channel])
 			end
 		elseif kind == "YOU_JOINED" then
+			if not string_find(num == 0 and deadName or channel, "^AceComm") then
+				return
+			end
 			if num == 0 then
-				if not string_find(deadName, "^AceComm") then
-					return
-				end
 				self:ScheduleEvent(LeaveChannelByName, 0, deadName)
 				local t = new()
 				t.former = deadName
