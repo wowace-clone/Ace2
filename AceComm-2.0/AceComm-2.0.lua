@@ -32,6 +32,7 @@ local AceComm = Mixin {
 						"SetDefaultCommPriority",
 						"SetCommPrefix",
 						"RegisterMemoizations",
+						"IsUserInChannel",
 					  }
 AceComm.hooks = {}
 
@@ -110,6 +111,8 @@ local string_sub = string.sub
 local table_concat = table.concat
 local table_setn = table.setn
 local table_remove = table.remove
+
+local player = UnitName("player")
 
 local NumericCheckSum, HexCheckSum, BinaryCheckSum
 local TailoredNumericCheckSum, TailoredHexCheckSum, TailoredBinaryCheckSum
@@ -359,9 +362,27 @@ local function RefixAceCommChannelsAndEvents()
 		if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
 			AceComm:RegisterEvent("CHAT_MSG_CHANNEL")
 		end
+		if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_LIST") then
+			AceComm:RegisterEvent("CHAT_MSG_CHANNEL_LIST")
+		end
+		if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_JOIN") then
+			AceComm:RegisterEvent("CHAT_MSG_CHANNEL_JOIN")
+		end
+		if not AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_LEAVE") then
+			AceComm:RegisterEvent("CHAT_MSG_CHANNEL_LEAVE")
+		end
 	else
 		if AceComm:IsEventRegistered("CHAT_MSG_CHANNEL") then
 			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL")
+		end
+		if AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_LIST") then
+			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL_LIST")
+		end
+		if AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_JOIN") then
+			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL_JOIN")
+		end
+		if AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_LEAVE") then
+			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL_LEAVE")
 		end
 	end
 	
@@ -416,6 +437,9 @@ do
 			if string_find(channel, "^AceComm") and SupposedToBeInChannel(channel) then
 				self:ScheduleEvent(JoinChannel, 0, channel)
 			end
+			if AceComm.userRegistry[channel] then
+				AceComm.userRegistry[channel] = del(AceComm.userRegistry[channel])
+			end
 		elseif kind == "YOU_JOINED" then
 			if num == 0 then
 				if not string_find(deadName, "^AceComm") then
@@ -433,8 +457,12 @@ do
 			else
 				self:TriggerEvent("AceComm_JoinedChannel", "CUSTOM", string_sub(channel, 8))
 			end
-			if num ~= 0 and not SupposedToBeInChannel(channel) then
-				LeaveChannel(channel)
+			if num ~= 0 then
+				if not SupposedToBeInChannel(channel) then
+					LeaveChannel(channel)
+				else
+					ListChannelByName(channel)
+				end
 			end
 		end
 	end
@@ -1623,8 +1651,6 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 end
 
-local player = UnitName("player")
-
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	if sender == player then
 		return
@@ -1671,6 +1697,72 @@ function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
 	return HandleMessage(text, nil, distribution, sender, customChannel)
 end
 
+function AceComm:IsUserInChannel(userName, distribution, customChannel)
+	AceComm:argCheck(userName, 2, "string", "nil")
+	if not userName then
+		userName = player
+	end
+	AceComm:argCheck(distribution, 3, "string")
+	local channel
+	if distribution == "GLOBAL" then
+		channel = "AceComm"
+	elseif distribution == "ZONE" then
+		channel = GetCurrentZoneChannel()
+	elseif distribution == "CUSTOM" then
+		AceComm:argCheck(customChannel, 4, "string")
+		channel = "AceComm" .. customChannel
+	else
+		AceComm:error('Argument #3 to `IsUserInChannel\' must be "GLOBAL", "CUSTOM", or "ZONE"')
+	end
+	
+	return AceComm.userRegistry[channel] and AceComm.userRegistry[channel][userName] or false
+end
+
+function AceComm:CHAT_MSG_CHANNEL_LIST(text, _, _, _, _, _, _, _, channel)
+	if not string_find(channel, "^AceComm") then
+		return
+	end
+	
+	if not AceComm.userRegistry[channel] then
+		AceComm.userRegistry[channel] = new()
+	end
+	local t = AceComm.userRegistry[channel]
+	for k in string.gfind(text, "[^, @%*#]+") do
+		t[k] = true
+		AceLibrary("AceConsole-2.0"):Print(k, "joined")
+	end
+end
+
+function AceComm:CHAT_MSG_CHANNEL_JOIN(_, user, _, _, _, _, _, _, channel)
+	if not string_find(channel, "^AceComm") then
+		return
+	end
+	
+	if not AceComm.userRegistry[channel] then
+		AceComm.userRegistry[channel] = {}
+	end
+	local t = AceComm.userRegistry[channel]
+	if not t[user] then
+		t[user] = true
+		AceLibrary("AceConsole-2.0"):Print(user, "joined")
+	end
+end
+
+function AceComm:CHAT_MSG_CHANNEL_LEAVE(_, user, _, _, _, _, _, _, channel)
+	if not string_find(channel, "^AceComm") then
+		return
+	end
+	
+	if not AceComm.userRegistry[channel] then
+		AceComm.userRegistry[channel] = {}
+	end
+	local t = AceComm.userRegistry[channel]
+	if t[user] then
+		t[user] = nil
+		AceLibrary("AceConsole-2.0"):Print(user, "left")
+	end
+end
+
 function AceComm:AceEvent_FullyInitialized()
 	RefixAceCommChannelsAndEvents()
 end
@@ -1709,7 +1801,7 @@ function AceComm.hooks:ChatFrame_OnEvent(orig, event)
 		if t and GetTime() - t <= 15 then
 			return
 		end
-	elseif event == "CHAT_MSG_CHANNEL" then
+	elseif event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST" then
 		if string_find(arg9, "^AceComm") then
 			return
 		end
@@ -1749,42 +1841,18 @@ function AceComm.hooks:Quit(orig)
 	return orig()
 end
 
-function AceComm.hooks:FCFDropDown_LoadChannels(orig, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-	local t = new()
-	t[1] = a1
-	t[2] = a2
-	t[3] = a3
-	t[4] = a4
-	t[5] = a5
-	t[6] = a6
-	t[7] = a7
-	t[8] = a8
-	t[9] = a9
-	t[10] = a10
-	t[11] = a11
-	t[12] = a12
-	t[13] = a13
-	t[14] = a14
-	t[15] = a15
-	t[16] = a16
-	t[17] = a17
-	t[18] = a18
-	t[19] = a19
-	t[20] = a20
-	t.n = 20
-	for i = 1, 20, 2 do
-		if not t[i] then
+function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
+	for i = 1, arg.n, 2 do
+		if not arg[i] then
 			break
 		end
-		if type(t[i + 1]) == "string" and string_find(t[i + 1], "^AceComm") then
-			table_remove(n, i + 1)
-			table_remove(n, i)
+		if type(arg[i + 1]) == "string" and string_find(arg[i + 1], "^AceComm") then
+			table.remove(arg, i + 1)
+			table.remove(arg, i)
 			i = i - 2
 		end
 	end
-	a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(t)
-	t = del(t)
-	return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+	return orig(unpack(arg))
 end
 
 function AceComm:CHAT_MSG_SYSTEM(text)
@@ -1848,6 +1916,7 @@ local function activate(self, oldLib, oldDeactivate)
 		self.prefixHashToText = oldLib.prefixHashToText
 		self.prefixTextToHash = oldLib.prefixTextToHash
 		self.recentWhispers = oldLib.recentWhispers
+		self.userRegistry = oldLib.userRegistry
 	else
 		local old_ChatFrame_OnEvent = ChatFrame_OnEvent
 		function ChatFrame_OnEvent(event)
@@ -1884,11 +1953,11 @@ local function activate(self, oldLib, oldDeactivate)
 			end
 		end
 		local old_FCFDropDown_LoadChannels = FCFDropDown_LoadChannels
-		function FCFDropDown_LoadChannels(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+		function FCFDropDown_LoadChannels(...)
 			if self.hooks.FCFDropDown_LoadChannels then
-				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, unpack(arg))
 			else
-				return old_FCFDropDown_LoadChannels(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				return old_FCFDropDown_LoadChannels(unpack(arg))
 			end
 		end
 		local old_JoinChannelByName = JoinChannelByName
@@ -1929,6 +1998,9 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 	if not self.recentWhispers then
 		self.recentWhispers = {}
+	end
+	if not self.userRegistry then
+		self.userRegistry = {}
 	end
 	
 	if oldDeactivate then
