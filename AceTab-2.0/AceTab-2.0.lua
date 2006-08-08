@@ -66,6 +66,9 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 				else
 					hookedFrames[frame] = true
 				end
+				Gframe.curMatch = 0
+				Gframe.matches = compost and compost:Erase() or {}
+				Gframe.pMatchLen = 0
 			end
 		end
 	end
@@ -79,6 +82,7 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 	end
 	self.registry[descriptor][self] = {patterns = regex, wlfunc = wlfunc,  usage = usage, frames = editframes}
 	
+
 	if not AceEvent and AceLibrary:HasInstance("AceEvent-2.0") then
 		external(AceTab, "AceEvent-2.0", AceLibrary("AceEvent-2.0"))
 	end
@@ -136,10 +140,39 @@ function AceTab:OnTabPressed()
 	if not left or left == 1 and string.sub(text, 1, 1) == "/" then return self.hooks[this].OnTabPressed.orig() end
 
 	local _, _, word = string.find(string.sub(text, left, pos), "(%w+)")
-	if not word then word = "" end
-	
+	word = word or ""
+	this.lMatch = this.curMatch > 0 and (this.lMatch or this.origWord)
+	if this.lMatch and string.find(string.sub(text, 1, pos), this.lMatch.."$") then
+		this.pMatchLen = string.len(this.lMatch)
+		local cMatch = 0
+		local matched = false
+		for desc, mList in pairs(this.matches) do
+			if not matched then
+				for _, m in ipairs(mList) do
+					cMatch = cMatch + 1
+					if cMatch == this.curMatch then
+						this.lMatch = m
+						this.curMatch = this.curMatch + 1
+						matched = true
+						break
+					end
+				end
+			end
+		end
+		if not matched then
+			this.curMatch = 1
+			this.lMatch = this.origWord
+		end
+		this:HighlightText(pos - this.pMatchLen, pos)
+		this:Insert(this.lMatch)
+		return this.curMatch
+	else
+		this.matches = compost and compost:Erase() or {}
+		this.curMatch = 0
+		this.lMatch = nil
+	end
+
 	local completions = compost and compost:Erase() or {}
-	local matches = compost and compost:Erase() or {}
 	local numMatches = 0
 	local firstMatch, hasNonFallback
 	
@@ -153,7 +186,7 @@ function AceTab:OnTabPressed()
 							local c = s.wlfunc(cands, fulltext, left)
 							if c ~= false then
 								local mtemp = compost and compost:Erase() or {}
-								matches[desc] = matches[desc] or compost and compost:Erase() or {}
+								this.matches[desc] = this.matches[desc] or compost and compost:Erase() or {}
 								for _, cand in ipairs(cands) do
 									if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 then
 										mtemp[cand] = true
@@ -162,12 +195,12 @@ function AceTab:OnTabPressed()
 									end
 								end
 								for i in pairs(mtemp) do
-									table.insert(matches[desc], i)
+									table.insert(this.matches[desc], i)
 								end
-								matches[desc].usage = s.usage
-								if regex ~= "" and matches[desc][1] then
+								this.matches[desc].usage = s.usage
+								if regex ~= "" and this.matches[desc][1] then
 									hasNonFallback = true
-									matches[desc].notFallback = true
+									this.matches[desc].notFallback = true
 								end
 							end
 						end
@@ -177,7 +210,7 @@ function AceTab:OnTabPressed()
 		end
 	end
 
-	local _, set = next(matches)
+	local _, set = next(this.matches)
 	if not set or not set.usage and numMatches == 0 then return self.hooks[this].OnTabPressed.orig() end
 	
 	this:HighlightText(left, left + string.len(word))
@@ -185,8 +218,12 @@ function AceTab:OnTabPressed()
 		this:Insert(firstMatch)
 		this:Insert(" ")
 	else
+		if this.curMatch == 0 then
+			this.curMatch = 1
+			this.origWord = word
+		end
 		local gcs
-		for h, c in pairs(matches) do
+		for h, c in pairs(this.matches) do
 			if hasNonFallback and not c.notFallback then break end
 			local u = c.usage
 			c.usage = nil
