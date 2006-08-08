@@ -824,8 +824,21 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.ALL_EVENTS = {}
 	end
 	ALL_EVENTS = self.ALL_EVENTS
+	local inPlw = false
+	local blacklist = {
+		UNIT_INVENTORY_CHANGED = true,
+		BAG_UPDATE = true,
+		ITEM_LOCK_CHANGED = true,
+		ACTIONBAR_SLOT_CHANGED = true,
+	}
 	self.frame:SetScript("OnEvent", function()
-		if event then
+		local event = event
+		if event == "PLAYER_ENTERING_WORLD" then
+			inPlw = false
+		elseif event == "PLAYER_LEAVING_WORLD" then
+			inPlw = true
+		end
+		if event and (not inPlw or not blacklist[event]) then
 			self:TriggerEvent(event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 		end
 	end)
