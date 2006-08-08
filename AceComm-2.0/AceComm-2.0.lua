@@ -1749,18 +1749,42 @@ function AceComm.hooks:Quit(orig)
 	return orig()
 end
 
-function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
-	for i = 1, arg.n, 2 do
-		if not arg[i] then
+function AceComm.hooks:FCFDropDown_LoadChannels(orig, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+	local t = new()
+	t[1] = a1
+	t[2] = a2
+	t[3] = a3
+	t[4] = a4
+	t[5] = a5
+	t[6] = a6
+	t[7] = a7
+	t[8] = a8
+	t[9] = a9
+	t[10] = a10
+	t[11] = a11
+	t[12] = a12
+	t[13] = a13
+	t[14] = a14
+	t[15] = a15
+	t[16] = a16
+	t[17] = a17
+	t[18] = a18
+	t[19] = a19
+	t[20] = a20
+	t.n = 20
+	for i = 1, 20, 2 do
+		if not t[i] then
 			break
 		end
-		if type(arg[i + 1]) == "string" and string_find(arg[i + 1], "^AceComm") then
-			table.remove(arg, i + 1)
-			table.remove(arg, i)
+		if type(t[i + 1]) == "string" and string_find(t[i + 1], "^AceComm") then
+			table_remove(n, i + 1)
+			table_remove(n, i)
 			i = i - 2
 		end
 	end
-	return orig(unpack(arg))
+	a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(t)
+	t = del(t)
+	return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 end
 
 function AceComm:CHAT_MSG_SYSTEM(text)
@@ -1860,11 +1884,11 @@ local function activate(self, oldLib, oldDeactivate)
 			end
 		end
 		local old_FCFDropDown_LoadChannels = FCFDropDown_LoadChannels
-		function FCFDropDown_LoadChannels(...)
+		function FCFDropDown_LoadChannels(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 			if self.hooks.FCFDropDown_LoadChannels then
-				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, unpack(arg))
+				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 			else
-				return old_FCFDropDown_LoadChannels(unpack(arg))
+				return old_FCFDropDown_LoadChannels(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 			end
 		end
 		local old_JoinChannelByName = JoinChannelByName
