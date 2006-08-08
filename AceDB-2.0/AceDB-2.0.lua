@@ -840,6 +840,20 @@ function AceDB:SetProfile(name, copyFrom)
 	if string.lower(oldName) == string.lower(name) then
 		return
 	end
+	local current = self.class
+	while true do
+		if current == AceOO.Class then
+			break
+		end
+		if current.mixins then
+			for mixin in pairs(current.mixins) do
+				if type(mixin.OnEmbedProfileDisable) == "function" then
+					mixin:OnEmbedProfileDisable(self)
+				end
+			end
+		end
+		current = current.super
+	end
 	if type(self.OnProfileDisable) == "function" then
 		self:OnProfileDisable()
 	end
@@ -862,6 +876,20 @@ function AceDB:SetProfile(name, copyFrom)
 		copyTable(db.profile, db.raw.profiles[copyFrom])
 		inheritDefaults(db.profile, db.defaults and db.defaults.profile)
 	end
+	local current = self.class
+	while true do
+		if current == AceOO.Class then
+			break
+		end
+		if current.mixins then
+			for mixin in pairs(current.mixins) do
+				if type(mixin.OnEmbedProfileEnable) == "function" then
+					mixin:OnEmbedProfileEnable(self, oldName, oldProfileData, copyFrom)
+				end
+			end
+		end
+		current = current.super
+	end
 	if type(self.OnProfileEnable) == "function" then
 		self:OnProfileEnable(oldName, oldProfileData, copyFrom)
 	end
@@ -873,7 +901,6 @@ function AceDB:SetProfile(name, copyFrom)
 	end
 	local newactive = self:IsActive()
 	if active ~= newactive then
-		DEFAULT_CHAT_FRAME:AddMessage(tostring(self) .. ": switch active state to " .. tostring(newactive))
 		if AceOO.inherits(self, "AceAddon-2.0") then
 			local AceAddon = AceLibrary("AceAddon-2.0")
 			if not AceAddon.addonsStarted[self] then
