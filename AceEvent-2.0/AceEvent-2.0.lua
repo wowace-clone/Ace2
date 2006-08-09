@@ -873,8 +873,8 @@ function AceEvent:activate(oldLib, oldDeactivate)
 			if self.registry["MINIMAP_ZONE_CHANGED"] and self.registry["MINIMAP_ZONE_CHANGED"][self] then
 				self:UnregisterEvent("MINIMAP_ZONE_CHANGED")
 			end
-			if self.registry["SPELLS_CHANGED"] and self.registry["SPELLS_CHANGED"][self] then
-				self:UnregisterEvent("SPELLS_CHANGED")
+			if self.registry["LANGUAGE_LIST_CHANGED"] and self.registry["LANGUAGE_LIST_CHANGED"][self] then
+				self:UnregisterEvent("LANGUAGE_LIST_CHANGED")
 			end
 		end
 		registeringFromAceEvent = true
@@ -886,7 +886,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE", function()
 			self:ScheduleEvent("AceEvent_FullyInitialized", func, 0.05)
 		end)
-		self:RegisterEvent("SPELLS_CHANGED", function()
+		self:RegisterEvent("LANGUAGE_LIST_CHANGED", function()
 			if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
 				self:UnregisterEvent("MEETINGSTONE_CHANGED")
 				self:RegisterEvent("MINIMAP_ZONE_CHANGED", f, true)
