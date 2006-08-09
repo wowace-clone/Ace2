@@ -729,6 +729,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 				end
 				for k in pairs(current) do
 					current[k] = nil
+					k = nil
 				end
 			end
 		end
