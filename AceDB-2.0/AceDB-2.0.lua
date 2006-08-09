@@ -289,21 +289,19 @@ function CrawlForSerialization(t)
 		tmp[k] = v
 	end
 	for k,v in pairs(tmp) do
-		if type(v) == "table" then
+		if type(v) == "table" and type(v[0]) ~= "userdata" then
 			if IsSerializable(v) then
 				v = SerializeObject(v)
 				t[k] = v
 			else
-				AceLibrary("AceConsole-2.0"):Print('crawling', v)
 				CrawlForSerialization(v)
 			end
 		end
-		if type(k) == "table" then
+		if type(k) == "table" and type(k[0]) ~= "userdata" then
 			if IsSerializable(k) then
 				t[k] = nil
 				t[SerializeObject(k)] = v
 			else
-				AceLibrary("AceConsole-2.0"):Print('crawling', k)
 				CrawlForSerialization(k)
 			end
 		end
@@ -328,7 +326,7 @@ function CrawlForDeserialization(t)
 				t[k] = DeserializeObject(v)
 				del(v)
 				v = t[k]
-			else
+			elseif type(v[0]) ~= "userdata" then
 				CrawlForDeserialization(v)
 			end
 		end
@@ -337,7 +335,7 @@ function CrawlForDeserialization(t)
 				t[k] = nil
 				t[DeserializeObject(k)] = v
 				del(k)
-			else
+			elseif type(k[0]) ~= "userdata" then
 				CrawlForDeserialization(k)
 			end
 		end
