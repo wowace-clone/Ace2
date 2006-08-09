@@ -56,7 +56,7 @@ local function print(text, name, r, g, b, frame, delay)
 end
 
 local tmp
-function AceConsole:CustomPrint(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	a1 = tostring(a1)
 	if string.find(a1, "%%") then
 		print(string.format(a1, tostring(a2), tostring(a3), tostring(a4), tostring(a5), tostring(a6), tostring(a7), tostring(a8), tostring(a9), tostring(a10), tostring(a11), tostring(a12), tostring(a13), tostring(a14), tostring(a15), tostring(a16), tostring(a17), tostring(a18), tostring(a19), tostring(a20)), self, r, g, b, frame or self.printFrame, delay)
@@ -64,33 +64,35 @@ function AceConsole:CustomPrint(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a
 		if not tmp then
 			tmp = {}
 		end
-		table.insert(tmp, a1)
-		table.insert(tmp, a2)
-		table.insert(tmp, a3)
-		table.insert(tmp, a4)
-		table.insert(tmp, a5)
-		table.insert(tmp, a6)
-		table.insert(tmp, a7)
-		table.insert(tmp, a8)
-		table.insert(tmp, a9)
-		table.insert(tmp, a10)
-		table.insert(tmp, a11)
-		table.insert(tmp, a12)
-		table.insert(tmp, a13)
-		table.insert(tmp, a14)
-		table.insert(tmp, a15)
-		table.insert(tmp, a16)
-		table.insert(tmp, a17)
-		table.insert(tmp, a18)
-		table.insert(tmp, a19)
-		table.insert(tmp, a20)
-		while tmp[table.getn(tmp)] == nil do
-			table.remove(tmp)
+		tmp[1] = a1
+		tmp[2] = a2
+		tmp[3] = a3
+		tmp[4] = a4
+		tmp[5] = a5
+		tmp[6] = a6
+		tmp[7] = a7
+		tmp[8] = a8
+		tmp[9] = a9
+		tmp[10] = a10
+		tmp[11] = a11
+		tmp[12] = a12
+		tmp[13] = a13
+		tmp[14] = a14
+		tmp[15] = a15
+		tmp[16] = a16
+		tmp[17] = a17
+		tmp[18] = a18
+		tmp[19] = a19
+		tmp[20] = a20
+		local n = 20
+		while tmp[n] == nil do
+			n = n - 1
 		end
-		for k = 1, table.getn(tmp) do
+		table.setn(tmp, n)
+		for k = 1, n do
 			tmp[k] = tostring(tmp[k])
 		end
-		print(table.concat(tmp, " "), self, r, g, b, frame or self.printFrame, delay)
+		print(table.concat(tmp, connector or " "), self, r, g, b, frame or self.printFrame, delay)
 		for k,v in tmp do
 			tmp[k] = nil
 		end
@@ -99,7 +101,11 @@ function AceConsole:CustomPrint(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a
 end
 
 function AceConsole:Print(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	AceConsole.CustomPrint(self, nil, nil, nil, nil, nil, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	return AceConsole.CustomPrint(self, nil, nil, nil, nil, nil, " ", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+end
+
+function AceConsole:PrintComma(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	return AceConsole.CustomPrint(self, nil, nil, nil, nil, nil, ", ", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
 local work
