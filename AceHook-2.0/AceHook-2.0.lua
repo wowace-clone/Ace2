@@ -489,12 +489,12 @@ function AceHook:HookReport()
 	if not self.hooks then _debug(self, "No registered hooks.") return end
 
 	for key, value in pairs(self.hooks) do
-		if type(key) == "table" then
+		if type(value) == "table" then
 			for method in pairs(value) do
 				_debug(self, string.format("key: %s method: %q |cff%s|r", tostring(key), method, self.hooks[key][method].active and "00ff00Active" or "ffff00Inactive"))
 			end
 		else
-			_debug(self, string.format("key: %s value: %q |cff%s|r", tostring(key), value, self.hooks[key].active and "00ff00Active" or "ffff00Inactive"))
+			_debug(self, string.format("key: %s value: %q |cff%s|r", tostring(key), tostring(value), self.hooks[key].active and "00ff00Active" or "ffff00Inactive"))
 		end
 	end
 end
