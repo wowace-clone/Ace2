@@ -73,7 +73,11 @@ function AceEvent:RegisterEvent(event, method, once)
 		AceEvent:argCheck(method, 3, "function")
 		self = method
 	else
-		AceEvent:argCheck(method, 3, "string", "function", "nil")
+		AceEvent:argCheck(method, 3, "string", "function", "nil", "boolean", "number")
+		if type(method) == "boolean" or type(method) == "number" then
+			AceEvent:argCheck(once, 4, "nil")
+			once, method = method, event
+		end
 	end
 	AceEvent:argCheck(once, 4, "number", "boolean", "nil")
 	local throttleRate
