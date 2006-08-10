@@ -1227,6 +1227,9 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	else
 		id = id + 1
 	end
+	if id == byte_s or id == byte_S then
+		id = id + 1
+	end
 	local id = string_char(id)
 	local drunk = distribution == "GLOBAL" or distribution == "WHISPER" or distribution == "ZONE" or distribution == "CUSTOM"
 	prefix = Encode(prefix, drunk)
