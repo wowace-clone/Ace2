@@ -69,8 +69,10 @@ local byte_a = string_byte('a')
 local byte_z = string_byte('z')
 local byte_A = string_byte('A')
 local byte_Z = string_byte('Z')
-local byte_h = string_byte('h')
+local byte_fake_s = string_byte('\015')
+local byte_fake_S = string_byte('\020')
 local byte_deg = string_byte('°')
+local byte_percent = string_byte('%') -- 37
 
 local byte_b = string_byte('b')
 local byte_nil = string_byte('/')
@@ -144,17 +146,18 @@ do
 		local a = math_floor(hash / 65536)
 		local b = math_floor(math_mod(hash / 256, 256))
 		local c = math_mod(hash, 256)
-		if a == 0 or a == 10 or a == 124 or a == 176 or a == 104 then
+		-- \000, \n, |, °, s, S
+		if a == 0 or a == 10 or a == 124 or a == 176 or a == 115 or a == 83 or a == 15 or a == 20 or a == 37 then
 			a = a + 1
 		elseif a == 9 or a == 255 then
 			a = a - 1
 		end
-		if b == 0 or b == 10 or b == 124 or b == 176 or a == 104 then
+		if b == 0 or b == 10 or b == 124 or b == 176 or b == 115 or b == 83 or b == 15 or b == 20 or b == 37 then
 			b = b + 1
 		elseif b == 9 or b == 255 then
 			b = b - 1
 		end
-		if c == 0 or c == 10 or c == 124 or c == 176 or a == 104 then
+		if c == 0 or c == 10 or c == 124 or c == 176 or c == 115 or c == 83 or c == 15 or c == 20 or c == 37 then
 			c = c + 1
 		elseif c == 9 or c == 255 then
 			c = c - 1
@@ -185,13 +188,17 @@ end
 local function Encode(text, drunk)
 	text = string_gsub(text, "°", "°±")
 	if drunk then
-		text = string_gsub(text, "h", "°h")
-		-- encode a hidden character in front of all the "h"s and the same hidden character
+		text = string_gsub(text, "\020", "°\021")
+		text = string_gsub(text, "\015", "°\016")
+		text = string_gsub(text, "S", "\020")
+		text = string_gsub(text, "s", "\015")
+		-- change S and s to a different set of character bytes.
 	end
 	text = string_gsub(text, "\255", "°\254") -- \255 (this is here because \000 is more common)
 	text = string_gsub(text, "%z", "\255") -- \000
 	text = string_gsub(text, "\010", "°\011") -- \n
 	text = string_gsub(text, "\124", "°\125") -- |
+	text = string_gsub(text, "%%", "°\038") -- %
 	-- encode assorted prohibited characters
 	return text
 end
@@ -200,18 +207,16 @@ local func
 -- Clean a received message
 local function Decode(text, drunk)
 	if drunk then
-		text = string_gsub(text, "([Ss])h", "%1")
-		-- find "h"s added to any "s", remove.
-	end
-	if drunk then
 		local _,x = string_find(text, "^.*°")
 		text = string_gsub(text, "^(.*)°.-$", "%1")
 		-- get rid of " ...hic!"
 	end
 	if not func then
 		func = function(text)
-			if text == "h" then
-				return "h"
+			if text == "\016" then
+				return "\015"
+			elseif text == "\021" then
+				return "\020"
 			elseif text == "±" then
 				return "°"
 			elseif text == "\254" then
@@ -220,11 +225,17 @@ local function Decode(text, drunk)
 				return "\010"
 			elseif text == "\125" then
 				return "\124"
+			elseif text == "\038" then
+				return "\037"
 			end
 		end
 	end
 	text = string_gsub(text, "\255", "\000")
-	text = string_gsub(text, drunk and "°([h±\254\011\125])" or "°([±\254\011\125])", func)
+	if drunk then
+		text = string_gsub(text, "\020", "S")
+		text = string_gsub(text, "\015", "s")
+	end
+	text = string_gsub(text, drunk and "°([\016\021±\254\011\125\038])" or "°([±\254\011\125\038])", func)
 	-- remove the hidden character and refix the prohibited characters.
 	return text
 end
@@ -551,7 +562,7 @@ do
 			else
 				-- normal string
 				local len = string_len(v)
-				if len <= 256 then
+				if len <= 255 then
 					return string_char(byte_s, len) .. v
 				else
 					return string_char(byte_S, len / 256, math_mod(len, 256)) .. v
@@ -621,7 +632,7 @@ do
 				local s = table.concat(t)
 				t = del(t)
 				local len = string_len(s)
-				if len <= 256 then
+				if len <= 255 then
 					return string_char(byte_o, len) .. s
 				else
 					return string_char(byte_O, len / 256, math_mod(len, 256)) .. s
@@ -662,13 +673,13 @@ do
 			t = del(t)
 			local len = string_len(s)
 			if islist then
-				if len <= 256 then
+				if len <= 255 then
 					return string_char(byte_u, len) .. s
 				else
 					return "U" .. string_char(len / 256, math_mod(len, 256)) .. s
 				end
 			else
-				if len <= 256 then
+				if len <= 255 then
 					return string_char(byte_t, len) .. s
 				else
 					return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
@@ -1163,10 +1174,35 @@ local function encodedChar(x)
 		return "°\254"
 	elseif x == 124 then
 		return "°\125"
-	elseif x == byte_h then
-		return "°h"
+	elseif x == byte_s then
+		return "\015"
+	elseif x == byte_S then
+		return "\020"
+	elseif x == 15 then
+		return "°\016"
+	elseif x == 20 then
+		return "°\021"
 	elseif x == byte_deg then
 		return "°±"
+	elseif x == 37 then
+		return "°\038"
+	end
+	return string_char(x)
+end
+
+local function soberEncodedChar(x)
+	if x == 10 then
+		return "°\011"
+	elseif x == 0 then
+		return "\255"
+	elseif x == 255 then
+		return "°\254"
+	elseif x == 124 then
+		return "°\125"
+	elseif x == byte_deg then
+		return "°±"
+	elseif x == 37 then
+		return "°\038"
 	end
 	return string_char(x)
 end
@@ -1198,25 +1234,10 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	message = Encode(message, drunk)
 	local headerLen = string_len(prefix) + 6
 	local messageLen = string_len(message)
-	local esses = 0
-	if drunk then
-		local _,alpha = string_gsub(prefix, "([Ss])", "%1")
-		local _,bravo = string_gsub(message, "([Ss])", "%1")
-		esses = alpha + bravo
-	end
 	if distribution == "WHISPER" then
 		AceComm.recentWhispers[string.lower(person)] = GetTime()
 	end
-	local max
-	if esses > 0 then
-		if esses >= (250 - headerLen) then
-			max = math_floor((messageLen / (250 - headerLen) + 1)  * 2)
-		else
-			max = math_floor((messageLen / (250 - headerLen) + 1)  * (esses / (250 - headerLen) + 1))
-		end
-	else
-		max = math_floor(messageLen / (250 - headerLen) + 1)
-	end
+	local max = math_floor(messageLen / (250 - headerLen) + 1)
 	if max > 1 then
 		local segment = math_floor(messageLen / max + 0.5)
 		local last = 0
@@ -1253,7 +1274,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 					good = false
 				end
 			else
-				bit = id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit
+				bit = id .. soberEncodedChar(i) .. soberEncodedChar(max) .. "\t" .. bit
 				ChatThrottleLib:SendAddonMessage(priority, prefix, bit, distribution)
 			end
 		end
@@ -2063,7 +2084,7 @@ AceLibrary:Register(AceComm, MAJOR_VERSION, MINOR_VERSION, activate, nil, extern
 -- Can run as a standalone addon also, but, really, just embed it! :-)
 --
 
-local CTL_VERSION = 10
+local CTL_VERSION = 8
 
 local MAX_CPS = 1000			-- 2000 seems to be safe if NOTHING ELSE is happening. let's call it 1000.
 local MSG_OVERHEAD = 40		-- Guesstimate overhead for sending a message; source+dest+chattype+protocolstuff
@@ -2241,16 +2262,12 @@ function ChatThrottleLib:Init()
 	
 	-- Hook SendChatMessage and SendAddonMessage so we can measure unpiped traffic and avoid overloads (v7)
 	if(not self.ORIG_SendChatMessage) then
-		--SendChatMessage
 		self.ORIG_SendChatMessage = SendChatMessage;
 		SendChatMessage = function(a1,a2,a3,a4) return ChatThrottleLib.Hook_SendChatMessage(a1,a2,a3,a4); end
-		--SendAdd[Oo]nMessage
-		if(SendAddonMessage or SendAddOnMessage) then -- v10: don't pretend like it doesn't exist if it doesn't!
-			self.ORIG_SendAddonMessage = SendAddonMessage or SendAddOnMessage;
-			SendAddonMessage = function(a1,a2,a3) return ChatThrottleLib.Hook_SendAddonMessage(a1,a2,a3); end
-			if(SendAddOnMessage) then		-- in case Slouken changes his mind...
-				SendAddOnMessage = SendAddonMessage;
-			end
+		self.ORIG_SendAddonMessage = SendAddonMessage or SendAddOnMessage;
+		SendAddonMessage = function(a1,a2,a3) return ChatThrottleLib.Hook_SendAddonMessage(a1,a2,a3); end
+		if(SendAddOnMessage) then		-- in case Slouken changes his mind...
+			SendAddOnMessage = SendAddonMessage;
 		end
 	end
 	self.nBypass = 0;
@@ -2429,7 +2446,7 @@ function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, languag
 	msg.n = 4
 	msg.nSize = nSize;
 
-	self:Enqueue(prio, string.format("%s/%s/%s", prefix, chattype, destination or ""), msg);
+	self:Enqueue(prio, prefix.."/"..chattype.."/"..(destination or ""), msg);
 end
 
 
@@ -2457,7 +2474,7 @@ function ChatThrottleLib:SendAddonMessage(prio,   prefix, text, chattype)
 	msg.n = 3
 	msg.nSize = nSize;
 	
-	self:Enqueue(prio, string.format("%s/%s", prefix, chattype), msg);
+	self:Enqueue(prio, prefix.."/"..chattype, msg);
 end
 
 
