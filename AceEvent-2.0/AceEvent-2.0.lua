@@ -625,7 +625,7 @@ function AceEvent:UnregisterEvent(event)
 		end
 		local AceEvent_throttleRegistry = AceEvent.throttleRegistry
 		if AceEvent_throttleRegistry and AceEvent_throttleRegistry[event] and AceEvent_throttleRegistry[event][self] then
-			AceEvent_throttleRegistry[event][self] = nil
+			AceEvent_throttleRegistry[event][self] = del(AceEvent_throttleRegistry[event][self])
 			if not next(AceEvent_throttleRegistry[event]) then
 				AceEvent_throttleRegistry[event] = del(AceEvent_throttleRegistry[event])
 			end
