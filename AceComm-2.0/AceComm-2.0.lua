@@ -2063,7 +2063,7 @@ AceLibrary:Register(AceComm, MAJOR_VERSION, MINOR_VERSION, activate, nil, extern
 -- Can run as a standalone addon also, but, really, just embed it! :-)
 --
 
-local CTL_VERSION = 8
+local CTL_VERSION = 10
 
 local MAX_CPS = 1000			-- 2000 seems to be safe if NOTHING ELSE is happening. let's call it 1000.
 local MSG_OVERHEAD = 40		-- Guesstimate overhead for sending a message; source+dest+chattype+protocolstuff
@@ -2241,12 +2241,16 @@ function ChatThrottleLib:Init()
 	
 	-- Hook SendChatMessage and SendAddonMessage so we can measure unpiped traffic and avoid overloads (v7)
 	if(not self.ORIG_SendChatMessage) then
+		--SendChatMessage
 		self.ORIG_SendChatMessage = SendChatMessage;
 		SendChatMessage = function(a1,a2,a3,a4) return ChatThrottleLib.Hook_SendChatMessage(a1,a2,a3,a4); end
-		self.ORIG_SendAddonMessage = SendAddonMessage or SendAddOnMessage;
-		SendAddonMessage = function(a1,a2,a3) return ChatThrottleLib.Hook_SendAddonMessage(a1,a2,a3); end
-		if(SendAddOnMessage) then		-- in case Slouken changes his mind...
-			SendAddOnMessage = SendAddonMessage;
+		--SendAdd[Oo]nMessage
+		if(SendAddonMessage or SendAddOnMessage) then -- v10: don't pretend like it doesn't exist if it doesn't!
+			self.ORIG_SendAddonMessage = SendAddonMessage or SendAddOnMessage;
+			SendAddonMessage = function(a1,a2,a3) return ChatThrottleLib.Hook_SendAddonMessage(a1,a2,a3); end
+			if(SendAddOnMessage) then		-- in case Slouken changes his mind...
+				SendAddOnMessage = SendAddonMessage;
+			end
 		end
 	end
 	self.nBypass = 0;
@@ -2425,7 +2429,7 @@ function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, languag
 	msg.n = 4
 	msg.nSize = nSize;
 
-	self:Enqueue(prio, prefix.."/"..chattype.."/"..(destination or ""), msg);
+	self:Enqueue(prio, string.format("%s/%s/%s", prefix, chattype, destination or ""), msg);
 end
 
 
@@ -2453,7 +2457,7 @@ function ChatThrottleLib:SendAddonMessage(prio,   prefix, text, chattype)
 	msg.n = 3
 	msg.nSize = nSize;
 	
-	self:Enqueue(prio, prefix.."/"..chattype, msg);
+	self:Enqueue(prio, string.format("%s/%s", prefix, chattype), msg);
 end
 
 
