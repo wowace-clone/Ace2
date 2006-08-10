@@ -60,24 +60,27 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	AceLocale.argCheck(self, locale, 2, "string")
 	AceLocale.argCheck(self, func, 3, "function")
 	
+	if locale == self.baseLocale then
+		AceLocale.error(self, "Cannot provide the same locale more than once. %q provided twice.", locale)
+	end
+	
 	if self.baseTranslations and GetLocale() ~= locale then
 		if self.debugging then
 			local t = func()
 			func = nil
 			if type(t) ~= "table" then
-				AceLocale.error(self, "Bad argument #3 to `RegisterTranslation'. function did not return a table. (expected table, got %s)", type(t))
+				AceLocale.error(self, "Bad argument #3 to `RegisterTranslations'. function did not return a table. (expected table, got %s)", type(t))
 			end
 			self.translationTables[locale] = t
 			t = nil
 		end
 		func = nil
---		collectgarbage()
 		return
 	end
 	local t = func()
 	func = nil
 	if type(t) ~= "table" then
-		AceLocale.error(self, "Bad argument #3 to `RegisterTranslation'. function did not return a table. (expected table, got %s)", type(t))
+		AceLocale.error(self, "Bad argument #3 to `RegisterTranslations'. function did not return a table. (expected table, got %s)", type(t))
 	end
 	
 	self.translations = t
@@ -105,7 +108,6 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 		self.translationTables[locale] = t
 	end
 	t = nil
---	collectgarbage()
 end
 
 function AceLocale.prototype:SetStrictness(strict)
