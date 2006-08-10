@@ -40,9 +40,10 @@ local AceEvent = Mixin {
 						"IsBucketEventRegistered",
 					   }
 
+local weakKey = {__mode="k"}
 local new, del
 do
-	local list = setmetatable({}, {__mode="k"})
+	local list = setmetatable({}, weakKey)
 	function new()
 		local t = next(list)
 		if t then
@@ -54,12 +55,16 @@ do
 	end
 	
 	function del(t)
+		setmetatable(t, nil)
 		for k in pairs(t) do
 			t[k] = nil
 		end
 		list[t] = true
 	end
 end
+
+local FAKE_NIL
+local RATE
 
 local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
@@ -70,7 +75,11 @@ function AceEvent:RegisterEvent(event, method, once)
 	else
 		AceEvent:argCheck(method, 3, "string", "function", "nil")
 	end
-	AceEvent:argCheck(once, 4, "boolean", "nil")
+	AceEvent:argCheck(once, 4, "number", "boolean", "nil")
+	local throttleRate
+	if type(once) == "number" then
+		throttleRate, once = once
+	end
 	if not method then
 		method = event
 	end
@@ -90,8 +99,8 @@ function AceEvent:RegisterEvent(event, method, once)
 	end
 	AceEvent_registry[event][self] = method
 	
+	local AceEvent_onceRegistry = AceEvent.onceRegistry
 	if once then
-		local AceEvent_onceRegistry = AceEvent.onceRegistry
 		if not AceEvent_onceRegistry then
 			AceEvent.onceRegistry = new()
 			AceEvent_onceRegistry = AceEvent.onceRegistry
@@ -105,6 +114,32 @@ function AceEvent:RegisterEvent(event, method, once)
 			AceEvent_onceRegistry[event][self] = nil
 			if not next(AceEvent_onceRegistry[event]) then
 				AceEvent_onceRegistry[event] = del(AceEvent_onceRegistry[event])
+			end
+		end
+	end
+	
+	local AceEvent_throttleRegistry = AceEvent.throttleRegistry
+	if throttleRate then
+		if not AceEvent_throttleRegistry then
+			AceEvent.throttleRegistry = new()
+			AceEvent_throttleRegistry = AceEvent.throttleRegistry
+		end
+		if not AceEvent_throttleRegistry[event] then
+			AceEvent_throttleRegistry[event] = new()
+		end
+		if AceEvent_throttleRegistry[event][self] then
+			AceEvent_throttleRegistry[event][self] = del(AceEvent_throttleRegistry[event][self])
+		end
+		AceEvent_throttleRegistry[event][self] = setmetatable(new(), weakKey)
+		local t = AceEvent_throttleRegistry[event][self]
+		t[RATE] = throttleRate
+	else
+		if AceEvent_throttleRegistry and AceEvent_throttleRegistry[event] then
+			if AceEvent_throttleRegistry[event][self] then
+				AceEvent_throttleRegistry[event][self] = del(AceEvent_throttleRegistry[event][self])
+			end
+			if not next(AceEvent_throttleRegistry[event]) then
+				AceEvent_throttleRegistry[event] = del(AceEvent_throttleRegistry[event])
 			end
 		end
 	end
@@ -186,6 +221,9 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		end
 		del(tmp)
 	end
+	
+	local AceEvent_throttleRegistry = AceEvent.throttleRegistry
+	local throttleTable = AceEvent_throttleRegistry and AceEvent_throttleRegistry[event]
 	if AceEvent_registry[event] then
 		local tmp = new()
 		for obj, method in pairs(AceEvent_registry[event]) do
@@ -194,30 +232,44 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		local obj = next(tmp)
 		while obj do
 			local method = tmp[obj]
-			local mem, time
-			if AceEvent_debugTable then
-				if not AceEvent_debugTable[event] then
-					AceEvent_debugTable[event] = new()
+			local continue = false
+			if throttleTable and throttleTable[obj] then
+				local a1 = a1
+				if a1 == nil then
+					a1 = FAKE_NIL
 				end
-				if not AceEvent_debugTable[event][obj] then
-					AceEvent_debugTable[event][obj] = new()
-					AceEvent_debugTable[event][obj].mem = 0
-					AceEvent_debugTable[event][obj].time = 0
+				if not throttleTable[obj][a1] or GetTime() - throttleTable[obj][a1] >= throttleTable[obj][RATE] then
+					throttleTable[obj][a1] = GetTime()
+				else
+					continue = true
 				end
-				mem, time = gcinfo(), GetTime()
 			end
-			if type(method) == "string" then
-				local obj_method = obj[method]
-				if obj_method then
-					obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+			if not continue then
+				local mem, time
+				if AceEvent_debugTable then
+					if not AceEvent_debugTable[event] then
+						AceEvent_debugTable[event] = new()
+					end
+					if not AceEvent_debugTable[event][obj] then
+						AceEvent_debugTable[event][obj] = new()
+						AceEvent_debugTable[event][obj].mem = 0
+						AceEvent_debugTable[event][obj].time = 0
+					end
+					mem, time = gcinfo(), GetTime()
 				end
-			elseif method then -- function
-				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-			end
-			if AceEvent_debugTable then
-				mem, time = mem - gcinfo(), time - GetTime()
-				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
-				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
+				if type(method) == "string" then
+					local obj_method = obj[method]
+					if obj_method then
+						obj_method(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+					end
+				elseif method then -- function
+					method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+				end
+				if AceEvent_debugTable then
+					mem, time = mem - gcinfo(), time - GetTime()
+					AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
+					AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
+				end
 			end
 			tmp[obj] = nil
 			obj = next(tmp)
@@ -563,8 +615,15 @@ function AceEvent:UnregisterEvent(event)
 		local AceEvent_onceRegistry = AceEvent.onceRegistry
 		if AceEvent_onceRegistry[event] and AceEvent_onceRegistry[event][self] then
 			AceEvent_onceRegistry[event][self] = nil
-			if not next(AceEvent_registry[event]) then
+			if not next(AceEvent_onceRegistry[event]) then
 				AceEvent_onceRegistry[event] = del(AceEvent_onceRegistry[event])
+			end
+		end
+		local AceEvent_throttleRegistry = AceEvent.throttleRegistry
+		if AceEvent_throttleRegistry[event] and AceEvent_throttleRegistry[event][self] then
+			AceEvent_throttleRegistry[event][self] = nil
+			if not next(AceEvent_throttleRegistry[event]) then
+				AceEvent_throttleRegistry[event] = del(AceEvent_throttleRegistry[event])
 			end
 		end
 		if not next(AceEvent_registry[event]) then
@@ -807,6 +866,7 @@ function AceEvent:activate(oldLib, oldDeactivate)
 
 	if oldLib then
 		self.onceRegistry = oldLib.onceRegistry
+		self.throttleRegistry = oldLib.throttleRegistry
 		self.delayRegistry = oldLib.delayRegistry
 		self.buckets = oldLib.buckets
 		self.delayHeap = oldLib.delayHeap
@@ -816,6 +876,8 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.playerLogin = oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
 		self.postInit = oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
 		self.ALL_EVENTS = oldLib.ALL_EVENTS
+		self.FAKE_NIL = oldLib.FAKE_NIL
+		self.RATE = oldLib.RATE
 	end
 	if not self.registry then
 		self.registry = {}
@@ -826,7 +888,15 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	if not self.ALL_EVENTS then
 		self.ALL_EVENTS = {}
 	end
+	if not self.FAKE_NIL then
+		self.FAKE_NIL = {}
+	end
+	if not self.RATE then
+		self.RATE = {}
+	end
 	ALL_EVENTS = self.ALL_EVENTS
+	FAKE_NIL = self.FAKE_NIL
+	RATE = self.RATE
 	local inPlw = false
 	local blacklist = {
 		UNIT_INVENTORY_CHANGED = true,
