@@ -124,20 +124,22 @@ local function assert(self, condition, message, a1, a2, a3, a4, a5, a6, a7, a8, 
 	return condition
 end
 
-local function argCheck(self, arg, num, kind, kind2, kind3, kind4)
+local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
 	if type(num) ~= "number" then
 		error(self, "Bad argument #3 to `argCheck' (number expected, got %s)", type(num))
 	elseif type(kind) ~= "string" then
 		error(self, "Bad argument #4 to `argCheck' (string expected, got %s)", type(kind))
 	end
 	local errored = false
-	arg = tostring(type(arg))
-	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 then
+	arg = type(arg)
+	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 and arg ~= kind5 then
 		local _,_,func = string.find(debugstack(), "`argCheck'.-([`<].-['>])")
 		if not func then
 			_,_,func = string.find(debugstack(), "([`<].-['>])")
 		end
-		if kind4 then
+		if kind5 then
+			error(self, "Bad argument #%s to %s (%s, %s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, kind5, arg)
+		elseif kind4 then
 			error(self, "Bad argument #%s to %s (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, arg)
 		elseif kind3 then
 			error(self, "Bad argument #%s to %s (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, arg)
