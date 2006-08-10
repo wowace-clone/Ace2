@@ -704,6 +704,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 	bucket.method = method
 	
 	local func = function(arg1)
+		bucket.run = true
 		if arg1 then
 			bucket.current[arg1] = true
 		end
@@ -721,7 +722,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 			local current = bucket.current
 			local method = bucket.method
 			local self = bucket.self
-			if next(current) then
+			if bucket.run then
 				if type(method) == "string" then
 					self[method](self, current)
 				elseif method then -- function
@@ -731,6 +732,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 					current[k] = nil
 					k = nil
 				end
+				bucket.run = false
 			end
 		end
 	end
