@@ -146,9 +146,10 @@ do
 		local a = math_floor(hash / 65536)
 		local b = math_floor(math_mod(hash / 256, 256))
 		local c = math_mod(hash, 256)
-		-- \000, \n, |, °, s, S
+		-- \000, \n, |, °, s, S, \015, \020
 		if a == 0 or a == 10 or a == 124 or a == 176 or a == 115 or a == 83 or a == 15 or a == 20 or a == 37 then
 			a = a + 1
+		-- \t, \255
 		elseif a == 9 or a == 255 then
 			a = a - 1
 		end
