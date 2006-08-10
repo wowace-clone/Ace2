@@ -617,14 +617,14 @@ function AceEvent:UnregisterEvent(event)
 	if AceEvent_registry[event] and AceEvent_registry[event][self] then
 		AceEvent_registry[event][self] = nil
 		local AceEvent_onceRegistry = AceEvent.onceRegistry
-		if AceEvent_onceRegistry[event] and AceEvent_onceRegistry[event][self] then
+		if AceEvent_onceRegistry and AceEvent_onceRegistry[event] and AceEvent_onceRegistry[event][self] then
 			AceEvent_onceRegistry[event][self] = nil
 			if not next(AceEvent_onceRegistry[event]) then
 				AceEvent_onceRegistry[event] = del(AceEvent_onceRegistry[event])
 			end
 		end
 		local AceEvent_throttleRegistry = AceEvent.throttleRegistry
-		if AceEvent_throttleRegistry[event] and AceEvent_throttleRegistry[event][self] then
+		if AceEvent_throttleRegistry and AceEvent_throttleRegistry[event] and AceEvent_throttleRegistry[event][self] then
 			AceEvent_throttleRegistry[event][self] = nil
 			if not next(AceEvent_throttleRegistry[event]) then
 				AceEvent_throttleRegistry[event] = del(AceEvent_throttleRegistry[event])
