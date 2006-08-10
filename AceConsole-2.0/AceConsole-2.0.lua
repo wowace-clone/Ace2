@@ -870,6 +870,7 @@ local function handlerFunc(self, chat, msg, options)
 			disabled = handler[disabled](handler)
 		end
 	end
+	local _G_this = this
 	local kind = string.lower(options.type or "group")
 	if disabled then
 		print(string.format(OPTION_IS_DISABLED, path), realOptions.cmdName or realOptions.name or self)
@@ -1024,6 +1025,7 @@ local function handlerFunc(self, chat, msg, options)
 				handler[passFunc](handler, passValue)
 			end
 		else
+			local ret, msg
 			if type(options.func) == "function" then
 				options.func()
 			else
@@ -1512,6 +1514,7 @@ local function handlerFunc(self, chat, msg, options)
 		end
 		return
 	end
+	this = _G_this
 	if Dewdrop then
 		Dewdrop:Refresh(1)
 		Dewdrop:Refresh(2)
