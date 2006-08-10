@@ -172,7 +172,7 @@ local db_mt = { __index = function(db, key)
 			if type(_G[db.charName]) ~= "table" then
 				_G[db.charName] = {}
 			end
-			if type(_G[db.charName].raw) ~= "table" then
+			if type(_G[db.charName].global) ~= "table" then
 				_G[db.charName].global = {}
 			end
 			rawset(db, 'char', _G[db.charName].global)
