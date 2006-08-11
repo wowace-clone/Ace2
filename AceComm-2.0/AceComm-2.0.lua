@@ -1023,6 +1023,8 @@ function AceComm:RegisterComm(prefix, distribution, method, a4)
 		AceComm:argCheck(customChannel, 4, "string")
 		if string_len(customChannel) == 0 then
 			AceComm:error('Argument #4 to `RegisterComm\' must be a non-zero-length string.')
+		elseif string_find(customChannel, "%s") then
+			AceComm:error('Argument #4 to `RegisterComm\' must not have spaces.')
 		end
 	end
 	if self == AceComm then
