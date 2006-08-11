@@ -94,6 +94,7 @@ local byte_U = string_byte('U')
 local byte_i = string_byte('i')
 local byte_I = string_byte('I')
 local byte_j = string_byte('j')
+local byte_J = string_byte('J')
 local byte_inf = string_byte('@')
 local byte_ninf = string_byte('$')
 local byte_nan = string_byte('!')
@@ -558,7 +559,11 @@ do
 						return string_char(byte_j, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256), math_mod(C / 256, 256), math_mod(C, 256))
 					end
 				else
-					return string_char(byte_j, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256))
+					if B ~= 0 then
+						return string_char(byte_J, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256), math_mod(B / 256, 256), math_mod(B, 256))
+					else
+						return string_char(byte_i, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256))
+					end
 				end
 			else
 				-- normal string
@@ -681,7 +686,7 @@ do
 				end
 			else
 				if len <= 255 then
-					return string_char(byte_t, len) .. s
+					return "t" .. string_char(len) .. s
 				else
 					return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
 				end
@@ -765,6 +770,23 @@ do
 			local A = a1 * 65536 + a2 * 256 + a3
 			local C = c1 * 256 + c2
 			local s = "item:" .. A .. ":0:" .. C .. ":0"
+			local name, code, quality = GetItemInfo(s)
+			if name then
+				local _,_,_,color = GetItemQualityColor(quality)
+				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 5
+			else
+				return nil, position + 5
+			end
+		elseif x == byte_J then
+			-- 5-byte item link
+			local a1 = string_byte(value, position + 1)
+			local a2 = string_byte(value, position + 2)
+			local a3 = string_byte(value, position + 3)
+			local b1 = string_byte(value, position + 4)
+			local b2 = string_byte(value, position + 5)
+			local A = a1 * 65536 + a2 * 256 + a3
+			local B = b1 * 256 + b2
+			local s = "item:" .. A .. ":" .. B .. ":0:0"
 			local name, code, quality = GetItemInfo(s)
 			if name then
 				local _,_,_,color = GetItemQualityColor(quality)
@@ -1452,7 +1474,7 @@ end
 
 function AceComm:SetDefaultCommPriority(priority)
 	AceComm:argCheck(priority, 2, "string")
-	if priority ~= "NORMAL" or priority ~= "BULK" or priority ~= "ALERT" then
+	if priority ~= "NORMAL" and priority ~= "BULK" and priority ~= "ALERT" then
 		AceComm:error('Argument #2 must be either "NORMAL", "BULK", or "ALERT"')
 	end
 	
