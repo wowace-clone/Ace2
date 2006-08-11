@@ -142,7 +142,7 @@ function AceTab:OnTabPressed()
 	local _, _, word = string.find(string.sub(text, left, pos), "(%w+)")
 	word = word or ""
 	this.lMatch = this.curMatch > 0 and (this.lMatch or this.origWord)
-	if this.lMatch and string.find(string.sub(text, 1, pos), this.lMatch.."$") then
+	if this.lMatch and this.lMatch ~= "" and string.find(string.sub(text, 1, pos), this.lMatch.."$") then
 		this.pMatchLen = string.len(this.lMatch)
 		local cMatch = 0
 		local matched = false
