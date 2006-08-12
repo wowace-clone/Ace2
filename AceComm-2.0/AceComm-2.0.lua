@@ -1389,7 +1389,7 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 		message[20] = a20
 		local n = 20
 		while n > 0 do
-			if message[i] ~= nil then
+			if message[n] ~= nil then
 				break
 			end
 			n = n - 1
@@ -1455,7 +1455,7 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 		message[20] = a20
 		local n = 20
 		while n > 0 do
-			if message[i] ~= nil then
+			if message[n] ~= nil then
 				break
 			end
 			n = n - 1
