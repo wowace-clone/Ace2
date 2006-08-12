@@ -63,12 +63,12 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 			else
 				if AceEvent:IsFullyInitialized() and not self:IsHooked(Gframe, "OnTabPressed") then
 					self:HookScript(Gframe, "OnTabPressed")
+					Gframe.curMatch = 0
+					Gframe.matches = compost and compost:Erase() or {}
+					Gframe.pMatchLen = 0
 				else
 					hookedFrames[frame] = true
 				end
-				Gframe.curMatch = 0
-				Gframe.matches = compost and compost:Erase() or {}
-				Gframe.pMatchLen = 0
 			end
 		end
 	end
@@ -258,6 +258,9 @@ end
 function AceTab:AceEvent_FullyInitialized()
 	for frame in pairs(hookedFrames) do
 		self:HookScript(_G[frame], "OnTabPressed")
+		_G[frame].curMatch = 0
+		_G[frame].matches = compost and compost:Erase() or {}
+		_G[frame].pMatchLen = 0
 	end
 end
 
