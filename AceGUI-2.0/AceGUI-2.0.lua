@@ -27,7 +27,7 @@ local AceGUI = AceOO.Mixin{"CreateGUI"}
 local function configureTree(root)
     
     local info = registry.objects[root]
-    if AceOO.inherits(child,AceGUIFontInstance) then
+    if AceOO.inherits(root,AceGUIFontInstance) then
         root:ConfigureFontInstance(info.def)
     end
     root:Configure(info.def,info.parent,info.name,info.handler)
@@ -36,10 +36,6 @@ local function configureTree(root)
     
     local children = info.children
     for _,child in children do
-        info = registry.objects[child]
-        if AceOO.inherits(child,AceGUIFontInstance) then
-            child:ConfigureFontInstance(info.def)
-        end
         configureTree(child)
     end
 end

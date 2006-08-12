@@ -74,7 +74,6 @@ function AceGUIBase.prototype:Configure(def,parent,name,handler)
             s[script] = method
         end
     end
-    ace:print("Configuring ",name)
 end
 
 function AceGUIBase.prototype:Build(def,parent,name,handler) end
