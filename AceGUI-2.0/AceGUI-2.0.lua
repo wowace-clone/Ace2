@@ -26,4 +26,3 @@ function AceGUI:CreateGUI(def)
 end
 
 AceLibrary:Register(AceGUI, MAJOR_VERSION, MINOR_VERSION)
-AceGUI = AceLibrary(MAJOR_VERSION)

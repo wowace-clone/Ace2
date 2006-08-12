@@ -67,6 +67,5 @@ function AceGUIBase.prototype:GetAceGUIName()
     return registry.objects[self].name
 end
 
-
 AceLibrary:Register(AceGUIBase,MAJOR_VERSION,MINOR_VERSION)
 AceGUIBase = AceLibrary(MAJOR_VERSION)
