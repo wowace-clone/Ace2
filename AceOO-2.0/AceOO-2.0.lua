@@ -327,11 +327,7 @@ do
 	Class.super = Object
 	
 	local function protostring(t)
-		if t.ToString then
-			return t:ToString()
-		else
-			return '<' .. tostring(t.class) .. ' prototype>'
-		end
+		return '<' .. tostring(t.class) .. ' prototype>'
 	end
 	local function classobjectstring(t)
 		if t.ToString then
