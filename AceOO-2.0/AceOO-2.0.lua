@@ -721,7 +721,15 @@ do
 			target[self] = true
 		end
 		if not autoEmbed and type(self.OnManualEmbed) == "function" then
-			self:OnManualEmbed(target)
+			local mt = getmetatable(target)
+			if mt then
+				local newindex = mt.__newindex
+				rawset(mt, '__newindex', nil)
+				self:OnManualEmbed(target)
+				rawset(mt, '__newindex', newindex)
+			else
+				self:OnManualEmbed(target)
+			end
 		end
 	end
 	
