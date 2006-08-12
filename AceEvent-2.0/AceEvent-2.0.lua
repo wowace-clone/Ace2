@@ -53,7 +53,7 @@ do
 			return {}
 		end
 	end
-	
+
 	function del(t)
 		setmetatable(t, nil)
 		for k in pairs(t) do
@@ -96,13 +96,13 @@ function AceEvent:RegisterEvent(event, method, once)
 		AceEvent_registry[event] = new()
 		AceEvent.frame:RegisterEvent(event)
 	end
-	
+
 	local remember = true
 	if AceEvent_registry[event][self] then
 		remember = false
 	end
 	AceEvent_registry[event][self] = method
-	
+
 	local AceEvent_onceRegistry = AceEvent.onceRegistry
 	if once then
 		if not AceEvent_onceRegistry then
@@ -121,7 +121,7 @@ function AceEvent:RegisterEvent(event, method, once)
 			end
 		end
 	end
-	
+
 	local AceEvent_throttleRegistry = AceEvent.throttleRegistry
 	if throttleRate then
 		if not AceEvent_throttleRegistry then
@@ -147,7 +147,7 @@ function AceEvent:RegisterEvent(event, method, once)
 			end
 		end
 	end
-	
+
 	if remember then
 		AceEvent:TriggerEvent("AceEvent_EventRegistered", self, event)
 	end
@@ -165,12 +165,12 @@ function AceEvent:RegisterAllEvents(method)
 			AceEvent:error("Cannot register all events to method %q, it does not exist", method)
 		end
 	end
-	
+
 	if not AceEvent.registry[ALL_EVENTS] then
 		AceEvent.registry[ALL_EVENTS] = new()
 		AceEvent.frame:RegisterAllEvents()
 	end
-	
+
 	AceEvent.registry[ALL_EVENTS][self] = method
 end
 
@@ -202,6 +202,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					AceEvent_debugTable[event][obj] = new()
 					AceEvent_debugTable[event][obj].mem = 0
 					AceEvent_debugTable[event][obj].time = 0
+					AceEvent_debugTable[event][obj].count = 0
 				end
 				mem, time = gcinfo(), GetTime()
 			end
@@ -219,13 +220,14 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				mem, time = gcinfo() - mem, GetTime() - time
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
+				AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
 			end
 			tmp[obj] = nil
 			obj = next(tmp)
 		end
 		del(tmp)
 	end
-	
+
 	local AceEvent_throttleRegistry = AceEvent.throttleRegistry
 	local throttleTable = AceEvent_throttleRegistry and AceEvent_throttleRegistry[event]
 	if AceEvent_registry[event] then
@@ -258,6 +260,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 						AceEvent_debugTable[event][obj] = new()
 						AceEvent_debugTable[event][obj].mem = 0
 						AceEvent_debugTable[event][obj].time = 0
+						AceEvent_debugTable[event][obj].count = 0
 					end
 					mem, time = gcinfo(), GetTime()
 				end
@@ -273,6 +276,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					mem, time = gcinfo() - mem, GetTime() - time
 					AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 					AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
+					AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
 				end
 			end
 			tmp[obj] = nil
@@ -297,6 +301,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					AceEvent_debugTable[event][obj] = new()
 					AceEvent_debugTable[event][obj].mem = 0
 					AceEvent_debugTable[event][obj].time = 0
+					AceEvent_debugTable[event][obj].count = 0
 				end
 				mem, time = gcinfo(), GetTime()
 			end
@@ -312,6 +317,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				mem, time = gcinfo() - mem, GetTime() - time
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
+				AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
 			end
 			tmp[obj] = nil
 			obj = next(tmp)
@@ -337,7 +343,7 @@ local floor = math.floor
 local function hSiftUp(heap, pos, schedule)
 	schedule = schedule or heap[pos]
 	local scheduleTime = schedule.time
-	
+
 	local curr, i = pos, floor(pos/2)
 	local parent = heap[i]
 	while i > 0 and scheduleTime < parent.time do
@@ -352,7 +358,7 @@ end
 local function hSiftDown(heap, pos, schedule, size)
 	schedule, size = schedule or heap[pos], size or getn(heap)
 	local scheduleTime = schedule.time
-	
+
 	local curr = pos
 	repeat
 		local child, childTime, c
@@ -402,7 +408,7 @@ end
 local function hPop(heap)
 	local head, tail = heap[1], tremove(heap)
 	local size = getn(heap)
-	
+
 	if size == 1 then
 		heap[1], tail.i = tail, 1
 	elseif size > 1 then
@@ -547,7 +553,7 @@ function AceEvent:ScheduleEvent(event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9
 		AceEvent:argCheck(event, 2, "string", "function")
 		AceEvent:argCheck(delay, 3, "number")
 	end
-	
+
 	return ScheduleEvent(self, false, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
@@ -566,7 +572,7 @@ function AceEvent:ScheduleRepeatingEvent(event, delay, a1, a2, a3, a4, a5, a6, a
 		AceEvent:argCheck(event, 2, "string", "function")
 		AceEvent:argCheck(delay, 3, "number")
 	end
-	
+
 	return ScheduleEvent(self, true, event, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 end
 
@@ -745,7 +751,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 		else
 			AceEvent:argCheck(method, 4, "string", "function")
 		end
-		
+
 		if type(method) == "string" and type(self[method]) ~= "function" then
 			AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
 		end
@@ -765,7 +771,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 	end
 	local bucket = AceEvent.buckets[event][self]
 	bucket.method = method
-	
+
 	local func = function(arg1)
 		bucket.run = true
 		if arg1 then
@@ -812,9 +818,9 @@ function AceEvent:UnregisterBucketEvent(event)
 	if not AceEvent.buckets or not AceEvent.buckets[event] or not AceEvent.buckets[event][self] then
 		AceEvent:error("Cannot unregister bucket event %q. %q is not registered with it.", event, self)
 	end
-	
+
 	local bucket = AceEvent.buckets[event][self]
-	
+
 	if type(event) == "string" then
 		AceEvent.UnregisterEvent(bucket.func, event)
 	else
@@ -823,7 +829,7 @@ function AceEvent:UnregisterBucketEvent(event)
 		end
 	end
 	AceEvent:CancelScheduledEvent(bucket.id)
-	
+
 	del(bucket.current)
 	AceEvent.buckets[event][self] = del(AceEvent.buckets[event][self])
 	if not next(AceEvent.buckets[event]) then
@@ -847,7 +853,7 @@ function AceEvent:OnEmbedDisable(target)
 	self.UnregisterAllEvents(target)
 
 	self.CancelAllScheduledEvents(target)
-	
+
 	self.UnregisterAllBucketEvents(target)
 end
 
