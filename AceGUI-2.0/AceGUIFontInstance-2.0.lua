@@ -8,7 +8,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIFontInstance = AceOO.Mixin{ "ConfigureFontInstance" }
 
-function AceGUIFontInstance:ConfigureFontInstance(def,parent,name,handler)
+function AceGUIFontInstance:ConfigureFontInstance(def)
     self:SetFontObject(def.FontObject or GameFontNormal)
 		
 	local font,size,flags = self:GetFont()

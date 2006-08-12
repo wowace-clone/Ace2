@@ -1,8 +1,8 @@
 <UI>
     <Script file="AceGUICustomClass-2.0.lua"/>
     <Script file="AceGUIFactory-2.0.lua"/>
-    <Script file="AceGUI-2.0.lua"/>
     <Script file="AceGUIFontInstance-2.0.lua"/>
+    <Script file="AceGUI-2.0.lua"/>
     <Script file="AceGUIBase-2.0.lua"/>
     <Script file="AceGUIFontInstance-2.0.lua"/>
     <Script file="AceGUIRegion-2.0.lua"/>

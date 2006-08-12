@@ -8,14 +8,14 @@ local AceOO = AceLibrary("AceOO-2.0")
 local AceGUILayeredRegion = AceLibrary("AceGUILayeredRegion-2.0")
 local AceGUITexture = AceOO.Class(AceGUILayeredRegion)
 AceGUITexture.new = AceGUILayeredRegion.new
-AceGUIFontString.UIObjectType = "Texture"
+AceGUITexture.UIObjectType = "Texture"
 
 
-function AceGUIFontString:CreateUIObject(parent)
+function AceGUITexture:CreateUIObject(parent)
     return parent:CreateTexture()
 end
 
-function AceGUIFontString.prototype:Configure(def,parent,name,handler)
+function AceGUITexture.prototype:Configure(def,parent,name,handler)
     --AceGUITexture.super.prototype.Configure(self,def,parent,name,handler)
     AceGUILayeredRegion.prototype.Configure(self,def,parent,name,handler)
     

@@ -10,11 +10,13 @@ local AceGUIBase = AceLibrary("AceGUIBase-2.0")
 local AceGUIRegion = AceOO.Class(AceGUIBase)
 AceGUIRegion.new = AceGUIBase.new
 AceGUIRegion.virtual = true
-local registry = ACEGUI_FACTORY
+local registry = ACEGUI_REGISTRY
 
 function AceGUIRegion.prototype:Configure(def,parent,name,handler)
     --AceGUIRegion.super.prototype.Configure(self,def,parent,name,handler)
     AceGUIBase.prototype.Configure(self,def,parent,name,handler)
+    
+    if def.hidden then self:Hide() end
     
     if def.height then self:SetHeight(def.height) end
     if def.width then self:SetWidth(def.width) end
@@ -32,6 +34,9 @@ function AceGUIRegion.prototype:Configure(def,parent,name,handler)
             else
                 local relTo = options.relTo
                 if type(relTo) == "string" then
+                    if string.sub(relTo,0,7) == "$parent" then
+                        relTo = registry.objects[parent].name .. string.sub(relTo,8)
+                    end
                     local tmp = registry.objects[relTo]
                     if not tmp then
                         error("No AceGUI Object named '"..relTo.."' exists to anchor object '"..name.."' to.")

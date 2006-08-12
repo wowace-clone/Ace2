@@ -31,15 +31,11 @@ AceGUIBase.new = function(self,def,handler,parent,name)
         error("An AceGUI ojbect with the name '"..name.."' already exists",3)
     end
     parent = def.parent or parent
-    local info = { o = o, name = name, def = def, handler = handler, parent = parent }
+    local info = { o = o, name = name, def = def, handler = handler, parent = parent, children = {} }
     registry.objects[name] = info
     registry.objects[o] = info
     if o.Build then o:Build(def,parent,name,handler) end
     o:BuildChildren()
-    if AceOO.inherits(o,AceGUIFontInstance) then
-        o:ConfigureFontInstance(def,parent,name,handler)
-    end
-    o:Configure(def,parent,name,handler)
     return o    
 end
 
@@ -48,9 +44,12 @@ function AceGUIBase.prototype:BuildChildren()
     local elements = info.def.elements
     local prefix = info.name
     local handler = info.handler
+    local children = info.children
     if elements then
         for suffix,def in pairs(elements) do
-            self[suffix] = AceGUIFactory:make(def,handler,self, prefix .. suffix)
+            local child = AceGUIFactory:make(def,handler,self, prefix .. suffix)
+            self[suffix] = child
+            table.insert(children,child)
         end
     end
 end
