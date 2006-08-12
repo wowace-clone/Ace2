@@ -44,7 +44,7 @@ function AceGUIRegion.prototype:Configure(def,parent,name,handler)
                     relTo = tmp.o
                 end
                 local relPoint = options.relPoint or point
-                self:SetPoint(point,relTo or parent,relPoint,options.xOffset or 0, options.yOffset or 0)
+                self:SetPoint(point,relTo or parent,relPoint,options.xOffset or options.x or 0, options.yOffset or options.y or 0)
             end
         end
     end

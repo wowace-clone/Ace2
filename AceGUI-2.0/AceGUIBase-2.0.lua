@@ -31,20 +31,17 @@ AceGUIBase.new = function(self,def,handler,parent,name)
         error("An AceGUI ojbect with the name '"..name.."' already exists",3)
     end
     parent = def.parent or parent
-    local info = { o = o, name = name, def = def, handler = handler, parent = parent, children = {} }
+    local children = {}
+    local info = { o = o, name = name, def = def, handler = handler, parent = parent, children = children }
     registry.objects[name] = info
     registry.objects[o] = info
-    if o.Build then o:Build(def,parent,name,handler) end
-    o:BuildChildren()
+    o:Build(def,parent,name,handler)
+    o:BuildChildren(def,parent,name,handler,children)
     return o    
 end
 
-function AceGUIBase.prototype:BuildChildren()
-    local info = registry.objects[self]
-    local elements = info.def.elements
-    local prefix = info.name
-    local handler = info.handler
-    local children = info.children
+function AceGUIBase.prototype:BuildChildren(def,parent,prefix,handler,children)
+    local elements = def.elements
     if elements then
         for suffix,def in pairs(elements) do
             local child = AceGUIFactory:make(def,handler,self, prefix .. suffix)
@@ -60,6 +57,10 @@ function AceGUIBase.prototype:Configure(def,parent,name,handler)
     if alpha then
         self:SetAlpha(alpha)
     end
+end
+
+function AceGUIBase.prototype:Build(def,parent,name,handler)
+
 end
 
 function AceGUIBase.prototype:GetAceGUIName()
