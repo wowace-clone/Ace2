@@ -873,7 +873,10 @@ local Classpool
 do
 	local pool = setmetatable({}, {__mode = 'v'})
 	local function newindex(k, v)
-		AceOO:error('Attempt to modify a read only class.')
+		AceOO:error('Attempt to modify a read-only class.')
+	end
+	local function protonewindex(k, v)
+		AceOO:error('Attempt to modify a read-only class prototype.')
 	end
 	local function ts(bit)
 		if type(bit) ~= "table" then
@@ -946,7 +949,7 @@ do
 			-- but it's likely that only a truly malicious user will be doing so.
 			class.sealed = true
 			setmetatable(class, classmeta)
-			getmetatable(class.prototype).__newindex = newindex
+			getmetatable(class.prototype).__newindex = protonewindex
 			pool[key] = class
 		end
 		return pool[key]
