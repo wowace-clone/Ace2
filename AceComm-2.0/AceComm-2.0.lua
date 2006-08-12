@@ -487,7 +487,7 @@ do
 	local function _Serialize(v, textToHash)
 		local kind = type(v)
 		if kind == "boolean" then
-			if value then
+			if v then
 				return "by"
 			else
 				return "bn"
@@ -716,9 +716,9 @@ do
 		if x == byte_b then
 			-- boolean
 			local v = string_byte(value, position + 1)
-			if v == "n" then
+			if v == 110 then -- 'n'
 				return false, position + 1
-			elseif v == "y" then
+			elseif v == 121 then -- 'y'
 				return true, position + 1
 			else
 				error("Improper serialized value provided")
