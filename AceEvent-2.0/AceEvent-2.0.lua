@@ -216,7 +216,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 			end
 			if AceEvent_debugTable then
-				mem, time = mem - gcinfo(), time - GetTime()
+				mem, time = gcinfo() - mem, GetTime() - time
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
@@ -270,7 +270,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 				end
 				if AceEvent_debugTable then
-					mem, time = mem - gcinfo(), time - GetTime()
+					mem, time = gcinfo() - mem, GetTime() - time
 					AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 					AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 				end
@@ -309,7 +309,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 			end
 			if AceEvent_debugTable then
-				mem, time = mem - gcinfo(), time - GetTime()
+				mem, time = gcinfo() - mem, GetTime() - time
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 			end
@@ -761,7 +761,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 		AceEvent.buckets[event][self].current = new()
 		AceEvent.buckets[event][self].self = self
 	else
-		AceEvent:CancelScheduledEvent(AceEvent.buckets[event][self].id)
+		AceEvent.CancelScheduledEvent(self, AceEvent.buckets[event][self].id)
 	end
 	local bucket = AceEvent.buckets[event][self]
 	bucket.method = method
@@ -774,10 +774,10 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 	end
 	AceEvent.buckets[event][self].func = func
 	if type(event) == "string" then
-		AceEvent:RegisterEvent(event, func)
+		AceEvent.RegisterEvent(self, event, func)
 	else
 		for _,v in ipairs(event) do
-			AceEvent:RegisterEvent(v, func)
+			AceEvent.RegisterEvent(self, v, func)
 		end
 	end
 	if not bucketfunc then
@@ -799,7 +799,7 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 			end
 		end
 	end
-	bucket.id = AceEvent:ScheduleRepeatingEvent(bucketfunc, delay, bucket)
+	bucket.id = AceEvent.ScheduleRepeatingEvent(self, bucketfunc, delay, bucket)
 end
 
 function AceEvent:IsBucketEventRegistered(event)
