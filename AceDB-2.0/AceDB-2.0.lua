@@ -1273,9 +1273,9 @@ function AceDB:GetAceOptionsDataTable(target)
 						validate = target['acedb-profile-list']
 					},
 					copy = {
-						guiName = "Copy",
+						guiName = "Copy from",
 						cmdName = PROFILE,
-						desc = "Copy a profile",
+						desc = "Copy settings from another profile",
 						type = 'text',
 						get = "GetProfile",
 						set = "SetProfile",
