@@ -710,9 +710,10 @@ do
 		local mt = getmetatable(target)
 		setmetatable(target, nil)
 		local err, msg = pcall(_Embed, self, nil, target)
-		setmetatable(target, mt)
 		if not err then
+			setmetatable(target, mt)
 			AceOO:error(msg)
+			return
 		end
 		if type(self.embedList) == "table" then
 			self.embedList[target] = true
@@ -721,16 +722,9 @@ do
 			target[self] = true
 		end
 		if not autoEmbed and type(self.OnManualEmbed) == "function" then
-			local mt = getmetatable(target)
-			if mt then
-				local newindex = mt.__newindex
-				rawset(mt, '__newindex', nil)
-				self:OnManualEmbed(target)
-				rawset(mt, '__newindex', newindex)
-			else
-				self:OnManualEmbed(target)
-			end
+			self:OnManualEmbed(target)
 		end
+		setmetatable(target, mt)
 	end
 	
 	function Mixin.prototype:activate(oldLib, oldDeactivate)
