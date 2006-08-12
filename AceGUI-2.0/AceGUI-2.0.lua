@@ -34,7 +34,7 @@ local function simulateOnLoad(self,def,handler)
             end
             method = function()tmp(handler)end
         end
-        self:assert(type(method) == "function" or (type(method) == "table" and getmetatable(method).__call))
+        assert(type(method) == "function" or (type(method) == "table" and getmetatable(method).__call))
         local tmp = this
         this = self
         method()        
@@ -49,6 +49,7 @@ local function configureTree(root)
         root:ConfigureFontInstance(info.def)
     end
     root:Configure(info.def,info.parent,info.name,info.handler)
+    simulateOnLoad(root,info.def,info.handler)
     
     local children = info.children
     for _,child in children do
@@ -57,7 +58,6 @@ local function configureTree(root)
             child:ConfigureFontInstance(info.def)
         end
         child:Configure(info.def,info.parent,info.name,info.handler)
-        simulateOnLoad(child,info.def,info.handler)
         configureTree(child)
     end
 end
