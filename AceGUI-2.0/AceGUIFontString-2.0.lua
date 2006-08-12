@@ -26,7 +26,7 @@ function AceGUIFontString.prototype:Configure(def,parent,name,handler)
     t = def.AlphaGradient
     if(t) then self:SetAlphaGradient(def.AlphaGradient.start,def.AlphaGradient.length) end
 	
-    self:SetText(def.text)
+    if def.text then self:SetText(def.text) end
 end
 
 AceLibrary:Register(AceGUIFontString,MAJOR_VERSION,MINOR_VERSION)

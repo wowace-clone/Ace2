@@ -18,6 +18,7 @@ function AceGUIRegion.prototype:Configure(def,parent,name,handler)
     
     if def.hidden then self:Hide() end
     
+    if def.size then def.width = def.size[1] or def.size.x def.height = def.size[2] or def.size.y end
     if def.height then self:SetHeight(def.height) end
     if def.width then self:SetWidth(def.width) end
     
@@ -52,5 +53,3 @@ function AceGUIRegion.prototype:Configure(def,parent,name,handler)
 end
 
 AceLibrary:Register(AceGUIRegion, MAJOR_VERSION, MINOR_VERSION)
-
-

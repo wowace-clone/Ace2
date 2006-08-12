@@ -63,7 +63,7 @@ local registry = ACEGUI_REGISTRY
 
 local function inheritTemplate(def)
 	local template = def.template
-	if(not template or AceGUI.registry.templates[def]) then return end
+	if(not template or registry.templates[def]) then return end
 
 	if(template.template) then inheritTemplate(template) end
 	
@@ -77,7 +77,7 @@ local function inheritTemplate(def)
 			def.elements = setmetatable({},{__index = template.elements})
 		end
 	end
-	AceGUI.registry.templates[def] = true
+	registry.templates[def] = true
 end
 
 function AceGUIFactory:make(def,handler,parent,name)

@@ -9,6 +9,7 @@ local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIFrame = AceLibrary("AceGUIFrame-2.0")
 local AceGUIButton = AceOO.Class(AceGUIFrame)
 AceGUIButton.new = AceGUIFrame.new
+AceGUIButton.CreateUIObject = AceGUIFrame.CreateUIObject
 AceGUIButton.UIObjectType = "Button"
 
 local buttonTextTemplate = {
@@ -28,6 +29,10 @@ local function attachTexture(textureType,def,elements)
 end
 
 function AceGUIButton.prototype:Build(def,parent,name,handler)
+    if def.enableMouse ~= false then
+        def.enableMouse = true
+    end
+    
     --AceGUIButton.super.prototype.Build(self,def,parent,name,handler)
     AceGUIFrame.prototype.Build(self,def,parent,name,handler)
     def.elements = def.elements or {}
@@ -58,11 +63,6 @@ local function setTexture(self,textureType,def)
     self[method](self,arg)
 end
 
-local function setFont(self,fontType,def,method)
-    method = method or ("Set" .. fontType)
-    self[method](self,def[fontType] or GameFontNormal)
-end
-
 local function setTextColor(self,textType,def,method)
     if def[textType] then
         method = method or ("Set" .. textType)
@@ -82,10 +82,9 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
     setTexture(self,"PushedTexture",def)
     setTexture(self,"DisabledTexture",def)
     
-    setFont(self,"NormalFontObject",def,"SetTextFontObject")
-    setFont(self,"HighlightFontObject",def)
-    setFont(self,"PushedFontObject",def)
-    setFont(self,"DisabledFontObject",def)
+    self:SetTextFontObject(def.NormalFontObject or GameFontNormal)
+    self:SetHighlightFontObject(def.HighlightFontObject or GameFontHighlight)
+    self:SetDisabledFontObject(def.DisabledFontObject or GameFontDisable)
     
     def.NormalTextColor = def.NormalTextColor or def.TextColor
     def.TextColor = nil
@@ -96,7 +95,7 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
     
     local o = def.PushedTextOffset 
     if o then
-        self:SetPusedTextOffset(o[1] or o.x,o[2] or o.y)
+        self:SetPusedTextOffset(o[1] or o.x or o.xOffset,o[2] or o.y or o.yOffset)
     end
     
     local clicks = def.Clicks
@@ -109,9 +108,12 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
     end
     
     self:SetText(def.text or "")
+    TARD2 = self:GetText()
+    TARD3 = def.text
     if def.disabled then
         self:Disable()
     end
 end
+    
 
 AceLibrary:Register(AceGUIButton, MAJOR_VERSION, MINOR_VERSION)

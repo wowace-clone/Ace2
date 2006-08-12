@@ -21,7 +21,10 @@ function AceGUITexture.prototype:Configure(def,parent,name,handler)
     
     local t = def.file
 	if t then self:SetTexture(t) end
-
+    
+    t = def.BlendMode
+    if t then self:SetBlendMode(t) end
+    
 	t = def.color	
 	if t then self:SetTexture(t[1] or t.r, t[2] or t.g, t[3] or t.g, t[4] or t.a) end
 

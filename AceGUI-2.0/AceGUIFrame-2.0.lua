@@ -15,16 +15,6 @@ function AceGUIFrame:CreateUIObject()
     return CreateFrame(self.UIObjectType)
 end
 
-
-local scripts = {"OnSizeChanged","OnEvent", "OnUpdate", "OnShow", "OnHide", "OnEnter","OnLeave", "OnMouseDown", 
-"OnMouseUp", "OnMouseWheel", "OnDragStart", "OnDragStop", "OnReceiveDrag", "OnClick", "OnDoubleClick", 
-"OnValueChanged", "OnUpdateModel", "OnAnimFinished", "OnEnterPressed", "OnEscapePressed", "OnSpacePressed", 
-"OnTabPressed", "OnTextChanged", "OnTextSet", "OnCursorChanged", "OnInputLanguageChanged", "OnEditFocusGained", 
-"OnEditFocusLost", "OnHorizontalScroll", "OnVerticalScroll", "OnScrollRangeChanged", "OnChar", "OnKeyDown", 
-"OnKeyUp", "OnColorSelect", "OnHyperlinkEnter", "OnHyperlinkLeave", "OnHyperlinkClick", "OnMessageScrollChanged",
-"OnMovieFinished", "OnMovieShowSubtitle", "OnMovieHideSubtitle", "OnTooltipSetDefaultAnchor", "OnTooltipCleared",
-"OnTooltipAddMoney"}
-
 function AceGUIFrame.prototype:Configure(def,parent,name,handler)
     --AceGUIFrame.super.prototype.Configure(self,def,parent,name,handler)
     AceGUIRegion.prototype.Configure(self,def,parent,name,handler)
@@ -62,20 +52,6 @@ function AceGUIFrame.prototype:Configure(def,parent,name,handler)
     if(t) then self:SetID(def.id) end
 
     self:SetToplevel(self.toplevel)
-    
-    for _,script in pairs(scripts) do
-        if def[script] and self:HasScript(script) then
-            local method = def[script]
-            if type(method) == "string" then
-                local tmp = handler[method]
-                if not tmp then
-                    self:error("Handler %q for script %q on object %q not found",method,script,name)
-                end
-                method = function()tmp(handler)end
-            end
-            self:SetScript(script,method)
-        end
-    end
 end
 
 AceLibrary:Register(AceGUIFrame, MAJOR_VERSION, MINOR_VERSION)

@@ -24,24 +24,6 @@ local AceGUIFactory = AceLibrary("AceGUIFactory-2.0")
 local AceGUIFontInstance = AceLibrary("AceGUIFontInstance-2.0")
 local AceGUI = AceOO.Mixin{"CreateGUI"}
 
-local function simulateOnLoad(self,def,handler)
-    local method = def.OnLoad
-    if method then
-        if type(method) == "string" then
-            local tmp = handler[method]
-            if not tmp then
-                self:error("Handler %q for script %q on object %q not found",method,script,name)
-            end
-            method = function()tmp(handler)end
-        end
-        assert(type(method) == "function" or (type(method) == "table" and getmetatable(method).__call))
-        local tmp = this
-        this = self
-        method()        
-        this = tmp
-    end
-end
-
 local function configureTree(root)
     
     local info = registry.objects[root]
@@ -49,7 +31,8 @@ local function configureTree(root)
         root:ConfigureFontInstance(info.def)
     end
     root:Configure(info.def,info.parent,info.name,info.handler)
-    simulateOnLoad(root,info.def,info.handler)
+    root:RunScript("OnLoad")
+    if root:IsVisible() then root:RunScript("OnShow") end
     
     local children = info.children
     for _,child in children do
@@ -57,7 +40,6 @@ local function configureTree(root)
         if AceOO.inherits(child,AceGUIFontInstance) then
             child:ConfigureFontInstance(info.def)
         end
-        child:Configure(info.def,info.parent,info.name,info.handler)
         configureTree(child)
     end
 end

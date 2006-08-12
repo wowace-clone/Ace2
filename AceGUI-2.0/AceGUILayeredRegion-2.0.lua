@@ -11,6 +11,8 @@ local AceGUILayeredRegion = AceOO.Class(AceGUIRegion)
 AceGUILayeredRegion.new = AceGUIRegion.new
 AceGUILayeredRegion.virtual = true
 
+local registry = ACEGUI_REGISTRY
+
 function AceGUILayeredRegion.prototype:Configure(def,parent,name,handler)
     --AceGUILayeredRegion.super.prototype.Configure(self,def,parent,name,handler)
     AceGUIRegion.prototype.Configure(self,def,parent,name,handler)
@@ -18,8 +20,20 @@ function AceGUILayeredRegion.prototype:Configure(def,parent,name,handler)
     local t = def.drawLayer
     if t then self:SetDrawLayer(t) end
     t = def.VertexColor
-	if t then self:SetVertexColor(t.r or t[1],t.g or t[2],t.b or t[3],t.a or t[4]) end
+	if t then self:SetVertexColor(t.r or t[1],t.g or t[2],t.b or t[3],t.a or t[4]) end        
     
+end
+
+function AceGUILayeredRegion.prototype:SetScript(script,func)
+    registry.objects[self].scripts[script] = func
+end
+
+function AceGUILayeredRegion.prototype:GetScript(script)
+    return registry.objects[self].scripts[script]
+end
+
+function AceGUILayeredRegion.prototype:HasScript(script)
+    return script == "OnLoad"
 end
 
 AceLibrary:Register(AceGUILayeredRegion,MAJOR_VERSION,MINOR_VERSION)
