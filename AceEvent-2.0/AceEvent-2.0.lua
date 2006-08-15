@@ -175,6 +175,8 @@ function AceEvent:RegisterAllEvents(method)
 end
 
 local _G = getfenv(0)
+local memstack, timestack = {}, {}
+local memdiff, timediff
 function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
@@ -204,6 +206,11 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					AceEvent_debugTable[event][obj].time = 0
 					AceEvent_debugTable[event][obj].count = 0
 				end
+				if memdiff then
+					table.insert(memstack, memdiff)
+					table.insert(timestack, timediff)
+				end
+				memdiff, timediff = 0, 0
 				mem, time = gcinfo(), GetTime()
 			end
 			local method = tmp[obj]
@@ -217,10 +224,17 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 			end
 			if AceEvent_debugTable then
-				mem, time = gcinfo() - mem, GetTime() - time
+				local dmem, dtime = memdiff, timediff
+				mem, time = gcinfo() - mem - memdiff, GetTime() - time - timediff
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 				AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
+
+				memdiff, timediff = table.remove(memstack), table.remove(timestack)
+				if memdiff then
+					memdiff = memdiff + mem + dmem
+					timediff = timediff + time + dtime
+				end
 			end
 			tmp[obj] = nil
 			obj = next(tmp)
@@ -262,6 +276,11 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 						AceEvent_debugTable[event][obj].time = 0
 						AceEvent_debugTable[event][obj].count = 0
 					end
+					if memdiff then
+						table.insert(memstack, memdiff)
+						table.insert(timestack, timediff)
+					end
+					memdiff, timediff = 0, 0
 					mem, time = gcinfo(), GetTime()
 				end
 				if type(method) == "string" then
@@ -273,10 +292,17 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 				end
 				if AceEvent_debugTable then
-					mem, time = gcinfo() - mem, GetTime() - time
+					local dmem, dtime = memdiff, timediff
+					mem, time = gcinfo() - mem - memdiff, GetTime() - time - timediff
 					AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 					AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 					AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
+
+					memdiff, timediff = table.remove(memstack), table.remove(timestack)
+					if memdiff then
+						memdiff = memdiff + mem + dmem
+						timediff = timediff + time + dtime
+					end
 				end
 			end
 			tmp[obj] = nil
@@ -303,6 +329,11 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 					AceEvent_debugTable[event][obj].time = 0
 					AceEvent_debugTable[event][obj].count = 0
 				end
+				if memdiff then
+					table.insert(memstack, memdiff)
+					table.insert(timestack, timediff)
+				end
+				memdiff, timediff = 0, 0
 				mem, time = gcinfo(), GetTime()
 			end
 			if type(method) == "string" then
@@ -314,10 +345,17 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 				method(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 			end
 			if AceEvent_debugTable then
-				mem, time = gcinfo() - mem, GetTime() - time
+				local dmem, dtime = memdiff, timediff
+				mem, time = gcinfo() - mem - memdiff, GetTime() - time - timediff
 				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
 				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
 				AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
+
+				memdiff, timediff = table.remove(memstack), table.remove(timestack)
+				if memdiff then
+					memdiff = memdiff + mem + dmem
+					timediff = timediff + time + dtime
+				end
 			end
 			tmp[obj] = nil
 			obj = next(tmp)
