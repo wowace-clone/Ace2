@@ -5,53 +5,26 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
-local ACEGUI_GENERIC				= "generic"
-local ACEGUI_FRAME				= "frame"
-local ACEGUI_BORDER_FRAME			= "border frame"
-local ACEGUI_BASIC_DIALOG			= "basic dialog"
-local ACEGUI_DIALOG 				= "dialog"
-local ACEGUI_OPTIONSBOX			= "optionsbox"
-local ACEGUI_BUTTON 				= "button"
-local ACEGUI_CHECK_BUTTON			= "checkbutton"
-local ACEGUI_DROPDOWN				= "dropdown"
-local ACEGUI_LISTBOX				= "listbox"
-local ACEGUI_EDITBOX				= "editbox"
-local ACEGUI_INPUTBOX				= "inputbox"
-local ACEGUI_CHECKBOX				= "checkbox"
-local ACEGUI_SCROLL_EDITBOX		= "scroll editbox"
-local ACEGUI_SCROLL_FRAME			= "scroll frame"
-local ACEGUI_SCROLLBAR			= "scrollbar"
-local ACEGUI_SCROLL_CHILD			= "scroll child"
-local ACEGUI_SLIDER 				= "slider"
-local ACEGUI_FONTSTRING			= "fontstring"
-local ACEGUI_TEXTURE				= "texture"
-local ACEGUI_BACKDROP				= "backdrop"
-local ACEGUI_RADIO_BOX			= "radio box"
-local ACEGUI_CONTAINTER			= "container"
-
-local PLACEHOLDER = "AceGUIRegion-2.0"
-
 local CLASS_MAP	= {
-	[ACEGUI_GENERIC]			= PLACEHOLDER,
-	[ACEGUI_FRAME]				= "AceGUIFrame-2.0",
-	[ACEGUI_BORDER_FRAME]		= PLACEHOLDER,
-	[ACEGUI_BASIC_DIALOG]		= PLACEHOLDER,
-	[ACEGUI_DIALOG]				= PLACEHOLDER,
-	[ACEGUI_OPTIONSBOX]			= PLACEHOLDER,
-	[ACEGUI_BUTTON]				= "AceGUIButton-2.0",
-	[ACEGUI_CHECK_BUTTON]		= "AceGUICheckButton-2.0",
+--	["generic"]			        = PLACEHOLDER,
+	["frame"]				    = "AceGUIFrame-2.0",
+--	[ACEGUI_BORDER_FRAME]		= PLACEHOLDER,
+--	["dialog"]		            = PLACEHOLDER,
+--	["optionsbox"]		    	= PLACEHOLDER,
+	["button"]  				= "AceGUIButton-2.0",
+--	["checkbutton"]		        = "AceGUICheckButton-2.0",
 --	[ACEGUI_DROPDOWN]			= AceGUIDropDown,
-	[ACEGUI_LISTBOX]			= PLACEHOLDER,
-	[ACEGUI_EDITBOX]			= "AceGUIEditBox-2.0",
-	[ACEGUI_INPUTBOX]			= PLACEHOLDER,
-	[ACEGUI_CHECKBOX]			= PLACEHOLDER,
-	[ACEGUI_SCROLL_EDITBOX]		= PLACEHOLDER,
-	[ACEGUI_SCROLL_FRAME]		= "AceGUIScrollFrame-2.0",
-	[ACEGUI_SCROLLBAR]			= PLACEHOLDER,
-	[ACEGUI_SCROLL_CHILD]		= PLACEHOLDER,
-	[ACEGUI_SLIDER]				= PLACEHOLDER,
-	[ACEGUI_FONTSTRING]			= "AceGUIFontString-2.0",
-	[ACEGUI_TEXTURE]			= "AceGUITexture-2.0",
+	["listbox"]			        = PLACEHOLDER,
+	["editbox"]     			= "AceGUIEditBox-2.0",
+--	[ACEGUI_INPUTBOX]			= PLACEHOLDER,
+--	[ACEGUI_CHECKBOX]			= PLACEHOLDER,
+--	[ACEGUI_SCROLL_EDITBOX]		= PLACEHOLDER,
+--	["scrollframe"]     		= "AceGUIScrollFrame-2.0",
+--	[ACEGUI_SCROLLBAR]			= PLACEHOLDER,
+--	[ACEGUI_SCROLL_CHILD]		= PLACEHOLDER,
+--	[ACEGUI_SLIDER]				= PLACEHOLDER,
+	["fontstring"]  			= "AceGUIFontString-2.0",
+	["texture"]     			= "AceGUITexture-2.0",
 --	[ACEGUI_BACKDROP]			= PLACEHOLDER,
 }
 
