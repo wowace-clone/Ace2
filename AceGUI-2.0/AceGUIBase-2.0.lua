@@ -31,6 +31,7 @@ AceGUIBase.new = function(self,def,handler,parent,name)
         error("An AceGUI ojbect with the name '"..name.."' already exists",3)
     end
     parent = def.parent or parent
+    o:SetParent(parent)
     local children = {}
     local scripts = {}
     local info = { o = o, name = name, def = def, handler = handler, parent = parent, children = children, scripts = scripts }

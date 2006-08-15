@@ -35,6 +35,7 @@ function AceGUIButton.prototype:Build(def,parent,name,handler)
     
     --AceGUIButton.super.prototype.Build(self,def,parent,name,handler)
     AceGUIFrame.prototype.Build(self,def,parent,name,handler)
+    
     def.elements = def.elements or {}
     local elements = def.elements
     local buttonText = def.ButtonText
@@ -93,12 +94,12 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
     setTextColor(self,"PushedTextColor",def)
     setTextColor(self,"DisabledTextColor",def)
     
-    local o = def.PushedTextOffset 
+    local o = def.pushedTextOffset 
     if o then
         self:SetPusedTextOffset(o[1] or o.x or o.xOffset,o[2] or o.y or o.yOffset)
     end
     
-    local clicks = def.Clicks
+    local clicks = def.clicks
     if type(clicks) == "string" then
         self:RegisterForClicks(clicks)
     elseif type(clicks) == "table" then
@@ -108,8 +109,6 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
     end
     
     self:SetText(def.text or "")
-    TARD2 = self:GetText()
-    TARD3 = def.text
     if def.disabled then
         self:Disable()
     end

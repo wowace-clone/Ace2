@@ -9,18 +9,18 @@ local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIFontInstance = AceOO.Mixin{ "ConfigureFontInstance" }
 
 function AceGUIFontInstance:ConfigureFontInstance(def)
-    self:SetFontObject(def.FontObject or GameFontNormal)
+    self:SetFontObject(def.fontObject or GameFontNormal)
 		
 	local font,size,flags = self:GetFont()
-	self:SetFont(def.Font or font,def.FontHeight or size,def.Flags or flags)
+	self:SetFont(def.font or font,def.fontHeight or size,def.flags or flags)
 	
-	local t = def.Color
+	local t = def.color
 	if(t) then self:SetTextColor(t.r or t[1], t.g or t[2], t.b or t[3], t.a or t[4] or 1) end
 	
-	t = def.JustifyH
+	t = def.justifyH
 	if(t) then self:SetJustifyH(def.justifyH) end
 
-	t = def.JustifyV
+	t = def.justifyV
 	if(t) then self:SetJustifyV(def.justfyV) end
 end
 

@@ -22,15 +22,15 @@ function AceGUITexture.prototype:Configure(def,parent,name,handler)
     local t = def.file
 	if t then self:SetTexture(t) end
     
-    t = def.BlendMode
+    t = def.blendMode
     if t then self:SetBlendMode(t) end
     
 	t = def.color	
 	if t then self:SetTexture(t[1] or t.r, t[2] or t.g, t[3] or t.g, t[4] or t.a) end
 
-	self:SetDesaturated(def.Desaturated)
+	self:SetDesaturated(def.desaturated)
 
-	t = def.Gradient
+	t = def.gradient
 	if t then
 		-- TODO: find out if SetGradient is the same as SetAlphaGradient with 1 in both alpha positions.
 		local min = t.min
@@ -40,7 +40,7 @@ function AceGUITexture.prototype:Configure(def,parent,name,handler)
             max.r or max[2], max.g or max[2], max.b or max[3], max.a or max[4] or 1)
 	end
 
-	local c = def.TexCoord
+	local c = def.texCoord
 	if c then
 		if c.minX then
 			self:SetTexCoord(c.minX, c.maxX, c.minY, c.maxY)

@@ -40,8 +40,8 @@ local function configureTree(root)
     end
 end
 
-function AceGUI:CreateGUI(def)
-    local root = AceGUIFactory:make(def,self)
+function AceGUI:CreateGUI(def,handler)
+    local root = AceGUIFactory:make(def,handler or self)
     configureTree(root)
     return root
 end

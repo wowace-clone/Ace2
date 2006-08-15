@@ -60,11 +60,16 @@ local AceGUICustomClass = AceLibrary("AceGUICustomClass-2.0")
 local AceGUIFactory = {}
 ACEGUI_REGISTRY = ACEGUI_REGISTRY or {templates = {}, objects = {}}
 local registry = ACEGUI_REGISTRY
+local templates = AceLibrary("AceGUITemplates-2.0")
 
 local function inheritTemplate(def)
 	local template = def.template
 	if(not template or registry.templates[def]) then return end
-
+    if type(template) == "string" then
+        template = templates[def.template]
+        def.template = template
+    end 
+    
 	if(template.template) then inheritTemplate(template) end
 	
 	setmetatable(def,{__index = template})

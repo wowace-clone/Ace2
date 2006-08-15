@@ -1,5 +1,7 @@
 <UI>
     <Script file="AceGUICustomClass-2.0.lua"/>
+    <Script file="AceGUITemplates-2.0.lua"/>
+    
     <Script file="AceGUIFactory-2.0.lua"/>
     <Script file="AceGUIFontInstance-2.0.lua"/>
     <Script file="AceGUI-2.0.lua"/>
@@ -11,4 +13,5 @@
     <Script file="AceGUITexture-2.0.lua"/>
     <Script file="AceGUIFrame-2.0.lua"/>
     <Script file="AceGUIButton-2.0.lua"/>
+    
 </UI>

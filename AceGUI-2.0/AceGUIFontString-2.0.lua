@@ -21,10 +21,10 @@ function AceGUIFontString.prototype:Configure(def,parent,name,handler)
     --AceGUIFontString.super.prototype.Configure(self,def,parent,name,handler)
     AceGUILayeredRegion.prototype.Configure(self,def,parent,name,handler)
     
-    self:SetNonSpaceWrap(def.NonSpaceWrap)
+    self:SetNonSpaceWrap(def.nonSpaceWrap)
 	
-    t = def.AlphaGradient
-    if(t) then self:SetAlphaGradient(def.AlphaGradient.start,def.AlphaGradient.length) end
+    t = def.alphaGradient
+    if(t) then self:SetAlphaGradient(def.alphaGradient.start,def.alphaGradient.length) end
 	
     if def.text then self:SetText(def.text) end
 end
