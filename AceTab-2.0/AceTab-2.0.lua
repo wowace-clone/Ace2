@@ -122,13 +122,38 @@ GCS = function(s1, s2)
 		return GCS(string.sub(s1, 1, -2), s2)
 	end
 end
+local pos
+local function CycleTab()
+	this.pMatchLen = string.len(this.lMatch)
+	local cMatch = 0
+	local matched = false
+	for desc, mList in pairs(this.matches) do
+		if not matched then
+			for _, m in ipairs(mList) do
+				cMatch = cMatch + 1
+				if cMatch == this.curMatch then
+					this.lMatch = m
+					this.curMatch = this.curMatch + 1
+					matched = true
+					break
+				end
+			end
+		end
+	end
+	if not matched then
+		this.curMatch = 1
+		this.lMatch = this.origWord
+	end
+	this:HighlightText(pos - this.pMatchLen, pos)
+	this:Insert(this.lMatch)
+end
 
 function AceTab:OnTabPressed()
 	local ost = this:GetScript("OnTextSet")
 	if ost then this:SetScript("OnTextSet", nil) end
 	if this:GetText() == "" then return self.hooks[this].OnTabPressed.orig() end
 	this:Insert("\255")
-	local pos = string.find(this:GetText(), "\255", 1) - 1
+	pos = string.find(this:GetText(), "\255", 1) - 1
 	this:HighlightText(pos, pos+1)
 	this:Insert("\0")
 	if ost then this:SetScript("OnTextSet", ost) end
@@ -142,30 +167,9 @@ function AceTab:OnTabPressed()
 	local _, _, word = string.find(string.sub(text, left, pos), "(%w+)")
 	word = word or ""
 	this.lMatch = this.curMatch > 0 and (this.lMatch or this.origWord)
+
 	if this.lMatch and this.lMatch ~= "" and string.find(string.sub(text, 1, pos), this.lMatch.."$") then
-		this.pMatchLen = string.len(this.lMatch)
-		local cMatch = 0
-		local matched = false
-		for desc, mList in pairs(this.matches) do
-			if not matched then
-				for _, m in ipairs(mList) do
-					cMatch = cMatch + 1
-					if cMatch == this.curMatch then
-						this.lMatch = m
-						this.curMatch = this.curMatch + 1
-						matched = true
-						break
-					end
-				end
-			end
-		end
-		if not matched then
-			this.curMatch = 1
-			this.lMatch = this.origWord
-		end
-		this:HighlightText(pos - this.pMatchLen, pos)
-		this:Insert(this.lMatch)
-		return this.curMatch
+		return CycleTab()
 	else
 		this.matches = compost and compost:Erase() or {}
 		this.curMatch = 0
@@ -221,6 +225,8 @@ function AceTab:OnTabPressed()
 		if this.curMatch == 0 then
 			this.curMatch = 1
 			this.origWord = word
+			this.lMatch = word
+			CycleTab()
 		end
 		local gcs
 		for h, c in pairs(this.matches) do
@@ -251,7 +257,9 @@ function AceTab:OnTabPressed()
 				end
 			end
 		end
-		this:Insert(gcs or word)
+		if curMatch == 0 then
+			this:Insert(gcs or word)
+		end
 	end
 end
 
