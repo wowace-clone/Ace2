@@ -230,9 +230,9 @@ function AceTab:OnTabPressed()
 			local candUsage = u and (compost and compost:Acquire() or {})
 			local gcs2
 			if next(c) then
-				if not u then print(h..":") end
+				if not u then DEFAULT_CHAT_FRAME:AddMessage(h..":") end
 				for _, m in ipairs(c) do
-					if not u then print(m) end
+					if not u then DEFAULT_CHAT_FRAME:AddMessage(m) end
 					gcs2 = GCS(gcs2, m)
 				end
 			end
@@ -242,10 +242,10 @@ function AceTab:OnTabPressed()
 					local us = u(candUsage, c, gcs2, string.sub(text, 1, left))
 					if candUsage and next(candUsage) then us = candUsage end
 					if type(us) == "string" then
-						print(us)
+						DEFAULT_CHAT_FRAME:AddMessage(us)
 					elseif type(us) == "table" and numMatches > 0 then
 						for _, v in ipairs(c) do
-							if us[v] then print(string.format("%s - %s", v, us[v])) end
+							if us[v] then DEFAULT_CHAT_FRAME:AddMessage(string.format("%s - %s", v, us[v])) end
 						end
 					end
 				end
