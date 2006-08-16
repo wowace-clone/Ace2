@@ -31,8 +31,8 @@ local CLASS_MAP	= {
 local AceOO = AceLibrary("AceOO-2.0")
 local AceGUICustomClass = AceLibrary("AceGUICustomClass-2.0")
 local AceGUIFactory = {}
-ACEGUI_REGISTRY = ACEGUI_REGISTRY or {templates = {}, objects = {}}
-local registry = ACEGUI_REGISTRY
+ACEGUI2_REGISTRY = ACEGUI2_REGISTRY or {templates = {}, objects = {}}
+local registry = ACEGUI2_REGISTRY
 local templates = AceLibrary("AceGUITemplates-2.0")
 
 local function inheritTemplate(def)

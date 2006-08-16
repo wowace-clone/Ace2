@@ -8,7 +8,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIButton = AceLibrary("AceGUIButton-2.0")
 local AceGUICheckButton = AceOO.Class(AceGUIButton)
-AceGUICheckButton.new = AceGUIFrame.new
+AceGUICheckButton.new = AceGUIButton.new
 AceGUICheckButton.CreateUIObject = AceGUIButton.CreateUIObject
 AceGUICheckButton.UIObjectType = "CheckButton"
 
@@ -23,12 +23,12 @@ local function attachTexture(textureType,def,elements)
     end
 end
 
-function AceGUIButton.prototype:Build(def,parent,name,handler)
-    --AceGUIButton.super.prototype.Build(self,def,parent,name,handler)
-    AceGUIFrame.prototype.Build(self,def,parent,name,handler)
+function AceGUICheckButton.prototype:Build(def,parent,name,handler)
+    --AceGUICheckButton.super.prototype.Build(self,def,parent,name,handler)
+    AceGUIButton.prototype.Build(self,def,parent,name,handler)
 
     attachTexture("CheckedTexture",def,elements)
-    attachTexture("DisabledCheckTexture",def,elements)
+    attachTexture("DisabledCheckedTexture",def,elements)
 end
 
 local function setTexture(self,textureType,def)
@@ -41,13 +41,13 @@ local function setTexture(self,textureType,def)
 end
 
 
-function AceGUIButton.prototype:Configure(def,parent,name,handler)
+function AceGUICheckButton.prototype:Configure(def,parent,name,handler)
     --AceGUIButton.super.prototype.Configure(self,def,parent,name,handler)
     AceGUIButton.prototype.Configure(self,def,parent,name,handler)
     
     setTexture(self,"CheckedTexture",def)
-    setTexture(self,"DisabledCheckTexture",def)
+    setTexture(self,"DisabledCheckedTexture",def)
 end
     
 
-AceLibrary:Register(AceGUIButton, MAJOR_VERSION, MINOR_VERSION)
+AceLibrary:Register(AceGUICheckButton, MAJOR_VERSION, MINOR_VERSION)

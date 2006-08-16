@@ -95,8 +95,10 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
     setTextColor(self,"DisabledTextColor",def)
     
     local o = def.pushedTextOffset 
-    if o then
+    if type(o) == "table" then
         self:SetPusedTextOffset(o[1] or o.x or o.xOffset,o[2] or o.y or o.yOffset)
+    elseif type(o) == "number" then
+        self:SetPushedTextOffset(0,o)
     end
     
     local clicks = def.clicks
@@ -104,8 +106,8 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
         self:RegisterForClicks(clicks)
     elseif type(clicks) == "table" then
         self:RegisterForClicks(unpack(clicks))
-    else
-        self:error("Unreachable Code")
+    elseif type(clicks) ~= "nil" then
+        error("Unreachable Code")
     end
     
     if def.text then

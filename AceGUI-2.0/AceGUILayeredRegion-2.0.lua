@@ -11,7 +11,7 @@ local AceGUILayeredRegion = AceOO.Class(AceGUIRegion)
 AceGUILayeredRegion.new = AceGUIRegion.new
 AceGUILayeredRegion.virtual = true
 
-local registry = ACEGUI_REGISTRY
+local registry = ACEGUI2_REGISTRY
 
 function AceGUILayeredRegion.prototype:Configure(def,parent,name,handler)
     --AceGUILayeredRegion.super.prototype.Configure(self,def,parent,name,handler)

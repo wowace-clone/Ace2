@@ -17,7 +17,7 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
-local registry = ACEGUI_REGISTRY
+local registry = ACEGUI2_REGISTRY
 
 local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIFactory = AceLibrary("AceGUIFactory-2.0")

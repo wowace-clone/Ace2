@@ -13,7 +13,7 @@ AceGUIBase.virtual = true
 
 local old_new = AceGUIBase.new
 
-local registry = ACEGUI_REGISTRY
+local registry = ACEGUI2_REGISTRY
 local scripts
 AceGUIBase.new = function(self,def,handler,parent,name)
     local tmp = old_new(self)

@@ -86,6 +86,32 @@ templates.UIPanelDialog = {
 	},
 }
 
+templates.UICheckButton = {
+    type = "checkbutton",
+    height = 32,
+    width = 32,
+    
+    NormalTexture = "Interface/Buttons/UI-CheckBox-Up",
+    PushedTexture = "Interface/Buttons/UI-CheckBox-Down",
+    DisabledTexture = "Interface/Buttons/UI-CheckBox-Disabled",
+    HightlightTexture = {
+        file = "Interface/Buttons/UI-CheckBox-Highlight",
+        setAllPoints = true,
+        blendMode = "ADD",
+    },
+    CheckedTexture = "Interface/Buttons/UI-CheckBox-Check",
+    DisabledCheckTexture = "Interface/Buttons/UI-CheckBox-Check-Disabled",
+    clicks = "LeftButtonUp",
+    ButtonText = {
+        anchors = {
+            left = { relPoint = "right", x = 2 },
+        },
+        fontObject = GameFontNormalSmall,
+    },
+    pushedTextOffset = 0,    
+
+}
+
 AceLibrary:Register(templates,MAJOR_VERSION,MINOR_VERSION)
 templates = AceLibrary(MAJOR_VERSION)
 setmetatable(templates,mt)
