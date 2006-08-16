@@ -13,5 +13,6 @@
     <Script file="AceGUITexture-2.0.lua"/>
     <Script file="AceGUIFrame-2.0.lua"/>
     <Script file="AceGUIButton-2.0.lua"/>
+    <Script file="AceGUICheckButton-2.0.lua"/>
     
 </UI>

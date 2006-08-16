@@ -108,7 +108,10 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
         self:error("Unreachable Code")
     end
     
-    self:SetText(def.text or "")
+    if def.text then
+        self:SetText(def.text)
+    end
+    
     if def.disabled then
         self:Disable()
     end
