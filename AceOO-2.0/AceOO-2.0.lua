@@ -17,6 +17,8 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
+DEFAULT_CHAT_FRAME:AddMessage(string.format("Loading %s %s", MAJOR_VERSION, MINOR_VERSION))
+
 local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
 
 local AceOO = {
@@ -322,6 +324,7 @@ local function traverseInterfaces(bit, total)
 		end
 	end
 end
+local class_new
 do
 	Class = Factory(Object, setmetatable({}, {__index = Object}), Object)
 	Class.super = Object
@@ -653,8 +656,12 @@ local ClassFactory = Factory(Object, Class, Object)
 
 function Class:new(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
 					a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	return ClassFactory:new(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
+	local x = ClassFactory:new(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
 							a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if AceOO.classes then
+		AceOO.classes[x] = true
+	end
+	return x
 end
 getmetatable(Class).__call = Class.new
 
@@ -977,6 +984,17 @@ local function activate(self, oldLib, oldDeactivate)
 	Mixin = self.Mixin
 	Interface = self.Interface
 	Classpool = self.Classpool
+	
+	if oldLib then
+		self.classes = oldLib.classes
+		for class in pairs(self.classes) do
+			class.new = class_new
+		end
+	end
+	if not self.classes then
+		self.classes = setmetatable({}, {__mode="k"})
+	end
+	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
 	end
