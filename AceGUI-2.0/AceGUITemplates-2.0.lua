@@ -94,11 +94,7 @@ templates.UICheckButton = {
     NormalTexture = "Interface/Buttons/UI-CheckBox-Up",
     PushedTexture = "Interface/Buttons/UI-CheckBox-Down",
     DisabledTexture = "Interface/Buttons/UI-CheckBox-Disabled",
-    HightlightTexture = {
-        file = "Interface/Buttons/UI-CheckBox-Highlight",
-        setAllPoints = true,
-        blendMode = "ADD",
-    },
+    HighlightTexture = "Interface/Buttons/UI-CheckBox-Highlight",
     CheckedTexture = "Interface/Buttons/UI-CheckBox-Check",
     DisabledCheckTexture = "Interface/Buttons/UI-CheckBox-Check-Disabled",
     clicks = "LeftButtonUp",
