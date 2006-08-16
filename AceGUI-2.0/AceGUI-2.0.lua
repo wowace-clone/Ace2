@@ -17,13 +17,14 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
-local registry = ACEGUI2_REGISTRY
 
 local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIFactory = AceLibrary("AceGUIFactory-2.0")
 local AceGUIFontInstance = AceLibrary("AceGUIFontInstance-2.0")
 local AceGUI = AceOO.Mixin{"CreateGUI"}
 
+AceGUI.registry = {objects = {}, templates = {}}
+local registry
 local function configureTree(root)
     
     local info = registry.objects[root]
@@ -46,4 +47,14 @@ function AceGUI:CreateGUI(def,handler)
     return root
 end
 
-AceLibrary:Register(AceGUI, MAJOR_VERSION, MINOR_VERSION)
+function AceGUI:activate(oldLib, oldDeactivate)
+	AceGUI = AceLibrary(MAJOR_VERSION)
+	
+	AceGUI.super.activate(self, oldLib, oldDeactivate)
+end
+
+
+AceLibrary:Register(AceGUI, MAJOR_VERSION, MINOR_VERSION, AceGUI.activate)
+AceGUI = AceLibrary(MAJOR_VERSION)
+AceGUIFactory:init()
+registry = AceGUI.registry

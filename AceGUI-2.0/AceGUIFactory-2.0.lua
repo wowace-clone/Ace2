@@ -31,8 +31,7 @@ local CLASS_MAP	= {
 local AceOO = AceLibrary("AceOO-2.0")
 local AceGUICustomClass = AceLibrary("AceGUICustomClass-2.0")
 local AceGUIFactory = {}
-ACEGUI2_REGISTRY = ACEGUI2_REGISTRY or {templates = {}, objects = {}}
-local registry = ACEGUI2_REGISTRY
+local registry 
 local templates = AceLibrary("AceGUITemplates-2.0")
 
 
@@ -83,6 +82,10 @@ function AceGUIFactory:make(def,handler,parent,name)
     end
     
     return class:new(def,handler,parent,name)
+end
+
+function AceGUIFactory:init()
+    registry = AceLibrary("AceGUI-2.0").registry
 end
 
 AceLibrary:Register(AceGUIFactory,MAJOR_VERSION,MINOR_VERSION)

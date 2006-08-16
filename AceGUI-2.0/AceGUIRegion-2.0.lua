@@ -10,7 +10,7 @@ local AceGUIBase = AceLibrary("AceGUIBase-2.0")
 local AceGUIRegion = AceOO.Class(AceGUIBase)
 AceGUIRegion.new = AceGUIBase.new
 AceGUIRegion.virtual = true
-local registry = ACEGUI2_REGISTRY
+local registry = AceLibrary("AceGUI-2.0").registry
 
 function AceGUIRegion.prototype:Configure(def,parent,name,handler)
     --AceGUIRegion.super.prototype.Configure(self,def,parent,name,handler)
