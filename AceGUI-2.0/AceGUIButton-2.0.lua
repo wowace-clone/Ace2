@@ -12,6 +12,8 @@ AceGUIButton.new = AceGUIFrame.new
 AceGUIButton.CreateUIObject = AceGUIFrame.CreateUIObject
 AceGUIButton.UIObjectType = "Button"
 
+local factory = AceLibrary("AceGUIFactory-2.0")
+
 local buttonTextTemplate = {
     type = "fontstring",
     anchors = {
@@ -22,6 +24,7 @@ local buttonTextTemplate = {
 local function attachTexture(textureType,def,elements)
     if type(def[textureType]) == "table" then
         local textureDef = def[textureType]
+        factory:SetupTemplate(textureDef)
         elements[textureType] = textureDef
         textureDef.type = "texture"
         textureDef.anchors = textureDef.anchors or buttonTextTemplate.anchors

@@ -12,21 +12,27 @@ AceGUICheckButton.new = AceGUIButton.new
 AceGUICheckButton.CreateUIObject = AceGUIButton.CreateUIObject
 AceGUICheckButton.UIObjectType = "CheckButton"
 
+local factory = AceLibrary("AceGUIFactory-2.0")
 
+local anchors = {
+    center = true,
+}
 
 local function attachTexture(textureType,def,elements)
     if type(def[textureType]) == "table" then
         local textureDef = def[textureType]
+        factory:SetupTemplate(textureDef)
         elements[textureType] = textureDef
         textureDef.type = "texture"
-        textureDef.anchors = textureDef.anchors or buttonTextTemplate.anchors
+        textureDef.anchors = textureDef.anchors or anchors
     end
 end
 
 function AceGUICheckButton.prototype:Build(def,parent,name,handler)
     --AceGUICheckButton.super.prototype.Build(self,def,parent,name,handler)
     AceGUIButton.prototype.Build(self,def,parent,name,handler)
-
+    local elements = def.elements
+    
     attachTexture("CheckedTexture",def,elements)
     attachTexture("DisabledCheckedTexture",def,elements)
 end

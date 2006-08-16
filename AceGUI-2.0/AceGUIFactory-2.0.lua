@@ -35,15 +35,16 @@ ACEGUI2_REGISTRY = ACEGUI2_REGISTRY or {templates = {}, objects = {}}
 local registry = ACEGUI2_REGISTRY
 local templates = AceLibrary("AceGUITemplates-2.0")
 
-local function inheritTemplate(def)
-	local template = def.template
+
+function AceGUIFactory:SetupTemplate(def)
+    local template = def.template
 	if(not template or registry.templates[def]) then return end
     if type(template) == "string" then
         template = templates[def.template]
         def.template = template
     end 
     
-	if(template.template) then inheritTemplate(template) end
+	if(template.template) then self:SetupTemplate(template) end
 	
 	setmetatable(def,{__index = template})
 	if(template.elements) then	
@@ -55,11 +56,12 @@ local function inheritTemplate(def)
 			def.elements = setmetatable({},{__index = template.elements})
 		end
 	end
-	registry.templates[def] = true
+	registry.templates[def] = true    
 end
 
+
 function AceGUIFactory:make(def,handler,parent,name)
-    inheritTemplate(def)
+    self:SetupTemplate(def)
     name = def.name or name
     if not name then
         error("Root Objects must define a name",3)

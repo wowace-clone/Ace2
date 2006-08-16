@@ -3,7 +3,6 @@ local MINOR_VERSION = "$Rev$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-
 local templates = {}    
 
 local mt = { __index = function(t,k)
@@ -86,21 +85,47 @@ templates.UIPanelDialog = {
 	},
 }
 
+local checkButtonTexture = {
+    width = 32,
+    height = 32,
+    anchors = { left = true },    
+}
+
 templates.UICheckButton = {
     type = "checkbutton",
     height = 32,
     width = 32,
     
-    NormalTexture = "Interface/Buttons/UI-CheckBox-Up",
-    PushedTexture = "Interface/Buttons/UI-CheckBox-Down",
-    DisabledTexture = "Interface/Buttons/UI-CheckBox-Disabled",
-    HighlightTexture = "Interface/Buttons/UI-CheckBox-Highlight",
-    CheckedTexture = "Interface/Buttons/UI-CheckBox-Check",
-    DisabledCheckTexture = "Interface/Buttons/UI-CheckBox-Check-Disabled",
+    NormalTexture = {
+        template = checkButtonTexture,
+        file = "Interface/Buttons/UI-CheckBox-Up",
+    },    
+    PushedTexture = {
+        template = checkButtonTexture,
+        file = "Interface/Buttons/UI-CheckBox-Down",
+    },
+    DisabledTexture = {
+        template = checkButtonTexture,
+        file = "Interface/Buttons/UI-CheckBox-Disabled",
+    },
+    HighlightTexture = {
+        template = checkButtonTexture,
+        file = "Interface/Buttons/UI-CheckBox-Highlight",
+        blendMode = "ADD",
+    },
+    CheckedTexture = {
+        template = checkButtonTexture,
+        file = "Interface/Buttons/UI-CheckBox-Check",
+    },
+    DisabledCheckTexture = {
+        template = checkButtonTexture,
+        file = "Interface/Buttons/UI-CheckBox-Check-Disabled",
+    },
+    
     clicks = "LeftButtonUp",
     ButtonText = {
         anchors = {
-            left = { relPoint = "right", x = 2 },
+            left = { x = 34 },
         },
         fontObject = GameFontNormalSmall,
     },
