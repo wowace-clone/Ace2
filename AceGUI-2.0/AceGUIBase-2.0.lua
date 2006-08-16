@@ -9,6 +9,12 @@ local AceGUIFactory = AceLibrary("AceGUIFactory-2.0")
 local AceGUIFontInstance = AceLibrary("AceGUIFontInstance-2.0")
 local AceGUIBase = AceOO.Class()
 
+local AceEvent
+
+if AceLibrary:HasInstace("AceEvent-2.0") then
+    AceEvent = AceLibrary("AceEvent-2.0")
+end
+
 AceGUIBase.virtual = true
 
 local old_new = AceGUIBase.new
@@ -28,7 +34,7 @@ AceGUIBase.new = function(self,def,handler,parent,name)
     end})  
     
     if registry.objects[name] then
-        error("An AceGUI ojbect with the name '"..name.."' already exists",3)
+        self:error("An AceGUI ojbect with the name %q already exists",name)
     end
     parent = def.parent or parent
     o:SetParent(parent)
@@ -37,6 +43,8 @@ AceGUIBase.new = function(self,def,handler,parent,name)
     local info = { o = o, name = name, def = def, handler = handler, parent = parent, children = children, scripts = scripts }
     registry.objects[name] = info
     registry.objects[o] = info
+    
+    if AceEvent then AceEvent:TriggerEvent("ACEGUI_NEW_OBJECT",name,o) end
     o:Build(def,parent,name,handler)
     o:BuildChildren(def,parent,name,handler,children)
     return o    

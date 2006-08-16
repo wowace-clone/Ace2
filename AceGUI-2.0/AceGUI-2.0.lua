@@ -25,6 +25,13 @@ local AceGUI = AceOO.Mixin{"CreateGUI"}
 
 AceGUI.registry = {objects = {}, templates = {}}
 local registry
+
+local AceEvent
+
+if AceLibrary:HasInstace("AceEvent-2.0") then
+    AceEvent = AceLibrary("AceEvent-2.0")
+end
+
 local function configureTree(root)
     
     local info = registry.objects[root]
@@ -34,11 +41,13 @@ local function configureTree(root)
     root:Configure(info.def,info.parent,info.name,info.handler)
     root:RunScript("OnLoad")
     if root:IsVisible() then root:RunScript("OnShow") end
-    
+        
     local children = info.children
     for _,child in children do
         configureTree(child)
     end
+    
+    if AceEvent then AceEvent:TriggerEvent("ACEGUI_OBJECT_CONFIGURED",info.name,root)
 end
 
 function AceGUI:CreateGUI(def,handler)
