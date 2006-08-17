@@ -23,7 +23,6 @@ local AceGUIFactory = AceLibrary("AceGUIFactory-2.0")
 local AceGUIFontInstance = AceLibrary("AceGUIFontInstance-2.0")
 local AceGUI = AceOO.Mixin{"CreateGUI"}
 
-AceGUI.registry = {objects = {}, templates = {}}
 local registry
 
 local AceEvent
@@ -57,9 +56,13 @@ function AceGUI:CreateGUI(def,handler)
 end
 
 function AceGUI:activate(oldLib, oldDeactivate)
-	AceGUI = AceLibrary(MAJOR_VERSION)
-	
-	AceGUI.super.activate(self, oldLib, oldDeactivate)
+	AceGUI = self
+    if oldLib then
+        self.registry = oldLib.registry
+    end
+    if not self.registry then
+        self.registry = {templates = {}, objects = {}}
+    end
 end
 
 
