@@ -134,6 +134,17 @@ templates.UICheckButton = {
 
 }
 
-AceLibrary:Register(templates,MAJOR_VERSION,MINOR_VERSION)
+function templates:activate(oldLib,oldDeactivate)
+    if oldLib then
+        for k,v in pairs(oldLib) do
+            if type(v) == "table" then
+                self[k] = self[k] or oldLib[k]
+            end
+        end
+    end
+
+end
+
+AceLibrary:Register(templates,MAJOR_VERSION,MINOR_VERSION,templates.activate)
 templates = AceLibrary(MAJOR_VERSION)
 setmetatable(templates,mt)
