@@ -65,6 +65,9 @@ local function setTexture(self,textureType,def)
         arg = self[textureType]
     end
     self[method](self,arg)
+    if not self[textureType] then
+        self[textureType] = self["Get"..textureType](self)
+    end
 end
 
 local function setTextColor(self,textType,def,method)
@@ -120,6 +123,7 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
     if def.disabled then
         self:Disable()
     end
+    
 end
     
 

@@ -40,7 +40,10 @@ function AceGUISlider.prototype:Configure(def,parent,name,handler)
     self:SetMinMaxValues(def.minValue or 0, def.maxValue or 100)
     
     if def.valueStep then self:SetValueStep(def.valueStep) end
+    
+    if not self.ThumbTexture then
+        self.ThumbTexture = self:GetThumbTexture()
+    end
 end
-
 
 AceLibrary:Register(AceGUISlider, MAJOR_VERSION, MINOR_VERSION)

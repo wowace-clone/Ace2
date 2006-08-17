@@ -44,6 +44,9 @@ local function setTexture(self,textureType,def)
         arg = self[textureType]
     end
     self[method](self,arg)
+    if not self[textureType] then
+        self[textureType] = self["Get"..textureType](self)
+    end
 end
 
 
