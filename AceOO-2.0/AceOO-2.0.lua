@@ -17,8 +17,6 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-DEFAULT_CHAT_FRAME:AddMessage(string.format("Loading %s %s", MAJOR_VERSION, MINOR_VERSION))
-
 local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
 
 local AceOO = {
