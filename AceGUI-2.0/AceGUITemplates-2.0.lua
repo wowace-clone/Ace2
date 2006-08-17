@@ -127,8 +127,9 @@ templates.UICheckButton = {
         anchors = {
             left = { x = 34 },
         },
-        fontObject = GameFontNormalSmall,
     },
+    NormalFontObject = GameFontNormalSmall,
+    HighlightFontObject = GameFontNormalSmall,
     pushedTextOffset = 0,    
 
 }

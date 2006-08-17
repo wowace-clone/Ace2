@@ -11,7 +11,7 @@ local AceGUIBase = AceOO.Class()
 
 local AceEvent
 
-if AceLibrary:HasInstace("AceEvent-2.0") then
+if AceLibrary:HasInstance("AceEvent-2.0") then
     AceEvent = AceLibrary("AceEvent-2.0")
 end
 

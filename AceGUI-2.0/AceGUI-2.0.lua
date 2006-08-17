@@ -28,7 +28,7 @@ local registry
 
 local AceEvent
 
-if AceLibrary:HasInstace("AceEvent-2.0") then
+if AceLibrary:HasInstance("AceEvent-2.0") then
     AceEvent = AceLibrary("AceEvent-2.0")
 end
 
@@ -47,7 +47,7 @@ local function configureTree(root)
         configureTree(child)
     end
     
-    if AceEvent then AceEvent:TriggerEvent("ACEGUI_OBJECT_CONFIGURED",info.name,root)
+    if AceEvent then AceEvent:TriggerEvent("ACEGUI_OBJECT_CONFIGURED",info.name,root) end
 end
 
 function AceGUI:CreateGUI(def,handler)
