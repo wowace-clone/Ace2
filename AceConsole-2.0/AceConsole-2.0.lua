@@ -39,7 +39,7 @@ local NONE = NONE or "None"
 local AceOO = AceLibrary("AceOO-2.0")
 local AceEvent
 
-local AceConsole = AceOO.Mixin { "Print", "CustomPrint", "RegisterChatCommand" }
+local AceConsole = AceOO.Mixin { "Print", "PrintComma", "CustomPrint", "RegisterChatCommand" }
 local Dewdrop
 
 local _G = getfenv(0)
