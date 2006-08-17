@@ -985,12 +985,13 @@ local function activate(self, oldLib, oldDeactivate)
 	
 	if oldLib then
 		self.classes = oldLib.classes
-		for class in pairs(self.classes) do
-			class.new = class_new
-		end
 	end
 	if not self.classes then
 		self.classes = setmetatable({}, {__mode="k"})
+	else
+		for class in pairs(self.classes) do
+			class.new = class_new
+		end
 	end
 	
 	if oldDeactivate then
