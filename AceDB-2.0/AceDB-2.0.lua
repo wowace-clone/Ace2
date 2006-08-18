@@ -549,6 +549,9 @@ function AceDB:InitializeDB(addonName)
 end
 
 function AceDB:OnEmbedInitialize(target, name)
+	if name then
+		self:ADDON_LOADED(name)
+	end
 	self.InitializeDB(target, name)
 end
 
