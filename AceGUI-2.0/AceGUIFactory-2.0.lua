@@ -22,7 +22,7 @@ local CLASS_MAP	= {
 --	["scrollframe"]     		= "AceGUIScrollFrame-2.0",
 --	[ACEGUI_SCROLLBAR]			= PLACEHOLDER,
 --	[ACEGUI_SCROLL_CHILD]		= PLACEHOLDER,
---	[ACEGUI_SLIDER]				= PLACEHOLDER,
+	["slider"]				    = "AceGUISlider-2.0",
 	["fontstring"]  			= "AceGUIFontString-2.0",
 	["texture"]     			= "AceGUITexture-2.0",
 --	[ACEGUI_BACKDROP]			= PLACEHOLDER,
@@ -78,7 +78,7 @@ function AceGUIFactory:make(def,handler,parent,name)
             error(string.format("%s Is not a valid class.  All Custom classes must implement the AceGUICustomClass interface.",def.type),3)
         end
     else
-        error("The type field may only be a string or class reference",3)
+        self:error("Type field must be a string or class reference. (%q gave %s)",name,type(def.type))
     end
     
     return class:new(def,handler,parent,name)

@@ -134,6 +134,109 @@ templates.UICheckButton = {
 
 }
 
+templates.OptionsSlider = {
+    type = "slider",
+    width = 128,
+    height = 17,
+    hitRectInsets = {0,0,-10,-10},
+    backdrop = {
+        bgFile = "Interface/Buttons/UI-SliderBar-Background",
+        edgeFile = "Interface/Buttons/UI-SliderBar-Border",
+        tile = true, edgeSize = 8, tileSize = 8,
+        insets = {
+            left = 3, right = 3,
+            top = 6, bottom = 6,
+        },
+    },
+    ThumbTexture = {
+        file = "Interface/Buttons/UI-SliderBar-Button-Horizontal",
+        width = 32,
+        height = 32,
+    },        
+}
+
+templates.UIPanelScrollButtonTexture = {
+    type = "texture",
+    texCoord = {
+        left = .25, right = .75,
+        top = .75, bottom = .25,
+    },
+    width = 16,
+    height = 16,
+    anchors = {center = true},
+}
+
+templates.UIPanelScrollUpButton = {
+    type = "button",
+    width = 16,
+    height = 16,
+    NormalTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollUpButton-Up"},
+    PushedTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollUpButton-Down"},
+    DisabledTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollUpButton-Disabled"},
+    HighlightTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollUpButton-Highlight", blendMode = "ADD"},
+}
+
+templates.UIPanelScrollDownButton = {
+    type = "button",
+    width = 16,
+    height = 16,
+    NormalTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollDownButton-Up"},
+    PushedTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollDownButton-Down"},
+    DisabledTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollDownButton-Disabled"},
+    HighlightTexture = {template = "UIPanelScrollButtonTexture", file = "Interface/Buttons/UI-ScrollBar-ScrollDownButton-Highlight", blendMode = "ADD"},
+}
+
+--TODO: 
+-- o Add the slider's background.  
+-- o Might be simpler to encapsulate this entire thing as a frame
+-- o Reexamine the scripts used here.  Should a template be this specific?
+templates.UIPanelScrollBar = {
+    type = "slider",
+    orientation = "VERTICAL",
+    width = 16,
+    elements = {
+        upButton = {
+            template = "UIPanelScrollUpButton",
+            anchors = { bottom = { relPoint = "top"} },
+            
+            clicks = "LeftButtonUp",
+            OnClick = function()
+                local parent = this:GetParent()
+                parent:SetValue(parent:GetValue() - parent:GetValueStep())
+            end,               
+        },
+        downButton = {
+            template = "UIPanelScrollDownButton",
+            anchors = { top = { relPoint = "bottom", y = -2 } },
+            
+            clicks = "LeftButtonUp",
+            OnClick = function()
+                local parent = this:GetParent()
+                parent:SetValue(parent:GetValue() + parent:GetValueStep())
+            end
+        }
+    },
+    ThumbTexture = {
+        file = "Interface/Buttons/UI-ScrollBar-Knob",
+        width = 16,
+        height = 16,
+        texCoord = {
+            left = .25, right = .75,
+            top = .25, bottom = .75,
+        },
+    },
+    OnValueChanged = function() 
+        local min,max = this:GetMinMaxValues()
+        local val = this:GetValue()
+        if val == min then this.upButton:Disable()
+        else this.upButton:Enable() end
+        
+        if val == max then this.downButton:Disable()
+        else this.downButton:Enable() end
+    end,
+        
+}
+
 function templates:activate(oldLib,oldDeactivate)
     if oldLib then
         for k,v in pairs(oldLib) do
@@ -142,7 +245,6 @@ function templates:activate(oldLib,oldDeactivate)
             end
         end
     end
-
 end
 
 AceLibrary:Register(templates,MAJOR_VERSION,MINOR_VERSION,templates.activate)

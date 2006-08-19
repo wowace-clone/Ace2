@@ -42,12 +42,13 @@ function AceGUITexture.prototype:Configure(def,parent,name,handler)
 
 	local c = def.texCoord
 	if c then
-		if c.minX then
-			self:SetTexCoord(c.minX, c.maxX, c.minY, c.maxY)
-		else
+		if c.minX or c.left then
+			self:SetTexCoord(c.minX or c.left, c.maxX or c.right, c.minY or c.bottom, c.maxY or c.top)
+        else
 			self:SetTexCoord(c.ULx, c.ULy, c.LLx, c.LLy, c.URx, c.URy, c.LRx, c.LRy)
 		end
 	end
+    
 end
 
 AceLibrary:Register(AceGUITexture,MAJOR_VERSION,MINOR_VERSION)

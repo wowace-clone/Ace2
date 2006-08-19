@@ -14,5 +14,9 @@
     <Script file="AceGUIFrame-2.0.lua"/>
     <Script file="AceGUIButton-2.0.lua"/>
     <Script file="AceGUICheckButton-2.0.lua"/>
+    <Script file="AceGUISlider-2.0.lua"/>
+    
+    
+    <Script file="AceGUIListBox-2.0.lua"/>
     
 </UI>
