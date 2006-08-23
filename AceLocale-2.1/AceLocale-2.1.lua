@@ -39,7 +39,7 @@ function AceLocale:new(name)
 			end
 		end,
         __call = function(obj, arg1, arg2)
-            if arg2 == nil then return self[key] end
+            if arg2 == nil then return obj[arg1] end
             arg1 = strlower(arg1)
             
             if arg1 == "getstrict" then 
