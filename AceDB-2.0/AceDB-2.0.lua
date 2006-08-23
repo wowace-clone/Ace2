@@ -842,10 +842,7 @@ function AceDB:SetProfile(name, copyFrom)
 		return
 	end
 	local current = self.class
-	while true do
-		if current == AceOO.Class then
-			break
-		end
+	while current and current ~= AceOO.Class do
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedProfileDisable) == "function" then
@@ -878,10 +875,7 @@ function AceDB:SetProfile(name, copyFrom)
 		inheritDefaults(db.profile, db.defaults and db.defaults.profile)
 	end
 	local current = self.class
-	while true do
-		if current == AceOO.Class then
-			break
-		end
+	while current and current ~= AceOO.Class do
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedProfileEnable) == "function" then
@@ -910,10 +904,7 @@ function AceDB:SetProfile(name, copyFrom)
 		end
 		if newactive then
 			local current = self.class
-			while true do
-				if current == AceOO.Class then
-					break
-				end
+			while current and current ~= AceOO.Class do
 				if current.mixins then
 					for mixin in pairs(current.mixins) do
 						if type(mixin.OnEmbedEnable) == "function" then
@@ -928,10 +919,7 @@ function AceDB:SetProfile(name, copyFrom)
 			end
 		else
 			local current = self.class
-			while true do
-				if current == AceOO.Class then
-					break
-				end
+			while current and current ~= AceOO.Class do
 				if current.mixins then
 					for mixin in pairs(current.mixins) do
 						if type(mixin.OnEmbedDisable) == "function" then
@@ -992,10 +980,7 @@ function AceDB:ToggleActive(state)
 	end
 	if not disable then
 		local current = self.class
-		while true do
-			if current == AceOO.Class then
-				break
-			end
+		while current and current ~= AceOO.Class do
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedEnable) == "function" then
@@ -1010,10 +995,7 @@ function AceDB:ToggleActive(state)
 		end
 	else
 		local current = self.class
-		while true do
-			if current == AceOO.Class then
-				break
-			end
+		while current and current ~= AceOO.Class do
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedDisable) == "function" then
