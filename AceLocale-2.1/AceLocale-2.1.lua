@@ -188,9 +188,7 @@ end
 function AceLocale:GetReverseTranslation(name, text)
 	self:argCheck(name, 1, "string")
     self:argCheck(text, 2, "string")
-	
-    
-    
+	    
 	if not rawget(self.registry[name], "__reverseTranslation__") then
 		initReverse(self.registry[name])
 	end
@@ -198,6 +196,38 @@ function AceLocale:GetReverseTranslation(name, text)
     return self.registry[name].__reverseTranslation__[text]	
 end
 
+function AceLocale:HasTranslation(name, text)
+    self:argCheck(name, 1, "string")
+    self:argCheck(text, 2, "string")
+    
+    return self.registry[name].__reverseTranslation__[text]	 and true or false
+end
+
+function AceLocale:HasReverseTranslation(name, text)
+    self:argCheck(name, 1, "string")
+    self:argCheck(text, 2, "string")
+
+    if not rawget(self.registry[name], "__reverseTranslation__") then
+		initReverse(self.registry[name])
+	end
+    
+    return rawget(self.registry[name], text) and true or false
+end
+
+function AceLocale:GetIterator(name)
+    self:argCheck(name, 1, "string")
+    return pairs(self.registry[name].__curTranslation__)
+end
+
+function AceLocale:HasReverseTranslation(name)
+    self:argCheck(name, 1, "string")
+
+    if not rawget(self.registry[name], "__reverseTranslation__") then
+		initReverse(self.registry[name])
+	end
+    
+    return pairs(self.registry[name].__reverseTranslation__)
+end
 
 local function activate(self, oldLib, oldDeactivate)
 	AceLocale = self
