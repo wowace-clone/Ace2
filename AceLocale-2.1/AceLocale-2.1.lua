@@ -57,13 +57,13 @@ function AceLocale:RegisterTranslation(name, locale, func)
 	
     if not self.registry[name] then self:new(name) end
     
-    if not self.registry[name].__translations__ then self.registry[name].__translations__ = {} end
+    if not rawget(self.registry[name], "__translations__") then self.registry[name].__translations__ = {} end
     
 	if self.registry[name].__translations__[locale] then
 		self:error("Cannot provide the same locale more than once. %q provided twice for %s.", locale, name)
 	end
 	
-    if self.registry[name].__baseLocale__ then 
+    if rawget(self.registry[name], "__baseLocale__") then 
         for k, v in pairs(func()) do
 			if not rawget(self.registry[name].__baseTranslation__, k) then
 				self:error("Improper translation exists. %q is likely misspelled for locale %s.", k, locale)
@@ -96,7 +96,7 @@ end
 function AceLocale:SetLocale(name, locale)
     self:argCheck(name, 2, "string")
     
-    if not self.registry[name] then self:error("At least one translation must be registered before you can SetLocale().", name) end
+    if not self.registry[name] or not rawget(self.registry[name], "__translations__") then self:error("At least one translation must be registered before you can SetLocale().", name) end
     
     if locale then 
         if not self.registry[name].__translations__[locale] then
@@ -132,6 +132,10 @@ function AceLocale:SetLocale(name, locale)
     if not rawget(self.registry[name], "__dynamic__") then
         self.registry[name].__translations__ = nil
     end
+    
+    if rawget(self.registry[name], "__reverseTranslation__") then
+		self.registry[name].__reverseTranslation__ = nil
+	end
 end
 
 function AceLocale:SetDynamicLocales(name, flag)
@@ -144,7 +148,7 @@ end
 function AceLocale:GetTranslation(name, locale)
     self:argCheck(name, 2, "string")
     
-    if not self.registry[name] then self:error("At least one translation must be registered before you can GetTranslation().", name) end
+    if not self.registry[name] or not rawget(self.registry[name], "__translations__") then self:error("At least one translation must be registered before you can GetTranslation().", name) end
     if locale and not self.registry[name].__translations__[locale] then
         self:error("Cannot GetTranslation for locale %s,  It has not been registered for %s.", locale, name)
     end
@@ -156,8 +160,9 @@ end
 
 function AceLocale:SetStrictness(name, strict)
     self:argCheck(name, 2, "string")
+    self:argCheck(strict, 2, "boolean")
 	
-	if not self.registry[name] then self:error("At least one translation must be registered before you can SetStrictness().", name) end
+	if not self.registry[name] then self:error("At least one translation must be registered before you can SetStrictness().") end
     local mt = getmetatable(self.registry[name].__curTranslation__)
     
 	if strict and mt then
@@ -188,7 +193,9 @@ end
 function AceLocale:GetReverseTranslation(name, text)
 	self:argCheck(name, 1, "string")
     self:argCheck(text, 2, "string")
-	    
+    
+    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetReverseTranslation().") end
+    
 	if not rawget(self.registry[name], "__reverseTranslation__") then
 		initReverse(self.registry[name])
 	end
@@ -200,28 +207,37 @@ function AceLocale:HasTranslation(name, text)
     self:argCheck(name, 1, "string")
     self:argCheck(text, 2, "string")
     
-    return self.registry[name].__reverseTranslation__[text]	 and true or false
+    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can HasTranslation().") end
+    
+    return rawget(self.registry[name], "__curTranslation__")[text] and true or false
 end
 
 function AceLocale:HasReverseTranslation(name, text)
     self:argCheck(name, 1, "string")
     self:argCheck(text, 2, "string")
-
+    
+    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can HasReverseTranslation().") end
+    
     if not rawget(self.registry[name], "__reverseTranslation__") then
 		initReverse(self.registry[name])
 	end
     
-    return rawget(self.registry[name], text) and true or false
+    return rawget(self.registry[name], "__reverseTranslation__")[text] and true or false
 end
 
 function AceLocale:GetIterator(name)
     self:argCheck(name, 1, "string")
+    
+    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetIterator().") end
+    
     return pairs(self.registry[name].__curTranslation__)
 end
 
 function AceLocale:GetReverseIterator(name)
     self:argCheck(name, 1, "string")
 
+    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetReverseIterator().") end
+    
     if not rawget(self.registry[name], "__reverseTranslation__") then
 		initReverse(self.registry[name])
 	end
