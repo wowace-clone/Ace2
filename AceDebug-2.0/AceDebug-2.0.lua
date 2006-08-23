@@ -119,7 +119,7 @@ function AceDebug:GetDebugLevel()
 end
 
 function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	if not self.debuglevel then return end
+	if not self.debugging or not self.debuglevel then return end
     AceDebug:argCheck(level, 1, "number")
     if level < 1 or level > 3 then
         AceDebug:error("Bad argument #1 to `LevelDebug`, must be a number 1-3")
@@ -177,7 +177,7 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, a2, a3, a4,
 end
 
 function AceDebug:LevelDebug(level, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	if not self.debuglevel then return end
+	if not self.debugging or not self.debuglevel then return end
     AceDebug:argCheck(level, 1, "number")
     if level < 1 or level > 3 then
         AceDebug:error("Bad argument #1 to `LevelDebug`, must be a number 1-3")
