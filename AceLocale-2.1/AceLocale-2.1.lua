@@ -26,11 +26,16 @@ function AceLocale:new(name)
 	end
     
     self.registry[name] = {}
-	
+	self.registry[name].__uid__ = name
+    
     setmetatable(self.registry[name], {
         __tostring = function(self)
-            return name
-        end,
+			if type(self.GetLibraryVersion) == "function" then
+				return self:GetLibraryVersion()
+			else
+				return "AceLocale(" .. name .. ")"
+			end
+		end,
         __call = function(self, key, strict)
             if strict == true then
                 return rawget(self.__curTranslation__, key)
@@ -41,7 +46,7 @@ function AceLocale:new(name)
             end
         end,
     })
-
+    
     return self.registry[name]
     
 end
@@ -145,7 +150,7 @@ end
 function AceLocale:SetDynamicLocales(name, flag)
     self:argCheck(name, 2, "string", "table")
     self:argCheck(flag, 3, "boolean")
-    if type(name) == "table" then name = tostring(name) end
+    if type(name) == "table" then name = name.__uid__ end
     
     if not self.registry[name] then self:error("At least one translation must be registered before you can SetDynamicLocales().") end
 
@@ -169,7 +174,7 @@ end
 function AceLocale:SetStrictness(name, strict)
     self:argCheck(name, 2, "string", "table")
     self:argCheck(strict, 2, "boolean")
-	if type(name) == "table" then name = tostring(name) end
+	if type(name) == "table" then name = name.__uid__ end
     
 	if not self.registry[name] then self:error("At least one translation must be registered before you can SetStrictness().") end
     local mt = getmetatable(self.registry[name].__curTranslation__)
@@ -202,7 +207,7 @@ end
 function AceLocale:GetReverseTranslation(name, text)
 	self:argCheck(name, 1, "string", "table")
     self:argCheck(text, 2, "string")
-    if type(name) == "table" then name = tostring(name) end
+    if type(name) == "table" then name = name.__uid__ end
     
     if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetReverseTranslation().") end
     
@@ -216,7 +221,7 @@ end
 function AceLocale:HasTranslation(name, text)
     self:argCheck(name, 1, "string", "table")
     self:argCheck(text, 2, "string")
-    if type(name) == "table" then name = tostring(name) end
+    if type(name) == "table" then name = name.__uid__ end
     
     if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can HasTranslation().") end
     
@@ -226,7 +231,7 @@ end
 function AceLocale:HasReverseTranslation(name, text)
     self:argCheck(name, 1, "string", "table")
     self:argCheck(text, 2, "string")
-    if type(name) == "table" then name = tostring(name) end
+    if type(name) == "table" then name = name.__uid__ end
     
     if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can HasReverseTranslation().") end
     
@@ -239,7 +244,7 @@ end
 
 function AceLocale:GetIterator(name)
     self:argCheck(name, 1, "string", "table")
-    if type(name) == "table" then name = tostring(name) end
+    if type(name) == "table" then name = name.__uid__ end
     
     if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetIterator().") end
     
@@ -248,7 +253,7 @@ end
 
 function AceLocale:GetReverseIterator(name)
     self:argCheck(name, 1, "string", "table")
-    if type(name) == "table" then name = tostring(name) end
+    if type(name) == "table" then name = name.__uid__ end
     
     if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetReverseIterator().") end
     
