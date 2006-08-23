@@ -1131,7 +1131,7 @@ function AceComm:UnregisterAllComms()
 	for k,distribution in pairs(registry) do
 		for j,prefix in pairs(distribution) do
 			if prefix[self] then
-				AceComm.UnregisterComm(self)
+				AceComm.UnregisterComm(self, j)
 			end
 		end
 	end
