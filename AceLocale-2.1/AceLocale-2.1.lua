@@ -1,10 +1,10 @@
 --[[
-Name: AceLocale-2.0
+Name: AceLocale-2.1
 Revision: $Rev$
-Author(s): ckknight (ckknight@gmail.com)
+Author(s): kaelten (kaelten@gmail.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceLocale-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceLocale-2.0
+Documentation: http://wiki.wowace.com/index.php/AceLocale-2.1
+SVN: http://svn.wowace.com/root/trunk/Ace2/AceLocale-2.1
 Description: Localization library for addons to use to handle proper
              localization and internationalization.
 Dependencies: AceLibrary
