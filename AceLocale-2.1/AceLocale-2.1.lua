@@ -36,13 +36,20 @@ function AceLocale:new(name)
 				return "AceLocale(" .. name .. ")"
 			end
 		end,
-        __call = function(self, key, strict)
-            if strict == true then
-                return rawget(self.__curTranslation__, key)
-            elseif strict == false then
-                return rawget(self.__curTranslation__, key) or self.__baseTranslation__[key]
-            elseif strict == nil then
-                return self[key]
+        __call = function(obj, arg1, arg2)
+            if arg2 == nil then return self[key] end
+            arg1 == strlower(arg1)
+            
+            if arg1 == "getstrict" then 
+                return rawget(self.__curTranslation__, arg2)
+            elseif arg1 == "getloose" then
+                return rawget(self.__curTranslation__, arg2) or self.__baseTranslation__[arg2]
+            elseif arg1 == "getreverse" then
+                return self:GetReverseTranslation(obj, arg2)
+            elseif arg1 == "hastranslation" then
+                return self:HasTranslation(obj, arg2)
+            elseif arg1 == "hasreversetranslation" then
+                return self:HasReverseTranslation(obj, arg2)
             end
         end,
     })
