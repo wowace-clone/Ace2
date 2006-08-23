@@ -43,9 +43,11 @@ function AceLocale:new(name)
             arg1 = strlower(arg1)
             
             if arg1 == "getstrict" then 
-                return rawget(self[__curTranslation__], arg2)
+                local text = rawget(obj[__curTranslation__], arg2)
+                if not text then self:error("Strict translation for %s not found", key) end
+                return text
             elseif arg1 == "getloose" then
-                return rawget(self[__curTranslation__], arg2) or self[__baseTranslation__][arg2]
+                return rawget(obj[__curTranslation__], arg2) or obj[__baseTranslation__][arg2]
             elseif arg1 == "getreverse" then
                 return self:GetReverseTranslation(obj, arg2)
             elseif arg1 == "hastranslation" then
@@ -234,7 +236,7 @@ function AceLocale:HasTranslation(name, text)
     
     if not self.registry[name] or not rawget(self.registry[name], __curTranslation__) then self:error("At least one translation must be registered before you can HasTranslation().") end
     
-    return rawget(self.registry[name], __curTranslation__)[text] and true or false
+    return rawget(self.registry[name][__curTranslation__], text) and true or false
 end
 
 function AceLocale:HasReverseTranslation(name, text)
@@ -248,7 +250,7 @@ function AceLocale:HasReverseTranslation(name, text)
 		initReverse(self.registry[name])
 	end
     
-    return rawget(self.registry[name], __reverseTranslation__)[text] and true or false
+    return rawget(self.registry[name][__reverseTranslation__], text) and true or false
 end
 
 function AceLocale:GetIterator(name)
