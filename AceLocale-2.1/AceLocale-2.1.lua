@@ -219,7 +219,7 @@ function AceLocale:GetIterator(name)
     return pairs(self.registry[name].__curTranslation__)
 end
 
-function AceLocale:HasReverseTranslation(name)
+function AceLocale:GetReverseIterator(name)
     self:argCheck(name, 1, "string")
 
     if not rawget(self.registry[name], "__reverseTranslation__") then
