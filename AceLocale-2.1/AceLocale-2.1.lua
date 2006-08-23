@@ -18,6 +18,8 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 local AceLocale = {}
 
+local __uid__, __curTranslation__, __baseTranslation__, __translations__, __baseLocale__, __curLocale__, __strictTranslations__, __dynamic__, __reverseTranslation__
+
 function AceLocale:new(name)
 	self:argCheck(name, 2, "string")
 	
@@ -26,7 +28,7 @@ function AceLocale:new(name)
 	end
     
     self.registry[name] = {}
-	self.registry[name].__uid__ = name
+	self.registry[name][__uid__] = name
     
     setmetatable(self.registry[name], {
         __tostring = function(self)
@@ -38,12 +40,12 @@ function AceLocale:new(name)
 		end,
         __call = function(obj, arg1, arg2)
             if arg2 == nil then return self[key] end
-            arg1 == strlower(arg1)
+            arg1 = strlower(arg1)
             
             if arg1 == "getstrict" then 
-                return rawget(self.__curTranslation__, arg2)
+                return rawget(self[__curTranslation__], arg2)
             elseif arg1 == "getloose" then
-                return rawget(self.__curTranslation__, arg2) or self.__baseTranslation__[arg2]
+                return rawget(self[__curTranslation__], arg2) or self[__baseTranslation__][arg2]
             elseif arg1 == "getreverse" then
                 return self:GetReverseTranslation(obj, arg2)
             elseif arg1 == "hastranslation" then
@@ -65,40 +67,40 @@ function AceLocale:RegisterTranslation(name, locale, func)
 	
     if not self.registry[name] then self:new(name) end
     
-    if not rawget(self.registry[name], "__translations__") then self.registry[name].__translations__ = {} end
+    if not rawget(self.registry[name], __translations__) then self.registry[name][__translations__] = {} end
     
-	if self.registry[name].__translations__[locale] then
+	if self.registry[name][__translations__][locale] then
 		self:error("Cannot provide the same locale more than once. %q provided twice for %s.", locale, name)
 	end
 	
-    if rawget(self.registry[name], "__baseLocale__") then 
+    if rawget(self.registry[name], __baseLocale__) then 
         for k, v in pairs(func()) do
-			if not rawget(self.registry[name].__baseTranslation__, k) then
+			if not rawget(self.registry[name][__baseTranslation__], k) then
 				self:error("Improper translation exists. %q is likely misspelled for locale %s.", k, locale)
 			elseif value == true then
-				self:error( "Can only accept true as a value on the base locale. %q is the base locale, %q is not.", self.registry[name].__baseLocale__, locale)
+				self:error( "Can only accept true as a value on the base locale. %q is the base locale, %q is not.", self.registry[name][__baseLocale__], locale)
 			end
 		end
     else
-        self.registry[name].__baseTranslation__ = func() 
-        self.registry[name].__baseLocale__ = locale
+        self.registry[name][__baseTranslation__] = func() 
+        self.registry[name][__baseLocale__] = locale
         
-        for k, v in pairs(self.registry[name].__baseTranslation__) do
+        for k, v in pairs(self.registry[name][__baseTranslation__]) do
             if type(v) ~= "string" then
                 if type(v) == "boolean" then 
-                    self.registry[name].__baseTranslation__[k] = k 
+                    self.registry[name][__baseTranslation__][k] = k 
                 else
                     self:error("Translation for %s is invalid.  Must be either string or boolean", k)
                 end
             end
         end
         
-        setmetatable(self.registry[name].__baseTranslation__, {__index = function(tbl, key)  
+        setmetatable(self.registry[name][__baseTranslation__], {__index = function(tbl, key)  
             self:error("Translation for %s not found", key)
         end})
     end
     
-    self.registry[name].__translations__[locale] = func
+    self.registry[name][__translations__][locale] = func
 end
 
 function AceLocale:SetLocale(name, locale)
@@ -106,70 +108,70 @@ function AceLocale:SetLocale(name, locale)
     
     if not self.registry[name] then self:error("At least one translation must be registered before you can SetLocale().", name) end
     
-    if rawget(self.registry[name], "__curLocale__") then
+    if rawget(self.registry[name], __curLocale__) then
         locale = locale or GetLocale()
-        if self.registry[name].__curLocale__ == locale then return end
+        if self.registry[name][__curLocale__] == locale then return end
     end
     
     
-    if not self.registry[name] or not rawget(self.registry[name], "__translations__") then self:error("At least one translation must be registered before you can SetLocale().", name) end
+    if not self.registry[name] or not rawget(self.registry[name], __translations__) then self:error("At least one translation must be registered before you can SetLocale().", name) end
     
     if locale then 
-        if not self.registry[name].__translations__[locale] then
+        if not self.registry[name][__translations__][locale] then
             self:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, name)
         end
     else 
         locale = GetLocale() 
     end
     
-    if self.registry[name].__translations__[locale] and self.registry[name].__baseLocale__ ~= locale then
-        self.registry[name].__curLocale__ = locale
-        self.registry[name].__curTranslation__ = self.registry[name].__translations__[locale]()
+    if self.registry[name][__translations__][locale] and self.registry[name][__baseLocale__] ~= locale then
+        self.registry[name][__curLocale__] = locale
+        self.registry[name][__curTranslation__] = self.registry[name][__translations__][locale]()
     else
-        self.registry[name].__curLocale__ = self.registry[name].__baseLocale__
-        self.registry[name].__curTranslation__ = self.registry[name].__baseTranslation__
+        self.registry[name][__curLocale__] = self.registry[name][__baseLocale__]
+        self.registry[name][__curTranslation__] = self.registry[name][__baseTranslation__]
     end    
     
-    if rawget(self.registry[name], "__strictTranslations__") then
-        setmetatable(self.registry[name].__curTranslation__, {
+    if rawget(self.registry[name], __strictTranslations__) then
+        setmetatable(self.registry[name][__curTranslation__], {
             __index = function(tbl, key)  
                 self:error("Translation for %s not found", key)
             end
         })
     else
-        setmetatable(self.registry[name].__curTranslation__, {
-            __index = self.registry[name].__baseTranslation__
+        setmetatable(self.registry[name][__curTranslation__], {
+            __index = self.registry[name][__baseTranslation__]
         })
     end
     
-    getmetatable(self.registry[name]).__index = self.registry[name].__curTranslation__
+    getmetatable(self.registry[name]).__index = self.registry[name][__curTranslation__]
 
     
-    if not rawget(self.registry[name], "__dynamic__") then
-        self.registry[name].__translations__ = nil
+    if not rawget(self.registry[name], __dynamic__) then
+        self.registry[name][__translations__] = nil
     end
     
-    if rawget(self.registry[name], "__reverseTranslation__") then
-		self.registry[name].__reverseTranslation__ = nil
+    if rawget(self.registry[name], __reverseTranslation__) then
+		self.registry[name][__reverseTranslation__] = nil
 	end
 end
 
 function AceLocale:SetDynamicLocales(name, flag)
     self:argCheck(name, 2, "string", "table")
     self:argCheck(flag, 3, "boolean")
-    if type(name) == "table" then name = name.__uid__ end
+    if type(name) == "table" then name = name[__uid__] end
     
     if not self.registry[name] then self:error("At least one translation must be registered before you can SetDynamicLocales().") end
 
-    self.registry[name].__dynamic__ = flag
+    self.registry[name][__dynamic__] = flag
 end
 
 function AceLocale:GetTranslation(name, locale)
     self:argCheck(name, 2, "string")
     
-    if not self.registry[name] or (not rawget(self.registry[name], "__translations__") and not rawget(self.registry[name], "__curLocale__")) then self:error("At least one translation must be registered before you can GetTranslation().", name) end
+    if not self.registry[name] or (not rawget(self.registry[name], __translations__) and not rawget(self.registry[name], __curLocale__)) then self:error("At least one translation must be registered before you can GetTranslation().", name) end
 
-    if locale and rawget(self.registry[name], "__translations__") and not self.registry[name].__translations__[locale] then
+    if locale and rawget(self.registry[name], __translations__) and not self.registry[name][__translations__][locale] then
         self:error("Cannot GetTranslation for locale %s,  It has not been registered for %s.", locale, name)
     end
     
@@ -181,30 +183,30 @@ end
 function AceLocale:SetStrictness(name, strict)
     self:argCheck(name, 2, "string", "table")
     self:argCheck(strict, 2, "boolean")
-	if type(name) == "table" then name = name.__uid__ end
+	if type(name) == "table" then name = name[__uid__] end
     
 	if not self.registry[name] then self:error("At least one translation must be registered before you can SetStrictness().") end
-    local mt = getmetatable(self.registry[name].__curTranslation__)
+    local mt = getmetatable(self.registry[name][__curTranslation__])
     
 	if strict and mt then
 		mt.__index = function(tbl, key)  
             self:error("Translation for %s not found", key)
         end
 	elseif mt then
-		mt.__index = self.registry[name].__baseTranslation__
+		mt.__index = self.registry[name][__baseTranslation__]
 	end
     
-    self.registry[name].__strictTranslations__ = strict
+    self.registry[name][__strictTranslations__] = strict
 end
 
 local function initReverse(self)
-	self.__reverseTranslation__ = {}
+	self[__reverseTranslation__] = {}
 	
-	for k, v in pairs(self.__curTranslation__) do
-		self.__reverseTranslation__[v] = k
+	for k, v in pairs(self[__curTranslation__]) do
+		self[__reverseTranslation__][v] = k
 	end
    
-    setmetatable(self.__reverseTranslation__, {
+    setmetatable(self[__reverseTranslation__], {
         __index = function(tbl, key)  
             AceLocale:error("Reverse translation for %s not found", key)
         end
@@ -214,61 +216,61 @@ end
 function AceLocale:GetReverseTranslation(name, text)
 	self:argCheck(name, 1, "string", "table")
     self:argCheck(text, 2, "string")
-    if type(name) == "table" then name = name.__uid__ end
+    if type(name) == "table" then name = name[__uid__] end
     
-    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetReverseTranslation().") end
+    if not self.registry[name] or not rawget(self.registry[name], __curTranslation__) then self:error("At least one translation must be registered before you can GetReverseTranslation().") end
     
-	if not rawget(self.registry[name], "__reverseTranslation__") then
+	if not rawget(self.registry[name], __reverseTranslation__) then
 		initReverse(self.registry[name])
 	end
 	
-    return self.registry[name].__reverseTranslation__[text]	
+    return self.registry[name][__reverseTranslation__][text]	
 end
 
 function AceLocale:HasTranslation(name, text)
     self:argCheck(name, 1, "string", "table")
     self:argCheck(text, 2, "string")
-    if type(name) == "table" then name = name.__uid__ end
+    if type(name) == "table" then name = name[__uid__] end
     
-    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can HasTranslation().") end
+    if not self.registry[name] or not rawget(self.registry[name], __curTranslation__) then self:error("At least one translation must be registered before you can HasTranslation().") end
     
-    return rawget(self.registry[name], "__curTranslation__")[text] and true or false
+    return rawget(self.registry[name], __curTranslation__)[text] and true or false
 end
 
 function AceLocale:HasReverseTranslation(name, text)
     self:argCheck(name, 1, "string", "table")
     self:argCheck(text, 2, "string")
-    if type(name) == "table" then name = name.__uid__ end
+    if type(name) == "table" then name = name[__uid__] end
     
-    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can HasReverseTranslation().") end
+    if not self.registry[name] or not rawget(self.registry[name], __curTranslation__) then self:error("At least one translation must be registered before you can HasReverseTranslation().") end
     
-    if not rawget(self.registry[name], "__reverseTranslation__") then
+    if not rawget(self.registry[name], __reverseTranslation__) then
 		initReverse(self.registry[name])
 	end
     
-    return rawget(self.registry[name], "__reverseTranslation__")[text] and true or false
+    return rawget(self.registry[name], __reverseTranslation__)[text] and true or false
 end
 
 function AceLocale:GetIterator(name)
     self:argCheck(name, 1, "string", "table")
-    if type(name) == "table" then name = name.__uid__ end
+    if type(name) == "table" then name = name[__uid__] end
     
-    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetIterator().") end
+    if not self.registry[name] or not rawget(self.registry[name], __curTranslation__) then self:error("At least one translation must be registered before you can GetIterator().") end
     
-    return pairs(self.registry[name].__curTranslation__)
+    return pairs(self.registry[name][__curTranslation__])
 end
 
 function AceLocale:GetReverseIterator(name)
     self:argCheck(name, 1, "string", "table")
-    if type(name) == "table" then name = name.__uid__ end
+    if type(name) == "table" then name = name[__uid__] end
     
-    if not self.registry[name] or not rawget(self.registry[name], "__curTranslation__") then self:error("At least one translation must be registered before you can GetReverseIterator().") end
+    if not self.registry[name] or not rawget(self.registry[name], __curTranslation__) then self:error("At least one translation must be registered before you can GetReverseIterator().") end
     
-    if not rawget(self.registry[name], "__reverseTranslation__") then
+    if not rawget(self.registry[name], __reverseTranslation__) then
 		initReverse(self.registry[name])
 	end
     
-    return pairs(self.registry[name].__reverseTranslation__)
+    return pairs(self.registry[name][__reverseTranslation__])
 end
 
 local function activate(self, oldLib, oldDeactivate)
@@ -276,14 +278,60 @@ local function activate(self, oldLib, oldDeactivate)
 	
 	if oldLib then
 		self.registry = oldLib.registry
+		self.__uid__ = oldLib.__uid__
+		self.__curTranslation__ = oldLib.__curTranslation__
+		self.__baseTranslation__ = oldLib.__baseTranslation__
+		self.__translations__ = oldLib.__translations__
+		self.__baseLocale__ = oldLib.__baseLocale__
+		self.__curLocale__ = oldLib.__curLocale__
+		self.__strictTranslations__ = oldLib.__strictTranslations__
+		self.__dynamic__ = oldLib.__dynamic__
+		self.__reverseTranslation__ = oldLib.__reverseTranslation__
 	end
 	if not self.registry then
 		self.registry = {}
+	end
+	if not self.__uid__ then
+		self.__uid__ = {}
+	end
+	if not self.__curTranslation__ then
+		self.__curTranslation__ = {}
+	end
+	if not self.__baseTranslation__ then
+		self.__baseTranslation__ = {}
+	end
+	if not self.__translations__ then
+		self.__translations__ = {}
+	end
+	if not self.__baseLocale__ then
+		self.__baseLocale__ = {}
+	end
+	if not self.__curLocale__ then
+		self.__curLocale__ = {}
+	end
+	if not self.__strictTranslations__ then
+		self.__strictTranslations__ = {}
+	end
+	if not self.__dynamic__ then
+		self.__dynamic__ = {}
+	end
+	if not self.__reverseTranslation__ then
+		self.__reverseTranslation__ = {}
 	end
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
 	end
+	
+	__uid__ = self.__uid__
+	__curTranslation__ = self.__curTranslation__
+	__baseTranslation__ = self.__baseTranslation__
+	__translations__ = self.__translations__
+	__baseLocale__ = self.__baseLocale__
+	__curLocale__ = self.__curLocale__
+	__strictTranslations__ = self.__strictTranslations__
+	__dynamic__ = self.__dynamic__
+	__reverseTranslation__ = self.__reverseTranslation__
 end
 
 AceLibrary:Register(AceLocale, MAJOR_VERSION, MINOR_VERSION, activate)
