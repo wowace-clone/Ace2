@@ -29,11 +29,7 @@ function AceLocale:new(name)
 	
     setmetatable(self.registry[name], {
         __tostring = function(self)
-            if type(self.GetLibraryVersion) == "function" then
-                return self:GetLibraryVersion()
-            else
-                return "AceLocale(" .. name .. ")"
-            end
+            return "AceLocale(" .. name .. ")"
         end,
         __call = function(self, key, strict)
             if strict == true then
@@ -96,6 +92,14 @@ end
 function AceLocale:SetLocale(name, locale)
     self:argCheck(name, 2, "string")
     
+    if not self.registry[name] then self:error("At least one translation must be registered before you can SetLocale().", name) end
+    
+    if rawget(self.registry[name], "__curLocale__") then
+        locale = locale or GetLocale()
+        if self.registry[name].__curLocale__ == locale then return end
+    end
+    
+    
     if not self.registry[name] or not rawget(self.registry[name], "__translations__") then self:error("At least one translation must be registered before you can SetLocale().", name) end
     
     if locale then 
@@ -148,8 +152,9 @@ end
 function AceLocale:GetTranslation(name, locale)
     self:argCheck(name, 2, "string")
     
-    if not self.registry[name] or not rawget(self.registry[name], "__translations__") then self:error("At least one translation must be registered before you can GetTranslation().", name) end
-    if locale and not self.registry[name].__translations__[locale] then
+    if not self.registry[name] or (not rawget(self.registry[name], "__translations__") and not rawget(self.registry[name], "__curLocale__")) then self:error("At least one translation must be registered before you can GetTranslation().", name) end
+
+    if locale and rawget(self.registry[name], "__translations__") and not self.registry[name].__translations__[locale] then
         self:error("Cannot GetTranslation for locale %s,  It has not been registered for %s.", locale, name)
     end
     
