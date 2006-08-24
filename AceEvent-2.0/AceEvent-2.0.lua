@@ -69,6 +69,8 @@ local RATE
 local eventsWhichHappenOnce = {
 	PLAYER_LOGIN = true,
 	AceEvent_FullyInitialized = true,
+	VARIABLES_LOADED = true,
+	PLAYER_LOGOUT = true,
 }
 
 local registeringFromAceEvent
