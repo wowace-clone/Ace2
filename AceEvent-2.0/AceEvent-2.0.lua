@@ -66,6 +66,11 @@ end
 local FAKE_NIL
 local RATE
 
+local eventsWhichHappenOnce = {
+	PLAYER_LOGIN = true,
+	AceEvent_FullyInitialized = true,
+}
+
 local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
@@ -80,6 +85,9 @@ function AceEvent:RegisterEvent(event, method, once)
 		end
 	end
 	AceEvent:argCheck(once, 4, "number", "boolean", "nil")
+	if eventsWhichHappenOnce[event] then
+		once = true
+	end
 	local throttleRate
 	if type(once) == "number" then
 		throttleRate, once = once
