@@ -134,55 +134,57 @@ end
 
 
 setmetatable(backbone, {__index = 
-   function(tbl, key)  
-      AceLocale:error("Translation for %s not found", key)
-   end})
+    function(tbl, key)  
+        AceLocale:error("Translation for %s not found", key)
+    end})
 
 function backbone:SetLocale(locale)
-   if locale == nil then return end
+    if locale == nil then return end
    
-   if locale == true then locale = GetLocale() end
+    if locale == true then locale = GetLocale() end
    
-   if rawget(self, curLocale) and self[curLocale] == locale then return end
+    if rawget(self, curLocale) and self[curLocale] == locale then return end
 
-   if not self[translations][locale] then
-      AceLocale:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, name)
-   end
+    if not self[translations][locale] then
+        AceLocale:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, name)
+    end
 
-   if self[translations][locale] and self[baseLocale] == locale then
-      self[curLocale] = self[baseLocale]
-      self[curTranslation] = self[baseTranslation]
-   else
-      self[curLocale] = locale
-      self[curTranslation] = self[translations][locale]()
-   end    
+    if self[translations][locale] and self[baseLocale] == locale then
+        self[curLocale] = self[baseLocale]
+        self[curTranslation] = {}
+        getmetatable(self).__index = self[baseTranslation]
+    else
+        self[curLocale] = locale
+        self[curTranslation] = self[translations][locale]()
+        getmetatable(self).__index = self[curTranslation]
+    end    
 
-   if rawget(self, strictTranslations) then
-      setmetatable(self[curTranslation], {
-         __index = function(tbl, key)  
-            AceLocale:error("Translation for %s not found", key)
-         end
-      })
-   else
-      setmetatable(self[curTranslation], {
-         __index = self[baseTranslation]
-      })
-   end
+    if rawget(self, strictTranslations) then
+        setmetatable(self[curTranslation], {
+            __index = function(tbl, key)  
+                AceLocale:error("Translation for %s not found", key)
+            end
+        })
+    else
+        setmetatable(self[curTranslation], {
+            __index = self[baseTranslation]
+        })
+    end
 
-   getmetatable(self).__index = self[curTranslation]
+   
 
-   if not rawget(self, dynamic) then
-      self[translations] = {}
-   end
+    if not rawget(self, dynamic) then
+        self[translations] = {}
+    end
 
-   if rawget(self, reverseTranslation) then
-      self[reverseTranslation] = nil
-   end
+    if rawget(self, reverseTranslation) then
+        self[reverseTranslation] = nil
+    end
 end
 
 function backbone:SetDynamicLocales(flag)
-   AceLocale:argCheck(flag, 1, "boolean")
-   self[dynamic] = flag
+    AceLocale:argCheck(flag, 1, "boolean")
+    self[dynamic] = flag
 end
 
 function backbone:SetStrictness(flag)
