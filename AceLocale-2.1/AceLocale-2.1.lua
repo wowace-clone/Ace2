@@ -25,7 +25,7 @@ local function __call(obj, text, flag)
    
    if flag == true then
       local text = rawget(obj[curTranslation], arg2)
-      if not text then self:error("Strict translation for %s not found", key) end
+      if not text then AceLocale:error("Strict translation for %s not found", key) end
       return text
    elseif flag == false then
       return rawget(obj[curTranslation], arg2) or obj[baseTranslation][arg2]
@@ -135,7 +135,7 @@ end
 
 setmetatable(backbone, {__index = 
    function(tbl, key)  
-      self:error("Translation for %s not found", key)
+      AceLocale:error("Translation for %s not found", key)
    end})
 
 function backbone:SetLocale(locale)
@@ -146,7 +146,7 @@ function backbone:SetLocale(locale)
    if rawget(self, curLocale) and self[curLocale] == locale then return end
 
    if not self[translations][locale] then
-      self:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, name)
+      AceLocale:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, name)
    end
 
    if self[translations][locale] and self[baseLocale] == locale then
@@ -160,7 +160,7 @@ function backbone:SetLocale(locale)
    if rawget(self, strictTranslations) then
       setmetatable(self[curTranslation], {
          __index = function(tbl, key)  
-            self:error("Translation for %s not found", key)
+            AceLocale:error("Translation for %s not found", key)
          end
       })
    else
@@ -192,7 +192,7 @@ function backbone:SetStrictness(flag)
 
    if strict and mt then
       mt.__index = function(tbl, key)  
-         self:error("Translation for %s not found", key)
+         AceLocale:error("Translation for %s not found", key)
       end
    elseif mt then
       mt.__index = self[baseTranslation]
@@ -204,7 +204,7 @@ end
 function backbone:HasTranslation(text)
    AceLocale:argCheck(text, 1, "string")
    
-   if not rawget(self, curTranslation) then self:error("A locale must be chosen before you can call HasTranslation().") end
+   if not rawget(self, curTranslation) then AceLocale:error("A locale must be chosen before you can call HasTranslation().") end
    
    return rawget(self[curTranslation], text) and true or false
 end
@@ -212,7 +212,7 @@ end
 function backbone:HasReverseTranslation(text)
    AceLocale:argCheck(text, 1, "string")
     
-    if not rawget(self, curTranslation) then self:error("A locale must be chosen before you can call HasReverseTranslation().") end
+    if not rawget(self, curTranslation) then AceLocale:error("A locale must be chosen before you can call HasReverseTranslation().") end
     
     if not rawget(self, reverseTranslation) then
 		initReverse(self)
@@ -222,12 +222,12 @@ function backbone:HasReverseTranslation(text)
 end
 
 function backbone:GetIterator()
-   if not rawget(self, curTranslation) then self:error("A locale must be chosen before you can call GetIterator().") end
+   if not rawget(self, curTranslation) then AceLocale:error("A locale must be chosen before you can call GetIterator().") end
    return pairs(self[curTranslation])
 end
 
 function backbone:GetReverseIterator()
-    if not rawget(self, curTranslation) then self:error("A locale must be chosen before you can call HasReverseTranslation().") end
+    if not rawget(self, curTranslation) then AceLocale:error("A locale must be chosen before you can call HasReverseTranslation().") end
     
     if not rawget(self, reverseTranslation) then
 		initReverse(self)
