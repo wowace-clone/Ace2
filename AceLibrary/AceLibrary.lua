@@ -80,9 +80,9 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 	
 	if getmetatable(self) and getmetatable(self).__tostring then
 		message = string.format("%s: %s", tostring(self), message)
-	elseif type(self.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
+	elseif type(rawget(self, 'GetLibraryVersion')) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
 		message = string.format("%s: %s", self:GetLibraryVersion(), message)
-	elseif type(self.class) == "table" and type(self.class.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
+	elseif type(rawget(self, 'class')) == "table" and type(self.class.GetLibraryVersion) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
 		message = string.format("%s: %s", self.class:GetLibraryVersion(), message)
 	end
 	
@@ -166,10 +166,10 @@ local function addToPositions(t, major)
 		rawset(t, recurse, true)
 		AceLibrary.positions[t] = major
 		for k,v in pairs(t) do
-			if type(v) == "table" and not v[recurse] then
+			if type(v) == "table" and not rawget(v, recurse) then
 				addToPositions(v, major)
 			end
-			if type(k) == "table" and not k[recurse] then
+			if type(k) == "table" and not rawget(k, recurse) then
 				addToPositions(k, major)
 			end
 		end
