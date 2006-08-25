@@ -56,7 +56,7 @@ end
 function AceLocale:new(name)
 	self:argCheck(name, 2, "string")
 	
-	if self.registry[name] and type(self.registry[name].GetLibraryVersion) ~= "function" then
+	if self.registry[name] and type(rawget(self.registry[name], 'GetLibraryVersion')) ~= "function" then
 		return self.registry[name]
 	end
 	
@@ -72,7 +72,7 @@ function AceLocale:new(name)
 	end
 	mt.__call = callFunc
 	mt.__tostring = function(self)
-		if type(self.GetLibraryVersion) == "function" then
+		if type(rawget(self, 'GetLibraryVersion')) == "function" then
 			return self:GetLibraryVersion()
 		else
 			return "AceLocale(" .. name .. ")"
@@ -509,7 +509,7 @@ end
 
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
-		if type(k) ~= "table" and k ~= "GetLibraryVersion" then -- HACK: remove "GetLibraryVersion" later.
+		if type(k) ~= "table" and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
 			AceLocale.error(self, "Translation %q does not exist", k)
 		end
 	end
