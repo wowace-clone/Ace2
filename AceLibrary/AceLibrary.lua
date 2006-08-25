@@ -163,7 +163,7 @@ end
 local recurse = {}
 local function addToPositions(t, major)
 	if not AceLibrary.positions[t] or AceLibrary.positions[t] == major then
-		t[recurse] = true
+		rawset(t, recurse, true)
 		AceLibrary.positions[t] = major
 		for k,v in pairs(t) do
 			if type(v) == "table" and not v[recurse] then
@@ -177,7 +177,7 @@ local function addToPositions(t, major)
 		if mt and not mt[recurse] then
 			addToPositions(mt, major)
 		end
-		t[recurse] = nil
+		rawset(t, recurse, nil)
 	end
 end
 
