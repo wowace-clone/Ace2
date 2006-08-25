@@ -594,36 +594,36 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	data.minor = minor
 	data.deactivateFunc = deactivateFunc
 	data.externalFunc = externalFunc
-	function instance:GetLibraryVersion()
+	rawset(instance, 'GetLibraryVersion', function(self)
 		return major, minor
+	end)
+	if not rawget(instance, 'error') then
+		rawset(instance, 'error', error)
 	end
-	if not instance.error then
-		instance.error = error
+	if not rawget(instance, 'assert') then
+		rawset(instance, 'assert', assert)
 	end
-	if not instance.assert then
-		instance.assert = assert
+	if not rawget(instance, 'argCheck') then
+		rawset(instance, 'argCheck', argCheck)
 	end
-	if not instance.argCheck then
-		instance.argCheck = argCheck
-	end
-	if not instance.pcall then
-		instance.pcall = pcall
+	if not rawget(instance, 'pcall') then
+		rawset(instance, 'pcall', pcall)
 	end
 	if isAceLibrary then
 		for _,v in pairs(self.libs) do
 			local i = type(v) == "table" and v.instance
 			if type(i) == "table" then
-				if i.error == old_error or not i.error then
-					i.error = error
+				if not rawget(i, 'error') or i.error == old_error then
+					rawset(i, 'error', error)
 				end
-				if i.assert == old_assert or not i.assert then
-					i.assert = assert
+				if not rawget(i, 'assert') or i.assert == old_assert then
+					rawset(i, 'assert', assert)
 				end
-				if i.argCheck == old_argCheck or not i.argCheck then
-					i.argCheck = argCheck
+				if not rawget(i, 'argCheck') or i.argCheck == old_argCheck then
+					rawset(i, 'argCheck', argCheck)
 				end
-				if i.pcall == old_pcall or not i.pcall then
-					i.pcall = pcall
+				if not rawget(i, 'pcall') or i.pcall == old_pcall then
+					rawset(i, 'pcall', pcall)
 				end
 			end
 		end
