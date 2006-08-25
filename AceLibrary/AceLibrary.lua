@@ -174,7 +174,7 @@ local function addToPositions(t, major)
 			end
 		end
 		local mt = getmetatable(t)
-		if mt and not mt[recurse] then
+		if mt and not rawget(mt, recurse) then
 			addToPositions(mt, major)
 		end
 		rawset(t, recurse, nil)
@@ -206,7 +206,8 @@ do
 		recurse[t] = true
 		local mt = getmetatable(t)
 		setmetatable(t, nil)
-		t[from], t[to] = nil, t[from]
+		rawset(t, to, rawget(t, from))
+		rawset(t, from, nil)
 		for k,v in pairs(t) do
 			if v == from then
 				t[k] = to
@@ -249,7 +250,7 @@ local function destroyTable(t)
 end
 
 local function isFrame(frame)
-	return type(frame) == "table" and type(frame[0]) == "userdata" and type(frame.IsFrameType) == "function" and getmetatable(frame) and type(getmetatable(frame).__index) == "function"
+	return type(frame) == "table" and type(rawget(frame, 0)) == "userdata" and type(rawget(frame, 'IsFrameType')) == "function" and getmetatable(frame) and type(rawget(getmetatable(frame), '__index')) == "function"
 end
 
 local new, del
@@ -285,7 +286,7 @@ end
 -- @return     A shallow copy of the table
 local function copyTable(from)
 	local to = new()
-	for k,v in pairs(from) do to[k]=v end
+	for k,v in pairs(from) do to[k] = v end
 	table.setn(to, table.getn(from))
 	setmetatable(to, getmetatable(from))
 	return to
