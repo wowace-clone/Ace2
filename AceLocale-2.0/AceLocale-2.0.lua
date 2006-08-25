@@ -507,6 +507,14 @@ function AceLocale.prototype:Debug()
 	DEFAULT_CHAT_FRAME:AddMessage("--- End AceLocale Debug ---")
 end
 
+setmetatable(AceLocale.prototype, {
+	__index = function(self, k)
+		if type(k) ~= "table" and k ~= "GetLibraryVersion" then -- HACK: remove "GetLibraryVersion" later.
+			AceLocale.error(self, "Translation %q does not exist", k)
+		end
+	end
+})
+
 local function activate(self, oldLib, oldDeactivate)
 	AceLocale = self
 	
