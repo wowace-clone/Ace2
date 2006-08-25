@@ -64,7 +64,7 @@ function AceLocale:new(name)
 	local mt = new()
 	mt.__index = AceLocale.prototype
 	mt.__newindex = function(self, k, v)
-		if type(v) ~= "function" then
+		if type(v) ~= "function" and type(k) ~= "table" then
 			AceLocale.error(self, "Cannot change the values of an AceLocale instance.")
 		else
 			rawset(self, k, v)
