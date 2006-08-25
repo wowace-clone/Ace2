@@ -517,20 +517,20 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 			deactivateFunc = deactivateFunc,
 			externalFunc = externalFunc,
 		}
-		function instance:GetLibraryVersion()
+		rawset(instance, 'GetLibraryVersion', function(self)
 			return major, minor
+		end)
+		if not rawget(instance, 'error') then
+			rawset(instance, 'error', error)
 		end
-		if not instance.error then
-			instance.error = error
+		if not rawget(instance, 'assert') then
+			rawset(instance, 'assert', assert)
 		end
-		if not instance.assert then
-			instance.assert = assert
+		if not rawget(instance, 'argCheck') then
+			rawset(instance, 'argCheck', argCheck)
 		end
-		if not instance.argCheck then
-			instance.argCheck = argCheck
-		end
-		if not instance.pcall then
-			instance.pcall = pcall
+		if not rawget(instance, 'pcall') then
+			rawset(instance, 'pcall', pcall)
 		end
 		addToPositions(instance, major)
 		if activateFunc then
