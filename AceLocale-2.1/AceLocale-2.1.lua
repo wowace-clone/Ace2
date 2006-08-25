@@ -16,7 +16,7 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-local _uid, curTranslation, baseTranslation, translations, baseLocale, curLocale, strictTranslations, dynamic, reverseTranslation
+local curTranslation, baseTranslation, translations, baseLocale, curLocale, strictTranslations, dynamic, reverseTranslation
 local AceLocale = {}
 local backbone = {}
 
@@ -24,16 +24,12 @@ local function __call(obj, text, flag)
    if flag == nil then return obj[text] end
    
    if flag == true then
-      local text = rawget(obj[curTranslation], arg2)
-      if not text then AceLocale:error("Strict translation for %s not found", key) end
-      return text
+      if rawget(obj[curTranslation], text) then AceLocale:error("Strict translation for %s not found", text) end
+      return rawget(obj[curTranslation], text)
    elseif flag == false then
       return rawget(obj[curTranslation], arg2) or obj[baseTranslation][arg2]
    elseif strlower(flag) == "reverse" then
-      if not rawget(obj, reverseTranslation) then
-         initReverse(obj)
-      end
-      
+      if not rawget(obj, reverseTranslation) then initReverse(obj) end
       return obj[reverseTranslation][text]	
    else
       AceLocale:error("Invalid flag given to __call.  Should be true/false/\"reverse\" but %s was given", flag)
@@ -41,23 +37,14 @@ local function __call(obj, text, flag)
 end
 
 local function NewInstance(self, uid)
-   self:argCheck(uid, 2, "string")
-
-   if self.registry[uid] and type(self.registry[uid].GetLibraryVersion) ~= "function" then
-      return self.registry[uid]
-   end
+   if self.registry[uid] then return self.registry[uid] end
 
    self.registry[uid] = {}
-   self.registry[uid][_uid] = uid
    self.registry[uid][translations] = {}
    
    setmetatable(self.registry[uid], {
-     __tostring = function(self)
-         if type(self.GetLibraryVersion) == "function" then
-             return self:GetLibraryVersion()
-         else
-             return "AceLocale(" .. uid .. ")"
-         end
+     __tostring = function()
+        return "AceLocale(" .. uid .. ")"
      end,
      __call = __call,
      __index = backbone
@@ -69,9 +56,7 @@ end
 local function initReverse(self)
    self[reverseTranslation] = {}
 
-   for k, v in pairs(self[curTranslation]) do
-      self[reverseTranslation][v] = k
-   end
+   for k, v in pairs(self[curTranslation]) do self[reverseTranslation][v] = k end
 
    setmetatable(self[reverseTranslation], {
       __index = function(tbl, key)  
@@ -81,7 +66,7 @@ local function initReverse(self)
 end
 
 function AceLocale:RegisterTranslation(uid, locale, func)
-   self:argCheck(uid, 2, "string")
+   self:argCheck(uid, 1, "string")
    self:argCheck(locale, 2, "string")
    self:argCheck(func, 3, "function")
 	
@@ -171,8 +156,6 @@ function backbone:SetLocale(locale)
         })
     end
 
-   
-
     if not rawget(self, dynamic) then
         self[translations] = {}
     end
@@ -243,7 +226,6 @@ local function activate(self, oldLib, oldDeactivate)
 	
    if oldLib then
       self.registry = oldLib.registry
-      self._uid = oldLib._uid
       self.curTranslation = oldLib.curTranslation
       self.baseTranslation = oldLib.baseTranslation
       self.translations = oldLib.translations
@@ -255,7 +237,6 @@ local function activate(self, oldLib, oldDeactivate)
    end
 	
    if not self.registry then self.registry = {} end
-   if not self._uid then self._uid = {} end
    if not self.curTranslation then	self.curTranslation = {} end
    if not self.baseTranslation then self.baseTranslation = {} end
    if not self.translations then self.translations = {} end
@@ -269,7 +250,6 @@ local function activate(self, oldLib, oldDeactivate)
       oldDeactivate(oldLib)
    end
 	
-   _uid = self._uid
    curTranslation = self.curTranslation
    baseTranslation = self.baseTranslation
    translations = self.translations
