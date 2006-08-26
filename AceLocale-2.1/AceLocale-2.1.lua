@@ -20,6 +20,18 @@ local curTranslation, baseTranslation, translations, baseLocale, curLocale, stri
 local AceLocale = {}
 local backbone = {}
 
+local function initReverse(self)
+   self[reverseTranslation] = {}
+
+   for k, v in pairs(self[curTranslation]) do self[reverseTranslation][v] = k end
+
+   setmetatable(self[reverseTranslation], {
+      __index = function(tbl, key)  
+         AceLocale:error("Reverse translation for %s not found", key)
+      end
+   })
+end
+
 local function __call(obj, text, flag)
    if flag == nil then return obj[text] end
    
@@ -28,7 +40,7 @@ local function __call(obj, text, flag)
       return rawget(obj[curTranslation], text)
    elseif flag == false then
       return rawget(obj[curTranslation], arg2) or obj[baseTranslation][arg2]
-   elseif strlower(flag) == "reverse" then
+   elseif flag == "reverse" then
       if not rawget(obj, reverseTranslation) then initReverse(obj) end
       return obj[reverseTranslation][text]	
    else
@@ -51,18 +63,6 @@ local function NewInstance(self, uid)
    })
    
    return self.registry[uid]
-end
-
-local function initReverse(self)
-   self[reverseTranslation] = {}
-
-   for k, v in pairs(self[curTranslation]) do self[reverseTranslation][v] = k end
-
-   setmetatable(self[reverseTranslation], {
-      __index = function(tbl, key)  
-         AceLocale:error("Reverse translation for %s not found", key)
-      end
-   })
 end
 
 function AceLocale:RegisterTranslation(uid, locale, func)
