@@ -311,7 +311,7 @@ do
 	-- @param list An account of the table references
 	local function examine(to, from, list, major)
 		list[from] = to
-		for k in pairs(from) do
+		for k,v in pairs(from) do
 			if to[k] and type(from[k]) == "table" and type(to[k]) == "table" and not list[from[k]] then
 				if from[k] == to[k] then
 					list[from[k]] = to[k]
@@ -336,7 +336,7 @@ do
 		end
 		list2[to] = to
 		for k,v in pairs(to) do
-			if type(from[k]) ~= "table" or type(v) ~= "table" or isFrame(v) then
+			if type(rawget(from, k)) ~= "table" or type(v) ~= "table" or isFrame(v) then
 				if saveFields then
 					saveFields[k] = v
 				end
@@ -348,13 +348,13 @@ do
 			end
 		end
 		for k in pairs(from) do
-			if to[k] and to[k] ~= from[k] and AceLibrary.positions[to[k]] == major and from[k] ~= _G then
+			if rawget(to, k) and to[k] ~= from[k] and AceLibrary.positions[to[k]] == major and from[k] ~= _G then
 				if not list2[to[k]] then
 					deepTransfer(to[k], from[k], nil, major, list, list2)
 				end
 				to[k] = list[to[k]] or list2[to[k]]
 			else
-				to[k] = from[k]
+				rawset(to, k, from[k])
 			end
 		end
 		table.setn(to, table.getn(from))
