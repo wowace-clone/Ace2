@@ -312,7 +312,7 @@ do
 	local function examine(to, from, list, major)
 		list[from] = to
 		for k,v in pairs(from) do
-			if to[k] and type(from[k]) == "table" and type(to[k]) == "table" and not list[from[k]] then
+			if rawget(to, k) and type(from[k]) == "table" and type(to[k]) == "table" and not list[from[k]] then
 				if from[k] == to[k] then
 					list[from[k]] = to[k]
 				elseif AceLibrary.positions[from[v]] ~= major and AceLibrary.positions[from[v]] then
