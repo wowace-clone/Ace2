@@ -124,16 +124,22 @@ setmetatable(backbone, {__index =
     end})
 
 function backbone:SetLocale(locale)
+    local loose = false
     if locale == nil then return end
    
     if locale == true then 
         locale = GetLocale() 
+        loose = true
     end
 
     if rawget(self, curLocale) and self[curLocale] == locale then return end
   
     if not self[translations][locale] then
-        AceLocale:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, tostring(self))
+        if loose then
+            locale = self[baseLocale]
+        else
+            AceLocale:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, tostring(self))
+        end
     end
 
     if self[translations][locale] and self[baseLocale] == locale then
