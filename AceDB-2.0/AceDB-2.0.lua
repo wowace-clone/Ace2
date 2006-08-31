@@ -21,6 +21,7 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 -- localize --
 local ACTIVE = "Active"
+local ENABLED = "Enabled"
 local STATE = "State"
 local TOGGLE_ACTIVE = "Suspend/resume this addon"
 local MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Active|r", [false] = "|cffff0000Suspended|r" }
@@ -1232,7 +1233,7 @@ function AceDB:GetAceOptionsDataTable(target)
 		options = {
 			standby = {
 				cmdName = STATE,
-				guiName = ACTIVE,
+				guiName = ENABLED,
 				name = ACTIVE,
 				desc = TOGGLE_ACTIVE,
 				type = "toggle",
