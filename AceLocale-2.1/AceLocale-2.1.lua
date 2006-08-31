@@ -128,9 +128,6 @@ function backbone:SetLocale(locale)
    
     if locale == true then 
         locale = GetLocale() 
-        if not self[translations][locale] then
-            locale = self[baseLocale]
-        end
     end
 
     if rawget(self, curLocale) and self[curLocale] == locale then return end
