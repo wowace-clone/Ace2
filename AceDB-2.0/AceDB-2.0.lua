@@ -1124,7 +1124,7 @@ function AceDB:PLAYER_LOGOUT()
 						end
 						if v.profile and cleanDefaults(v.profile, v.defaults and v.defaults.profile) then
 							if db.raw.namespaces[name].profiles then
-								db.raw.namespaces[name].profiles[db.raw.currentProfile[charID] or "Default"] = nil
+								db.raw.namespaces[name].profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"] = nil
 								if not next(db.raw.namespaces[name].profiles) then
 									db.raw.namespaces[name].profiles = nil
 								end
