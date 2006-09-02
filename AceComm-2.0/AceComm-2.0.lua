@@ -11,7 +11,7 @@ Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0,
 ]]
 
 local MAJOR_VERSION = "AceComm-2.0"
-local MINOR_VERSION = "$Revision: 6076 $"
+local MINOR_VERSION = "$Revision: 60760 $"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
@@ -1081,8 +1081,19 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 	local registry = AceComm_registry
 	if not distribution then
 		for k,v in pairs(registry) do
-			if v[prefix] and v[prefix][self] then
-				AceComm.UnregisterComm(self, prefix, k)
+			if k == "CUSTOM" then
+				for l,u in pairs(v) do
+					if u[prefix] and u[prefix][self] then
+						AceComm.UnregisterComm(self, prefix, k, l)
+						if not registry[k] then
+							break
+						end
+					end
+				end
+			else
+				if v[prefix] and v[prefix][self] then
+					AceComm.UnregisterComm(self, prefix, k)
+				end
 			end
 		end
 		return
@@ -1128,10 +1139,44 @@ end
 
 function AceComm:UnregisterAllComms()
 	local registry = AceComm_registry
-	for k,distribution in pairs(registry) do
-		for j,prefix in pairs(distribution) do
-			if prefix[self] then
-				AceComm.UnregisterComm(self, j)
+	for k, distribution in pairs(registry) do
+		if distribution == "CUSTOM" then
+			for l, channel in pairs(distribution) do
+				local j = next(channel)
+				while j ~= nil do
+					local prefix = channel[j]
+					if prefix[self] then
+						AceComm.UnregisterComm(self, j)
+						if distribution[l] and registry[k] then
+							j = next(channel)
+						else
+							l = nil
+							k = nil
+							break
+						end
+					else
+						j = next(channel, j)
+					end
+				end
+				if k == nil then
+					break
+				end
+			end
+		else
+			local j = next(distribution)
+			while j ~= nil do
+				local prefix = distribution[j]
+				if prefix[self] then
+					AceComm.UnregisterComm(self, j)
+					if registry[k] then
+						j = next(distribution)
+					else
+						k = nil
+						break
+					end
+				else
+					j = next(distribution, j)
+				end
 			end
 		end
 	end
