@@ -649,23 +649,37 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			end
 			for k,v in pairs(options.args) do
 				if v.type ~= "header" then
-					if filter then
-						if string.find(k, filter) then
-							table.insert(order, k)
-						elseif type(v.aliases) == "table" then
-							for _,bit in ipairs(v.aliases) do
+					local hidden = v.cmdHidden or v.hidden
+					if hidden then
+						if type(hidden) == "function" then
+							hidden = hidden()
+						elseif type(hidden) == "string" then
+							local handler = v.handler or handler
+							if type(handler[hidden]) ~= "function" then
+								AceConsole:error(OPTION_HANDLER_NOT_FOUND, hidden)
+							end
+							hidden = handler[hidden](handler)
+						end
+					end
+					if not hidden then
+						if filter then
+							if string.find(k, filter) then
+								table.insert(order, k)
+							elseif type(v.aliases) == "table" then
+								for _,bit in ipairs(v.aliases) do
+									if string.find(v.aliases, filter) then
+										table.insert(order, k)
+										break
+									end
+								end
+							elseif type(v.aliases) == "string" then
 								if string.find(v.aliases, filter) then
 									table.insert(order, k)
-									break
 								end
 							end
-						elseif type(v.aliases) == "string" then
-							if string.find(v.aliases, filter) then
-								table.insert(order, k)
-							end
+						else
+							table.insert(order, k)
 						end
-					else
-						table.insert(order, k)
 					end
 				end
 			end
@@ -719,99 +733,86 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			for _,k in ipairs(order) do
 				local v = options.args[k]
 				if v then
-					local hidden, disabled = v.cmdHidden or v.hidden, v.disabled
-					if hidden then
-						if type(hidden) == "function" then
-							hidden = hidden()
-						elseif type(hidden) == "string" then
+					local disabled = v.disabled
+					if disabled then
+						if type(disabled) == "function" then
+							disabled = disabled()
+						elseif type(disabled) == "string" then
 							local handler = v.handler or handler
-							if type(handler[hidden]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, hidden)
+							if type(handler[disabled]) ~= "function" then
+								AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
 							end
-							hidden = handler[hidden](handler)
+							disabled = handler[disabled](handler)
 						end
 					end
-					if not hidden then
-						if disabled then
-							if type(disabled) == "function" then
-								disabled = disabled()
-							elseif type(disabled) == "string" then
-								local handler = v.handler or handler
-								if type(handler[disabled]) ~= "function" then
-									AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
-								end
-								disabled = handler[disabled](handler)
-							end
-						end
-						if type(v.aliases) == "table" then
-							k = k .. " || " .. table.concat(v.aliases, " || ")
-						elseif type(v.aliases) == "string" then
-							k = k .. " || " .. v.aliases
-						end
-						if v.get then
-							local a1,a2,a3,a4
-							if type(v.get) == "function" then
-								if options.pass then
-									a1,a2,a3,a4 = v.get(k)
-								else
-									a1,a2,a3,a4 = v.get()
-								end
+					if type(v.aliases) == "table" then
+						k = k .. " || " .. table.concat(v.aliases, " || ")
+					elseif type(v.aliases) == "string" then
+						k = k .. " || " .. v.aliases
+					end
+					if v.get then
+						local a1,a2,a3,a4
+						if type(v.get) == "function" then
+							if options.pass then
+								a1,a2,a3,a4 = v.get(k)
 							else
-								local handler = v.handler or handler
-								if type(handler[v.get]) ~= "function" then
-									AceConsole:error(OPTION_HANDLER_NOT_FOUND, v.get)
-								end
-								if options.pass then
-									a1,a2,a3,a4 = handler[v.get](handler, k)
-								else
-									a1,a2,a3,a4 = handler[v.get](handler)
-								end
-							end
-							if v.type == "color" then
-								if v.hasAlpha then
-									if not a1 or not a2 or not a3 or not a4 then
-										s = NONE
-									else
-										s = string.format("|c%02x%02x%02x%02x%02x%02x%02x%02x|r", a4*255, a1*255, a2*255, a3*255, a4*255, a1*255, a2*255, a3*255)
-									end
-								else
-									if not a1 or not a2 or not a3 then
-										s = NONE
-									else
-										s = string.format("|cff%02x%02x%02x%02x%02x%02x|r", a1*255, a2*255, a3*255, a1*255, a2*255, a3*255)
-									end
-								end
-							elseif v.type == "toggle" then
-								if v.map then
-									s = tostring(v.map[a1 or false] or NONE)
-								else
-									s = tostring(MAP_ONOFF[a1 or false] or NONE)
-								end
-							elseif v.type == "range" then
-								if v.isPercent then
-									s = tostring(a1 * 100) .. "%"
-								else
-									s = tostring(a1)
-								end
-							elseif v.type == "text" and type(v.validate) == "table" then
-								s = tostring(v.validate[a1] or a1)
-							else
-								s = tostring(a1 or NONE)
-							end
-							if disabled then
-								local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-								local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-								print(string.format("|cffcfcfcf - %s: [%s] %s|r", k, s, desc))
-							else
-								print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
+								a1,a2,a3,a4 = v.get()
 							end
 						else
-							if disabled then
-								local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-								print(string.format("|cffcfcfcf - %s: %s", k, desc))
-							else
-								print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
+							local handler = v.handler or handler
+							if type(handler[v.get]) ~= "function" then
+								AceConsole:error(OPTION_HANDLER_NOT_FOUND, v.get)
 							end
+							if options.pass then
+								a1,a2,a3,a4 = handler[v.get](handler, k)
+							else
+								a1,a2,a3,a4 = handler[v.get](handler)
+							end
+						end
+						if v.type == "color" then
+							if v.hasAlpha then
+								if not a1 or not a2 or not a3 or not a4 then
+									s = NONE
+								else
+									s = string.format("|c%02x%02x%02x%02x%02x%02x%02x%02x|r", a4*255, a1*255, a2*255, a3*255, a4*255, a1*255, a2*255, a3*255)
+								end
+							else
+								if not a1 or not a2 or not a3 then
+									s = NONE
+								else
+									s = string.format("|cff%02x%02x%02x%02x%02x%02x|r", a1*255, a2*255, a3*255, a1*255, a2*255, a3*255)
+								end
+							end
+						elseif v.type == "toggle" then
+							if v.map then
+								s = tostring(v.map[a1 or false] or NONE)
+							else
+								s = tostring(MAP_ONOFF[a1 or false] or NONE)
+							end
+						elseif v.type == "range" then
+							if v.isPercent then
+								s = tostring(a1 * 100) .. "%"
+							else
+								s = tostring(a1)
+							end
+						elseif v.type == "text" and type(v.validate) == "table" then
+							s = tostring(v.validate[a1] or a1)
+						else
+							s = tostring(a1 or NONE)
+						end
+						if disabled then
+							local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							print(string.format("|cffcfcfcf - %s: [%s] %s|r", k, s, desc))
+						else
+							print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
+						end
+					else
+						if disabled then
+							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							print(string.format("|cffcfcfcf - %s: %s", k, desc))
+						else
+							print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
 						end
 					end
 				end
