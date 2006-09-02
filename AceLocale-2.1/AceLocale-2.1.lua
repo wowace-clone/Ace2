@@ -129,20 +129,17 @@ function backbone:SetLocale(locale)
    
     if locale == true then 
         locale = GetLocale() 
-        loose = true
-    end
-
-    if rawget(self, curLocale) and self[curLocale] == locale then return end
-  
-    if not self[translations][locale] then
-        if loose then
+        if not self[translations][locale] then
             locale = self[baseLocale]
         end
-        if not self[translations][locale] then
-            AceLocale:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, tostring(self))
-        end
     end
-
+    
+    if rawget(self, curLocale) and self[curLocale] == locale then return end
+    
+    if not self[translations][locale] then
+            AceLocale:error("Cannot SetLocale to %s for %s,  It has not been registered.", locale, tostring(self))
+    end
+    
     if self[translations][locale] and self[baseLocale] == locale then
         self[curLocale] = self[baseLocale]
         self[curTranslation] = {}
