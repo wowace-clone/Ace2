@@ -99,6 +99,12 @@ do
 	end
 end
 
+local origMetatable = {
+	__call = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+		return self.orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+	end
+}
+
 --[[----------------------------------------------------------------------
 	AceHook:_getFunctionHook- internal method
 -------------------------------------------------------------------------]]		
@@ -213,7 +219,7 @@ local function _hookFunc(self, func, handler)
 		AceHook:error("Could not find the handler you supplied when hooking %q", func)
 	end
 	
-	local t = new()
+	local t = setmetatable(new(), origMetatable)
 	self.hooks[func] = t
 	t.orig = f
 	t.active = true
@@ -311,7 +317,7 @@ local function _hookMeth(self, obj, method, handler, script)
 	if not self.hooks[obj] then
 		self.hooks[obj] = new()
 	end
-	local t = new()
+	local t = setmetatable(new(), origMetatable)
 	self.hooks[obj][method] = t
 	t.orig = orig
 	t.active = true
