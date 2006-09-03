@@ -53,6 +53,18 @@ local callFunc = function(self, key1, key2)
 	end
 end
 
+local lastSelf
+
+local Create__index = function(superTable)
+	return function(self, key)
+		lastSelf = self
+		local value = superTable[key]
+		rawset(self, key, value)
+		lastSelf = nil
+		return value
+	end
+end
+
 function AceLocale:new(name)
 	self:argCheck(name, 2, "string")
 	
@@ -62,7 +74,7 @@ function AceLocale:new(name)
 	
 	local self = new()
 	local mt = new()
-	mt.__index = AceLocale.prototype
+	mt.__index = Create__index(AceLocale.prototype)
 	mt.__newindex = function(self, k, v)
 		if type(v) ~= "function" and type(k) ~= "table" then
 			AceLocale.error(self, "Cannot change the values of an AceLocale instance.")
@@ -132,10 +144,9 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 			end
 		end
 		local mt = getmetatable(self)
-		local __index = mt.__index
-		mt.__index = t
+		mt.__index = Create__index(t)
 		local mt2 = new()
-		mt2.__index = __index
+		mt2.__index = AceLocale.prototype
 		setmetatable(t, mt2)
 	else
 		for key, value in pairs(self[__translations__]) do
@@ -147,10 +158,10 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 		end
 		local mt = getmetatable(self)
 		local __index = mt.__index
-		mt.__index = rawget(self, __translations__)
+		mt.__index = Create__index(t)
 		local mt2 = new()
-		mt2.__index = __index
-		setmetatable(rawget(self, __translations__), mt2)
+		mt2.__index = self[__baseTranslations__]
+		setmetatable(t, mt2)
 	end
 	if rawget(self, __debugging__) then
 		if not rawget(self, __translationTables__) then
@@ -182,7 +193,12 @@ function AceLocale.prototype:SetStrictness(strict)
 		local mt2 = new()
 		mt2.__index = AceLocale.prototype
 		setmetatable(self[__translations__], mt2)
-		getmetatable(self).__index = self[__translations__]
+		getmetatable(self).__index = Create__index(self[__translations__])
+		for k,v in pairs(self[__baseTranslations__]) do
+			if rawget(self, k) == v then
+				self[k] = nil
+			end
+		end
 	else
 		if self[__baseTranslations__] ~= self[__translations__] then
 			local mt2 = new()
@@ -193,7 +209,7 @@ function AceLocale.prototype:SetStrictness(strict)
 				local mt3 = new()
 				mt3.__index = self[__baseTranslations__]
 				setmetatable(self[__translations__], mt3)
-				mt.__index = self[__translations__]
+				mt.__index = Create__index(self[__translations__])
 			end
 		end
 	end
@@ -509,7 +525,7 @@ end
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
 		if type(k) ~= "table" and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
-			AceLocale.error(self, "Translation %q does not exist.", k)
+			AceLocale.error(lastSelf or self, "Translation %q does not exist.", k)
 		end
 	end
 })
