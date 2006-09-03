@@ -40,10 +40,11 @@ do
 		end
 		table.setn(t, 0)
 		list[t] = true
+		return nil
 	end
 end
 
-local __baseTranslations__, __debugging__, __translations__, __baseLocale__, __translationTables__, __reverseTranslations__
+local __baseTranslations__, __debugging__, __translations__, __baseLocale__, __translationTables__, __reverseTranslations__, __strictness__
 
 local callFunc = function(self, key1, key2)
 	if key2 then
@@ -59,12 +60,21 @@ local type = type
 
 local lastSelf
 
-local Create__index = function(superTable)
-	return function(self, key)
-		lastSelf = self
-		local value = superTable[key]
-		rawset(self, key, value)
-		return value
+local Create__index
+do
+	local cache = setmetatable({}, {__mode='kv'})
+	function Create__index(superTable)
+		if cache[superTable] then
+			return cache[superTable]
+		end
+		local x = function(self, key)
+			lastSelf = self
+			local value = superTable[key]
+			rawset(self, key, value)
+			return value
+		end
+		cache[superTable] = x
+		return x
 	end
 end
 
@@ -75,6 +85,64 @@ local __newindex = function(self, k, v)
 	rawset(self, k, v)
 end
 
+local __tostring = function(self)
+	if type(rawget(self, 'GetLibraryVersion')) == "function" then
+		return self:GetLibraryVersion()
+	else
+		return "AceLocale(" .. self[__name__] .. ")"
+	end
+end
+
+local refixInstance = function(instance)
+	if getmetatable(instance) then
+		setmetatable(instance, del(getmetatable(instance)))
+	end
+	local translations = instance[__translations__]
+	if translations then
+		if getmetatable(translations) then
+			setmetatable(translations, del(getmetatable(translations)))
+		end
+		local baseTranslations = instance[__baseTranslations__]
+		if getmetatable(baseTranslations) then
+			setmetatable(baseTranslations, del(getmetatable(baseTranslations)))
+		end
+		if translations == baseTranslations or instance[__strictness__] then
+			local mt = new()
+			mt.__index = Create__index(translations)
+			mt.__newindex = __newindex
+			mt.__call = callFunc
+			mt.__tostring = __tostring
+			setmetatable(instance, mt)
+			
+			local mt2 = new()
+			mt2.__index = AceLocale.prototype
+			setmetatable(translations, mt2)
+		else
+			local mt = new()
+			mt.__index = Create__index(translations)
+			mt.__newindex = __newindex
+			mt.__call = callFunc
+			mt.__tostring = __tostring
+			setmetatable(instance, mt)
+			
+			local mt2 = new()
+			mt2.__index = baseTranslations
+			setmetatable(translations, mt2)
+			
+			local mt3 = new()
+			mt3.__index = AceLocale.prototype
+			setmetatable(baseTranslations, mt3)
+		end
+	else
+		local mt = new()
+		mt.__index = Create__index(AceLocale.prototype)
+		mt.__newindex = __newindex
+		mt.__call = callFunc
+		mt.__tostring = __tostring
+		setmetatable(instance, mt)
+	end
+end
+
 function AceLocale:new(name)
 	self:argCheck(name, 2, "string")
 	
@@ -83,18 +151,9 @@ function AceLocale:new(name)
 	end
 	
 	local self = new()
-	local mt = new()
-	mt.__index = Create__index(AceLocale.prototype)
-	mt.__newindex = __newindex
-	mt.__call = callFunc
-	mt.__tostring = function(self)
-		if type(rawget(self, 'GetLibraryVersion')) == "function" then
-			return self:GetLibraryVersion()
-		else
-			return "AceLocale(" .. name .. ")"
-		end
-	end
-	setmetatable(self, mt)
+	self[__strictness__] = false
+	self[__name__] = name
+	refixInstance(self)
 	
 	AceLocale.registry[name] = self
 	return self
@@ -148,11 +207,6 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 				t[key] = key
 			end
 		end
-		local mt = getmetatable(self)
-		mt.__index = Create__index(t)
-		local mt2 = new()
-		mt2.__index = AceLocale.prototype
-		setmetatable(t, mt2)
 	else
 		for key, value in pairs(self[__translations__]) do
 			if not rawget(self[__baseTranslations__], key) then
@@ -162,13 +216,8 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 				AceLocale.error(self, "Can only accept true as a value on the base locale. %q is the base locale, %q is not.", rawget(self, __baseLocale__), locale)
 			end
 		end
-		local mt = getmetatable(self)
-		local __index = mt.__index
-		mt.__index = Create__index(t)
-		local mt2 = new()
-		mt2.__index = self[__baseTranslations__]
-		setmetatable(t, mt2)
 	end
+	refixInstance(self)
 	if rawget(self, __debugging__) then
 		if not rawget(self, __translationTables__) then
 			rawset(self, __translationTables__, {})
@@ -179,48 +228,16 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 end
 
 function AceLocale.prototype:SetStrictness(strict)
+	AceLocale.argCheck(self, strict, 2, "boolean")
 	local mt = getmetatable(self)
 	if not mt then
 		AceLocale.error(self, "Cannot call `SetStrictness' without a metatable.")
 	end
-	local translations = rawget(self, __translations__)
-	if not translations then
+	if not rawget(self, __translations__) then
 		AceLocale.error(self, "No translations registered.")
 	end
-	local baseTranslations = rawget(self, __baseTranslations__)
-	local mt2 = getmetatable(translations)
-	local mt3 = getmetatable(baseTranslations)
-	if mt2 then
-		mt2 = del(mt2)
-		setmetatable(translations, nil)
-	end
-	if mt3 then
-		mt3 = del(mt3)
-		setmetatable(baseTranslations, nil)
-	end
-	getmetatable(self).__index = AceLocale.prototype
-	if strict then
-		local mt2 = new()
-		mt2.__index = AceLocale.prototype
-		setmetatable(translations, mt2)
-		getmetatable(self).__index = Create__index(translations)
-		for k,v in pairs(baseTranslations) do
-			if rawget(self, k) == v then
-				self[k] = nil
-			end
-		end
-	else
-		if baseTranslations ~= translations then
-			local mt2 = new()
-			mt2.__index = AceLocale.prototype
-			setmetatable(baseTranslations, mt2)
-			mt.__index = baseTranslations
-			local mt3 = new()
-			mt3.__index = baseTranslations
-			setmetatable(translations, mt3)
-			mt.__index = Create__index(translations)
-		end
-	end
+	rawset(self, __strictness__, strict)
+	refixInstance(self)
 end
 
 function AceLocale.prototype:GetTranslationStrict(text, sublevel)
@@ -396,14 +413,14 @@ function AceLocale.prototype:Debug()
 		if type(words[word]) == "table" then
 			for bit in pairs(words[word]) do
 				for locale, localization in pairs(localizations) do
-					if not localization[word] or not localization[word][bit] then
+					if not rawget(localization, word) or not localization[word][bit] then
 						localeDebug[locale][word .. "::" .. bit] = true
 					end
 				end
 			end
 		else
 			for locale, localization in pairs(localizations) do
-				if not localization[word] then
+				if not rawget(localization, word) then
 					localeDebug[locale][word] = true
 				end
 			end
@@ -441,6 +458,8 @@ local function activate(self, oldLib, oldDeactivate)
 		self.__baseLocale__ = oldLib.__baseLocale__
 		self.__translationTables__ = oldLib.__translationTables__
 		self.__reverseTranslations__ = oldLib.__reverseTranslations__
+		self.__strictness__ = oldLib.__strictness__
+		self.__name__ = oldLib.__name__
 	end
 	if not self.__baseTranslations__ then
 		self.__baseTranslations__ = {}
@@ -460,6 +479,12 @@ local function activate(self, oldLib, oldDeactivate)
 	if not self.__reverseTranslations__ then
 		self.__reverseTranslations__ = {}
 	end
+	if not self.__strictness__ then
+		self.__strictness__ = {}
+	end
+	if not self.__name__ then
+		self.__name__ = {}
+	end
 	
 	__baseTranslations__ = self.__baseTranslations__
 	__debugging__ = self.__debugging__
@@ -467,6 +492,8 @@ local function activate(self, oldLib, oldDeactivate)
 	__baseLocale__ = self.__baseLocale__
 	__translationTables__ = self.__translationTables__
 	__reverseTranslations__ = self.__reverseTranslations__
+	__strictness__ = self.__strictness__
+	__name__ = self.__name__
 	
 	if not self.registry then
 		self.registry = {}
@@ -475,6 +502,7 @@ local function activate(self, oldLib, oldDeactivate)
 			local name = name
 			local mt = getmetatable(instance)
 			setmetatable(instance, nil)
+			instance[__name__] = name
 			local strict
 			if instance.translations then
 				instance[__translations__], instance.translations = instance.translations
@@ -487,66 +515,16 @@ local function activate(self, oldLib, oldDeactivate)
 					strict = true
 				end
 			else
-				if instance[__translations__] ~= instance[__baseTranslations__] then
+				if instance[__strictness__] ~= nil then
+					strict = instance[__strictness__]
+				elseif instance[__translations__] ~= instance[__baseTranslations__] then
 					if getmetatable(instance[__translations__]).__index == oldLib.prototype then
 						strict = true
 					end
 				end
 			end
-			if instance[__translations__] then
-				if instance[__translations__] == instance[__baseTranslations__] or strict then
-					local mt = new()
-					mt.__index = Create__index(instance[__translations__])
-					mt.__newindex = __newindex
-					mt.__call = callFunc
-					mt.__tostring = function(self)
-						if type(rawget(self, 'GetLibraryVersion')) == "function" then
-							return self:GetLibraryVersion()
-						else
-							return "AceLocale(" .. name .. ")"
-						end
-					end
-					setmetatable(instance, mt)
-					
-					local mt2 = new()
-					mt2.__index = self.prototype
-					setmetatable(instance[__translations__], mt2)
-				else
-					local mt = new()
-					mt.__index = Create__index(instance[__translations__])
-					mt.__newindex = __newindex
-					mt.__call = callFunc
-					mt.__tostring = function(self)
-						if type(rawget(self, 'GetLibraryVersion')) == "function" then
-							return self:GetLibraryVersion()
-						else
-							return "AceLocale(" .. name .. ")"
-						end
-					end
-					setmetatable(instance, mt)
-					
-					local mt2 = new()
-					mt2.__index = instance[__baseTranslations__]
-					setmetatable(instance[__translations__], mt2)
-					
-					local mt3 = new()
-					mt3.__index = self.prototype
-					setmetatable(instance[__baseTranslations__], mt3)
-				end
-			else
-				local mt = new()
-				mt.__index = Create__index(self.prototype)
-				mt.__newindex = __newindex
-				mt.__call = callFunc
-				mt.__tostring = function(self)
-					if type(rawget(self, 'GetLibraryVersion')) == "function" then
-						return self:GetLibraryVersion()
-					else
-						return "AceLocale(" .. name .. ")"
-					end
-				end
-				setmetatable(instance, mt)
-			end
+			instance[__strictness__] = strict and true or false
+			refixInstance(instance)
 		end
 	end
 	
