@@ -442,9 +442,6 @@ local function activate(self, oldLib, oldDeactivate)
 		self.__translationTables__ = oldLib.__translationTables__
 		self.__reverseTranslations__ = oldLib.__reverseTranslations__
 	end
-	if not self.registry then
-		self.registry = {}
-	end
 	if not self.__baseTranslations__ then
 		self.__baseTranslations__ = {}
 	end
@@ -470,6 +467,88 @@ local function activate(self, oldLib, oldDeactivate)
 	__baseLocale__ = self.__baseLocale__
 	__translationTables__ = self.__translationTables__
 	__reverseTranslations__ = self.__reverseTranslations__
+	
+	if not self.registry then
+		self.registry = {}
+	else
+		for name, instance in pairs(self.registry) do
+			local name = name
+			local mt = getmetatable(instance)
+			setmetatable(instance, nil)
+			local strict
+			if instance.translations then
+				instance[__translations__], instance.translations = instance.translations
+				instance[__baseLocale__], instance.baseLocale = instance.baseLocale
+				instance[__baseTranslations__], instance.baseTranslations = instance.baseTranslations
+				instance[__debugging__], instance.debugging = instance.debugging
+				instance.reverseTranslations = nil
+				instance[__translationTables__], instance.translationTables = instance.translationTables
+				if mt and mt.__call == oldLib.prototype.GetTranslationStrict then
+					strict = true
+				end
+			else
+				if instance[__translations__] ~= instance[__baseTranslations__] then
+					if getmetatable(instance[__translations__]).__index == oldLib.prototype then
+						strict = true
+					end
+				end
+			end
+			if instance[__translations__] then
+				if instance[__translations__] == instance[__baseTranslations__] or strict then
+					local mt = new()
+					mt.__index = Create__index(instance[__translations__])
+					mt.__newindex = __newindex
+					mt.__call = callFunc
+					mt.__tostring = function(self)
+						if type(rawget(self, 'GetLibraryVersion')) == "function" then
+							return self:GetLibraryVersion()
+						else
+							return "AceLocale(" .. name .. ")"
+						end
+					end
+					setmetatable(instance, mt)
+					
+					local mt2 = new()
+					mt2.__index = self.prototype
+					setmetatable(instance[__translations__], mt2)
+				else
+					local mt = new()
+					mt.__index = Create__index(instance[__translations__])
+					mt.__newindex = __newindex
+					mt.__call = callFunc
+					mt.__tostring = function(self)
+						if type(rawget(self, 'GetLibraryVersion')) == "function" then
+							return self:GetLibraryVersion()
+						else
+							return "AceLocale(" .. name .. ")"
+						end
+					end
+					setmetatable(instance, mt)
+					
+					local mt2 = new()
+					mt2.__index = instance[__baseTranslations__]
+					setmetatable(instance[__translations__], mt2)
+					
+					local mt3 = new()
+					mt3.__index = self.prototype
+					setmetatable(instance[__baseTranslations__], mt3)
+				end
+			else
+				local mt = new()
+				mt.__index = Create__index(self.prototype)
+				mt.__newindex = __newindex
+				mt.__call = callFunc
+				mt.__tostring = function(self)
+					if type(rawget(self, 'GetLibraryVersion')) == "function" then
+						return self:GetLibraryVersion()
+					else
+						return "AceLocale(" .. name .. ")"
+					end
+				end
+				setmetatable(instance, mt)
+			end
+		end
+	end
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
