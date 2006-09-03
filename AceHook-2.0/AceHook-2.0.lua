@@ -75,7 +75,7 @@ local function _debug(self, msg)
 	end		
 end
 
-local donothing
+local donothing = function() end
 
 local new, del
 do
@@ -109,23 +109,22 @@ local origMetatable = {
 	AceHook:_getFunctionHook- internal method
 -------------------------------------------------------------------------]]		
 
-local function _getFunctionHook(self, func, handler)
-	local orig = self.hooks[func].orig
+local function _getFunctionHook(self, func, handler, orig)
 	if type(handler) == "string" then
 		-- The handler is a method, need to self it
 		return function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			if self.hooks and self.hooks[func] and self.hooks[func].active then
+			if active then -- setfenv hack
 				return self[handler](self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			elseif orig then
+			else
 				return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 			end
 		end
 	else
 		-- The handler is a function, just call it
 		return function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			if self.hooks and self.hooks[func] and self.hooks[func].active then
+			if active then -- setfenv hack
 				return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			elseif orig then
+			else
 				return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 			end
 		end
@@ -135,24 +134,23 @@ end
 --[[----------------------------------------------------------------------
 	AceHook:_getMethodHook - Internal Method
 -------------------------------------------------------------------------]]		
-local function _getMethodHook(self, object, method, handler, script)
-	local orig = self.hooks[object][method].orig
+local function _getMethodHook(self, object, method, handler, orig, script)
 	if type(handler) == "string" then
 		-- The handler is a method, need to self it
 		if script then
 			return function()
-				if self.hooks and self.hooks[object] and self.hooks[object][method] and self.hooks[object][method].active then
+				if active then -- setfenv hack
 					return self[handler](self, object)
-				elseif orig then
+				else
 					return orig()
 				end
 			end
 		else
 			return function(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				if self.hooks and self.hooks[obj] and self.hooks[obj][method] and self.hooks[obj][method].active then
+				if active then -- setfenv hack
 					return self[handler](self, obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				elseif orig then
-					return orig(object, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				else
+					return orig(obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 				end
 			end
 		end
@@ -160,18 +158,18 @@ local function _getMethodHook(self, object, method, handler, script)
 		-- The handler is a function, just call it
 		if script then
 			return function()
-				if self.hooks and self.hooks[object] and self.hooks[object][method] and self.hooks[object][method].active then
+				if active then -- setfenv hack
 					return handler(object)
-				elseif orig then
+				else
 					return orig()
 				end
 			end
 		else
 			return function(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				if self.hooks and self.hooks[obj] and self.hooks[obj][method] and self.hooks[obj][method].active then
+				if active then -- setfenv hack
 					return handler(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				elseif orig then
-					return orig(object, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				else
+					return orig(obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
 				end
 			end	
 		end
@@ -187,9 +185,9 @@ end
 	o If handler is a function, it just uses it directly through the wrapper
 -------------------------------------------------------------------------]]		
 local function _hookFunc(self, func, handler)						
-	local f = _G[func]
+	local orig = _G[func]
 	
-	if not f or type(f) ~= "function" then
+	if not orig or type(orig) ~= "function" then
 		_debug(self, string.format("Attempt to hook a non-existant function %q", func),3)
 		return
 	end
@@ -221,10 +219,11 @@ local function _hookFunc(self, func, handler)
 	
 	local t = setmetatable(new(), origMetatable)
 	self.hooks[func] = t
-	t.orig = f
+	t.orig = orig
 	t.active = true
 	t.handler = handler
-	t.func = _getFunctionHook(self, func, handler)
+	t.func = _getFunctionHook(self, func, handler, orig or donothing)
+	setfenv(t.func, t) -- setfenv hack
 	
 	_G[func] = t.func
 end
@@ -302,9 +301,6 @@ local function _hookMeth(self, obj, method, handler, script)
 		-- Sometimes there is not a original function for a script.
 		orig = obj:GetScript(method)
 		if not orig then
-			if not donothing then
-				function donothing() end
-			end
 			orig = donothing
 		end
 	-- Method
@@ -323,7 +319,8 @@ local function _hookMeth(self, obj, method, handler, script)
 	t.active = true
 	t.handler = handler
 	t.script = script
-	t.func = _getMethodHook(self, obj, method, handler, script)
+	t.func = _getMethodHook(self, obj, method, handler, orig or donothing, script)
+	setfenv(t.func, t) -- setfenv hack
 	
 	if script then
 		obj:SetScript(method, t.func)
@@ -351,7 +348,7 @@ local function _unhookMeth(self, obj, method)
 		if self.hooks[obj][method].script then
 			if obj:GetScript(method) == self.hooks[obj][method].func then
 				-- We own the script.  Kill it.
-				obj:SetScript(method, self.hooks[obj][method].orig)
+				obj:SetScript(method, self.hooks[obj][method].orig ~= donothing and self.hooks[obj][method].orig or nil)
 				del(self.hooks[obj][method])
 				self.hooks[obj][method] = nil
 			else
