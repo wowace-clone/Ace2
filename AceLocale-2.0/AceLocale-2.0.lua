@@ -65,9 +65,7 @@ function AceLocale:new(name)
 	mt.__index = AceLocale.prototype
 	mt.__newindex = function(self, k, v)
 		if type(v) ~= "function" and type(k) ~= "table" then
-			local stack = debugstack()
-			local _,_,line = string.find(stack, "\n(.-)\n")
-			DEFAULT_CHAT_FRAME:AddMessage(string.format("%s: Cannot change the values of an AceLocale instance. %s", tostring(self), tostring(line)))
+			AceLocale.error(self, "Cannot change the values of an AceLocale instance.")
 		end
 		rawset(self, k, v)
 	end
@@ -511,9 +509,7 @@ end
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
 		if type(k) ~= "table" and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
-			local stack = debugstack()
-			local _,_,line = string.find(stack, "\n(.-)\n")
-			DEFAULT_CHAT_FRAME:AddMessage(string.format("%s: Translation %q does not exist. %s", tostring(self), tostring(k), tostring(line)))
+			AceLocale.error(self, "Translation %q does not exist.", k)
 		end
 	end
 })
