@@ -53,6 +53,10 @@ local callFunc = function(self, key1, key2)
 	end
 end
 
+local rawget = rawget
+local rawset = rawset
+local type = type
+
 local lastSelf
 
 local Create__index = function(superTable)
@@ -60,7 +64,6 @@ local Create__index = function(superTable)
 		lastSelf = self
 		local value = superTable[key]
 		rawset(self, key, value)
-		lastSelf = nil
 		return value
 	end
 end
@@ -103,7 +106,9 @@ AceLocale.prototype = {}
 AceLocale.prototype.class = AceLocale
 
 function AceLocale.prototype:EnableDebugging()
-	AceLocale.assert(not rawget(self, __baseTranslations__), "Cannot enable debugging after a translation has been registered.")
+	if rawget(self, __baseTranslations__) then
+		AceLocale:error("Cannot enable debugging after a translation has been registered.")
+	end
 	rawset(self, __debugging__, true)
 end
 
@@ -111,13 +116,17 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	AceLocale.argCheck(self, locale, 2, "string")
 	AceLocale.argCheck(self, func, 3, "function")
 	
-	AceLocale.assert(self, locale ~= rawget(self, __baseLocale__), "Cannot provide the same locale more than once. %q provided twice.", locale)
+	if locale == rawget(self, __baseLocale__) then
+		AceLocale.error(self, "Cannot provide the same locale more than once. %q provided twice.", locale)
+	end
 	
 	if rawget(self, __baseTranslations__) and GetLocale() ~= locale then
 		if rawget(self, __debugging__) then
 			local t = func()
 			func = nil
-			AceLocale.assert(self, type(t) == "table", "Bad argument #3 to `RegisterTranslations'. function did not return a table. (expected table, got %s)", type(t))
+			if type(t) ~= "table" then
+				AceLocale.error(self, "Bad argument #3 to `RegisterTranslations'. function did not return a table. (expected table, got %s)", type(t))
+			end
 			self[__translationTables__][locale] = t
 			t = nil
 		end
@@ -126,7 +135,9 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	end
 	local t = func()
 	func = nil
-	AceLocale.assert(self, type(t) == "table", "Bad argument #3 to `RegisterTranslations'. function did not return a table. (expected table, got %s)", type(t))
+	if type(t) ~= "table" then
+		AceLocale.error(self, "Bad argument #3 to `RegisterTranslations'. function did not return a table. (expected table, got %s)", type(t))
+	end
 	
 	rawset(self, __translations__, t)
 	if not rawget(self, __baseTranslations__) then
@@ -144,8 +155,12 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 		setmetatable(t, mt2)
 	else
 		for key, value in pairs(self[__translations__]) do
-			AceLocale.assert(self, rawget(self[__baseTranslations__], key), "Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
-			AceLocale.assert(self, value ~= true, "Improper translation exists. %q is likely misspelled for locale %s.", "Can only accept true as a value on the base locale. %q is the base locale, %q is not.", rawget(self, __baseLocale__), locale)
+			if not rawget(self[__baseTranslations__], key) then
+				AceLocale.error(self, "Improper translation exists. %q is likely misspelled for locale %s.", key, locale)
+			end
+			if value == true then
+				AceLocale.error(self, "Can only accept true as a value on the base locale. %q is the base locale, %q is not.", rawget(self, __baseLocale__), locale)
+			end
 		end
 		local mt = getmetatable(self)
 		local __index = mt.__index
@@ -165,78 +180,108 @@ end
 
 function AceLocale.prototype:SetStrictness(strict)
 	local mt = getmetatable(self)
-	AceLocale.assert(self, mt, "Cannot call `SetStrictness' without a metatable.")
-	AceLocale.assert(self, rawget(self, __translations__), "No translations registered.")
-	local mt2 = getmetatable(self[__translations__])
-	local mt3 = getmetatable(self[__baseTranslations__])
+	if not mt then
+		AceLocale.error(self, "Cannot call `SetStrictness' without a metatable.")
+	end
+	local translations = rawget(self, __translations__)
+	if not translations then
+		AceLocale.error(self, "No translations registered.")
+	end
+	local baseTranslations = rawget(self, __baseTranslations__)
+	local mt2 = getmetatable(translations)
+	local mt3 = getmetatable(baseTranslations)
 	if mt2 then
 		mt2 = del(mt2)
-		setmetatable(self[__translations__], nil)
+		setmetatable(translations, nil)
 	end
 	if mt3 then
 		mt3 = del(mt3)
-		setmetatable(self[__baseTranslations__], nil)
+		setmetatable(baseTranslations, nil)
 	end
 	getmetatable(self).__index = AceLocale.prototype
 	if strict then
 		local mt2 = new()
 		mt2.__index = AceLocale.prototype
-		setmetatable(self[__translations__], mt2)
-		getmetatable(self).__index = Create__index(self[__translations__])
-		for k,v in pairs(self[__baseTranslations__]) do
+		setmetatable(translations, mt2)
+		getmetatable(self).__index = Create__index(translations)
+		for k,v in pairs(baseTranslations) do
 			if rawget(self, k) == v then
 				self[k] = nil
 			end
 		end
 	else
-		if self[__baseTranslations__] ~= self[__translations__] then
+		if baseTranslations ~= translations then
 			local mt2 = new()
 			mt2.__index = AceLocale.prototype
-			setmetatable(self[__baseTranslations__], mt2)
-			mt.__index = self[__baseTranslations__]
-			if self[__translations__] then
-				local mt3 = new()
-				mt3.__index = self[__baseTranslations__]
-				setmetatable(self[__translations__], mt3)
-				mt.__index = Create__index(self[__translations__])
-			end
+			setmetatable(baseTranslations, mt2)
+			mt.__index = baseTranslations
+			local mt3 = new()
+			mt3.__index = baseTranslations
+			setmetatable(translations, mt3)
+			mt.__index = Create__index(translations)
 		end
 	end
 end
 
 function AceLocale.prototype:GetTranslationStrict(text, sublevel)
 	AceLocale.argCheck(self, text, 1, "string")
-	AceLocale.assert(self, rawget(self, __translations__), "No translations registered")
+	local translations = rawget(self, __translations__)
+	if not translations then
+		AceLocale.error(self, "No translations registered")
+	end
 	if sublevel then
-		local t = rawget(self[__translations__], text)
-		AceLocale.assert(self, type(t) == "table", "Strict translation %q::%q does not exist", text, sublevel)
+		local t = rawget(translations, text)
+		if type(t) ~= "table" then
+			AceLocale.error(self, "Strict translation %q::%q does not exist", text, sublevel)
+		end
 		local value = t[sublevel]
-		AceLocale.assert(self, value, "Strict translation %q::%q does not exist", text, sublevel)
+		if not value then
+			AceLocale.error(self, "Strict translation %q::%q does not exist", text, sublevel)
+		end
 		return value
 	else
-		local value = rawget(self[__translations__], text)
-		AceLocale.assert(self, value, "Strict translation %q does not exist", text)
+		local value = rawget(translations, text)
+		if not value then
+			AceLocale.error(self, "Strict translation %q does not exist", text)
+		end
 		return value
 	end
 end
 
 function AceLocale.prototype:GetTranslation(text, sublevel)
 	AceLocale.argCheck(self, text, 1, "string")
-	AceLocale.assert(self, rawget(self, __translations__), "No translations registered")
+	local translations = rawget(self, __translations__)
+	if not translations then
+		AceLocale.error(self, "No translations registered")
+	end
 	if sublevel then
-		local t = rawget(self[__translations__], text) or rawget(self[__baseTranslations__], text)
-		AceLocale.assert(self, type(t) == "table", "Loose translation %q::%q does not exist", text, sublevel)
-		local value = t[sublevel]
+		local base = self[__baseTranslations__]
+		local standard = rawget(translations, text)
+		local current
+		local baseStandard
+		if not standard then
+			baseStandard = rawget(base, text)
+			current = baseStandard
+		end
+		if not type(current) ~= "table" then
+			AceLocale.error(self, "Loose translation %q::%q does not exist", text, sublevel)
+		end
+		local value = current[sublevel]
 		if not value then
-			AceLocale.assert(self, t ~= rawget(self[__translations__], text) or rawget(self[__translations__], text) == rawget(self[__baseTranslations__], text), "Loose translation %q::%q does not exist", text, sublevel)
-			t = rawget(self[__baseTranslations__], text)
-			value = t[sublevel]
-			AceLocale.assert(self, value, "Loose translation %q::%q does not exist", text, sublevel)
+			if current == baseStandard or type(baseStandard) ~= "table" then
+				AceLocale.error(self, "Loose translation %q::%q does not exist", text, sublevel)
+			end
+			value = baseStandard[sublevel]
+			if not value then
+				AceLocale.error(self, "Loose translation %q::%q does not exist", text, sublevel)
+			end
 		end
 		return value
 	else
-		local value = rawget(self[__translations__], text)
-		AceLocale.assert(self, value, "Loose translation %q does not exist", text)
+		local value = rawget(translations, text)
+		if not value then
+			AceLocale.error(self, "Loose translation %q does not exist", text)
+		end
 		return value
 	end
 end
@@ -251,47 +296,64 @@ local function initReverse(self)
 end
 
 function AceLocale.prototype:GetReverseTranslation(text)
-	if not rawget(self, __reverseTranslations__) then
-		AceLocale.assert(self, rawget(self, __translations__), "No translations registered")
+	local x = rawget(self, __reverseTranslations__)
+	if not x then
+		if not rawget(self, __translations__) then
+			AceLocale.error(self, "No translations registered")
+		end
 		initReverse(self)
+		x = self[__reverseTranslations__]
 	end
-	local translation = self[__reverseTranslations__][text]
+	local translation = x[text]
 	if not translation then
 		AceLocale.error(self, "Reverse translation for %q does not exist", text)
-		return
 	end
 	return translation
 end
 
 function AceLocale.prototype:GetIterator()
-	AceLocale.assert(self, rawget(self, __translations__), "No translations registered")
-	return pairs(self[__translations__])
+	local x = rawget(self, __translations__)
+	if not x then
+		AceLocale.error(self, "No translations registered")
+	end
+	return next, x, nil
 end
 
 function AceLocale.prototype:GetReverseIterator()
-	if not rawget(self, __reverseTranslations__) then
-		AceLocale.assert(self, rawget(self, __translations__), "No translations registered")
+	local x = rawget(self, __reverseTranslations__)
+	if not x then
+		if not rawget(self, __translations__) then
+			AceLocale.error(self, "No translations registered")
+		end
 		initReverse(self)
+		x = self[__reverseTranslations__]
 	end
-	return pairs(self[__reverseTranslations__])
+	return next, x, nil
 end
 
 function AceLocale.prototype:HasTranslation(text, sublevel)
 	AceLocale.argCheck(self, text, 1, "string")
-	AceLocale.assert(self, rawget(self, __translations__), "No translations registered")
+	local x = rawget(self, __translations__)
+	if not x then
+		AceLocale.error(self, "No translations registered")
+	end
 	if sublevel then
 		AceLocale.argCheck(self, sublevel, 2, "string", "nil")
-		return type(rawget(self[__translations__], text)) == "table" and self[__translations__][text][sublevel] and true
+		return type(rawget(x, text)) == "table" and x[text][sublevel] and true
 	end
-	return rawget(self[__translations__], text) and true
+	return rawget(x, text) and true
 end
 
 function AceLocale.prototype:HasReverseTranslation(text)
-	if not rawget(self, __reverseTranslations__) then
-		AceLocale.assert(self, rawget(self, __translations__), "No translations registered")
+	local x = rawget(self, __reverseTranslations__)
+	if not x then
+		if not rawget(self, __translations__) then
+			AceLocale.error(self, "No translations registered")
+		end
 		initReverse(self)
+		x = self[__reverseTranslations__]
 	end
-	return self[__reverseTranslations__][text] and true
+	return x[text] and true
 end
 
 AceLocale.prototype.GetTableStrict = AceLocale.prototype.GetTranslationStrict
