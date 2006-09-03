@@ -227,6 +227,12 @@ function backbone:GetReverseIterator()
     return pairs(self[reverseTranslation])
 end
 
+function backbone:GetLocaleList()
+    local results = {}
+    for k, v in pairs(self[translations]) do tinsert(results, k) end
+    return results
+end
+
 local function activate(self, oldLib, oldDeactivate)
    AceLocale = self
 	
