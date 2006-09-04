@@ -1685,43 +1685,51 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	if AceComm_registry[distribution] then
 		if isTable then
 			if isCustom then
-				for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
-					if type(v) == "string" then
-						k[v](k, prefix, sender, distribution, smallCustomChannel, unpack(message))
-					else -- function
-						v(prefix, sender, distribution, smallCustomChannel, unpack(message))
+				if AceComm_registry.CUSTOM[customChannel][prefix] then
+					for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
+						if type(v) == "string" then
+							k[v](k, prefix, sender, distribution, smallCustomChannel, unpack(message))
+						else -- function
+							v(prefix, sender, distribution, smallCustomChannel, unpack(message))
+						end
 					end
 				end
 			else
-				for k,v in pairs(AceComm_registry[distribution][prefix]) do
-					if type(v) == "string" then
-						k[v](k, prefix, sender, distribution, unpack(message))
-					else -- function
-						v(prefix, sender, distribution, unpack(message))
+				if AceComm_registry[distribution][prefix] then
+					for k,v in pairs(AceComm_registry[distribution][prefix]) do
+						if type(v) == "string" then
+							k[v](k, prefix, sender, distribution, unpack(message))
+						else -- function
+							v(prefix, sender, distribution, unpack(message))
+						end
 					end
 				end
 			end
 		else
 			if isCustom then
-				for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
-					if type(v) == "string" then
-						k[v](k, prefix, sender, distribution, smallCustomChannel, message)
-					else -- function
-						v(prefix, sender, distribution, smallCustomChannel, message)
+				if AceComm_registry.CUSTOM[customChannel][prefix] then
+					for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
+						if type(v) == "string" then
+							k[v](k, prefix, sender, distribution, smallCustomChannel, message)
+						else -- function
+							v(prefix, sender, distribution, smallCustomChannel, message)
+						end
 					end
 				end
 			else
-				for k,v in pairs(AceComm_registry[distribution][prefix]) do
-					if type(v) == "string" then
-						k[v](k, prefix, sender, distribution, message)
-					else -- function
-						v(prefix, sender, distribution, message)
+				if AceComm_registry[distribution][prefix] then
+					for k,v in pairs(AceComm_registry[distribution][prefix]) do
+						if type(v) == "string" then
+							k[v](k, prefix, sender, distribution, message)
+						else -- function
+							v(prefix, sender, distribution, message)
+						end
 					end
 				end
 			end
 		end
 	end
-	if isGroup and AceComm_registry.GROUP then
+	if isGroup and AceComm_registry.GROUP and AceComm_registry.GROUP[prefix] then
 		if isTable then
 			for k,v in pairs(AceComm_registry.GROUP[prefix]) do
 				if type(v) == "string" then
