@@ -46,7 +46,7 @@ end
 
 local __baseTranslations__, __debugging__, __translations__, __baseLocale__, __translationTables__, __reverseTranslations__, __strictness__
 
-local callFunc = function(self, key1, key2)
+local __call = function(self, key1, key2)
 	if key2 then
 		return self[key1][key2]
 	else
@@ -60,22 +60,11 @@ local type = type
 
 local lastSelf
 
-local Create__index
-do
-	local cache = setmetatable({}, {__mode='kv'})
-	function Create__index(superTable)
-		if cache[superTable] then
-			return cache[superTable]
-		end
-		local x = function(self, key)
-			lastSelf = self
-			local value = superTable[key]
-			rawset(self, key, value)
-			return value
-		end
-		cache[superTable] = x
-		return x
-	end
+local __index = function(self, key)
+	lastSelf = self
+	local value = (rawget(self, __translations__) or AceLocale.prototype)[key]
+	rawset(self, key, value)
+	return value
 end
 
 local __newindex = function(self, k, v)
@@ -108,9 +97,9 @@ local refixInstance = function(instance)
 		end
 		if translations == baseTranslations or instance[__strictness__] then
 			local mt = new()
-			mt.__index = Create__index(translations)
+			mt.__index = __index
 			mt.__newindex = __newindex
-			mt.__call = callFunc
+			mt.__call = __call
 			mt.__tostring = __tostring
 			setmetatable(instance, mt)
 			
@@ -119,9 +108,9 @@ local refixInstance = function(instance)
 			setmetatable(translations, mt2)
 		else
 			local mt = new()
-			mt.__index = Create__index(translations)
+			mt.__index = __index
 			mt.__newindex = __newindex
-			mt.__call = callFunc
+			mt.__call = __call
 			mt.__tostring = __tostring
 			setmetatable(instance, mt)
 			
@@ -135,9 +124,9 @@ local refixInstance = function(instance)
 		end
 	else
 		local mt = new()
-		mt.__index = Create__index(AceLocale.prototype)
+		mt.__index = __index
 		mt.__newindex = __newindex
-		mt.__call = callFunc
+		mt.__call = __call
 		mt.__tostring = __tostring
 		setmetatable(instance, mt)
 	end
