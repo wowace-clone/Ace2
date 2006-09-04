@@ -252,6 +252,10 @@ local function _unhookFunc(self, func)
 		if _G[func] == funcs[orig] then
 			_G[func] = orig
 			self.hooks[func] = del(self.hooks[func])
+			handlers[orig] = nil
+			funcs[orig] = nil
+			scripts[orig] = nil
+			actives[orig] = nil
 			-- Magically all-done
 		else
 			actives[orig] = nil
@@ -359,6 +363,10 @@ local function _unhookMeth(self, obj, method)
 				-- We own the script.  Kill it.
 				obj:SetScript(method, orig)
 				self.hooks[obj][method] = del(self.hooks[obj][method])
+				handlers[orig] = nil
+				funcs[orig] = nil
+				scripts[orig] = nil
+				actives[orig] = nil
 			else
 				actives[orig] = nil
 			end
@@ -367,6 +375,10 @@ local function _unhookMeth(self, obj, method)
 				-- We own the method.  Kill it.
 				obj[method] = orig
 				self.hooks[obj][method] = del(self.hooks[obj][method])
+				handlers[orig] = nil
+				funcs[orig] = nil
+				scripts[orig] = nil
+				actives[orig] = nil
 			else
 				actives[orig] = nil
 			end
