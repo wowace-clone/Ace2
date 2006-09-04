@@ -375,143 +375,48 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 	_G.event = _G_event
 end
 
---------------------
--- schedule heap management
---------------------
-
 -- local accessors
 local getn = table.getn
 local setn = table.setn
 local tinsert = table.insert
 local tremove = table.remove
 local floor = math.floor
-
---------------------
--- sifting functions
-local function hSiftUp(heap, pos, schedule)
-	schedule = schedule or heap[pos]
-	local scheduleTime = schedule.time
-
-	local curr, i = pos, floor(pos/2)
-	local parent = heap[i]
-	while i > 0 and scheduleTime < parent.time do
-		heap[curr], parent.i = parent, curr
-		curr, i = i, floor(i/2)
-		parent = heap[i]
-	end
-	heap[curr], schedule.i = schedule, curr
-	return pos ~= curr
-end
-
-local function hSiftDown(heap, pos, schedule, size)
-	schedule, size = schedule or heap[pos], size or getn(heap)
-	local scheduleTime = schedule.time
-
-	local curr = pos
-	repeat
-		local child, childTime, c
-		-- determine the child to compare with
-		local j = 2 * curr
-		if j > size then
-			break
-		end
-		local k = j + 1
-		if k > size then
-			child = heap[j]
-			childTime, c = child.time, j
-		else
-			local childj, childk = heap[j], heap[k]
-			local jTime, kTime = childj.time, childk.time
-			if jTime < kTime then
-				child, childTime, c = childj, jTime, j
-			else
-				child, childTime, c = childk, kTime, k
-			end
-		end
-		-- do the comparison
-		if scheduleTime <= childTime then
-			break
-		end
-		heap[curr], child.i = child, curr
-		curr = c
-	until false
-	heap[curr], schedule.i = schedule, curr
-	return pos ~= curr
-end
-
---------------------
--- heap functions
-local function hMaintain(heap, pos, schedule, size)
-	schedule, size = schedule or heap[pos], size or getn(heap)
-	if not hSiftUp(heap, pos, schedule) then
-		hSiftDown(heap, pos, schedule, size)
-	end
-end
-
-local function hPush(heap, schedule)
-	tinsert(heap, schedule)
-	hSiftUp(heap, getn(heap), schedule)
-end
-
-local function hPop(heap)
-	local head, tail = heap[1], tremove(heap)
-	local size = getn(heap)
-
-	if size == 1 then
-		heap[1], tail.i = tail, 1
-	elseif size > 1 then
-		hSiftDown(heap, 1, tail, size)
-	end
-	return head
-end
-
-local function hDelete(heap, pos)
-	local size = getn(heap)
-	local tail = tremove(heap)
-	if pos < size then
-		size = size - 1
-		if size == 1 then
-			heap[1], tail.i = tail, 1
-		elseif size > 1 then
-			heap[pos] = tail
-			hMaintain(heap, pos, tail, size)
-		end
-	end
-end
-
 local GetTime = GetTime
+local next = next
+local pairs = pairs
+local unpack = unpack
+
 local delayRegistry
-local delayHeap
 local function OnUpdate()
 	local t = GetTime()
-	-- peek at top of heap
-	local v = delayHeap[1]
-	local v_time = v and v.time
-	while v and v_time <= t do
-		local v_repeatDelay = v.repeatDelay
-		if v_repeatDelay then
-			-- use the event time, not the current time, else timing inaccuracies add up over time
-			v.time = v_time + v_repeatDelay
-			-- re-arrange the heap
-			hSiftDown(delayHeap, 1, v)
+	local k = next(delayRegistry)
+	local last = nil
+	while k do
+		local v = delayRegistry[k]
+		local v_time = v.time
+		if v_time <= t then
+			local v_repeatDelay = v.repeatDelay
+			if v_repeatDelay then
+				-- use the event time, not the current time, else timing inaccuracies add up over time
+				v.time = v_time + v_repeatDelay
+			end
+			local event = v.event
+			if type(event) == "function" then
+				event(unpack(v))
+			else
+				AceEvent:TriggerEvent(event, unpack(v))
+			end
+			if not v_repeatDelay then
+				delayRegistry[k] = del(v)
+			else
+				last = k
+			end
 		else
-			-- pop the event off the heap, and delete it from the registry
-			hPop(delayHeap)
-			delayRegistry[v.id] = nil
+			last = k
 		end
-		local event = v.event
-		if type(event) == "function" then
-			event(unpack(v))
-		else
-			AceEvent:TriggerEvent(event, unpack(v))
-		end
-		if not v_repeatDelay then
-			del(v)
-		end
-		v = delayHeap[1]
-		v_time = v and v.time
+		k = next(delayRegistry, last)
 	end
-	if not v then
+	if not next(delayRegistry) then
 		AceEvent.frame:Hide()
 	end
 end
@@ -537,10 +442,7 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 
 	if not delayRegistry then
 		AceEvent.delayRegistry = new()
-		AceEvent.delayHeap = new()
-		AceEvent.delayHeap.n = 0
 		delayRegistry = AceEvent.delayRegistry
-		delayHeap = AceEvent.delayHeap
 		AceEvent.frame:SetScript("OnUpdate", OnUpdate)
 	end
 	local t
@@ -548,40 +450,37 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 		for k in pairs(id) do
 			id[k] = nil
 		end
-		table.setn(id, 0)
 		t = id
 	else
 		t = new()
 	end
-	t.n = 0
-	tinsert(t, a1)
-	tinsert(t, a2)
-	tinsert(t, a3)
-	tinsert(t, a4)
-	tinsert(t, a5)
-	tinsert(t, a6)
-	tinsert(t, a7)
-	tinsert(t, a8)
-	tinsert(t, a9)
-	tinsert(t, a10)
-	tinsert(t, a11)
-	tinsert(t, a12)
-	tinsert(t, a13)
-	tinsert(t, a14)
-	tinsert(t, a15)
-	tinsert(t, a16)
-	tinsert(t, a17)
-	tinsert(t, a18)
-	tinsert(t, a19)
-	tinsert(t, a20)
+	t[1] = a1
+	t[2] = a2
+	t[3] = a3
+	t[4] = a4
+	t[5] = a5
+	t[6] = a6
+	t[7] = a7
+	t[8] = a8
+	t[9] = a9
+	t[10] = a10
+	t[11] = a11
+	t[12] = a12
+	t[13] = a13
+	t[14] = a14
+	t[15] = a15
+	t[16] = a16
+	t[17] = a17
+	t[18] = a18
+	t[19] = a19
+	t[20] = a20
+	t.n = 20
 	t.event = event
 	t.time = GetTime() + delay
 	t.self = self
 	t.id = id or t
 	t.repeatDelay = repeating and delay
 	delayRegistry[t.id] = t
-	-- insert into heap
-	hPush(delayHeap, t)
 	AceEvent.frame:Show()
 	return t.id
 end
@@ -629,9 +528,7 @@ function AceEvent:CancelScheduledEvent(t)
 	if delayRegistry then
 		local v = delayRegistry[t]
 		if v then
-			hDelete(delayHeap, v.i)
-			delayRegistry[t] = nil
-			del(v)
+			delayRegistry[t] = del(v)
 			if not next(delayRegistry) then
 				AceEvent.frame:Hide()
 			end
@@ -738,9 +635,7 @@ function AceEvent:CancelAllScheduledEvents()
 	if delayRegistry then
 		for k,v in pairs(delayRegistry) do
 			if v.self == self then
-				hDelete(delayHeap, v.i)
-				del(v)
-				delayRegistry[k] = nil
+				delayRegistry[k] = del(v)
 			end
 		end
 		if not next(delayRegistry) then
@@ -914,7 +809,6 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		self.throttleRegistry = oldLib.throttleRegistry
 		self.delayRegistry = oldLib.delayRegistry
 		self.buckets = oldLib.buckets
-		self.delayHeap = oldLib.delayHeap
 		self.registry = oldLib.registry
 		self.frame = oldLib.frame
 		self.debugTable = oldLib.debugTable
@@ -962,7 +856,6 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	end)
 	if self.delayRegistry then
 		delayRegistry = self.delayRegistry
-		delayHeap = self.delayHeap
 		self.frame:SetScript("OnUpdate", OnUpdate)
 	end
 
