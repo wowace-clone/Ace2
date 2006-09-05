@@ -19,6 +19,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 local curTranslation, baseTranslation, translations, baseLocale, curLocale, strictTranslations, dynamic, reverseTranslation
 local AceLocale = {}
 local backbone = {}
+backbone.class, backbone.super = false, false
 
 local function initReverse(self)
    self[reverseTranslation] = {}
@@ -105,7 +106,7 @@ function AceLocale:RegisterTranslation(uid, locale, func)
 end
 
 function AceLocale:GetInstance(uid, locale)
-   self:argCheck(uid, 2, "string")
+   self:argCheck(uid, 1, "string")
    
    local instance = self.registry[uid]
    
@@ -116,7 +117,10 @@ function AceLocale:GetInstance(uid, locale)
    return instance
 end
 
-
+function AceLocale:HasInstance(uid)
+    self:argCheck(uid, 1, "string")
+    return self.registry[uid] and true or false
+end
 
 setmetatable(backbone, {__index = 
     function(tbl, key)  
@@ -170,25 +174,32 @@ function backbone:SetLocale(locale)
     end
 end
 
+function backbone:ClearLocales()
+    self[translations] = {}
+end
+
 function backbone:SetDynamicLocales(flag)
     AceLocale:argCheck(flag, 1, "boolean")
     self[dynamic] = flag
 end
 
 function backbone:SetStrictness(flag)
-   AceLocale:argCheck(flag, 1, "boolean")
-   
-   local mt = getmetatable(self[curTranslation])
+    AceLocale:argCheck(flag, 1, "boolean")
+    local mt
+    
+    if rawget(self, curTranslation) then
+        mt = getmetatable(self[curTranslation])
+    end
+    
+    if strict and mt then
+        mt.__index = function(tbl, key)  
+            AceLocale:error("Translation for %s not found", key)
+        end
+    elseif mt then
+        mt.__index = self[baseTranslation]
+    end
 
-   if strict and mt then
-      mt.__index = function(tbl, key)  
-         AceLocale:error("Translation for %s not found", key)
-      end
-   elseif mt then
-      mt.__index = self[baseTranslation]
-   end
-
-   self[strictTranslations] = strict
+    self[strictTranslations] = strict
 end
 
 function backbone:HasTranslation(text)
