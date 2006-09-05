@@ -215,7 +215,7 @@ function AceTab:OnTabPressed()
 	end
 
 	local _, set = next(this.matches)
-	if not set or not set.usage and numMatches == 0 then return self.hooks[this].OnTabPressed.orig() end
+	if not set or numMatches == 0 and not hasNonFallback then return self.hooks[this].OnTabPressed.orig() end
 	
 	this:HighlightText(left, left + string.len(word))
 	if numMatches == 1 then
