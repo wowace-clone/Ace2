@@ -115,6 +115,11 @@ local table_concat = table.concat
 local table_setn = table.setn
 local table_remove = table.remove
 
+local type = type
+local unpack = unpack
+local pairs = pairs
+local next = next
+
 local player = UnitName("player")
 
 local NumericCheckSum, HexCheckSum, BinaryCheckSum
@@ -518,11 +523,11 @@ do
 					return string_char(byte_E, v / 72057594037927936, math_mod(v / 281474976710656, 256), math_mod(v / 1099511627776, 256), math_mod(v / 4294967296, 256), math_mod(v / 16777216, 256), math_mod(v / 65536, 256), math_mod(v / 256, 256), math_mod(v, 256))
 				end
 			elseif v == inf then
-				return string_char(byte_inf)
+				return string_char(64 --[[byte_inf]])
 			elseif v == -inf then
-				return string_char(byte_ninf)
+				return string_char(36 --[[byte_ninf]])
 			elseif v ~= v then
-				return string_char(byte_nan)
+				return string_char(33 --[[byte_nan]])
 			end
 --			do
 --				local s = tostring(v)
@@ -805,11 +810,11 @@ do
 			-- 256-65535-byte string
 			local len = string_byte(value, position + 1) * 256 + string_byte(value, position + 2)
 			return string.sub(value, position + 3, position + 2 + len), position + 2 + len
-		elseif x == byte_inf then
+		elseif x == 64 --[[byte_inf]] then
 			return inf, position
-		elseif x == byte_ninf then
+		elseif x == 36 --[[byte_ninf]] then
 			return -inf, position
-		elseif x == byte_nan then
+		elseif x == 33 --[[byte_nan]] then
 			return nan, position
 		elseif x == byte_d then
 			-- 1-byte integer
@@ -1028,15 +1033,15 @@ function AceComm:RegisterComm(prefix, distribution, method, a4)
 		end
 	end
 	if self == AceComm then
-		AceComm:argCheck(method, customChannel and 5 or 4, "function")
+		AceComm:argCheck(method, customChannel and 5 or 4, "function", "table")
 		self = method
 	else
-		AceComm:argCheck(method, customChannel and 5 or 4, "string", "function", "nil")
+		AceComm:argCheck(method, customChannel and 5 or 4, "string", "function", "table", "nil")
 	end
 	if not method then
 		method = "OnCommReceive"
 	end
-	if type(method) == "string" and type(self[method]) ~= "function" then
+	if type(method) == "string" and type(self[method]) ~= "function" and type(self[method]) ~= "table" then
 		AceEvent:error("Cannot register comm %q to method %q, it does not exist", prefix, method)
 	end
 	
@@ -1687,8 +1692,38 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			if isCustom then
 				if AceComm_registry.CUSTOM[customChannel][prefix] then
 					for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
-						if type(v) == "string" then
-							k[v](k, prefix, sender, distribution, smallCustomChannel, unpack(message))
+						local type_v = type(v)
+						if type_v == "string" then
+							local f = k[v]
+							if type(f) == "table" then
+								local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
+								local g = f[a1]
+								if g then
+									if type(g) == "table" then
+										local h = g[a2]
+										if h then
+											h(k, prefix, sender, distribution, smallCustomChannel, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+										end
+									else -- function
+										g(k, prefix, sender, distribution, smallCustomChannel, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+									end
+								end
+							else -- function
+								f(k, prefix, sender, distribution, smallCustomChannel, unpack(message))
+							end
+						elseif type_v == "table" then
+							local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
+							local g = v[a1]
+							if g then
+								if type(g) == "table" then
+									local h = g[a2]
+									if h then
+										h(prefix, sender, distribution, smallCustomChannel, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+									end
+								else -- function
+									g(prefix, sender, distribution, smallCustomChannel, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+								end
+							end
 						else -- function
 							v(prefix, sender, distribution, smallCustomChannel, unpack(message))
 						end
@@ -1697,8 +1732,38 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			else
 				if AceComm_registry[distribution][prefix] then
 					for k,v in pairs(AceComm_registry[distribution][prefix]) do
-						if type(v) == "string" then
-							k[v](k, prefix, sender, distribution, unpack(message))
+						local type_v = type(v)
+						if type_v == "string" then
+							local f = k[v]
+							if type(f) == "table" then
+								local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
+								local g = f[a1]
+								if g then
+									if type(g) == "table" then
+										local h = g[a2]
+										if h then
+											h(k, prefix, sender, distribution, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+										end
+									else -- function
+										g(k, prefix, sender, distribution, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+									end
+								end
+							else -- function
+								f(k, prefix, sender, distribution, unpack(message))
+							end
+						elseif type_v == "table" then
+							local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
+							local g = v[a1]
+							if g then
+								if type(g) == "table" then
+									local h = g[a2]
+									if h then
+										h(prefix, sender, distribution, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+									end
+								else -- function
+									g(prefix, sender, distribution, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+								end
+							end
 						else -- function
 							v(prefix, sender, distribution, unpack(message))
 						end
@@ -1709,8 +1774,22 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			if isCustom then
 				if AceComm_registry.CUSTOM[customChannel][prefix] then
 					for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
-						if type(v) == "string" then
-							k[v](k, prefix, sender, distribution, smallCustomChannel, message)
+						local type_v = type(v)
+						if type_v == "string" then
+							local f = k[v]
+							if type(f) == "table" then
+								local g = f[message]
+								if g and type(g) == "function" then
+									g(k, prefix, sender, distribution, smallCustomChannel)
+								end
+							else -- function
+								f(k, prefix, sender, distribution, smallCustomChannel, message)
+							end
+						elseif type_v == "table" then
+							local g = v[message]
+							if g and type(g) == "function" then
+								g(k, prefix, sender, distribution, smallCustomChannel)
+							end
 						else -- function
 							v(prefix, sender, distribution, smallCustomChannel, message)
 						end
@@ -1719,8 +1798,22 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			else
 				if AceComm_registry[distribution][prefix] then
 					for k,v in pairs(AceComm_registry[distribution][prefix]) do
-						if type(v) == "string" then
-							k[v](k, prefix, sender, distribution, message)
+						local type_v = type(v)
+						if type_v == "string" then
+							local f = k[v]
+							if type(f) == "table" then
+								local g = f[message]
+								if g and type(g) == "function" then
+									g(k, prefix, sender, distribution)
+								end
+							else -- function
+								f(k, prefix, sender, distribution, message)
+							end
+						elseif type_v == "table" then
+							local g = v[message]
+							if g and type(g) == "function" then
+								g(k, prefix, sender, distribution)
+							end
 						else -- function
 							v(prefix, sender, distribution, message)
 						end
@@ -1732,16 +1825,60 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	if isGroup and AceComm_registry.GROUP and AceComm_registry.GROUP[prefix] then
 		if isTable then
 			for k,v in pairs(AceComm_registry.GROUP[prefix]) do
-				if type(v) == "string" then
-					k[v](k, prefix, sender, "GROUP", unpack(message))
+				local type_v = type(v)
+				if type_v == "string" then
+					local f = k[v]
+					if type(f) == "table" then
+						local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
+						local g = f[a1]
+						if g then
+							if type(g) == "table" then
+								local h = g[a2]
+								if h then
+									h(k, prefix, sender, "GROUP", a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+								end
+							else -- function
+								g(k, prefix, sender, "GROUP", a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+							end
+						end
+					else -- function
+						f(k, prefix, sender, "GROUP", unpack(message))
+					end
+				elseif type_v == "table" then
+					local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
+					local g = v[a1]
+					if g then
+						if type(g) == "table" then
+							local h = g[a2]
+							if h then
+								h(prefix, sender, "GROUP", a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+							end
+						else -- function
+							g(prefix, sender, "GROUP", a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+						end
+					end
 				else -- function
 					v(prefix, sender, "GROUP", unpack(message))
 				end
 			end
 		else
 			for k,v in pairs(AceComm_registry.GROUP[prefix]) do
-				if type(v) == "string" then
-					k[v](k, prefix, sender, "GROUP", message)
+				local type_v = type(v)
+				if type_v == "string" then
+					local f = k[v]
+					if type(f) == "table" then
+						local g = f[message]
+						if g and type(g) == "function" then
+							g(k, prefix, sender, "GROUP")
+						end
+					else -- function
+						f(k, prefix, sender, "GROUP", message)
+					end
+				elseif type_v == "table" then
+					local g = v[message]
+					if g and type(g) == "function" then
+						g(k, prefix, sender, "GROUP")
+					end
 				else -- function
 					v(prefix, sender, "GROUP", message)
 				end
