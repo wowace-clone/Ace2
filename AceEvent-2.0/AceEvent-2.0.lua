@@ -389,12 +389,13 @@ local unpack = unpack
 local delayRegistry
 local function OnUpdate()
 	local t = GetTime()
-	local k = next(delayRegistry)
+	local k,v = next(delayRegistry)
 	local last = nil
 	while k do
-		local v = delayRegistry[k]
 		local v_time = v.time
-		if v_time <= t then
+		if not v_time then
+			delayRegistry[k] = del(v)
+		elseif v_time <= t then
 			local v_repeatDelay = v.repeatDelay
 			if v_repeatDelay then
 				-- use the event time, not the current time, else timing inaccuracies add up over time
@@ -414,7 +415,7 @@ local function OnUpdate()
 		else
 			last = k
 		end
-		k = next(delayRegistry, last)
+		k,v = next(delayRegistry, last)
 	end
 	if not next(delayRegistry) then
 		AceEvent.frame:Hide()
