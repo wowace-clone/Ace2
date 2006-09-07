@@ -1,10 +1,10 @@
 --[[
 Name: AceOO-2.0
 Revision: $Rev$
-Author(s): ckknight (ckknight@gmail.com)
-           kergoth (kergoth@handhelds.org)
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
+Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceOO-2.0
+Documentation: http://www.wowace.com/index.php/AceOO-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceOO-2.0
 Description: Library to provide an object-orientation framework.
 Dependencies: AceLibrary, Compost-2.0 (optional)

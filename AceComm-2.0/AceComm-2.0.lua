@@ -1,9 +1,10 @@
 --[[
 Name: AceComm-2.0
-Revision: $Rev: 6076 $
-Author(s): ckknight (ckknight@gmail.com)
+Revision: $Rev$
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
+Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceComm-2.0
+Documentation: http://www.wowace.com/index.php/AceComm-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceComm-2.0
 Description: Mixin to allow for inter-player addon communications.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0,
@@ -11,7 +12,7 @@ Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0,
 ]]
 
 local MAJOR_VERSION = "AceComm-2.0"
-local MINOR_VERSION = "$Revision: 60760 $"
+local MINOR_VERSION = "$Revision$"
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end

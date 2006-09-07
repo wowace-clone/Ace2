@@ -1,12 +1,10 @@
 --[[
 Name: AceConsole-2.0
 Revision: $Rev$
-Author(s): ckknight (ckknight@gmail.com)
-           cladhaire (cladhaire@gmail.com)
-           hyperactiveChipmunk (hyperactiveChipmunk@gmail.com)
-Inspired By: AceChatCmd 1.x by Turan (<email here>)
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
+Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceConsole-2.0
+Documentation: http://www.wowace.com/index.php/AceConsole-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceConsole-2.0
 Description: Mixin to allow for input/output capabilities. This uses the
              AceOptions data table format to determine input.

@@ -1,10 +1,10 @@
 --[[
 Name: AceDebug-2.0
 Revision: $Rev$
-Author(s): Kaelten (kaelten@gmail.com)
-Inspired By: AceDebug 1.x by Turan (<email here>)
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
+Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceDebug-2.0
+Documentation: http://www.wowace.com/index.php/AceDebug-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceDebug-2.0
 Description: Mixin to allow for simple debugging capabilities.
 Dependencies: AceLibrary, AceOO-2.0

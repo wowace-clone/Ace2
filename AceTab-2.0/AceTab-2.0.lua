@@ -1,9 +1,9 @@
 --[[
 Name: AceTab-2.0
-Revision: $Rev: 1$
-Author(s): hyperactiveChipmunk (hyperactiveChipmunk@gmail.com)
+Revision: $Rev$
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceTab-2.0
+Documentation: http://www..wowace.com/index.php/AceTab-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceTab-2.0
 Description: A tab-completion library
 Dependencies: AceLibrary

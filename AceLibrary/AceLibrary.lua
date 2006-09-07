@@ -1,12 +1,12 @@
 --[[
 Name: AceLibrary
 Revision: $Rev$
-Author(s): ckknight (ckknight@gmail.com)
-           cladhaire (cladhaire@gmail.com)
+Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Iriel (iriel@vigilance-committee.org)
              Tekkub (tekkub@gmail.com)
+             Revision: $Rev$
 Website: http://www.wowace.com/
-Documentation: http://wiki.wowace.com/index.php/AceLibrary
+Documentation: http://www.wowace.com/index.php/AceLibrary
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceLibrary
 Description: Versioning library to handle other library instances, upgrading,
              and proper access.
