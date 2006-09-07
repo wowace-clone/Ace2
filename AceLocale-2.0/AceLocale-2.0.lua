@@ -430,9 +430,10 @@ end
 
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
-		if type(k) ~= "table" and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
+		if type(k) ~= "table" and k ~= 0 and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
 			AceLocale.error(lastSelf or self, "Translation %q does not exist.", k)
 		end
+		return nil
 	end
 })
 
