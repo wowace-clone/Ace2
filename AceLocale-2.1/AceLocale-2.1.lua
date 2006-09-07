@@ -176,6 +176,8 @@ end
 
 function backbone:ClearLocales()
     self[translations] = {}
+    self[curLocale] = nil
+    self[baseLocale] = nil
 end
 
 function backbone:SetDynamicLocales(flag)
