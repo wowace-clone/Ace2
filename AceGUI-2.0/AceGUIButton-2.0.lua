@@ -5,14 +5,17 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 
-local AceOO = AceLibrary("AceOO-2.0")
+--[[local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIFrame = AceLibrary("AceGUIFrame-2.0")
 local AceGUIButton = AceOO.Class(AceGUIFrame)
 AceGUIButton.new = AceGUIFrame.new
 AceGUIButton.CreateUIObject = AceGUIFrame.CreateUIObject
 AceGUIButton.UIObjectType = "Button"
+]]
 
 local factory = AceLibrary("AceGUIFactory-2.0")
+local button = factory:new("AceGUIFrame-2.0")
+button.UIObjectType = "Button"
 
 local buttonTextTemplate = {
     type = "fontstring",
@@ -31,13 +34,13 @@ local function attachTexture(textureType,def,elements)
     end
 end
 
-function AceGUIButton.prototype:Build(def,parent,name,handler)
+function button.prototype:Build(def,parent,name,handler)
     if def.enableMouse ~= false then
         def.enableMouse = true
     end
     
-    --AceGUIButton.super.prototype.Build(self,def,parent,name,handler)
-    AceGUIFrame.prototype.Build(self,def,parent,name,handler)
+    button.super.prototype.Build(self,def,parent,name,handler)
+    --AceGUIFrame.prototype.Build(self,def,parent,name,handler)
     
     def.elements = def.elements or {}
     local elements = def.elements
@@ -78,9 +81,9 @@ local function setTextColor(self,textType,def,method)
     end
 end
 
-function AceGUIButton.prototype:Configure(def,parent,name,handler)
-    --AceGUIButton.super.prototype.Configure(self,def,parent,name,handler)
-    AceGUIFrame.prototype.Configure(self,def,parent,name,handler)
+function button.prototype:Configure(def,parent,name,handler)
+    button.super.prototype.Configure(self,def,parent,name,handler)
+    --AceGUIFrame.prototype.Configure(self,def,parent,name,handler)
     
     self:SetFontString(self.Text)   
     
@@ -127,4 +130,5 @@ function AceGUIButton.prototype:Configure(def,parent,name,handler)
 end
     
 
-AceLibrary:Register(AceGUIButton, MAJOR_VERSION, MINOR_VERSION)
+AceLibrary:Register(button, MAJOR_VERSION, MINOR_VERSION)
+button = AceLibrary(MAJOR_VERSION)

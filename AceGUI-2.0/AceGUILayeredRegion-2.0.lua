@@ -5,17 +5,20 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 
-local AceOO = AceLibrary("AceOO-2.0")
+--[[local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIRegion = AceLibrary("AceGUIRegion-2.0")
 local AceGUILayeredRegion = AceOO.Class(AceGUIRegion)
 AceGUILayeredRegion.new = AceGUIRegion.new
 AceGUILayeredRegion.virtual = true
+]]
+local layeredRegion = AceLibrary("AceGUIFactory-2.0"):new("AceGUIRegion-2.0")
+layeredRegion.virtual = true
 
 local registry = AceLibrary("AceGUI-2.0").registry
 
-function AceGUILayeredRegion.prototype:Configure(def,parent,name,handler)
-    --AceGUILayeredRegion.super.prototype.Configure(self,def,parent,name,handler)
-    AceGUIRegion.prototype.Configure(self,def,parent,name,handler)
+function layeredRegion.prototype:Configure(def,parent,name,handler)
+    layeredRegion.super.prototype.Configure(self,def,parent,name,handler)
+    --AceGUIRegion.prototype.Configure(self,def,parent,name,handler)
     
     local t = def.drawLayer
     if t then self:SetDrawLayer(t) end
@@ -24,16 +27,17 @@ function AceGUILayeredRegion.prototype:Configure(def,parent,name,handler)
     
 end
 
-function AceGUILayeredRegion.prototype:SetScript(script,func)
+function layeredRegion.prototype:SetScript(script,func)
     registry.objects[self].scripts[script] = func
 end
 
-function AceGUILayeredRegion.prototype:GetScript(script)
+function layeredRegion.prototype:GetScript(script)
     return registry.objects[self].scripts[script]
 end
 
-function AceGUILayeredRegion.prototype:HasScript(script)
+function layeredRegion.prototype:HasScript(script)
     return script == "OnLoad"
 end
 
-AceLibrary:Register(AceGUILayeredRegion,MAJOR_VERSION,MINOR_VERSION)
+AceLibrary:Register(layeredRegion,MAJOR_VERSION,MINOR_VERSION)
+layeredRegion = AceLibrary(MAJOR_VERSION)

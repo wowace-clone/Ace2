@@ -31,7 +31,7 @@ local CLASS_MAP	= {
 local AceOO = AceLibrary("AceOO-2.0")
 local AceGUICustomClass = AceLibrary("AceGUICustomClass-2.0")
 local AceGUIFactory = {}
-local registry 
+local registry = AceLibrary("AceGUI-2.0").registry
 local templates = AceLibrary("AceGUITemplates-2.0")
 
 
@@ -84,8 +84,18 @@ function AceGUIFactory:make(def,handler,parent,name)
     return class:new(def,handler,parent,name)
 end
 
-function AceGUIFactory:init()
-    registry = AceLibrary("AceGUI-2.0").registry
+function AceGUIFactory:new(parentClass,mixin)
+    if type(parentClass) == "string" then
+        parentClass = AceLibrary(parentClass)
+    end
+    if type(mixin) == "string" then
+        mixin = AceLibrary(mixin)
+    end
+    local class = AceOO.Class(parentClass,mixin)
+    class.new = parentClass.new
+    class.CreateUIObject = parentClass.CreateUIObject
+    class.UIObject = parentClass.CreateUIObject
+    return class
 end
 
 AceLibrary:Register(AceGUIFactory,MAJOR_VERSION,MINOR_VERSION)

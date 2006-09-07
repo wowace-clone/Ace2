@@ -187,7 +187,7 @@ templates.UIPanelScrollDownButton = {
 }
 
 --TODO: 
--- o Add the slider's background.  
+-- o Fix Middle Section for taller bars
 -- o Might be simpler to encapsulate this entire thing as a frame
 -- o Reexamine the scripts used here.  Should a template be this specific?
 templates.UIPanelScrollBar = {
@@ -197,7 +197,7 @@ templates.UIPanelScrollBar = {
     elements = {
         upButton = {
             template = "UIPanelScrollUpButton",
-            anchors = { bottom = { relPoint = "top"} },
+            anchors = { bottom = { relPoint = "top", y = 2 } },
             
             clicks = "LeftButtonUp",
             OnClick = function()
@@ -207,14 +207,46 @@ templates.UIPanelScrollBar = {
         },
         downButton = {
             template = "UIPanelScrollDownButton",
-            anchors = { top = { relPoint = "bottom", y = -2 } },
+            anchors = { top = { relPoint = "bottom", y = -4 } },
             
             clicks = "LeftButtonUp",
             OnClick = function()
                 local parent = this:GetParent()
                 parent:SetValue(parent:GetValue() + parent:GetValueStep())
             end
-        }
+        },
+        backdropTop = {
+            type = "texture",
+            width = 30,
+            height = 120,
+            anchors = { top = { x = -2, y = 21 } },
+            file = "Interface/ClassTrainerFrame/UI-ClassTrainer-ScrollBar",
+            texCoord = {
+                left = 0.53125, right = 1.0, top = 0.03125, bottom = 1.0,
+            },
+        },
+        --[[backdropMiddle = {
+            type = "texture",
+            width = 27,
+            anchors = { 
+                top = { x = 0, y = -20 },
+                bottom = { x = 0, y = 20 },
+            },
+            file = "Interface/ClassTrainerFrame/UI-ClassTrainer-ScrollBar",
+            texCoord = {
+                left = 0.578125, right = 1.0, top = 0.1640625, bottom = 0.0703125
+            },
+        },]]
+        backdropBottom = {
+            type = "texture",
+            width = 30,
+            height = 120,
+            anchors = { bottom = { x = -2, y = -21 } },
+            file = "Interface/ClassTrainerFrame/UI-ClassTrainer-ScrollBar",
+            texCoord = {
+                left = 0, right = 0.46875, top = 0.0234375, bottom = 0.9609375
+            },
+        },
     },
     ThumbTexture = {
         file = "Interface/Buttons/UI-ScrollBar-Knob",
@@ -237,7 +269,8 @@ templates.UIPanelScrollBar = {
         
 }
 
-function templates:activate(oldLib,oldDeactivate)
+local function activate(self,oldLib,oldDeactivate)
+    templates = self
     if oldLib then
         for k,v in pairs(oldLib) do
             if type(v) == "table" then
@@ -247,6 +280,6 @@ function templates:activate(oldLib,oldDeactivate)
     end
 end
 
-AceLibrary:Register(templates,MAJOR_VERSION,MINOR_VERSION,templates.activate)
+AceLibrary:Register(templates,MAJOR_VERSION,MINOR_VERSION,activate)
 templates = AceLibrary(MAJOR_VERSION)
 setmetatable(templates,mt)

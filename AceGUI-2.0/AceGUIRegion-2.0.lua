@@ -5,16 +5,21 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 
-local AceOO = AceLibrary("AceOO-2.0")
+--[[local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIBase = AceLibrary("AceGUIBase-2.0")
 local AceGUIRegion = AceOO.Class(AceGUIBase)
 AceGUIRegion.new = AceGUIBase.new
-AceGUIRegion.virtual = true
+]]
+
+local region = AceLibrary("AceGUIFactory-2.0"):new("AceGUIBase-2.0")
+
+region.virtual = true
 local registry = AceLibrary("AceGUI-2.0").registry
 
-function AceGUIRegion.prototype:Configure(def,parent,name,handler)
-    --AceGUIRegion.super.prototype.Configure(self,def,parent,name,handler)
-    AceGUIBase.prototype.Configure(self,def,parent,name,handler)
+
+function region.prototype:Configure(def,parent,name,handler)
+    region.super.prototype.Configure(self,def,parent,name,handler)
+    --AceLibrary("AceGUIBase-2.0").prototype.Configure(self,def,parent,name,handler)
     
     if def.hidden then self:Hide() end
     
@@ -51,4 +56,5 @@ function AceGUIRegion.prototype:Configure(def,parent,name,handler)
     
 end
 
-AceLibrary:Register(AceGUIRegion, MAJOR_VERSION, MINOR_VERSION)
+AceLibrary:Register(region, MAJOR_VERSION, MINOR_VERSION)
+region = AceLibrary(MAJOR_VERSION)

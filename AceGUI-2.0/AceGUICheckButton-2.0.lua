@@ -5,14 +5,17 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 
-local AceOO = AceLibrary("AceOO-2.0")
+--[[local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIButton = AceLibrary("AceGUIButton-2.0")
-local AceGUICheckButton = AceOO.Class(AceGUIButton)
-AceGUICheckButton.new = AceGUIButton.new
-AceGUICheckButton.CreateUIObject = AceGUIButton.CreateUIObject
-AceGUICheckButton.UIObjectType = "CheckButton"
+local checkbutton = AceOO.Class(AceGUIButton)
+checkbutton.new = AceGUIButton.new
+checkbutton.CreateUIObject = AceGUIButton.CreateUIObject
+checkbutton.UIObjectType = "CheckButton"
+]]
 
 local factory = AceLibrary("AceGUIFactory-2.0")
+local checkbutton = factory:new("AceGUIButton-2.0")
+checkbutton.UIObjectType = "CheckButton"
 
 local anchors = {
     center = true,
@@ -28,9 +31,9 @@ local function attachTexture(textureType,def,elements)
     end
 end
 
-function AceGUICheckButton.prototype:Build(def,parent,name,handler)
-    --AceGUICheckButton.super.prototype.Build(self,def,parent,name,handler)
-    AceGUIButton.prototype.Build(self,def,parent,name,handler)
+function checkbutton.prototype:Build(def,parent,name,handler)
+    checkbutton.super.prototype.Build(self,def,parent,name,handler)
+    --AceGUIButton.prototype.Build(self,def,parent,name,handler)
     local elements = def.elements
     
     attachTexture("CheckedTexture",def,elements)
@@ -50,13 +53,14 @@ local function setTexture(self,textureType,def)
 end
 
 
-function AceGUICheckButton.prototype:Configure(def,parent,name,handler)
-    --AceGUIButton.super.prototype.Configure(self,def,parent,name,handler)
-    AceGUIButton.prototype.Configure(self,def,parent,name,handler)
+function checkbutton.prototype:Configure(def,parent,name,handler)
+    checkbutton.super.prototype.Configure(self,def,parent,name,handler)
+    --AceGUIButton.prototype.Configure(self,def,parent,name,handler)
     
     setTexture(self,"CheckedTexture",def)
     setTexture(self,"DisabledCheckedTexture",def)
 end
     
 
-AceLibrary:Register(AceGUICheckButton, MAJOR_VERSION, MINOR_VERSION)
+AceLibrary:Register(checkbutton, MAJOR_VERSION, MINOR_VERSION)
+checkbutton = AceLibrary(MAJOR_VERSION)

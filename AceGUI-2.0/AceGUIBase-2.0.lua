@@ -11,10 +11,6 @@ local AceGUIBase = AceOO.Class()
 
 local AceEvent
 
-if AceLibrary:HasInstance("AceEvent-2.0") then
-    AceEvent = AceLibrary("AceEvent-2.0")
-end
-
 AceGUIBase.virtual = true
 
 local old_new = AceGUIBase.new
@@ -22,6 +18,10 @@ local old_new = AceGUIBase.new
 local registry = AceLibrary("AceGUI-2.0").registry
 local scripts
 AceGUIBase.new = function(self,def,handler,parent,name)
+    if registry.objects[name] then
+        self:error("An AceGUI object with the name %q already exists",name)
+    end
+    
     local tmp = old_new(self)
     local o = self:CreateUIObject(parent)
     for k,v in pairs(tmp) do
@@ -33,9 +33,6 @@ AceGUIBase.new = function(self,def,handler,parent,name)
         return index[k] or frame_index(t,k)
     end})  
     
-    if registry.objects[name] then
-        self:error("An AceGUI ojbect with the name %q already exists",name)
-    end
     parent = def.parent or parent
     o:SetParent(parent)
     local children = {}
@@ -79,6 +76,9 @@ function AceGUIBase.prototype:Configure(def,parent,name,handler)
                 end
                 method = function()tmp(handler)end
             end
+            if self[script] then
+                method = function()self[script](self)method()end
+            end
             self:SetScript(script,method)
             s[script] = method
         end
@@ -101,7 +101,13 @@ function AceGUIBase.prototype:GetAceGUIName()
     return registry.objects[self].name
 end
 
-AceLibrary:Register(AceGUIBase,MAJOR_VERSION,MINOR_VERSION)
+local external = function(self,major,instance) 
+    if major == "AceEvent-2.0" then
+        AceEvent = instance
+    end
+end
+
+AceLibrary:Register(AceGUIBase,MAJOR_VERSION,MINOR_VERSION,nil,nil,external)
 AceGUIBase = AceLibrary(MAJOR_VERSION)
 
 scripts = {"OnSizeChanged","OnEvent", "OnUpdate", "OnShow", "OnHide", "OnEnter","OnLeave", "OnMouseDown", 

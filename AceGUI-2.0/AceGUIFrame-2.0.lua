@@ -5,19 +5,22 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 
-local AceOO = AceLibrary("AceOO-2.0")
+--[[local AceOO = AceLibrary("AceOO-2.0")
 local AceGUIRegion = AceLibrary("AceGUIRegion-2.0")
 local AceGUIFrame = AceOO.Class(AceGUIRegion)
 AceGUIFrame.new = AceGUIRegion.new
 AceGUIFrame.UIObjectType = "Frame"
+]]
 
-function AceGUIFrame:CreateUIObject()
-    return CreateFrame(self.UIObjectType)
+local frame = AceLibrary("AceGUIFactory-2.0"):new("AceGUIRegion-2.0")
+frame.UIObjectType = "Frame"
+function frame:CreateUIObject(parent)
+    return CreateFrame(self.UIObjectType,nil,parent)
 end
 
-function AceGUIFrame.prototype:Configure(def,parent,name,handler)
-    --AceGUIFrame.super.prototype.Configure(self,def,parent,name,handler)
-    AceGUIRegion.prototype.Configure(self,def,parent,name,handler)
+function frame.prototype:Configure(def,parent,name,handler)
+    frame.super.prototype.Configure(self,def,parent,name,handler)
+    --AceGUIRegion.prototype.Configure(self,def,parent,name,handler)
     
     self:EnableMouse(def.enableMouse)
     self:EnableKeyboard(def.enableKeyboard)
@@ -59,4 +62,5 @@ function AceGUIFrame.prototype:Configure(def,parent,name,handler)
     self:SetToplevel(self.toplevel)
 end
 
-AceLibrary:Register(AceGUIFrame, MAJOR_VERSION, MINOR_VERSION)
+AceLibrary:Register(frame, MAJOR_VERSION, MINOR_VERSION)
+frame = AceLibrary(MAJOR_VERSION)

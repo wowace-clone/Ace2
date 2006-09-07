@@ -19,20 +19,14 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 
 local AceOO = AceLibrary("AceOO-2.0")
-local AceGUIFactory = AceLibrary("AceGUIFactory-2.0")
 local AceGUIFontInstance = AceLibrary("AceGUIFontInstance-2.0")
 local AceGUI = AceOO.Mixin{"CreateGUI"}
 
 local registry
-
+local AceGUIFactory
 local AceEvent
 
-if AceLibrary:HasInstance("AceEvent-2.0") then
-    AceEvent = AceLibrary("AceEvent-2.0")
-end
-
-local function configureTree(root)
-    
+local function configureTree(root)    
     local info = registry.objects[root]
     if AceOO.inherits(root,AceGUIFontInstance) then
         root:ConfigureFontInstance(info.def)
@@ -42,7 +36,7 @@ local function configureTree(root)
     if root:IsVisible() then root:RunScript("OnShow") end
         
     local children = info.children
-    for _,child in children do
+    for i,child in ipairs(children) do
         configureTree(child)
     end
     
@@ -55,18 +49,24 @@ function AceGUI:CreateGUI(def,handler)
     return root
 end
 
-function AceGUI:activate(oldLib, oldDeactivate)
-	AceGUI = self
+local function activate(newLib, oldLib, oldDeactivate)
+    AceGUI = newLib
+    --AceGUI.super.activate(AceGUI, oldLib, oldDeactivate)
     if oldLib then
-        self.registry = oldLib.registry
+        newLib.registry = oldLib.registry
     end
-    if not self.registry then
-        self.registry = {templates = {}, objects = {}}
+    if not newLib.registry then
+        newLib.registry = {templates = {}, objects = {}}
+    end
+    registry = newLib.registry
+end
+
+local function external(self,major,instance)
+    if major == "AceEvent-2.0" then
+        AceEvent = instance
+    elseif major == "AceGUIFactory-2.0" then
+        AceGUIFactory = instance
     end
 end
 
-
-AceLibrary:Register(AceGUI, MAJOR_VERSION, MINOR_VERSION, AceGUI.activate)
-AceGUI = AceLibrary(MAJOR_VERSION)
-AceGUIFactory:init()
-registry = AceGUI.registry
+AceLibrary:Register(AceGUI, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)

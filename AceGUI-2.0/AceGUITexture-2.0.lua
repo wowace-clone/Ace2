@@ -4,20 +4,23 @@ local MINOR_VERSION = "$Rev$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-local AceOO = AceLibrary("AceOO-2.0")
+--[[local AceOO = AceLibrary("AceOO-2.0")
 local AceGUILayeredRegion = AceLibrary("AceGUILayeredRegion-2.0")
 local AceGUITexture = AceOO.Class(AceGUILayeredRegion)
 AceGUITexture.new = AceGUILayeredRegion.new
 AceGUITexture.UIObjectType = "Texture"
+]]
 
+local texture = AceLibrary("AceGUIFactory-2.0"):new("AceGUILayeredRegion-2.0")
+texture.UIObject = "Texture"
 
-function AceGUITexture:CreateUIObject(parent)
+function texture:CreateUIObject(parent)
     return parent:CreateTexture()
 end
 
-function AceGUITexture.prototype:Configure(def,parent,name,handler)
-    --AceGUITexture.super.prototype.Configure(self,def,parent,name,handler)
-    AceGUILayeredRegion.prototype.Configure(self,def,parent,name,handler)
+function texture.prototype:Configure(def,parent,name,handler)
+    texture.super.prototype.Configure(self,def,parent,name,handler)
+    --AceGUILayeredRegion.prototype.Configure(self,def,parent,name,handler)
     
     local t = def.file
 	if t then self:SetTexture(t) end
@@ -51,4 +54,5 @@ function AceGUITexture.prototype:Configure(def,parent,name,handler)
     
 end
 
-AceLibrary:Register(AceGUITexture,MAJOR_VERSION,MINOR_VERSION)
+AceLibrary:Register(texture,MAJOR_VERSION,MINOR_VERSION)
+texture = AceLibrary(MAJOR_VERSION)
