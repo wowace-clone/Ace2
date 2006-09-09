@@ -1,6 +1,0 @@
-## Inteface 11100
-AceLibrary\AceLibrary.lua
-AceOO\AceOO-2.0.lua
-
-AceGUI-2.0.xml
-wowtester.lua
