@@ -98,6 +98,8 @@ function AceEvent:RegisterEvent(event, method, once)
 	end
 	if type(method) == "string" and type(self[method]) ~= "function" then
 		AceEvent:error("Cannot register event %q to method %q, it does not exist", event, method)
+	else
+		assert(type(method) == "function" or type(method) == "string")
 	end
 
 	local AceEvent_registry = AceEvent.registry
@@ -174,13 +176,14 @@ function AceEvent:RegisterAllEvents(method)
 			AceEvent:error("Cannot register all events to method %q, it does not exist", method)
 		end
 	end
-
-	if not AceEvent.registry[ALL_EVENTS] then
-		AceEvent.registry[ALL_EVENTS] = new()
+	
+	local AceEvent_registry = AceEvent.registry
+	if not AceEvent_registry[ALL_EVENTS] then
+		AceEvent_registry[ALL_EVENTS] = new()
 		AceEvent.frame:RegisterAllEvents()
 	end
 
-	AceEvent.registry[ALL_EVENTS][self] = method
+	AceEvent_registry[ALL_EVENTS][self] = method
 end
 
 local _G = getfenv(0)
