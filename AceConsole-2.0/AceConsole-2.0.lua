@@ -1727,6 +1727,9 @@ end
 
 function AceConsole:TabCompleteInfo(cmdpath)
 	local _, _, cmd =  string.find(cmdpath, "(/%S+)")
+	if not cmd then
+		return
+	end
 	local path = string.sub(cmdpath, string.len(cmd) + 2)
 	for name in pairs(SlashCmdList) do --global
 		if AceConsole.registry[name] then
