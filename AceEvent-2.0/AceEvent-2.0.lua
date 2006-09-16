@@ -415,9 +415,9 @@ local function OnUpdate()
 			end
 			if AceEvent_debugTable then
 				mem, time = gcinfo() - mem, GetTime() - time
-				v.mem = (v.mem or 0) + mem
-				v.time = (v.time or 0) + time
-				v.count = (v.count or 0) + 1
+				v.mem = v.mem + mem
+				v.timeSpent = v.timeSpent + time
+				v.count = v.count + 1
 			end
 			if not v_repeatDelay then
 				local x = delayRegistry[k]
@@ -495,6 +495,11 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 	t.self = self
 	t.id = id or t
 	t.repeatDelay = repeating and delay
+	if AceEvent_debugTable then
+		t.mem = 0
+		t.count = 0
+		t.timeSpent = 0
+	end
 	delayRegistry[t.id] = t
 	AceEvent.frame:Show()
 	return t.id
@@ -805,6 +810,16 @@ end
 function AceEvent:EnableDebugging()
 	if not self.debugTable then
 		self.debugTable = new()
+		
+		if delayRegistry then
+			for k,v in pairs(self.delayRegistry) do
+				if not v.mem then
+					v.mem = 0
+					v.count = 0
+					v.timeSpent = 0
+				end
+			end
+		end
 	end
 end
 
