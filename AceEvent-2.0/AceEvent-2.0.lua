@@ -404,17 +404,29 @@ local function OnUpdate()
 				v.time = v_time + v_repeatDelay
 			end
 			local event = v.event
+			local mem, time
+			if AceEvent_debugTable then
+				mem, time = gcinfo(), GetTime()
+			end
 			if type(event) == "function" then
 				event(unpack(v))
 			else
 				AceEvent:TriggerEvent(event, unpack(v))
 			end
-			if not v_repeatDelay then
-				delayRegistry[k] = del(v)
-			else
-				last = k
+			if AceEvent_debugTable then
+				mem, time = gcinfo() - mem, GetTime() - time
+				v.mem = (v.mem or 0) + mem
+				v.time = (v.time or 0) + time
+				v.count = (v.count or 0) + 1
 			end
-		else
+			if not v_repeatDelay then
+				local x = delayRegistry[k]
+				if x and x.time == v_time then -- check if it was manually reset
+					delayRegistry[k] = del(v)
+				end
+			end
+		end
+		if delayRegistry[k] then
 			last = k
 		end
 		k,v = next(delayRegistry, last)
