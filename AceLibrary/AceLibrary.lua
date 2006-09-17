@@ -35,6 +35,9 @@ setmetatable(AceLibrary, AceLibrary_mt)
 
 local tmp
 local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+	if type(self) ~= "table" then
+		_G.error(string.format("Bad argument #1 to `error' (table expected, got %s)", type(self)), 2)
+	end
 	if not tmp then
 		tmp = {}
 	else
