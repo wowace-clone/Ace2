@@ -891,15 +891,19 @@ local function handlerFunc(self, chat, msg, options)
 					local arg = args[1]
 					arg = string.lower(tostring(arg))
 					for k,v in pairs(options.validate) do
-						local bit
 						if string.lower(v) == arg then
-							args[1] = v
+							args[1] = type(k) == "string" and k or v
 							good = true
 							break
-						elseif type(k) == "string" and string.lower(k) == arg then
-							args[1] = k
-							good = true
-							break
+						end
+					end
+					if not good and type((next(options.validate))) == "string" then
+						for k,v in pairs(options.validate) do
+							if type(k) == "string" and string.lower(k) == arg then
+								args[1] = k
+								good = true
+								break
+							end
 						end
 					end
 				else
