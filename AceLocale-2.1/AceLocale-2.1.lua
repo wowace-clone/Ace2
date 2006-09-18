@@ -91,7 +91,7 @@ function AceLocale:RegisterTranslation(uid, locale, func)
         instance[baseLocale] = locale
         
         for k, v in pairs(instance[baseTranslation]) do
-            if type(v) ~= "string" then
+            if type(v) ~= "string" and type(v) ~= "table" then
                 if type(v) == "boolean" then 
                     instance[baseTranslation][k] = k 
                 else
