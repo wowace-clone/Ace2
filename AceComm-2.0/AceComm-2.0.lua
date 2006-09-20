@@ -821,7 +821,7 @@ do
 			-- 1-byte integer
 			local a = string_byte(value, position + 1)
 			if a >= 128 then
-				a = a - 128
+				a = a - 256
 			end
 			return a, position + 1
 		elseif x == byte_D then
@@ -830,7 +830,7 @@ do
 			local b = string_byte(value, position + 2)
 			local N = a * 256 + b
 			if N >= 32768 then
-				N = N - 32768
+				N = N - 65536
 			end
 			return N, position + 2
 		elseif x == byte_e then
@@ -841,7 +841,7 @@ do
 			local d = string_byte(value, position + 4)
 			local N = a * 16777216 + b * 65536 + c * 256 + d
 			if N >= 2147483648 then
-				N = N - 2147483648
+				N = N - 4294967296
 			end
 			return N, position + 4
 		elseif x == byte_E then
@@ -856,13 +856,9 @@ do
 			local h = string_byte(value, position + 8)
 			local N = a * 72057594037927936 + b * 281474976710656 + c * 1099511627776 + d * 4294967296 + e * 16777216 + f * 65536 + g * 256 + h
 			if N >= 9223372036854775808 then
-				N = N - 9223372036854775808
+				N = N - 18446744073709551616
 			end
 			return N, position + 8
---		elseif x == byte_plus then
---			local len = string_byte(value, position + 1)
---			local s = string.sub(value, position + 2, position + 1 + len)
---			return s, position + 1 + len
 		elseif x == byte_plus or x == byte_minus then
 			local a = string_byte(value, position + 1)
 			local b = string_byte(value, position + 2)
@@ -873,12 +869,13 @@ do
 			local g = string_byte(value, position + 7)
 			local h = string_byte(value, position + 8)
 			local N = a * 1099511627776 + b * 4294967296 + c * 16777216 + d * 65536 + e * 256 + f
+			local sign = x
 			local x = math.floor(N / 137438953472)
 			local m = math.mod(N, 137438953472) * 65536 + g * 256 + h
 			local mantissa = m / 9007199254740992
 			local exp = x - 1023
 			local val = math.ldexp(mantissa, exp)
-			if x == byte_minus then
+			if sign == byte_minus then
 				return -val, position + 8
 			end
 			return val, position + 8
