@@ -116,7 +116,7 @@ local nan = 0/0
 
 local math_floor = math.floor
 local math_mod = math.mod or math.fmod
-local string_gfind = string.gfind or string.gmatch
+local string_gfind = string.gmatch or string.gfind
 local string_char = string.char
 local string_len = string.len
 local string_format = string.format
