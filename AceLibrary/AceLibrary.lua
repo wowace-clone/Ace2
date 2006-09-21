@@ -34,7 +34,7 @@ do
 	end
 end
 
-local string_gfind = string.gfind or string.gmatch
+local string_gfind = string.gmatch or string.gfind
 
 local _G = getfenv(0)
 local previous = _G[ACELIBRARY_MAJOR]
