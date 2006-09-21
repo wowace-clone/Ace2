@@ -42,6 +42,17 @@ local Dewdrop
 
 local _G = getfenv(0)
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
 local function print(text, name, r, g, b, frame, delay)
 	if not text or string.len(text) == 0 then
 		text = " "
@@ -86,7 +97,7 @@ function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, a2, a3, a4
 		while tmp[n] == nil do
 			n = n - 1
 		end
-		table.setn(tmp, n)
+		table_setn(tmp, n)
 		for k = 1, n do
 			tmp[k] = tostring(tmp[k])
 		end
@@ -94,7 +105,7 @@ function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, a2, a3, a4
 		for k,v in tmp do
 			tmp[k] = nil
 		end
-		table.setn(tmp, 0)
+		table_setn(tmp, 0)
 	end
 end
 
@@ -116,11 +127,11 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			for k,v in pairs(work) do
 				work[k] = nil
 			end
-			table.setn(work, 0)
+			table_setn(work, 0)
 			for k,v in pairs(argwork) do
 				argwork[k] = nil
 			end
-			table.setn(argwork, 0)
+			table_setn(argwork, 0)
 		else
 			work = {}
 			argwork = {}
@@ -575,7 +586,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				for k in pairs(order) do
 					order[k] = nil
 				end
-				table.setn(order, 0)
+				table_setn(order, 0)
 			else
 				if not order then
 					order = {}
@@ -587,7 +598,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				for k in pairs(order) do
 					order[k] = nil
 				end
-				table.setn(order, 0)
+				table_setn(order, 0)
 			end
 			var = options.validate[var] or var
 		else
@@ -818,7 +829,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			for k in pairs(order) do
 				order[k] = nil
 			end
-			table.setn(order, 0)
+			table_setn(order, 0)
 		else
 			if options.desc then
 				desc = options.desc
@@ -880,7 +891,7 @@ local function handlerFunc(self, chat, msg, options)
 				for k,v in pairs(args) do
 					args[k] = nil
 				end
-				table.setn(args, 0)
+				table_setn(args, 0)
 				table.insert(args, arg)
 			end
 			if options.validate then
@@ -925,7 +936,7 @@ local function handlerFunc(self, chat, msg, options)
 						for k in pairs(order) do
 							order[k] = nil
 						end
-						table.setn(order, 0)
+						table_setn(order, 0)
 					else
 						usage = options.usage or "<value>"
 					end
@@ -1723,10 +1734,18 @@ function AceConsole:PLAYER_LOGIN()
 	end
 	
 	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, ReloadUI, "RELOAD")
-	local tmp
-	self:RegisterChatCommand({ "/print" }, function(text)
-		RunScript("local function func(...) for k = 1,table.getn(arg) do arg[k] = tostring(arg[k]) end DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg, ' ')) end func(" .. text .. ")")
-	end, "PRINT")
+	
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		self:RegisterChatCommand({ "/print" }, function(text)
+			RunScript("local function func(...) local arg = {...}; for k = 1,select('#', ...) do arg[k] = tostring(arg[k]) end DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg, ' ')) end func(" .. text .. ")")
+		end, "PRINT")
+	else
+		self:RegisterChatCommand({ "/print" }, function(text)
+			RunScript("local function func(...) for k = 1,table.getn(arg) do arg[k] = tostring(arg[k]) end DEFAULT_CHAT_FRAME:AddMessage(table.concat(arg, ' ')) end func(" .. text .. ")")
+		end, "PRINT")
+	end
 end
 
 function AceConsole:TabCompleteInfo(cmdpath)

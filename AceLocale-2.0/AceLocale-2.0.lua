@@ -22,6 +22,17 @@ local AceLocale = {}
 local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
 local new, del
 do
 	local list = setmetatable({}, {__mode='k'})
@@ -39,7 +50,7 @@ do
 		for k in pairs(t) do
 			t[k] = nil
 		end
-		table.setn(t, 0)
+		table_setn(t, 0)
 		list[t] = true
 		return nil
 	end

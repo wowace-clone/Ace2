@@ -23,6 +23,19 @@ local DEBUGGING = "Debugging"
 local TOGGLE_DEBUGGING = "Enable/disable debugging"
 -- localize --
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
+local math_mod = math.mod or math.fmod
+
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local AceDebug = AceOO.Mixin {"Debug", "CustomDebug", "IsDebugging", "SetDebugging", "SetDebugLevel", "LevelDebug", "CustomLevelDebug", "GetDebugLevel"}
 
@@ -35,7 +48,7 @@ local tmp
 function AceDebug:CustomDebug(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	if not self.debugging then return end
 
-	local output = string.format("|cff7fff7f(DEBUG) %s:[%s%3d]|r",  tostring(self), date("%H:%M:%S"), math.mod(GetTime(), 1) * 1000)
+	local output = string.format("|cff7fff7f(DEBUG) %s:[%s%3d]|r",  tostring(self), date("%H:%M:%S"), math_mod(GetTime(), 1) * 1000)
 	
 	if string.find(tostring(a1), "%%") then
 		output = output .. " " .. string.format(tostring(a1), tostring(a2), tostring(a3), tostring(a4), tostring(a5), tostring(a6), tostring(a7), tostring(a8), tostring(a9), tostring(a10), tostring(a11), tostring(a12), tostring(a13), tostring(a14), tostring(a15), tostring(a16), tostring(a17), tostring(a18), tostring(a19), tostring(a20))
@@ -79,7 +92,7 @@ function AceDebug:CustomDebug(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7,
 		for k,v in tmp do
 			tmp[k] = nil
 		end
-		table.setn(tmp, 0)
+		table_setn(tmp, 0)
 	end
 
 	print(output, r, g, b, frame or self.debugFrame, delay)
@@ -126,7 +139,7 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, a2, a3, a4,
     end
     if level > self.debuglevel then return end
 
-	local output = string.format("|cff7fff7f(DEBUG) %s:[%s.%3d]|r",  tostring(self), date("%H:%M:%S"), math.mod(GetTime(), 1) * 1000)
+	local output = string.format("|cff7fff7f(DEBUG) %s:[%s.%3d]|r",  tostring(self), date("%H:%M:%S"), math_mod(GetTime(), 1) * 1000)
     
 	if string.find(tostring(a1), "%%") then
 		output = output .. " " .. string.format(tostring(a1), tostring(a2), tostring(a3), tostring(a4), tostring(a5), tostring(a6), tostring(a7), tostring(a8), tostring(a9), tostring(a10), tostring(a11), tostring(a12), tostring(a13), tostring(a14), tostring(a15), tostring(a16), tostring(a17), tostring(a18), tostring(a19), tostring(a20))
@@ -170,7 +183,7 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, a2, a3, a4,
 		for k,v in tmp do
 			tmp[k] = nil
 		end
-		table.setn(tmp, 0)
+		table_setn(tmp, 0)
 	end
 
 	print(output, r, g, b, frame or self.debugFrame, delay)

@@ -39,6 +39,17 @@ AceComm.hooks = {}
 
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
 local new, del
 do
 	local list = setmetatable({}, {__mode="k"})
@@ -58,7 +69,7 @@ do
 		for k in pairs(t) do
 			t[k] = nil
 		end
-		table.setn(t, 0)
+		table_setn(t, 0)
 		list[t] = true
 		return nil
 	end
@@ -104,7 +115,8 @@ local inf = 1/0
 local nan = 0/0
 
 local math_floor = math.floor
-local math_mod = math.mod
+local math_mod = math.mod or math.fmod
+local string_gfind = string.gfind or string.gmatch
 local string_char = string.char
 local string_len = string.len
 local string_format = string.format
@@ -113,7 +125,6 @@ local string_find = string.find
 local table_insert = table.insert
 local string_sub = string.sub
 local table_concat = table.concat
-local table_setn = table.setn
 local table_remove = table.remove
 
 local type = type
@@ -640,7 +651,7 @@ do
 						recurse[k] = nil
 					end
 				end
-				table.setn(t, n)
+				table_setn(t, n)
 				local s = table.concat(t)
 				t = del(t)
 				local len = string_len(s)
@@ -666,7 +677,7 @@ do
 				for i = 1, n do
 					t[i] = _Serialize(v[i], textToHash)
 				end
-				table.setn(t, n)
+				table_setn(t, n)
 			else
 				local i = 1
 				for k,u in pairs(v) do
@@ -674,7 +685,7 @@ do
 					t[i+1] = _Serialize(u, textToHash)
 					i = i + 2
 				end
-				table.setn(t, i - 1)
+				table_setn(t, i - 1)
 			end
 			if not notFirst then
 				for k in pairs(recurse) do
@@ -871,7 +882,7 @@ do
 			local N = a * 1099511627776 + b * 4294967296 + c * 16777216 + d * 65536 + e * 256 + f
 			local sign = x
 			local x = math.floor(N / 137438953472)
-			local m = math.mod(N, 137438953472) * 65536 + g * 256 + h
+			local m = math_mod(N, 137438953472) * 65536 + g * 256 + h
 			local mantissa = m / 9007199254740992
 			local exp = x - 1023
 			local val = math.ldexp(mantissa, exp)
@@ -901,7 +912,7 @@ do
 				n = n + 1
 				t[n] = v
 			end
-			table.setn(t, n)
+			table_setn(t, n)
 			return t, finish
 		elseif x == byte_o or x == byte_O then
 			-- numerically-indexed table
@@ -933,7 +944,7 @@ do
 				n = n + 1
 				t[n] = v
 			end
-			table.setn(t, n)
+			table_setn(t, n)
 			local object = class:Deserialize(unpack(t))
 			del(t)
 			return object, finish
@@ -963,7 +974,7 @@ do
 				while t[i] ~= nil do
 					i = i + 1
 				end
-				table.setn(t, i - 1)
+				table_setn(t, i - 1)
 			end
 			return t, finish
 		else
@@ -1442,7 +1453,7 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 			end
 			n = n - 1
 		end
-		table.setn(message, n)
+		table_setn(message, n)
 	end
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
@@ -1508,7 +1519,7 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 			end
 			n = n - 1
 		end
-		table.setn(message, n)
+		table_setn(message, n)
 	end
 	
 	local priority = self.commPriority or "NORMAL"
@@ -1676,7 +1687,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 		chunk.time = GetTime()
 		chunk[current] = message
 		if current == max then
-			chunk.n = max
+			table_setn(chunk, max)
 			message = table_concat(chunk)
 			queue[x] = del(queue[x])
 		else
@@ -1964,7 +1975,7 @@ function AceComm:CHAT_MSG_CHANNEL_LIST(text, _, _, _, _, _, _, _, channel)
 		AceComm.userRegistry[channel] = new()
 	end
 	local t = AceComm.userRegistry[channel]
-	for k in string.gfind(text, "[^, @%*#]+") do
+	for k in string_gfind(text, "[^, @%*#]+") do
 		t[k] = true
 		AceLibrary("AceConsole-2.0"):Print(k, "joined")
 	end
@@ -2078,8 +2089,9 @@ function AceComm.hooks:Quit(orig)
 	return orig()
 end
 
-function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
-	for i = 1, arg.n, 2 do
+function AceComm.hooks:FCFDropDown_LoadChannels(orig, a1,a2,a3,a4,a5,a6,a7,a8,a9,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+	local arg = {a1,a2,a3,a4,a5,a6,a7,a8,a9,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20}
+	for i = 1, table.getn(arg), 2 do
 		if not arg[i] then
 			break
 		end

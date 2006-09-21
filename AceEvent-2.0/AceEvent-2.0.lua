@@ -39,6 +39,17 @@ local AceEvent = Mixin {
 						"IsBucketEventRegistered",
 					   }
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
 local weakKey = {__mode="k"}
 local new, del
 do
@@ -379,7 +390,6 @@ end
 
 -- local accessors
 local getn = table.getn
-local setn = table.setn
 local tinsert = table.insert
 local tremove = table.remove
 local floor = math.floor
@@ -489,7 +499,7 @@ local function ScheduleEvent(self, repeating, event, delay, a1, a2, a3, a4, a5, 
 	t[18] = a18
 	t[19] = a19
 	t[20] = a20
-	t.n = 20
+	table_setn(t, 20)
 	t.event = event
 	t.time = GetTime() + delay
 	t.self = self

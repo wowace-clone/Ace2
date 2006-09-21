@@ -48,6 +48,17 @@ local Dewdrop = AceLibrary:HasInstance("Dewdrop-2.0") and AceLibrary("Dewdrop-2.
 
 local _G = getfenv(0)
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
 local function inheritDefaults(t, defaults)
 	if not defaults then
 		return t
@@ -134,7 +145,7 @@ do
 		for k in pairs(t) do
 			t[k] = nil
 		end
-		table.setn(t, 0)
+		table_setn(t, 0)
 		list[t] = true
 	end
 end
@@ -271,12 +282,12 @@ local function DeserializeObject(t)
 	local className = t[0]
 	for i = 20, 1, -1 do
 		if t[i] then
-			t.n = i
+			table_setn(t, i)
 			break
 		end
 	end
 	local o = AceLibrary(className):Deserialize(unpack(t))
-	t.n = 0
+	table_setn(t, 0)
 	return o
 end
 
@@ -798,7 +809,7 @@ local function copyTable(to, from)
 		end
 		to[k] = v
 	end
-	table.setn(to, table.getn(from))
+	table_setn(to, table.getn(from))
 	setmetatable(to, from)
 	return to
 end

@@ -19,6 +19,17 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local AceModuleCore = AceOO.Mixin {
 									"NewModule",
@@ -108,7 +119,7 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 	for k in pairs(tmp) do
 		tmp[k] = nil
 	end
-	table.setn(tmp, 0)
+	table_setn(tmp, 0)
 	return module
 end
 

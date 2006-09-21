@@ -33,6 +33,17 @@ local AceHook = AceOO.Mixin {
 								"HookScript",
 							}
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
 --[[---------------------------------------------------------------------------------
   Library Definitions
 ----------------------------------------------------------------------------------]]
@@ -90,7 +101,7 @@ do
 	
 	function del(t)
 		setmetatable(t, nil)
-		table.setn(t, 0)
+		table_setn(t, 0)
 		for k in pairs(t) do
 			t[k] = nil
 		end

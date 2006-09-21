@@ -23,6 +23,19 @@ local ACELIBRARY_MINOR = "$Revision$"
 local DEBUG = true
 -- CHANGE DEBUG TO ``false`` ON RELEASE -------------------
 
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
+
+local string_gfind = string.gfind or string.gmatch
+
 local _G = getfenv(0)
 local previous = _G[ACELIBRARY_MAJOR]
 if previous and not previous:IsNewVersion(ACELIBRARY_MAJOR, ACELIBRARY_MINOR) then return end
@@ -42,10 +55,9 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 		tmp = {}
 	else
 		for k in pairs(tmp) do tmp[k] = nil end
-		table.setn(tmp, 0)
+		table_setn(tmp, 0)
 	end
 	
-	tmp.n = 0
 	table.insert(tmp, a1)
 	table.insert(tmp, a2)
 	table.insert(tmp, a3)
@@ -94,7 +106,7 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 	file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 	
 	local i = 0
-	for s in string.gfind(stack, "\n([^\n]*)") do
+	for s in string_gfind(stack, "\n([^\n]*)") do
 		i = i + 1
 		if not string.find(s, file .. "%.lua:%d+:") then
 			file = string.gsub(s, "^.*\\(.*).lua:%d+: .*", "%1")
@@ -103,7 +115,7 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 		end
 	end
 	local j = 0
-	for s in string.gfind(stack, "\n([^\n]*)") do
+	for s in string_gfind(stack, "\n([^\n]*)") do
 		j = j + 1
 		if j > i and not string.find(s, file .. "%.lua:%d+:") then
 			_G.error(message, j + 1)
@@ -249,7 +261,7 @@ end
 local function destroyTable(t)
 	setmetatable(t, nil)
 	for k,v in pairs(t) do t[k] = nil end
-	table.setn(t, 0)
+	table_setn(t, 0)
 end
 
 local function isFrame(frame)
@@ -290,7 +302,7 @@ end
 local function copyTable(from)
 	local to = new()
 	for k,v in pairs(from) do to[k] = v end
-	table.setn(to, table.getn(from))
+	table_setn(to, table.getn(from))
 	setmetatable(to, getmetatable(from))
 	return to
 end
@@ -360,7 +372,7 @@ do
 				rawset(to, k, from[k])
 			end
 		end
-		table.setn(to, table.getn(from))
+		table_setn(to, table.getn(from))
 		setmetatable(to, getmetatable(from))
 		local mt = getmetatable(to)
 		if mt then

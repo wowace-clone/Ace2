@@ -19,7 +19,7 @@ local AceHook, AceEvent
 local AceTab = {}
 local _G = getfenv()
 
-local hookedFrames = compost and compost:Acquire() or {}
+local hookedFrames = {}
 
 function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editframes)
 	self:argCheck(descriptor, 2, "string")
@@ -64,7 +64,7 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 				if AceEvent:IsFullyInitialized() and not self:IsHooked(Gframe, "OnTabPressed") then
 					self:HookScript(Gframe, "OnTabPressed")
 					Gframe.curMatch = 0
-					Gframe.matches = compost and compost:Erase() or {}
+					Gframe.matches = {}
 					Gframe.pMatchLen = 0
 				else
 					hookedFrames[frame] = true
@@ -74,11 +74,11 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 	end
 	
 	if not self.registry[descriptor] then
-		self.registry[descriptor] = Compost and Compost:Acquire() or {}
+		self.registry[descriptor] = {}
 	end
 	
 	if not self.registry[descriptor][self] then
-		self.registry[descriptor][self] = Compost and Compost:Acquire() or {}
+		self.registry[descriptor][self] = {}
 	end
 	self.registry[descriptor][self] = {patterns = regex, wlfunc = wlfunc,  usage = usage, frames = editframes}
 	
@@ -171,12 +171,12 @@ function AceTab:OnTabPressed()
 	if this.lMatch and this.lMatch ~= "" and string.find(string.sub(text, 1, pos), this.lMatch.."$") then
 		return CycleTab()
 	else
-		this.matches = compost and compost:Erase() or {}
+		this.matches = {}
 		this.curMatch = 0
 		this.lMatch = nil
 	end
 
-	local completions = compost and compost:Erase() or {}
+	local completions = {}
 	local numMatches = 0
 	local firstMatch, hasNonFallback
 	
@@ -185,12 +185,12 @@ function AceTab:OnTabPressed()
 			for _, f in s.frames do
 				if _G[f] == this then
 					for _, regex in ipairs(s.patterns) do
-						local cands = compost and compost:Erase() or {}
+						local cands = {}
 						if string.find(string.sub(text, 1, left), regex.."$") then
 							local c = s.wlfunc(cands, fulltext, left)
 							if c ~= false then
-								local mtemp = compost and compost:Erase() or {}
-								this.matches[desc] = this.matches[desc] or compost and compost:Erase() or {}
+								local mtemp = {}
+								this.matches[desc] = this.matches[desc] or {}
 								for _, cand in ipairs(cands) do
 									if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 then
 										mtemp[cand] = true
@@ -233,7 +233,7 @@ function AceTab:OnTabPressed()
 			if hasNonFallback and not c.notFallback then break end
 			local u = c.usage
 			c.usage = nil
-			local candUsage = u and (compost and compost:Acquire() or {})
+			local candUsage = u and {}
 			local gcs2
 			if next(c) then
 				if not u then DEFAULT_CHAT_FRAME:AddMessage(h..":") end
@@ -267,7 +267,7 @@ function AceTab:AceEvent_FullyInitialized()
 	for frame in pairs(hookedFrames) do
 		self:HookScript(_G[frame], "OnTabPressed")
 		_G[frame].curMatch = 0
-		_G[frame].matches = compost and compost:Erase() or {}
+		_G[frame].matches = {}
 		_G[frame].pMatchLen = 0
 	end
 end

@@ -7,7 +7,7 @@ Website: http://www.wowace.com/
 Documentation: http://www.wowace.com/index.php/AceOO-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceOO-2.0
 Description: Library to provide an object-orientation framework.
-Dependencies: AceLibrary, Compost-2.0 (optional)
+Dependencies: AceLibrary
 ]]
 
 local MAJOR_VERSION = "AceOO-2.0"
@@ -17,7 +17,16 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
+local table_setn
+do
+	local version = GetBuildInfo()
+	if string.find(version, "^2%.") then
+		-- 2.0.0
+		table_setn = function() end
+	else
+		table_setn = table.setn
+	end
+end
 
 local AceOO = {
 	error = AceLibrary.error,
@@ -67,7 +76,7 @@ local Factory
 do
 	local function new(obj, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
 							a13, a14, a15, a16, a17, a18, a19, a20)
-		local t = Compost and Compost:Acquire() or {}
+		local t = {}
 		local uid = getuid(t)
 		local l = getlibrary
 		obj:init(t, l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7),
@@ -159,10 +168,7 @@ do
 		if not rawget(newobject, 'uid') then
 			newobject.uid = getuid(newobject)
 		end
-		local mt = Compost and Compost:AcquireHash(
-			'__index', parent,
-			'__tostring', objtostring
-		) or {
+		local mt = {
 			__index = parent,
 			__tostring = objtostring,
 		}
@@ -192,7 +198,7 @@ local function validateInterface(object, interface)
 	end
 	if type(object.class) == "table" and rawequal(object.class.prototype, object) then
 		if not object.class.interfaces then
-			rawset(object.class, 'interfaces', Compost and Compost:Acquire() or {})
+			rawset(object.class, 'interfaces', {})
 		end
 		object.class.interfaces[interface] = true
 	elseif type(object.class) == "table" and type(object.class.prototype) == "table" then
@@ -438,7 +444,7 @@ do
 		end
 		
 		local o = self.prototype
-		local newobj = Compost and Compost:Acquire() or {}
+		local newobj = {}
 		if o.class and o.class.instancemeta then
 			setmetatable(newobj, o.class.instancemeta)
 		else
@@ -507,7 +513,7 @@ do
 		for i,v in ipairs(total) do
 			if inherits(v, Mixin) and v.class then
 				if not newclass.mixins then
-					newclass.mixins = Compost and Compost:Acquire() or {}
+					newclass.mixins = {}
 				end
 				if newclass.mixins[v] then
 					AceOO:error("Cannot explicitly inherit from the same mixin twice")
@@ -515,7 +521,7 @@ do
 				newclass.mixins[v] = true
 			elseif inherits(v, Interface) and v.class then
 				if not newclass.interfaces then
-					newclass.interfaces = Compost and Compost:Acquire() or {}
+					newclass.interfaces = {}
 				end
 				if newclass.interfaces[v] then
 					AceOO:error("Cannot explicitly inherit from the same interface twice")
@@ -537,14 +543,11 @@ do
 		for k in pairs(total) do
 			total[k] = nil
 		end
-		table.setn(total, 0)
+		table_setn(total, 0)
 		
 		newclass.super = parent
 		
-		newclass.prototype = setmetatable(total, Compost and Compost:AcquireHash(
-			'__index',  parent.prototype,
-			'__tostring', protostring
-		) or {
+		newclass.prototype = setmetatable(total, {
 			__index = parent.prototype,
 			__tostring = protostring,
 		})
@@ -605,7 +608,7 @@ do
 			for mixin in pairs(newclass.mixins) do
 				if mixin.interfaces then
 					if not newclass.interfaces then
-						newclass.interfaces = Compost and Compost:Acquire() or {}
+						newclass.interfaces = {}
 					end
 					for interface in pairs(mixin.interfaces) do
 						newclass.interfaces[interface] = true
@@ -747,7 +750,7 @@ do
 				self:embed(target)
 			end
 		else
-			self.embedList = setmetatable(Compost and Compost:Acquire() or {}, Compost and Compost:AcquireHash('__mode', 'k') or {__mode="k"})
+			self.embedList = setmetatable({}, {__mode="k"})
 		end
 	end
 	
@@ -768,14 +771,11 @@ do
 			export[i] = nil
 			export[v] = true
 		end
-		table.setn(export, 0)
+		table_setn(export, 0)
 		local interfaces
 		if a1 then
 			local l = getlibrary
-			interfaces = Compost and Compost:Acquire(l(a1), l(a2), l(a3), l(a4),
-				l(a5), l(a6), l(a7), l(a8), l(a9), l(a10), l(a11), l(a12),
-				l(a13), l(a14), l(a15), l(a16), l(a17), l(a18), l(a19), l(a20))
-				or { l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7), l(a8),
+			interfaces = { l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7), l(a8),
 				l(a9), l(a10), l(a11), l(a12), l(a13), l(a14), l(a15), l(a16),
 				l(a17), l(a18), l(a19), l(a20) }
 			for _,v in ipairs(interfaces) do
@@ -789,7 +789,7 @@ do
 				interfaces[i] = nil
 				interfaces[v] = true
 			end
-			table.setn(interfaces, 0)
+			table_setn(interfaces, 0)
 			for interface in pairs(interfaces) do
 				traverseInterfaces(interface, interfaces)
 			end
@@ -852,7 +852,7 @@ do
 		local l = getlibrary
 		a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = l(a1), l(a2), l(a3), l(a4), l(a5), l(a6), l(a7), l(a8), l(a9), l(a10), l(a11), l(a12), l(a13), l(a14), l(a15), l(a16), l(a17), l(a18), l(a19), l(a20)
 		if a1 then
-			self.superinterfaces = Compost and Compost:Acquire(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20) or {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
+			self.superinterfaces = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20}
 			for k,v in ipairs(self.superinterfaces) do
 				if not inherits(v, Interface) or not v.class then
 					AceOO:error('Cannot provide a non-Interface to inherit from')
@@ -864,7 +864,7 @@ do
 				self.superinterfaces[i] = nil
 				self.superinterfaces[v] = true
 			end
-			table.setn(self.superinterfaces, 0)
+			table_setn(self.superinterfaces, 0)
 		end
 		self.interface = interface
 	end
@@ -925,7 +925,7 @@ do
 		table.sort(t)
 		local uid = table.concat(t, '')
 		for k in pairs(t) do t[k] = nil end
-		table.setn(t, 0)
+		table_setn(t, 0)
 		return uid
 	end
 	local classmeta
@@ -999,11 +999,5 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 end
 
-local function external(self, major, instance)
-	if major == "Compost-2.0" then
-		Compost = instance
-	end
-end
-
-AceLibrary:Register(AceOO, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
+AceLibrary:Register(AceOO, MAJOR_VERSION, MINOR_VERSION, activate)
 AceOO = AceLibrary(MAJOR_VERSION)
