@@ -120,6 +120,8 @@ end
 local work
 local argwork
 
+local string_gfind = string.gmatch or string.gfind
+
 local function findTableLevel(self, options, chat, text, index, passTable)
 	if not index then
 		index = 1
@@ -142,7 +144,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			text, count = string.gsub(text, "(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[[^%]]-) (.-%]|h|r)", "%1\001%2")
 		until count == 0
 		text = string.gsub(text, "(%]|h|r)(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[)", "%1 %2")
-		for token in string.gfind(text, "([^%s]+)") do
+		for token in string_gfind(text, "([^%s]+)") do
 			local token = token
 			local num = tonumber(token)
 			if num then
@@ -1610,6 +1612,14 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	local handler
 	if type(options) == "function" then
 		handler = options
+		for k,v in pairs(_G) do
+			if handler == v then
+				local k = k
+				handler = function(msg)
+					return _G[k](msg)
+				end
+			end
+		end
 	else
 		function handler(msg)
 			handlerFunc(self, chat, msg, options)
