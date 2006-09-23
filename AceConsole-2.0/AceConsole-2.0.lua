@@ -102,7 +102,7 @@ function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, a2, a3, a4
 			tmp[k] = tostring(tmp[k])
 		end
 		print(table.concat(tmp, connector or " "), self, r, g, b, frame or self.printFrame, delay)
-		for k,v in tmp do
+		for k,v in pairs(tmp) do
 			tmp[k] = nil
 		end
 		table_setn(tmp, 0)
@@ -190,7 +190,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 		if not disabled then
 			local next = work[index] and string.lower(work[index])
 			if next then
-				for k,v in options.args do
+				for k,v in pairs(options.args) do
 					local good = false
 					if string.lower(k) == next then
 						good = true
