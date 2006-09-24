@@ -1397,7 +1397,7 @@ end
 
 function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
 	AceComm:argCheck(priority, 2, "string")
-	if priority ~= "NORMAL" or priority ~= "BULK" or priority ~= "ALERT" then
+	if priority ~= "NORMAL" and priority ~= "BULK" and priority ~= "ALERT" then
 		AceComm:error('Argument #2 to `SendPrioritizedCommMessage\' must be either "NORMAL", "BULK", or "ALERT"')
 	end
 	AceComm:argCheck(distribution, 3, "string")
