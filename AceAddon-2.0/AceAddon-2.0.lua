@@ -379,14 +379,14 @@ local function external(self, major, instance)
 			end
 			
 			local s = string.rep("  ", depth) .. " - " .. tostring(addon)
-			if addon.version then
+			if rawget(addon, 'version') then
 				s = s .. " - |cffffff7f" .. tostring(addon.version) .. "|r"
 			end
-			if addon.slashCommand then
+			if rawget(addon, 'slashCommand') then
 				s = s .. " |cffffff7f(" .. tostring(addon.slashCommand) .. ")|r"
 			end
 			print(s)
-			if type(addon.modules) == "table" then
+			if type(rawget(addon, 'modules')) == "table" then
 				local i = 0
 				for k,v in pairs(addon.modules) do
 					i = i + 1
