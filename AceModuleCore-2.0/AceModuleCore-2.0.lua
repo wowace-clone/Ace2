@@ -30,6 +30,28 @@ do
 	end
 end
 
+local new, del
+do
+	local list = setmetatable({}, {__mode = 'k'})
+	function new()
+		local t = next(list)
+		if t then
+			list[t] = nil
+			return t
+		else
+			return {}
+		end
+	end
+	function del(t)
+		for k in pairs(t) do
+			t[k] = nil
+		end
+		table_setn(t, 0)
+		list[t] = true
+		return nil
+	end
+end
+
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local AceModuleCore = AceOO.Mixin {
 									"NewModule",
@@ -173,7 +195,22 @@ function AceModuleCore:IsModule(module)
 end
 
 function AceModuleCore:IterateModules()
-	return pairs(self.modules)
+	local t = new()
+	for k in pairs(self.modules) do
+		table.insert(t, k)
+	end
+	table.sort(t)
+	local i = 0
+	return function()
+		i = i + 1
+		local x = t[i]
+		if x then
+			return x, self.modules[x]
+		else
+			t = del(t)
+			return nil
+		end
+	end, nil, nil
 end
 
 function AceModuleCore:SetModuleMixins(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
