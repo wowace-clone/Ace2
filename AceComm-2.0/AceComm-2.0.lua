@@ -2089,8 +2089,8 @@ function AceComm.hooks:Quit(orig)
 	return orig()
 end
 
-function AceComm.hooks:FCFDropDown_LoadChannels(orig, a1,a2,a3,a4,a5,a6,a7,a8,a9,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-	local arg = {a1,a2,a3,a4,a5,a6,a7,a8,a9,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20}
+function AceComm.hooks:FCFDropDown_LoadChannels(orig, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+	local arg = {a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20}
 	for i = 1, table.getn(arg), 2 do
 		if not arg[i] then
 			break
@@ -2202,8 +2202,8 @@ local function activate(self, oldLib, oldDeactivate)
 			end
 		end
 		local old_FCFDropDown_LoadChannels = FCFDropDown_LoadChannels
-		function FCFDropDown_LoadChannels(a1,a2,a3,a4,a5,a6,a7,a8,a9,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			local arg = {a1,a2,a3,a4,a5,a6,a7,a8,a9,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20}
+		function FCFDropDown_LoadChannels(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			local arg = {a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20}
 			if self.hooks.FCFDropDown_LoadChannels then
 				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, unpack(arg))
 			else
