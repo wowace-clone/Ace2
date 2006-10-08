@@ -19,10 +19,6 @@ Dependencies: None
 local ACELIBRARY_MAJOR = "AceLibrary"
 local ACELIBRARY_MINOR = "$Revision$"
 
--- CHANGE DEBUG TO ``false`` ON RELEASE -------------------
-local DEBUG = true
--- CHANGE DEBUG TO ``false`` ON RELEASE -------------------
-
 local table_setn
 do
 	local version = GetBuildInfo()
@@ -577,12 +573,9 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	end
 	local instance = data.instance
 	if minor <= data.minor then
-		if DEBUG then
-			-- This one is already obsolete, raise an error.
-			error(string.format("Obsolete library registered. %s is already registered at version %d. You are trying to register version %d. Hint: if not AceLibrary:IsNewVersion(%q, %d) then return end", major, data.minor, minor, major, minor), 2)
-			return
-		end
-		return instance
+		-- This one is already obsolete, raise an error.
+		_G.error(string.format("Obsolete library registered. %s is already registered at version %d. You are trying to register version %d. Hint: if not AceLibrary:IsNewVersion(%q, %d) then return end", major, data.minor, minor, major, minor), 2)
+		return
 	end
 	-- This is an update
 	local oldInstance = new()
