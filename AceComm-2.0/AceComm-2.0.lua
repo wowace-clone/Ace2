@@ -5,7 +5,7 @@ Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
 Documentation: http://www.wowace.com/index.php/AceComm-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceComm-2.0
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceComm-2.0
 Description: Mixin to allow for inter-player addon communications.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0,
               ChatThrottleLib by Mikk (included)
@@ -1010,7 +1010,7 @@ local function IsInDistribution(dist, customChannel)
 	elseif dist == "RAID" then
 		return UnitInRaid("player") == 1
 	elseif dist == "PARTY" then
-		return UnitInPart("player") == 1
+		return UnitInParty("player") == 1
 	elseif dist == "GUILD" then
 		return IsInGuild() == 1
 	elseif dist == "GLOBAL" then
