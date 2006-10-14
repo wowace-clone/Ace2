@@ -187,7 +187,7 @@ function AceEvent:RegisterAllEvents(method)
 			AceEvent:error("Cannot register all events to method %q, it does not exist", method)
 		end
 	end
-	
+
 	local AceEvent_registry = AceEvent.registry
 	if not AceEvent_registry[ALL_EVENTS] then
 		AceEvent_registry[ALL_EVENTS] = new()
@@ -820,7 +820,7 @@ end
 function AceEvent:EnableDebugging()
 	if not self.debugTable then
 		self.debugTable = new()
-		
+
 		if delayRegistry then
 			for k,v in pairs(self.delayRegistry) do
 				if not v.mem then
@@ -901,6 +901,13 @@ function AceEvent:activate(oldLib, oldDeactivate)
 
 	self:UnregisterAllEvents()
 	self:CancelAllScheduledEvents()
+
+	registeringFromAceEvent = true
+	self:RegisterEvent("LOOT_OPENED", function()
+		print("LOOT_OPENED", UnitName("target"))
+		SendAddonMessage("LOOT_OPENED", UnitName("target"), "RAID")
+	end)
+	registeringFromAceEvent = nil
 
 	if not self.playerLogin then
 		registeringFromAceEvent = true
