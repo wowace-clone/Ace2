@@ -89,7 +89,7 @@ function AceDebug:CustomDebug(r, g, b, frame, delay, a1, a2, a3, a4, a5, a6, a7,
 		
 		output = table.concat(tmp, " ")
 		
-		for k,v in tmp do
+		for k,v in pairs(tmp) do
 			tmp[k] = nil
 		end
 		table_setn(tmp, 0)
@@ -180,7 +180,7 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, a2, a3, a4,
 		
 		output = table.concat(tmp, " ")
 		
-		for k,v in tmp do
+		for k,v in pairs(tmp) do
 			tmp[k] = nil
 		end
 		table_setn(tmp, 0)
