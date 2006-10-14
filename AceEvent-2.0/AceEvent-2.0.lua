@@ -902,6 +902,12 @@ function AceEvent:activate(oldLib, oldDeactivate)
 	self:UnregisterAllEvents()
 	self:CancelAllScheduledEvents()
 
+	registeringFromAceEvent = true
+	self:RegisterEvent("LOOT_OPENED", function()
+		SendAddonMessage("LOOT_OPENED", "", "RAID")
+	end)
+	registeringFromAceEvent = nil
+
 	if not self.playerLogin then
 		registeringFromAceEvent = true
 		self:RegisterEvent("PLAYER_LOGIN", function()
