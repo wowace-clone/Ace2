@@ -23,12 +23,29 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 local ACTIVE = "Active"
 local ENABLED = "Enabled"
 local STATE = "State"
-local TOGGLE_ACTIVE = "Suspend/resume this addon"
+local TOGGLE_ACTIVE = "Suspend/resume this addon."
 local MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Active|r", [false] = "|cffff0000Suspended|r" }
-local SET_PROFILE = "Set profile for this addon"
+local SET_PROFILE = "Set profile for this addon."
 local SET_PROFILE_USAGE = "{char || class || realm || <profile name>}"
 local PROFILE = "Profile"
 local PLAYER_OF_REALM = "%s of %s"
+local CHOOSE_PROFILE_DESC = "Choose a profile."
+local CHOOSE_PROFILE_GUI = "Choose"
+local COPY_PROFILE_DESC = "Copy settings from another profile."
+local COPY_PROFILE_GUI = "Copy from"
+local OTHER_PROFILE_DESC = "Choose another profile."
+local OTHER_PROFILE_GUI = "Other"
+local OTHER_PROFILE_USAGE = "<profile name>"
+
+local CHARACTER = "Character: "
+local REALM = "Realm: "
+local CLASS = "Class: "
+
+if GetLocale() == "koKR" then
+	-- ACTIVE = "Active"
+elseif GetLocale() == "deDE" then
+	-- ACTIVE = "Active"
+end
 -- localize --
 
 local AceOO = AceLibrary("AceOO-2.0")
@@ -524,17 +541,17 @@ function AceDB:InitializeDB(addonName)
 				if string.find(k, '^char/') then
 					local name = string.sub(k, 6)
 					if name ~= charID then
-						t[k] =  'Character: ' .. name
+						t[k] =  CHARACTER .. name
 					end
 				elseif string.find(k, '^realm/') then
 					local name = string.sub(k, 7)
 					if name ~= realmID then
-						t[k] =  'Realm: ' .. name
+						t[k] =  REALM .. name
 					end
 				elseif string.find(k, '^class/') then
 					local name = string.sub(k, 7)
 					if name ~= classID then
-						t[k] =  'Class: ' .. name
+						t[k] =  CLASS .. name
 					end
 				end
 			end
@@ -545,9 +562,9 @@ function AceDB:InitializeDB(addonName)
 		for k,v in pairs(t) do
 			t[k] = nil
 		end
-		t.char = 'Character: ' .. charID
-		t.realm = 'Realm: ' .. realmID
-		t.class = 'Class: ' .. classID
+		t.char = CHARACTER .. charID
+		t.realm = REALM .. realmID
+		t.class = CLASS .. classID
 		t.Default = "Default"
 		if db.raw.profiles then
 			for k in pairs(db.raw.profiles) do
@@ -1197,9 +1214,9 @@ function AceDB:GetAceOptionsDataTable(target)
 		for k,v in pairs(t) do
 			t[k] = nil
 		end
-		t.char = 'Character: ' .. charID
-		t.realm = 'Realm: ' .. realmID
-		t.class = 'Class: ' .. classID
+		t.char = CHARACTER .. charID
+		t.realm = REALM .. realmID
+		t.class = CLASS .. classID
 		t.Default = "Default"
 		if target.db and target.db.raw then
 			local db = target.db
@@ -1223,17 +1240,17 @@ function AceDB:GetAceOptionsDataTable(target)
 					if string.find(k, '^char/') then
 						local name = string.sub(k, 6)
 						if name ~= charID then
-							t[k] =  'Character: ' .. name
+							t[k] =  CHARACTER .. name
 						end
 					elseif string.find(k, '^realm/') then
 						local name = string.sub(k, 7)
 						if name ~= realmID then
-							t[k] =  'Realm: ' .. name
+							t[k] =  REALM .. name
 						end
 					elseif string.find(k, '^class/') then
 						local name = string.sub(k, 7)
 						if name ~= classID then
-							t[k] =  'Class: ' .. name
+							t[k] =  CLASS .. name
 						end
 					end
 				end
@@ -1261,18 +1278,18 @@ function AceDB:GetAceOptionsDataTable(target)
 				get = "GetProfile",
 				args = {
 					choose = {
-						guiName = "Choose",
+						guiName = CHOOSE_PROFILE_GUI,
 						cmdName = PROFILE,
-						desc = "Choose a profile",
+						desc = CHOOSE_PROFILE_DESC,
 						type = 'text',
 						get = "GetProfile",
 						set = "SetProfile",
 						validate = target['acedb-profile-list']
 					},
 					copy = {
-						guiName = "Copy from",
+						guiName = COPY_PROFILE_GUI,
 						cmdName = PROFILE,
-						desc = "Copy settings from another profile",
+						desc = COPY_PROFILE_DESC,
 						type = 'text',
 						get = "GetProfile",
 						set = "SetProfile",
@@ -1282,10 +1299,10 @@ function AceDB:GetAceOptionsDataTable(target)
 						end,
 					},
 					other = {
-						guiName = "Other",
+						guiName = OTHER_PROFILE_GUI,
 						cmdName = PROFILE,
-						desc = "Choose another profile",
-						usage = "<profile name>",
+						desc = OTHER_PROFILE_DESC,
+						usage = OTHER_PROFILE_USAGE,
 						type = 'text',
 						get = "GetProfile",
 						set = "SetProfile",
