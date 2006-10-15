@@ -384,7 +384,7 @@ local function RefixAceCommChannelsAndEvents()
 	if AceComm_registry.WHISPER then
 		whisper = true
 	end
-	if AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND then
+	if AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
 		addon = true
 	end
 	
