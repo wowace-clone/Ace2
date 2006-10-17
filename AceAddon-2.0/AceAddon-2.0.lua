@@ -72,6 +72,57 @@ if GetLocale() == "deDE" then
 		["Tradeskill"] = "Handelsf\195\164higkeit",
 		["UnitFrame"] = "UnitFrame",
 	}
+elseif GetLocale() == "frFR" then
+	STANDBY = "|cffff5050(attente)|r"
+	
+	TITLE = "Titre"
+	NOTES = "Notes"
+	VERSION = "Version"
+	AUTHOR = "Auteur"
+	DATE = "Date"
+	CATEGORY = "Cat\195\169gorie"
+	EMAIL = "E-mail"
+	WEBSITE = "Site web"
+	
+	ABOUT = "A propos"
+	PRINT_ADDON_INFO = "Afficher les informations sur l'addon"
+	
+	CATEGORIES = {
+		["Action Bars"] = "Barres d'action",
+		["Auction"] = "H\195\180tel des ventes",
+		["Audio"] = "Audio",
+		["Battlegrounds/PvP"] = "Champs de bataille/JcJ",
+		["Buffs"] = "Buffs",
+		["Chat/Communication"] = "Chat/Communication",
+		["Druid"] = "Druide",
+		["Hunter"] = "Chasseur",
+		["Mage"] = "Mage",
+		["Paladin"] = "Paladin",
+		["Priest"] = "Pr\195\170tre",
+		["Rogue"] = "Voleur",
+		["Shaman"] = "Chaman",
+		["Warlock"] = "D\195\169moniste",
+		["Warrior"] = "Guerrier",
+		["Healer"] = "Soigneur",
+		["Tank"] = "Tank",
+		["Caster"] = "Casteur",
+		["Combat"] = "Combat",
+		["Compilations"] = "Compilations",
+		["Data Export"] = "Exportation de donn\195\169es",
+		["Development Tools"] = "Outils de d\195\169veloppement",
+		["Guild"] = "Guilde",
+		["Frame Modification"] = "Modification des fen\195\170tres",
+		["Interface Enhancements"] = "Am\195\169liorations de l'interface",
+		["Inventory"] = "Inventaire",
+		["Library"] = "Biblioth\195\168ques",
+		["Map"] = "Carte",
+		["Mail"] = "Courrier",
+		["Miscellaneous"] = "Divers",
+		["Quest"] = "Qu\195\170tes",
+		["Raid"] = "Raid",
+		["Tradeskill"] = "M\195\169tiers",
+		["UnitFrame"] = "Fen\195\170tres d'unit\195\169",
+	}
 elseif GetLocale() == "koKR" then
 	STANDBY = "|cffff5050(사용가능)|r"
 	

@@ -20,7 +20,10 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 local DEBUGGING, TOGGLE_DEBUGGING
 
-if GetLocale() == "koKR" then
+if GetLocale() == "frFR" then
+	DEBUGGING = "D\195\169boguage"
+	TOGGLE_DEBUGGING = "Activer/d\195\169sactiver le d\195\169boguage"
+elseif GetLocale() == "koKR" then
 	DEBUGGING = "디버깅"
 	TOGGLE_DEBUGGING = "디버깅 기능 사용함/사용안함"
 else -- enUS
