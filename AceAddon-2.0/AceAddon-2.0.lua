@@ -21,7 +21,108 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 -- Localization
 local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
-if false then -- GetLocale() == "deDE"
+if GetLocale() == "deDE" then
+	STANDBY = "|cffff5050(Standby)|r" -- capitalized
+
+	TITLE = "Titel"
+	NOTES = "Anmerkung"
+	VERSION = "Version"
+	AUTHOR = "Autor"
+	DATE = "Datum"
+	CATEGORY = "Kategorie"
+	EMAIL = "E-mail"
+	WEBSITE = "Webseite"
+		 
+	ABOUT = "\195\188ber"
+	PRINT_ADDON_INFO = "Gibt Addondaten aus"
+
+	CATEGORIES = {
+		["Action Bars"] = "Aktionsleisten",
+		["Auction"] = "Auktion",
+		["Audio"] = "Audio",
+		["Battlegrounds/PvP"] = "Schlachtfeld/PvP",
+		["Buffs"] = "Buffs",
+		["Chat/Communication"] = "Chat/Kommunikation",
+		["Druid"] = "Druide",
+		["Hunter"] = "J�ger",
+		["Mage"] = "Magier",
+		["Paladin"] = "Paladin",
+		["Priest"] = "Priester",
+		["Rogue"] = "Schurke",
+		["Shaman"] = "Schamane",
+		["Warlock"] = "Hexenmeister",
+		["Warrior"] = "Krieger",
+		["Healer"] = "Heiler",
+		["Tank"] = "Tank", -- noone use "Brecher"...
+		["Caster"] = "Caster",
+		["Combat"] = "Kampf",
+		["Compilations"] = "Compilations", -- whats that o_O
+		["Data Export"] = "Datenexport",
+		["Development Tools"] = "Entwicklungs Tools",
+		["Guild"] = "Gilde",
+		["Frame Modification"] = "Frame Modifikation",
+		["Interface Enhancements"] = "Interface Verbesserungen",
+		["Inventory"] = "Inventar",
+		["Library"] = "Library",
+		["Map"] = "Map",
+		["Mail"] = "Mail",
+		["Miscellaneous"] = "Diverses",
+		["Quest"] = "Quest",
+		["Raid"] = "Schlachtzug",
+		["Tradeskill"] = "Handelsf\195\164higkeit",
+		["UnitFrame"] = "UnitFrame",
+	}
+elseif GetLocale() == "koKR" then
+	STANDBY = "|cffff5050(사용가능)|r"
+	
+	TITLE = "제목"
+	NOTES = "노트"
+	VERSION = "버전"
+	AUTHOR = "저작자"
+	DATE = "날짜"
+	CATEGORY = "분류"
+	EMAIL = "E-mail"
+	WEBSITE = "웹사이트"
+	
+	ABOUT = "정보"
+	PRINT_ADDON_INFO = "애드온 정보 출력"
+	
+	CATEGORIES = {
+		["Action Bars"] = "액션바",
+		["Auction"] = "경매",
+		["Audio"] = "음향",
+		["Battlegrounds/PvP"] = "전장/PvP",
+		["Buffs"] = "버프",
+		["Chat/Communication"] = "대화/의사소통",
+		["Druid"] = "드루이드",
+		["Hunter"] = "사냥꾼",
+		["Mage"] = "마법사",
+		["Paladin"] = "성기사",
+		["Priest"] = "사제",
+		["Rogue"] = "도적",
+		["Shaman"] = "주술사",
+		["Warlock"] = "흑마법사",
+		["Warrior"] = "전사",
+		["Healer"] = "힐러",
+		["Tank"] = "탱커",
+		["Caster"] = "캐스터",
+		["Combat"] = "전투",
+		["Compilations"] = "복합",
+		["Data Export"] = "자료 출력",
+		["Development Tools "] = "개발 도구 ",
+		["Guild"] = "길드",
+		["Frame Modification"] = "구조 변경",
+		["Interface Enhancements"] = "인터페이스 강화",
+		["Inventory"] = "인벤토리",
+		["Library"] = "라이브러리",
+		["Map"] = "지도",
+		["Mail"] = "우편",
+		["Miscellaneous"] = "기타",
+		["Quest"] = "퀘스트",
+		["Raid"] = "공격대",
+		["Tradeskill"] = "전문기술",
+		["UnitFrame"] = "유닛 프레임",
+	}
 else -- enUS
 	STANDBY = "|cffff5050(standby)|r"
 	
@@ -59,7 +160,7 @@ else -- enUS
 		["Combat"] = "Combat",
 		["Compilations"] = "Compilations",
 		["Data Export"] = "Data Export",
-		["Development Tools "] = "Development Tools ",
+		["Development Tools"] = "Development Tools",
 		["Guild"] = "Guild",
 		["Frame Modification"] = "Frame Modification",
 		["Interface Enhancements"] = "Interface Enhancements",

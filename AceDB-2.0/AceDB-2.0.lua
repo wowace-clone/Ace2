@@ -19,34 +19,72 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
--- localize --
-local ACTIVE = "Active"
-local ENABLED = "Enabled"
-local STATE = "State"
-local TOGGLE_ACTIVE = "Suspend/resume this addon."
-local MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Active|r", [false] = "|cffff0000Suspended|r" }
-local SET_PROFILE = "Set profile for this addon."
-local SET_PROFILE_USAGE = "{char || class || realm || <profile name>}"
-local PROFILE = "Profile"
-local PLAYER_OF_REALM = "%s of %s"
-local CHOOSE_PROFILE_DESC = "Choose a profile."
-local CHOOSE_PROFILE_GUI = "Choose"
-local COPY_PROFILE_DESC = "Copy settings from another profile."
-local COPY_PROFILE_GUI = "Copy from"
-local OTHER_PROFILE_DESC = "Choose another profile."
-local OTHER_PROFILE_GUI = "Other"
-local OTHER_PROFILE_USAGE = "<profile name>"
+local ACTIVE, ENABLED, STATE, TOGGLE_ACTIVE, MAP_ACTIVESUSPENDED, SET_PROFILE, SET_PROFILE_USAGE, PROFILE, PLAYER_OF_REALM, CHOOSE_PROFILE_DESC, CHOOSE_PROFILE_GUI, COPY_PROFILE_DESC, COPY_PROFILE_GUI, OTHER_PROFILE_DESC, OTHER_PROFILE_GUI, OTHER_PROFILE_USAGE, CHARACTER, REALM, CLASS
 
-local CHARACTER = "Character: "
-local REALM = "Realm: "
-local CLASS = "Class: "
+if GetLocale() == "deDE" then
+	ACTIVE = "Aktiv"
+	ENABLED = "Aktiviert"
+	STATE = "Status"
+	TOGGLE_ACTIVE = "Stoppt/Aktiviert dieses Addon."
+	MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Aktiv|r", [false] = "|cffff0000Gestoppt|r" }
+	SET_PROFILE = "Setzt das Profil f\195\188r dieses Addon."
+	SET_PROFILE_USAGE = "{Charakter || Klasse || Realm || <Profilname>}"
+	PROFILE = "Profil"
+	PLAYER_OF_REALM = "%s von %s"
+	CHOOSE_PROFILE_DESC = "W\195\164hle ein Profil."
+	CHOOSE_PROFILE_GUI = "W\195\164hle"
+	COPY_PROFILE_DESC = "Kopiert Einstellungen von einem anderem Profil."
+	COPY_PROFILE_GUI = "Kopiere von"
+	OTHER_PROFILE_DESC = "W\195\164hle ein anderes Profil."
+	OTHER_PROFILE_GUI = "Anderes"
+	OTHER_PROFILE_USAGE = "<Profilname>"
 
-if GetLocale() == "koKR" then
-	-- ACTIVE = "Active"
-elseif GetLocale() == "deDE" then
-	-- ACTIVE = "Active"
+	CHARACTER = "Charakter: "
+	REALM = "Realm: "
+	CLASS = "Klasse: "
+elseif GetLocale() == "koKR" then
+	ACTIVE = "활성화"
+	ENABLED = "활성화"
+	STATE = "상태"
+	TOGGLE_ACTIVE = "이 애드온 중지/계속 실행"
+	MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00활성화|r", [false] = "|cffff0000중지됨|r" }
+	SET_PROFILE = "이 애드온에 프로필 설정"
+	SET_PROFILE_USAGE = "{캐릭터명 || 직업 || 서버명 || <프로필명>}"
+	PROFILE = "프로필"
+--	PLAYER_OF_REALM = "%s (%s 서버)"
+	CHOOSE_PROFILE_DESC = "프로파일을 선택합니다."
+	CHOOSE_PROFILE_GUI = "선택"
+	COPY_PROFILE_DESC = "다른 프로파일에서 설정을 복사합니다."
+	COPY_PROFILE_GUI = "복사"
+	OTHER_PROFILE_DESC = "다른 프로파일을 선택합니다."
+	OTHER_PROFILE_GUI = "기타"
+	OTHER_PROFILE_USAGE = "<프로파일명>"
+
+	CHARACTER = "캐릭터: "
+	REALM = "서버: "
+	CLASS = "직업: "
+else -- enUS
+	ACTIVE = "Active"
+	ENABLED = "Enabled"
+	STATE = "State"
+	TOGGLE_ACTIVE = "Suspend/resume this addon."
+	MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Active|r", [false] = "|cffff0000Suspended|r" }
+	SET_PROFILE = "Set profile for this addon."
+	SET_PROFILE_USAGE = "{char || class || realm || <profile name>}"
+	PROFILE = "Profile"
+	PLAYER_OF_REALM = "%s of %s"
+	CHOOSE_PROFILE_DESC = "Choose a profile."
+	CHOOSE_PROFILE_GUI = "Choose"
+	COPY_PROFILE_DESC = "Copy settings from another profile."
+	COPY_PROFILE_GUI = "Copy from"
+	OTHER_PROFILE_DESC = "Choose another profile."
+	OTHER_PROFILE_GUI = "Other"
+	OTHER_PROFILE_USAGE = "<profile name>"
+
+	CHARACTER = "Character: "
+	REALM = "Realm: "
+	CLASS = "Class: "
 end
--- localize --
 
 local AceOO = AceLibrary("AceOO-2.0")
 local AceEvent
