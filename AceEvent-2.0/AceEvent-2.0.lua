@@ -782,10 +782,10 @@ function AceEvent:UnregisterBucketEvent(event)
 	local bucket = AceEvent.buckets[event][self]
 
 	if type(event) == "string" then
-		AceEvent.UnregisterEvent(bucket.func, event)
+		AceEvent.UnregisterEvent(self, event)
 	else
 		for _,v in ipairs(event) do
-			AceEvent.UnregisterEvent(bucket.func, v)
+			AceEvent.UnregisterEvent(self, v)
 		end
 	end
 	AceEvent:CancelScheduledEvent(bucket.id)
