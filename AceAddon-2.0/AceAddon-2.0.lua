@@ -109,7 +109,7 @@ elseif GetLocale() == "koKR" then
 		["Combat"] = "전투",
 		["Compilations"] = "복합",
 		["Data Export"] = "자료 출력",
-		["Development Tools "] = "개발 도구 ",
+		["Development Tools"] = "개발 도구",
 		["Guild"] = "길드",
 		["Frame Modification"] = "구조 변경",
 		["Interface Enhancements"] = "인터페이스 강화",
