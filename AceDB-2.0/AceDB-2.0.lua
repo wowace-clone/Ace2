@@ -72,7 +72,7 @@ elseif GetLocale() == "koKR" then
 	SET_PROFILE = "이 애드온에 프로필 설정"
 	SET_PROFILE_USAGE = "{캐릭터명 || 직업 || 서버명 || <프로필명>}"
 	PROFILE = "프로필"
---	PLAYER_OF_REALM = "%s (%s 서버)"
+	PLAYER_OF_REALM = "%s (%s 서버)"
 	CHOOSE_PROFILE_DESC = "프로파일을 선택합니다."
 	CHOOSE_PROFILE_GUI = "선택"
 	COPY_PROFILE_DESC = "다른 프로파일에서 설정을 복사합니다."
