@@ -509,8 +509,8 @@ do
 			else
 				return "bn"
 			end
-		elseif not v then
-			return "-"
+		elseif not v then -- nil
+			return "/"
 		elseif kind == "number" then
 			if v == math_floor(v) then
 				if v <= 127 and v >= -128 then
