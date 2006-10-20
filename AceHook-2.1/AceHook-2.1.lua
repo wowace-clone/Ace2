@@ -358,6 +358,10 @@ local function hookMethod(self, obj, method, handler, script, secure)
 		registry[self][obj] = new()
 	end
 	
+	if not self.hooks[obj] then
+		self.hooks[obj] = new()
+	end
+	
 	local uid = createMethodHook(self, obj, method, handler, orig, secure, script)
 	registry[self][obj][method] = uid
 	actives[uid] = true
