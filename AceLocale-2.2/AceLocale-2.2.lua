@@ -22,7 +22,7 @@ local AceLocale = {}
 local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
 
-local BASE_TRANSLATIONS, DEBUGGING, TRANSLATIONS, BASE_LOCALE, TRANSLATION_TABLES, REVERSE_TRANSLATIONS, STRICTNESS, DYNAMIC_LOCALES, CURRENT_LOCALE
+local BASE_TRANSLATIONS, DEBUGGING, TRANSLATIONS, BASE_LOCALE, TRANSLATION_TABLES, REVERSE_TRANSLATIONS, STRICTNESS, DYNAMIC_LOCALES, CURRENT_LOCALE, NAME
 
 local rawget = rawget
 local rawset = rawset
@@ -163,6 +163,9 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	
 	if rawget(self, BASE_TRANSLATIONS) and GetLocale() ~= locale then
 		if rawget(self, DEBUGGING) or rawget(self, DYNAMIC_LOCALES) then
+			if self[TRANSLATION_TABLES][locale] then
+				AceLocale.error(self, "Cannot provide the same locale more than once. %q provided twice.", locale)
+			end
 			local t = func()
 			func = nil
 			if type(t) ~= "table" then
@@ -240,9 +243,23 @@ end
 
 function AceLocale.prototype:GetLocale()
 	if not rawget(self, TRANSLATION_TABLES) then
-		AceLocale.error(self, "Cannot call `SetLocale' without first calling `RegisterTranslations'.")
+		AceLocale.error(self, "Cannot call `GetLocale' without first calling `RegisterTranslations'.")
 	end
 	return self[CURRENT_LOCALE]
+end
+
+local function iter(t, position)
+	return (next(t, position))
+end
+
+function AceLocale.prototype:IterateAvailableLocales()
+	if not rawget(self, DYNAMIC_LOCALES) then
+		AceLocale.error(self, "Cannot call `IterateAvailableLocales' without first calling `EnableDynamicLocales'.")
+	end
+	if not rawget(self, TRANSLATION_TABLES) then
+		AceLocale.error(self, "Cannot call `IterateAvailableLocales' without first calling `RegisterTranslations'.")
+	end
+	return iter, self[TRANSLATION_TABLES], nil
 end
 
 function AceLocale.prototype:SetStrictness(strict)
