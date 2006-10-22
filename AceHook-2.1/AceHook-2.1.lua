@@ -428,12 +428,8 @@ function AceHook:Hook(object, method, handler, hookSecure)
 		if handler == true then
 			handler, hookSecure = nil, true
 		end
-		if issecurevariable(method) or onceSecure[method] then
-			if hookSecure then
-				onceSecure[method] = true
-			else
-				AceHook:error("Attempt to hook secure function %q. Use `SecureHook' or add `true' to the argument list to override.", method)
-			end
+		if not hookSecure and issecurevariable(method) then
+			AceHook:error("Attempt to hook secure function %q. Use `SecureHook' or add `true' to the argument list to override.", method)
 		end
 		hookFunction(self, method, handler, false)
 	else
