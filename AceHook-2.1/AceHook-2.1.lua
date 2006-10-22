@@ -421,33 +421,46 @@ local function unhookMethod(self, obj, method)
 	end
 end
 
--- ("function", handler) or (object, "method", handler)
-function AceHook:Hook(arg1, arg2, arg3)
-	if type(arg1)== "string" then
-		if issecurevariable(arg1) then
-			AceHook:error("Attempt to hook secure function %q. Use `SecureHook'.", arg1)
+-- ("function" [, handler] [, hookSecure]) or (object, "method" [, handler] [, hookSecure])
+function AceHook:Hook(object, method, handler, hookSecure)
+	if type(object) == "string" then
+		method, handler, hookSecure = object, method, handler
+		if handler == true then
+			handler, hookSecure = nil, true
 		end
-		hookFunction(self, arg1, arg2, false)
+		if issecurevariable(method) or onceSecure[method] then
+			if hookSecure then
+				onceSecure[method] = true
+			else
+				AceHook:error("Attempt to hook secure function %q. Use `SecureHook' or add `true' to the argument list to override.", method)
+			end
+		end
+		hookFunction(self, method, handler, false)
 	else
-		if issecurevariable(arg1, arg2) then
-			AceHook:error("Attempt to hook secure method %q. Use `SecureHook'.", arg2)
+		if handler == true then
+			handler, hookSecure = nil, true
 		end
-		hookMethod(self, arg1, arg2, arg3, false, false)
+		if not hookSecure and issecurevariable(object, method) then
+			AceHook:error("Attempt to hook secure method %q. Use `SecureHook' or add `true' to the argument list to override.", method)
+		end
+		hookMethod(self, object, method, handler, false, false)
 	end
 end
 
 -- ("function", handler) or (object, "method", handler)
-function AceHook:SecureHook(arg1, arg2, arg3)
-	if type(arg1) == "string" then
-		hookFunction(self, arg1, arg2, true)
+function AceHook:SecureHook(object, method, handler)
+	if type(object) == "string" then
+		method, handler = object, method
+		hookFunction(self, method, handler, true)
 	else
-		hookMethod(self, arg1, arg2, arg3, false, true)
+		hookMethod(self, object, method, handler, false, true)
 	end
 end
 
 function AceHook:HookScript(frame, script, handler)
-	if issecurevariable(frame) and protectedScripts[script] then
-		AceHook:error("Cannot hook secure script %q.", script)
+	AceHook:argCheck(frame, 2, "table")
+	if not frame[0] or type(frame.IsFrameType) ~= "function" then
+		AceHook:error("Bad argument #2 to `HookScript'. Expected frame.")
 	end
 	hookMethod(self, frame, script, handler, true, false)
 end
