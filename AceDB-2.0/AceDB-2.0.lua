@@ -1265,7 +1265,6 @@ function AceDB:AcquireDBNamespace(name)
 	return db.namespaces[name]
 end
 
-local options
 function AceDB:GetAceOptionsDataTable(target)
 	if not target['acedb-profile-list'] then
 		target['acedb-profile-list'] = setmetatable({}, caseInsensitive_mt)
@@ -1316,61 +1315,58 @@ function AceDB:GetAceOptionsDataTable(target)
 			end
 		end
 	end
-	if not options then
-		options = {
-			standby = {
-				cmdName = STATE,
-				guiName = ENABLED,
-				name = ACTIVE,
-				desc = TOGGLE_ACTIVE,
-				type = "toggle",
-				get = "IsActive",
-				set = "ToggleActive",
-				map = MAP_ACTIVESUSPENDED,
-				order = -3,
-			},
-			profile = {
-				type = 'group',
-				name = PROFILE,
-				desc = SET_PROFILE,
-				order = -3.5,
-				get = "GetProfile",
-				args = {
-					choose = {
-						guiName = CHOOSE_PROFILE_GUI,
-						cmdName = PROFILE,
-						desc = CHOOSE_PROFILE_DESC,
-						type = 'text',
-						get = "GetProfile",
-						set = "SetProfile",
-						validate = target['acedb-profile-list']
-					},
-					copy = {
-						guiName = COPY_PROFILE_GUI,
-						cmdName = PROFILE,
-						desc = COPY_PROFILE_DESC,
-						type = 'text',
-						get = "GetProfile",
-						set = "SetProfile",
-						validate = target['acedb-profile-copylist'],
-						disabled = function()
-							return not next(target['acedb-profile-copylist'])
-						end,
-					},
-					other = {
-						guiName = OTHER_PROFILE_GUI,
-						cmdName = PROFILE,
-						desc = OTHER_PROFILE_DESC,
-						usage = OTHER_PROFILE_USAGE,
-						type = 'text',
-						get = "GetProfile",
-						set = "SetProfile",
-					}
+	return {
+		standby = {
+			cmdName = STATE,
+			guiName = ENABLED,
+			name = ACTIVE,
+			desc = TOGGLE_ACTIVE,
+			type = "toggle",
+			get = "IsActive",
+			set = "ToggleActive",
+			map = MAP_ACTIVESUSPENDED,
+			order = -3,
+		},
+		profile = {
+			type = 'group',
+			name = PROFILE,
+			desc = SET_PROFILE,
+			order = -3.5,
+			get = "GetProfile",
+			args = {
+				choose = {
+					guiName = CHOOSE_PROFILE_GUI,
+					cmdName = PROFILE,
+					desc = CHOOSE_PROFILE_DESC,
+					type = 'text',
+					get = "GetProfile",
+					set = "SetProfile",
+					validate = target['acedb-profile-list']
+				},
+				copy = {
+					guiName = COPY_PROFILE_GUI,
+					cmdName = PROFILE,
+					desc = COPY_PROFILE_DESC,
+					type = 'text',
+					get = "GetProfile",
+					set = "SetProfile",
+					validate = target['acedb-profile-copylist'],
+					disabled = function()
+						return not next(target['acedb-profile-copylist'])
+					end,
+				},
+				other = {
+					guiName = OTHER_PROFILE_GUI,
+					cmdName = PROFILE,
+					desc = OTHER_PROFILE_DESC,
+					usage = OTHER_PROFILE_USAGE,
+					type = 'text',
+					get = "GetProfile",
+					set = "SetProfile",
 				}
-			},
-		}
-	end
-	return options
+			}
+		},
+	}
 end
 
 local function activate(self, oldLib, oldDeactivate)
