@@ -28,7 +28,7 @@ if GetLocale() == "deDE" then
 	IS_NOW_SET_TO = "|cffffff7f%s|r ist nun auf |cffffff7f[|r%s|cffffff7f]|r gesetzt"
 	IS_NOT_A_VALID_OPTION_FOR = "[|cffffff7f%s|r] ist keine g\195\188ltige Option f\195\188r |cffffff7f%s|r"
 	IS_NOT_A_VALID_VALUE_FOR = "[|cffffff7f%s|r] ist kein g\195\188ltiger Wert f\195\188r |cffffff7f%s|r"
-	NO_OPTIONS_AVAILABLE = "Keine Optionen verf�gbar"
+	NO_OPTIONS_AVAILABLE = "Keine Optionen verfügbar"
 	OPTION_HANDLER_NOT_FOUND = "Optionen handler |cffffff7f%q|r nicht gefunden."
 	OPTION_HANDLER_NOT_VALID = "Optionen handler nicht g\195\188ltig."
 	OPTION_IS_DISABLED = "Option |cffffff7f%s|r deaktiviert."
@@ -44,16 +44,17 @@ elseif GetLocale() == "frFR" then
 	OPTION_HANDLER_NOT_VALID = "Le gestionnaire d'option n'est pas valide."
 	OPTION_IS_DISABLED = "L'option |cffffff7f%s|r est d\195\169sactiv\195\169e."
 elseif GetLocale() == "koKR" then
-	MAP_ONOFF = { [false] = "|cffff0000끔|r", [true] = "|cff00ff00켬|r" }
-	USAGE = "사용법"
-	IS_CURRENTLY_SET_TO = "|cffffff7f%s|r|1은;는; 현재 상태는 |cffffff7f[|r%s|cffffff7f]|r|1으로;로; 설정되어 있습니다"
-	IS_NOW_SET_TO = "|cffffff7f%s|r|1을;를; |cffffff7f[|r%s|cffffff7f]|r 상태로 변경합니다"
-	IS_NOT_A_VALID_OPTION_FOR = "[|cffffff7f%s|r]|1은;는; |cffffff7f%s|r에서 사용불가능한 설정입니다"
-	IS_NOT_A_VALID_VALUE_FOR = "[|cffffff7f%s|r]|1은;는; |cffffff7f%s|r에서 사용불가능한 설정값입니다"
-	NO_OPTIONS_AVAILABLE = "가능한 설정이 없습니다"
-	OPTION_HANDLER_NOT_FOUND = "설정 조정값인 |cffffff7f%q|r|1을;를; 찾지 못했습니다."
-	OPTION_HANDLER_NOT_VALID = "설정 조정값이 올바르지 않습니다."
-	OPTION_IS_DISABLED = "|cffffff7f%s|r 설정은 사용할 수 없습니다."
+elseif GetLocale() == "zhCN" then
+	MAP_ONOFF = { [false] = "|cffff0000\229\133\179\233\151\173|r", [true] = "|cff00ff00\229\188\128\229\144\175|r" }
+	USAGE = "\231\148\168\230\179\149"
+	IS_CURRENTLY_SET_TO = "|cffffff7f%s|r \229\189\147\229\137\141\232\162\171\232\174\190\231\189\174 |cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOW_SET_TO = "|cffffff7f%s|r \231\142\176\229\156\168\232\162\171\232\174\190\231\189\174\228\184\186 |cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOT_A_VALID_OPTION_FOR = "[|cffffff7f%s|r] \228\184\141\230\152\175\228\184\128\228\184\170\230\156\137\230\149\136\231\154\132\233\128\137\233\161\185 \228\184\186 |cffffff7f%s|r"
+	IS_NOT_A_VALID_VALUE_FOR = "[|cffffff7f%s|r] \228\184\141\230\152\175\228\184\128\228\184\170\230\156\137\230\149\136\229\128\188 \228\184\186 |cffffff7f%s|r"
+	NO_OPTIONS_AVAILABLE = "\230\178\161\230\156\137\233\128\137\233\161\185\229\143\175\231\148\168"
+	OPTION_HANDLER_NOT_FOUND = "\233\128\137\233\161\185\229\164\132\231\144\134\231\168\139\229\186\143 |cffffff7f%q|r \230\178\161\230\159\165\230\137\190."
+	OPTION_HANDLER_NOT_VALID = "\233\128\137\233\161\185\229\164\132\231\144\134\231\168\139\229\186\143 \230\151\160\230\149\136."
+	OPTION_IS_DISABLED = "\233\128\137\233\161\185 |cffffff7f%s|r \228\184\141\229\174\140\230\149\180."
 elseif GetLocale() == "zhTW" then
 	MAP_ONOFF = { [false] = "|cffff0000關閉|r", [true] = "|cff00ff00開啟|r" }
 	USAGE = "用法"
