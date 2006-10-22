@@ -146,8 +146,9 @@ function AceLocale.prototype:EnableDebugging()
 	rawset(self, DEBUGGING, true)
 end
 
-function AceLocale.prototype:EnableDynamicLocales()
-	if rawget(self, BASE_TRANSLATIONS) then
+function AceLocale.prototype:EnableDynamicLocales(forReals)
+	AceLocale:argCheck(forReals, 2, "boolean", "nil")
+	if not forReals and rawget(self, BASE_TRANSLATIONS) then
 		AceLocale:error("Cannot enable dynamic locales after a translation has been registered.")
 	end
 	rawset(self, DYNAMIC_LOCALES, true)
