@@ -174,6 +174,57 @@ elseif GetLocale() == "koKR" then
 		["Tradeskill"] = "전문기술",
 		["UnitFrame"] = "유닛 프레임",
 	}
+elseif GetLocale() == "zhTW" then
+	STANDBY = "|cffff5050(待命)|r"
+	
+	TITLE = "標題"
+	NOTES = "註記"
+	VERSION = "版本"
+	AUTHOR = "作者"
+	DATE = "日期"
+	CATEGORY = "類別"
+	EMAIL = "E-mail"
+	WEBSITE = "網站"
+	
+	ABOUT = "關於"
+	PRINT_ADDON_INFO = "顯示插件資訊"
+	
+	CATEGORIES = {
+		["Action Bars"] = "動作列",
+		["Auction"] = "拍賣",
+		["Audio"] = "音樂",
+		["Battlegrounds/PvP"] = "戰場/PvP",
+		["Buffs"] = "增益",
+		["Chat/Communication"] = "聊天/通訊",
+		["Druid"] = "德魯伊",
+		["Hunter"] = "獵人",
+		["Mage"] = "法師",
+		["Paladin"] = "聖騎士",
+		["Priest"] = "牧師",
+		["Rogue"] = "盜賊",
+		["Shaman"] = "薩滿",
+		["Warlock"] = "術士",
+		["Warrior"] = "戰士",
+		["Healer"] = "治療者",
+		["Tank"] = "坦克",
+		["Caster"] = "施法者",
+		["Combat"] = "戰鬥",
+		["Compilations"] = "編輯",
+		["Data Export"] = "資料匯出",
+		["Development Tools"] = "開發工具",
+		["Guild"] = "公會",
+		["Frame Modification"] = "框架修改",
+		["Interface Enhancements"] = "介面增強",
+		["Inventory"] = "背包",
+		["Library"] = "資料庫",
+		["Map"] = "地圖",
+		["Mail"] = "郵件",
+		["Miscellaneous"] = "綜合",
+		["Quest"] = "任務",
+		["Raid"] = "團隊",
+		["Tradeskill"] = "商業技能",
+		["UnitFrame"] = "單位框架",
+	}
 else -- enUS
 	STANDBY = "|cffff5050(standby)|r"
 	

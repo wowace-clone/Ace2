@@ -26,6 +26,9 @@ if GetLocale() == "frFR" then
 elseif GetLocale() == "koKR" then
 	DEBUGGING = "디버깅"
 	TOGGLE_DEBUGGING = "디버깅 기능 사용함/사용안함"
+elseif GetLocale() == "zhTW" then
+	DEBUGGING = "除錯"
+	TOGGLE_DEBUGGING = "啟用/停用除錯功能"
 else -- enUS
 	DEBUGGING = "Debugging"
 	TOGGLE_DEBUGGING = "Enable/disable debugging"

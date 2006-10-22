@@ -54,6 +54,17 @@ elseif GetLocale() == "koKR" then
 	OPTION_HANDLER_NOT_FOUND = "설정 조정값인 |cffffff7f%q|r|1을;를; 찾지 못했습니다."
 	OPTION_HANDLER_NOT_VALID = "설정 조정값이 올바르지 않습니다."
 	OPTION_IS_DISABLED = "|cffffff7f%s|r 설정은 사용할 수 없습니다."
+elseif GetLocale() == "zhTW" then
+	MAP_ONOFF = { [false] = "|cffff0000關閉|r", [true] = "|cff00ff00開啟|r" }
+	USAGE = "用法"
+	IS_CURRENTLY_SET_TO = "|cffffff7f%s|r 目前的設定為 |cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOW_SET_TO = "|cffffff7f%s|r 現在被設定為 |cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOT_A_VALID_OPTION_FOR = "[|cffffff7f%s|r] 是一個不符合規定的選項，對 |cffffff7f%s|r"
+	IS_NOT_A_VALID_VALUE_FOR = "[|cffffff7f%s|r] 是一個不符合規定的數值，對 |cffffff7f%s|r"
+	NO_OPTIONS_AVAILABLE = "沒有可用的選項處理器。"
+	OPTION_HANDLER_NOT_FOUND = "找不到 |cffffff7f%q|r 選項處理器。"
+	OPTION_HANDLER_NOT_VALID = "選項處理器不符合規定。"
+	OPTION_IS_DISABLED = "|cffffff7f%s|r 已被停用。"
 else -- enUS
 	MAP_ONOFF = { [false] = "|cffff0000Off|r", [true] = "|cff00ff00On|r" }
 	USAGE = "Usage"

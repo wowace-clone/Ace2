@@ -84,6 +84,27 @@ elseif GetLocale() == "koKR" then
 	CHARACTER = "캐릭터: "
 	REALM = "서버: "
 	CLASS = "직업: "
+elseif GetLocale() == "zhTW" then
+	ACTIVE = "啟動"
+	ENABLED = "啟用"
+	STATE = "狀態"
+	TOGGLE_ACTIVE = "暫停/重啟這個插件。"
+	MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00啟動|r", [false] = "|cffff0000已暫停|r" }
+	SET_PROFILE = "設定這插件的記錄檔。"
+	SET_PROFILE_USAGE = "{角色 || 聯業 || 伺服器 || <記錄檔名稱>}"
+	PROFILE = "記錄檔"
+	PLAYER_OF_REALM = "%s 於 %s"
+	CHOOSE_PROFILE_DESC = "選擇一個記錄檔"
+	CHOOSE_PROFILE_GUI = "選擇"
+	COPY_PROFILE_DESC = "由其他記錄檔複製設定。"
+	COPY_PROFILE_GUI = "複製由"
+	OTHER_PROFILE_DESC = "選擇其他記錄檔。"
+	OTHER_PROFILE_GUI = "其他"
+	OTHER_PROFILE_USAGE = "<記錄檔名稱>"
+
+	CHARACTER = "角色："
+	REALM = "伺服器："
+	CLASS = "聯業："
 else -- enUS
 	ACTIVE = "Active"
 	ENABLED = "Enabled"
@@ -1316,57 +1337,57 @@ function AceDB:GetAceOptionsDataTable(target)
 		end
 	end
 	return {
-		standby = {
-			cmdName = STATE,
-			guiName = ENABLED,
-			name = ACTIVE,
-			desc = TOGGLE_ACTIVE,
-			type = "toggle",
-			get = "IsActive",
-			set = "ToggleActive",
-			map = MAP_ACTIVESUSPENDED,
-			order = -3,
-		},
-		profile = {
-			type = 'group',
-			name = PROFILE,
-			desc = SET_PROFILE,
-			order = -3.5,
-			get = "GetProfile",
-			args = {
-				choose = {
-					guiName = CHOOSE_PROFILE_GUI,
-					cmdName = PROFILE,
-					desc = CHOOSE_PROFILE_DESC,
-					type = 'text',
-					get = "GetProfile",
-					set = "SetProfile",
-					validate = target['acedb-profile-list']
-				},
-				copy = {
-					guiName = COPY_PROFILE_GUI,
-					cmdName = PROFILE,
-					desc = COPY_PROFILE_DESC,
-					type = 'text',
-					get = "GetProfile",
-					set = "SetProfile",
-					validate = target['acedb-profile-copylist'],
-					disabled = function()
-						return not next(target['acedb-profile-copylist'])
-					end,
-				},
-				other = {
-					guiName = OTHER_PROFILE_GUI,
-					cmdName = PROFILE,
-					desc = OTHER_PROFILE_DESC,
-					usage = OTHER_PROFILE_USAGE,
-					type = 'text',
-					get = "GetProfile",
-					set = "SetProfile",
+			standby = {
+				cmdName = STATE,
+				guiName = ENABLED,
+				name = ACTIVE,
+				desc = TOGGLE_ACTIVE,
+				type = "toggle",
+				get = "IsActive",
+				set = "ToggleActive",
+				map = MAP_ACTIVESUSPENDED,
+				order = -3,
+			},
+			profile = {
+				type = 'group',
+				name = PROFILE,
+				desc = SET_PROFILE,
+				order = -3.5,
+				get = "GetProfile",
+				args = {
+					choose = {
+						guiName = CHOOSE_PROFILE_GUI,
+						cmdName = PROFILE,
+						desc = CHOOSE_PROFILE_DESC,
+						type = 'text',
+						get = "GetProfile",
+						set = "SetProfile",
+						validate = target['acedb-profile-list']
+					},
+					copy = {
+						guiName = COPY_PROFILE_GUI,
+						cmdName = PROFILE,
+						desc = COPY_PROFILE_DESC,
+						type = 'text',
+						get = "GetProfile",
+						set = "SetProfile",
+						validate = target['acedb-profile-copylist'],
+						disabled = function()
+							return not next(target['acedb-profile-copylist'])
+						end,
+					},
+					other = {
+						guiName = OTHER_PROFILE_GUI,
+						cmdName = PROFILE,
+						desc = OTHER_PROFILE_DESC,
+						usage = OTHER_PROFILE_USAGE,
+						type = 'text',
+						get = "GetProfile",
+						set = "SetProfile",
+					}
 				}
-			}
-		},
-	}
+			},
+		}
 end
 
 local function activate(self, oldLib, oldDeactivate)
