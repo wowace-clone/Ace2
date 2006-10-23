@@ -141,17 +141,25 @@ AceLocale.prototype = { class = AceLocale }
 
 function AceLocale.prototype:EnableDebugging()
 	if rawget(self, BASE_TRANSLATIONS) then
-		AceLocale:error("Cannot enable debugging after a translation has been registered.")
+		AceLocale.error(self, "Cannot enable debugging after a translation has been registered.")
 	end
 	rawset(self, DEBUGGING, true)
 end
 
-function AceLocale.prototype:EnableDynamicLocales(override)
-	AceLocale:argCheck(override, 2, "boolean", "nil")
-	if not override and rawget(self, BASE_TRANSLATIONS) then
-		AceLocale:error("Cannot enable dynamic locales after a translation has been registered.")
+function AceLocale.prototype:EnableDynamicLocales()
+	if rawget(self, BASE_TRANSLATIONS) then
+		AceLocale.error(self, "Cannot enable dynamic locales after a translation has been registered.")
 	end
-	rawset(self, DYNAMIC_LOCALES, true)
+	if not rawget(self, DYNAMIC_LOCALES) then
+		rawset(self, DYNAMIC_LOCALES, true)
+		if rawget(self, BASE_LOCALE) then
+			if not rawget(self, TRANSLATION_TABLES) then
+				rawset(self, TRANSLATION_TABLES, {})
+			end
+			self[TRANSLATION_TABLES][self[BASE_LOCALE]] = self[BASE_TRANSLATIONS]
+			self[TRANSLATION_TABLES][self[CURRENT_LOCALE]] = self[TRANSLATIONS]
+		end
+	end
 end
 
 function AceLocale.prototype:RegisterTranslations(locale, func)
@@ -164,6 +172,9 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	
 	if rawget(self, BASE_TRANSLATIONS) and GetLocale() ~= locale then
 		if rawget(self, DEBUGGING) or rawget(self, DYNAMIC_LOCALES) then
+			if not rawget(self, TRANSLATION_TABLES) then
+				rawset(self, TRANSLATION_TABLES, {})
+			end
 			if self[TRANSLATION_TABLES][locale] then
 				AceLocale.error(self, "Cannot provide the same locale more than once. %q provided twice.", locale)
 			end
@@ -261,6 +272,14 @@ function AceLocale.prototype:IterateAvailableLocales()
 		AceLocale.error(self, "Cannot call `IterateAvailableLocales' without first calling `RegisterTranslations'.")
 	end
 	return iter, self[TRANSLATION_TABLES], nil
+end
+
+function AceLocale.prototype:HasLocale(locale)
+	if not rawget(self, DYNAMIC_LOCALES) then
+		AceLocale.error(self, "Cannot call `HasLocale' without first calling `EnableDynamicLocales'.")
+	end
+	AceLocale.argCheck(self, locale, 2, "string")
+	return self[TRANSLATION_TABLES][locale] ~= nil
 end
 
 function AceLocale.prototype:SetStrictness(strict)
