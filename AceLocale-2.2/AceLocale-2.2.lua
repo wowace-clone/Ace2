@@ -280,7 +280,7 @@ function AceLocale.prototype:HasLocale(locale)
 		AceLocale.error(self, "Cannot call `HasLocale' without first calling `EnableDynamicLocales'.")
 	end
 	AceLocale.argCheck(self, locale, 2, "string")
-	return self[TRANSLATION_TABLES][locale] ~= nil
+	return rawget(self, TRANSLATION_TABLES) and self[TRANSLATION_TABLES][locale] ~= nil
 end
 
 function AceLocale.prototype:SetStrictness(strict)
