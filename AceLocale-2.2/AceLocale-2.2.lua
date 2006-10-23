@@ -147,7 +147,7 @@ function AceLocale.prototype:EnableDebugging()
 end
 
 function AceLocale.prototype:EnableDynamicLocales(override)
-	AceLocale:argcheck(override, 2, "boolean", "nil")
+	AceLocale.argCheck(self, override, 2, "boolean", "nil")
 	if not override and rawget(self, BASE_TRANSLATIONS) then
 		AceLocale.error(self, "Cannot enable dynamic locales after a translation has been registered.")
 	end
