@@ -853,9 +853,9 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							end
 						elseif v.type == "toggle" then
 							if v.map then
-								s = tostring(v.map[a1 or false] or NONE)
+								s = tostring(v.map[a1 and true or false] or NONE)
 							else
-								s = tostring(MAP_ONOFF[a1 or false] or NONE)
+								s = tostring(MAP_ONOFF[a1 and true or false] or NONE)
 							end
 						elseif v.type == "range" then
 							if v.isPercent then
@@ -1158,7 +1158,7 @@ local function handlerFunc(self, chat, msg, options)
 			end
 		end
 
-		print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), (options.map or MAP_ONOFF)[var or false] or NONE), realOptions.cmdName or realOptions.name or self)
+		print(string.format(options.message or IS_NOW_SET_TO, tostring(options.cmdName or options.name), (options.map or MAP_ONOFF)[var and true or false] or NONE), realOptions.cmdName or realOptions.name or self)
 	elseif kind == "range" then
 		local arg
 		if table.getn(args) <= 1 then
