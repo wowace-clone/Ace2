@@ -431,6 +431,8 @@ function AceHook:Hook(object, method, handler, hookSecure)
 		if not hookSecure and issecurevariable(method) then
 			AceHook:error("Attempt to hook secure function %q. Use `SecureHook' or add `true' to the argument list to override.", method)
 		end
+		AceHook:argCheck(handler, 3, "function", "string", "nil")
+		AceHook:argCheck(hookSecure, 4, "boolean", "nil")
 		hookFunction(self, method, handler, false)
 	else
 		if handler == true then
@@ -439,6 +441,10 @@ function AceHook:Hook(object, method, handler, hookSecure)
 		if not hookSecure and issecurevariable(object, method) then
 			AceHook:error("Attempt to hook secure method %q. Use `SecureHook' or add `true' to the argument list to override.", method)
 		end
+		AceHook:argCheck(object, 2, "table")
+		AceHook:argCheck(method, 3, "string")
+		AceHook:argCheck(handler, 4, "function", "string", "nil")
+		AceHook:argCheck(hookSecure, 5, "boolean", "nil")
 		hookMethod(self, object, method, handler, false, false)
 	end
 end
@@ -447,8 +453,12 @@ end
 function AceHook:SecureHook(object, method, handler)
 	if type(object) == "string" then
 		method, handler = object, method
+		AceHook:argCheck(handler, 3, "function", "string", "nil")
 		hookFunction(self, method, handler, true)
 	else
+		AceHook:argCheck(object, 2, "table")
+		AceHook:argCheck(method, 3, "string")
+		AceHook:argCheck(handler, 4, "function", "string", "nil")
 		hookMethod(self, object, method, handler, false, true)
 	end
 end
@@ -458,6 +468,8 @@ function AceHook:HookScript(frame, script, handler)
 	if not frame[0] or type(frame.IsFrameType) ~= "function" then
 		AceHook:error("Bad argument #2 to `HookScript'. Expected frame.")
 	end
+	AceHook:argCheck(script, 3, "string")
+	AceHook:argCheck(handler, 4, "function", "string", "nil")
 	hookMethod(self, frame, script, handler, true, false)
 end
 
@@ -468,6 +480,8 @@ function AceHook:IsHooked(obj, method)
 			return true, handlers[registry[self][obj]]
 		end
 	else
+		AceHook:argCheck(obj, 2, "string", "table")
+		AceHook:argCheck(method, 3, "string")
 		if registry[self][obj] and registry[self][obj][method] and actives[registry[self][obj][method]] then
 			return true, handlers[registry[self][obj][method]]
 		end
@@ -477,11 +491,13 @@ function AceHook:IsHooked(obj, method)
 end
 
 -- ("function") or (object, "method")
-function AceHook:Unhook(arg1, arg2)
-	if type(arg1) == "string" then
-		unhookFunction(self, arg1)
+function AceHook:Unhook(obj, method)
+	if type(obj) == "string" then
+		unhookFunction(self, obj)
 	else
-		unhookMethod(self, arg1, arg2)
+		AceHook:argCheck(obj, 2, "string", "table")
+		AceHook:argCheck(method, 3, "string")
+		unhookMethod(self, obj, method)
 	end
 end
 
