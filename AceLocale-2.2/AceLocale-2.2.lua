@@ -482,6 +482,16 @@ local function activate(self, oldLib, oldDeactivate)
 	DYNAMIC_LOCALES = self.DYNAMIC_LOCALES
 	CURRENT_LOCALE = self.CURRENT_LOCALE
 	
+	
+	local GetTime = GetTime
+	local timeUntilClear = GetTime() + 5
+	scheduleClear = function()
+		if next(newRegistries) then
+			self.frame:Show()
+			timeUntilClear = GetTime() + 5
+		end
+	end
+	
 	if not self.registry then
 		self.registry = {}
 	else
@@ -503,14 +513,6 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	
-	local GetTime = GetTime
-	local timeUntilClear = GetTime() + 5
-	scheduleClear = function()
-		if next(newRegistries) then
-			self.frame:Show()
-			timeUntilClear = GetTime() + 5
-		end
-	end
 	self.frame:SetScript("OnEvent", scheduleClear)
 	self.frame:SetScript("OnUpdate", function() -- (this, elapsed)
 		if timeUntilClear - GetTime() <= 0 then
