@@ -63,7 +63,7 @@ local function clearCache(self)
 	rawset(self, REVERSE_TRANSLATIONS, nil)
 	
 	for k in pairs(self) do
-		if cache[k] ~= nil then
+		if rawget(cache, k) ~= nil then
 			self[k] = nil
 		end
 	end
