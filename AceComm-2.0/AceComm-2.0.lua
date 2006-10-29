@@ -1098,7 +1098,7 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 			if k == "CUSTOM" then
 				for l,u in pairs(v) do
 					if u[prefix] and u[prefix][self] then
-						AceComm.UnregisterComm(self, prefix, k, l)
+						AceComm.UnregisterComm(self, prefix, k, string.sub(l, 8))
 						if not registry[k] then
 							break
 						end
@@ -1154,7 +1154,7 @@ end
 function AceComm:UnregisterAllComms()
 	local registry = AceComm_registry
 	for k, distribution in pairs(registry) do
-		if distribution == "CUSTOM" then
+		if k == "CUSTOM" then
 			for l, channel in pairs(distribution) do
 				local j = next(channel)
 				while j ~= nil do
@@ -1977,7 +1977,6 @@ function AceComm:CHAT_MSG_CHANNEL_LIST(text, _, _, _, _, _, _, _, channel)
 	local t = AceComm.userRegistry[channel]
 	for k in string_gfind(text, "[^, @%*#]+") do
 		t[k] = true
-		AceLibrary("AceConsole-2.0"):Print(k, "joined")
 	end
 end
 
@@ -1992,7 +1991,6 @@ function AceComm:CHAT_MSG_CHANNEL_JOIN(_, user, _, _, _, _, _, _, channel)
 	local t = AceComm.userRegistry[channel]
 	if not t[user] then
 		t[user] = true
-		AceLibrary("AceConsole-2.0"):Print(user, "joined")
 	end
 end
 
@@ -2007,7 +2005,6 @@ function AceComm:CHAT_MSG_CHANNEL_LEAVE(_, user, _, _, _, _, _, _, channel)
 	local t = AceComm.userRegistry[channel]
 	if t[user] then
 		t[user] = nil
-		AceLibrary("AceConsole-2.0"):Print(user, "left")
 	end
 end
 
