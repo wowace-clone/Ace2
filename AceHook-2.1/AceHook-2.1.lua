@@ -548,8 +548,6 @@ end
 local function activate(self, oldLib, oldDeactivate)
 	AceHook = self
 	
-	AceHook.super.activate(self, oldLib, oldDeactivate)
-	
 	self.handlers = oldLib and oldLib.handlers or {}
 	self.registry = oldLib and oldLib.registry or {}
 	self.scripts = oldLib and oldLib.scripts or {}
@@ -559,6 +557,8 @@ local function activate(self, oldLib, oldDeactivate)
 	registry = self.registry
 	scripts = self.scripts
 	actives = self.actives
+	
+	AceHook.super.activate(self, oldLib, oldDeactivate)
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
