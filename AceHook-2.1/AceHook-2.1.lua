@@ -502,7 +502,7 @@ function AceHook:Unhook(obj, method)
 end
 
 function AceHook:UnhookAll()
-	for key, value in pairs(self.hooks) do
+	for key, value in pairs(registry[self]) do
 		if type(key) == "table" then
 			for method in pairs(value) do
 				self:Unhook(key, method)
