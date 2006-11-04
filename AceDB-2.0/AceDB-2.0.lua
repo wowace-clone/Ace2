@@ -997,12 +997,26 @@ function AceDB:SetProfile(name, copyFrom)
 	local active = self:IsActive()
 	db.raw.currentProfile[charID] = name
 	rawset(db, 'profile', nil)
+	if db.namespaces then
+		for k,v in pairs(db.namespaces) do
+			rawset(v, 'profile', nil)
+		end
+	end
 	if copyFrom then
 		for k,v in pairs(db.profile) do
 			db.profile[k] = nil
 		end
 		copyTable(db.profile, db.raw.profiles[copyFrom])
 		inheritDefaults(db.profile, db.defaults and db.defaults.profile)
+		if db.namespaces then
+			for l,u in pairs(db.namespaces) do
+				for k,v in pairs(u.profile) do
+					u.profile[k] = nil
+				end
+				copyTable(u.profile, db.raw.namespaces[l].profiles[copyFrom])
+				inheritDefaults(u.profile, u.defaults and u.defaults.profile)
+			end
+		end
 	end
 	local current = self.class
 	while current and current ~= AceOO.Class do
