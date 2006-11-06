@@ -394,6 +394,12 @@ function AceModuleCore.OnEmbedProfileDisable(AceModuleCore, self, newProfile)
 			local newActive =  not self.db or not self.db.raw or not self.db.raw.disabledModules or not self.db.raw.disabledModules[newProfile] or not self.db.raw.disabledModules[newProfile][module.name]
 			if currentActive ~= newActive then
 				self:ToggleModuleActive(module)
+				if not self.db.raw.disabledModules then
+					self.db.raw.disabledModules = {}
+				end
+				if not self.db.raw.disabledModules[currentProfile] then
+					self.db.raw.disabledModules[currentProfile] = {}
+				end
 				self.db.raw.disabledModules[currentProfile][module.name] = not currentActive or nil
 			end
 		end
