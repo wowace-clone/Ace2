@@ -381,6 +381,25 @@ end
 
 AceModuleCore.OnManualEmbed = AceModuleCore.OnInstanceInit
 
+function AceModuleCore.OnEmbedProfileDisable(AceModuleCore, self, newProfile)
+	if not AceOO.inherits(self, "AceDB-2.0") then
+		return
+	end
+	local _,currentProfile = self:GetProfile()
+	for k, module in pairs(self.modules) do
+		if type(module.IsActive) == "function" or type(module.ToggleActive) == "function" then
+			-- continue
+		else
+			local currentActive =  not self.db or not self.db.raw or not self.db.raw.disabledModules or not self.db.raw.disabledModules[currentProfile] or not self.db.raw.disabledModules[currentProfile][module.name]
+			local newActive =  not self.db or not self.db.raw or not self.db.raw.disabledModules or not self.db.raw.disabledModules[newProfile] or not self.db.raw.disabledModules[newProfile][module.name]
+			if currentActive ~= newActive then
+				self:ToggleModuleActive(module)
+				self.db.raw.disabledModules[currentProfile][module.name] = not currentActive or nil
+			end
+		end
+	end
+end
+
 local function activate(self, oldLib, oldDeactivate)
 	AceModuleCore = self
 
