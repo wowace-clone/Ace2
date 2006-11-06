@@ -976,14 +976,14 @@ function AceDB:SetProfile(name, copyFrom)
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedProfileDisable) == "function" then
-					mixin:OnEmbedProfileDisable(self)
+					mixin:OnEmbedProfileDisable(self, name)
 				end
 			end
 		end
 		current = current.super
 	end
 	if type(self.OnProfileDisable) == "function" then
-		self:OnProfileDisable()
+		self:OnProfileDisable(name)
 	end
 	local oldProfileData = db.profile
 	local realName = name
