@@ -971,28 +971,28 @@ function AceDB:SetProfile(name, copyFrom)
 	if string.lower(oldName) == string.lower(name) then
 		return
 	end
+	local oldProfileData = db.profile
+	local realName = name
+	if lowerName == "char" then
+		realName = name .. "/" .. charID
+	elseif lowerName == "realm" then
+		realName = name .. "/" .. realmID
+	elseif lowerName == "class" then
+		realName = name .. "/" .. classID
+	end
 	local current = self.class
 	while current and current ~= AceOO.Class do
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedProfileDisable) == "function" then
-					mixin:OnEmbedProfileDisable(self, name)
+					mixin:OnEmbedProfileDisable(self, realName)
 				end
 			end
 		end
 		current = current.super
 	end
 	if type(self.OnProfileDisable) == "function" then
-		self:OnProfileDisable(name)
-	end
-	local oldProfileData = db.profile
-	local realName = name
-	if lowerName == "char" then
-		realName = name .. "/" .. charID
-	elseif lowerName == "realm/" then
-		realName = name .. "/" .. realmID
-	elseif lowerName == "class/" then
-		realName = name .. "/" .. classID
+		self:OnProfileDisable(realName)
 	end
 	local active = self:IsActive()
 	db.raw.currentProfile[charID] = name
