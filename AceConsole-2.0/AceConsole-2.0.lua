@@ -900,7 +900,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			else
 				print(string.format("|cffffff7f%s:|r %s", USAGE, path), realOptions.cmdName or realOptions.name or self)
 			end
-			print(self, NO_OPTIONS_AVAILABLE)
+			print(NO_OPTIONS_AVAILABLE)
 		end
 	end
 end
