@@ -375,7 +375,7 @@ local function RefixAceCommChannelsAndEvents()
 	end
 	if AceComm_registry.CUSTOM then
 		for k,v in pairs(AceComm_registry.CUSTOM) do
-			if next(v) then
+			if next(v) and SupposedToBeInChannel(k) then
 				JoinChannel(k)
 				channel = true
 			end
