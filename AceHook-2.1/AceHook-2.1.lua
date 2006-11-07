@@ -401,7 +401,7 @@ local function unhookMethod(self, obj, method)
 				actives[uid] = nil
 			end
 		else
-			if self.hooks[obj][method] and obj[method] == uid then
+			if self.hooks[obj] and self.hooks[obj][method] and obj[method] == uid then
 				-- We own the method.  Revert to normal.
 				obj[method] = self.hooks[obj][method]
 				self.hooks[obj][method] = nil
@@ -413,7 +413,7 @@ local function unhookMethod(self, obj, method)
 			end
 		end
 	end
-	if not next(self.hooks[obj]) then
+	if self.hooks[obj] and not next(self.hooks[obj]) then
 		self.hooks[obj] = del(self.hooks[obj])
 	end
 	if not next(registry[self][obj]) then
