@@ -331,7 +331,7 @@ end
 
 setmetatable(CATEGORIES, { __index = function(self, key) -- case-insensitive
 	local lowerKey = string.lower(key)
-	for k,v in CATEGORIES do
+	for k,v in pairs(CATEGORIES) do
 		if string.lower(k) == lowerKey then
 			return v
 		end
