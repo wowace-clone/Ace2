@@ -226,7 +226,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			elseif type(hidden) == "string" then
 				local handler = options.handler or self
 				if type(handler[hidden]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, hidden)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, hidden))
 				end
 				hidden = handler[hidden](handler)
 			end
@@ -239,7 +239,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			elseif type(disabled) == "string" then
 				local handler = options.handler or self
 				if type(handler[disabled]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, disabled))
 				end
 				disabled = handler[disabled](handler)
 			end
@@ -583,8 +583,8 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 		if type(hidden) == "function" then
 			hidden = hidden()
 		elseif type(hidden) == "string" then
-			if type(handler[handler]) ~= "function" then
-				AceConsole:error(OPTION_HANDLER_NOT_FOUND, handler)
+			if type(handler[hidden]) ~= "function" then
+				AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, hidden))
 			end
 			hidden = handler[hidden](handler)
 		end
@@ -596,7 +596,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			disabled = disabled()
 		elseif type(disabled) == "string" then
 			if type(handler[disabled]) ~= "function" then
-				AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
+				AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, disabled))
 			end
 			disabled = handler[disabled](handler)
 		end
@@ -613,7 +613,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			else
 				local handler = passTable.handler or handler
 				if type(handler[passTable.get]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 				end
 				var = handler[passTable.get](handler, passValue)
 			end
@@ -624,7 +624,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			else
 				local handler = options.handler or handler
 				if type(handler[options.get]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 				end
 				var = handler[options.get](handler)
 			end
@@ -677,7 +677,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			else
 				local handler = passTable.handler or handler
 				if type(handler[passTable.get]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 				end
 				var = handler[passTable.get](handler, passValue)
 			end
@@ -687,7 +687,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			else
 				local handler = options.handler or handler
 				if type(handler[options.get]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 				end
 				var = handler[options.get](handler)
 			end
@@ -724,7 +724,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						elseif type(hidden) == "string" then
 							local handler = v.handler or handler
 							if type(handler[hidden]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, hidden)
+								AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, hidden))
 							end
 							hidden = handler[hidden](handler)
 						end
@@ -808,7 +808,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						elseif type(disabled) == "string" then
 							local handler = v.handler or handler
 							if type(handler[disabled]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
+								AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, disabled))
 							end
 							disabled = handler[disabled](handler)
 						end
@@ -829,7 +829,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						else
 							local handler = v.handler or handler
 							if type(handler[v.get]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, v.get)
+								AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, v.get))
 							end
 							if options.pass then
 								a1,a2,a3,a4 = handler[v.get](handler, k)
@@ -922,7 +922,7 @@ local function handlerFunc(self, chat, msg, options)
 			hidden = hidden()
 		elseif type(hidden) == "string" then
 			if type(handler[hidden]) ~= "function" then
-				AceConsole:error(OPTION_HANDLER_NOT_FOUND, hidden)
+				AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, hidden))
 			end
 			hidden = handler[hidden](handler)
 		end
@@ -934,7 +934,7 @@ local function handlerFunc(self, chat, msg, options)
 			disabled = disabled()
 		elseif type(disabled) == "string" then
 			if type(handler[disabled]) ~= "function" then
-				AceConsole:error(OPTION_HANDLER_NOT_FOUND, disabled)
+				AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, disabled))
 			end
 			disabled = handler[disabled](handler)
 		end
@@ -978,7 +978,7 @@ local function handlerFunc(self, chat, msg, options)
 					end
 				else
 					if type(handler[options.validate]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.validate)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.validate))
 					end
 					good = handler[options.validate](handler, unpack(args))
 				end
@@ -1012,7 +1012,7 @@ local function handlerFunc(self, chat, msg, options)
 					var = passTable.get(passValue)
 				else
 					if type(handler[passTable.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 					end
 					var = handler[passTable.get](handler, passValue)
 				end
@@ -1022,7 +1022,7 @@ local function handlerFunc(self, chat, msg, options)
 					var = options.get()
 				else
 					if type(handler[options.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 					end
 					var = handler[options.get](handler)
 				end
@@ -1034,7 +1034,7 @@ local function handlerFunc(self, chat, msg, options)
 						passTable.set(passValue, unpack(args))
 					else
 						if type(handler[passTable.set]) ~= "function" then
-							AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.set)
+							AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.set))
 						end
 						handler[passTable.set](handler, passTable.set, unpack(args))
 					end
@@ -1043,7 +1043,7 @@ local function handlerFunc(self, chat, msg, options)
 						options.set(unpack(args))
 					else
 						if type(handler[options.set]) ~= "function" then
-							AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.set)
+							AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.set))
 						end
 						handler[options.set](handler, unpack(args))
 					end
@@ -1059,7 +1059,7 @@ local function handlerFunc(self, chat, msg, options)
 					var = passTable.get(passValue)
 				else
 					if type(handler[passTable.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 					end
 					var = handler[passTable.get](handler, passValue)
 				end
@@ -1069,7 +1069,7 @@ local function handlerFunc(self, chat, msg, options)
 					var = options.get()
 				else
 					if type(handler[options.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 					end
 					var = handler[options.get](handler)
 				end
@@ -1093,7 +1093,7 @@ local function handlerFunc(self, chat, msg, options)
 				set(passValue)
 			else
 				if type(handler[passFunc]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, passFunc)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passFunc))
 				end
 				handler[passFunc](handler, passValue)
 			end
@@ -1104,7 +1104,7 @@ local function handlerFunc(self, chat, msg, options)
 			else
 				local handler = options.handler or self
 				if type(handler[options.func]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.func)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.func))
 				end
 				handler[options.func](handler)
 			end
@@ -1116,7 +1116,7 @@ local function handlerFunc(self, chat, msg, options)
 				var = passTable.get(passValue)
 			else
 				if type(handler[passTable.get]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 				end
 				var = handler[passTable.get](handler, passValue)
 			end
@@ -1124,7 +1124,7 @@ local function handlerFunc(self, chat, msg, options)
 				passTable.set(passValue, not var)
 			else
 				if type(handler[passTable.set]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.set)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.set))
 				end
 				handler[passTable.set](handler, passValue, not var)
 			end
@@ -1139,7 +1139,7 @@ local function handlerFunc(self, chat, msg, options)
 				var = options.get()
 			else
 				if type(handler[options.get]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 				end
 				var = handler[options.get](handler)
 			end
@@ -1147,7 +1147,7 @@ local function handlerFunc(self, chat, msg, options)
 				options.set(not var)
 			else
 				if type(handler[options.set]) ~= "function" then
-					AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.set)
+					AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.set))
 				end
 				handler[options.set](handler, not var)
 			end
@@ -1213,7 +1213,7 @@ local function handlerFunc(self, chat, msg, options)
 					var = passTable.get(passValue)
 				else
 					if type(handler[passTable.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 					end
 					var = handler[passTable.get](handler, passValue)
 				end
@@ -1223,7 +1223,7 @@ local function handlerFunc(self, chat, msg, options)
 				else
 					local handler = options.handler or self
 					if type(handler[options.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 					end
 					var = handler[options.get](handler)
 				end
@@ -1235,7 +1235,7 @@ local function handlerFunc(self, chat, msg, options)
 						passTable.set(passValue, arg)
 					else
 						if type(handler[passTable.set]) ~= "function" then
-							AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.set)
+							AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.set))
 						end
 						handler[passTable.set](handler, passValue, arg)
 					end
@@ -1245,7 +1245,7 @@ local function handlerFunc(self, chat, msg, options)
 					else
 						local handler = options.handler or self
 						if type(handler[options.set]) ~= "function" then
-							AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.set)
+							AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.set))
 						end
 						handler[options.set](handler, arg)
 					end
@@ -1260,7 +1260,7 @@ local function handlerFunc(self, chat, msg, options)
 					var = passTable.get(passValue)
 				else
 					if type(handler[passTable.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 					end
 					var = handler[passTable.get](handler, passValue)
 				end
@@ -1270,7 +1270,7 @@ local function handlerFunc(self, chat, msg, options)
 				else
 					local handler = options.handler or self
 					if type(handler[options.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 					end
 					var = handler[options.get](handler)
 				end
@@ -1326,7 +1326,7 @@ local function handlerFunc(self, chat, msg, options)
 					passTable.set(passValue, r,g,b,a)
 				else
 					if type(handler[passTable.set]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.set)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.set))
 					end
 					handler[passTable.set](handler, passValue, r,g,b,a)
 				end
@@ -1335,7 +1335,7 @@ local function handlerFunc(self, chat, msg, options)
 					options.set(r,g,b,a)
 				else
 					if type(handler[options.set]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.set)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.set))
 					end
 					handler[options.set](handler, r,g,b,a)
 				end
@@ -1347,7 +1347,7 @@ local function handlerFunc(self, chat, msg, options)
 					r,g,b,a = passTable.get(passValue)
 				else
 					if type(handler[passTable.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 					end
 					r,g,b,a = handler[passTable.get](handler, passValue)
 				end
@@ -1356,7 +1356,7 @@ local function handlerFunc(self, chat, msg, options)
 					r,g,b,a = options.get()
 				else
 					if type(handler[options.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 					end
 					r,g,b,a = handler[options.get](handler)
 				end
@@ -1380,7 +1380,7 @@ local function handlerFunc(self, chat, msg, options)
 					r,g,b,a = passTable.get(passValue)
 				else
 					if type(handler[passTable.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, passTable.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
 					end
 					r,g,b,a = handler[passTable.get](handler, passValue)
 				end
@@ -1389,7 +1389,7 @@ local function handlerFunc(self, chat, msg, options)
 					r,g,b,a = options.get()
 				else
 					if type(handler[options.get]) ~= "function" then
-						AceConsole:error(OPTION_HANDLER_NOT_FOUND, options.get)
+						AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, options.get))
 					end
 					r,g,b,a = handler[options.get](handler)
 				end
@@ -1415,7 +1415,7 @@ local function handlerFunc(self, chat, msg, options)
 									r,g,b,a = t.get(t.passValue)
 								else
 									if type(t.handler[t.get]) ~= "function" then
-										AceConsole:error(OPTION_HANDLER_NOT_FOUND, t.get)
+										AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, t.get))
 									end
 									r,g,b,a = t.handler[t.get](t.handler, t.passValue)
 								end
@@ -1424,7 +1424,7 @@ local function handlerFunc(self, chat, msg, options)
 									r,g,b,a = t.get()
 								else
 									if type(t.handler[t.get]) ~= "function" then
-										AceConsole:error(OPTION_HANDLER_NOT_FOUND, t.get)
+										AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, t.get))
 									end
 									r,g,b,a = t.handler[t.get](t.handler)
 								end
@@ -1490,7 +1490,7 @@ local function handlerFunc(self, chat, msg, options)
 							end
 						else
 							if type(t.handler[t.set]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, t.set)
+								AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, t.set))
 							end
 							if t.passValue then
 								t.handler[t.set](t.handler, t.passValue, r,g,b,a)
@@ -1507,7 +1507,7 @@ local function handlerFunc(self, chat, msg, options)
 							end
 						else
 							if type(t.handler[t.set]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, t.set)
+								AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, t.set))
 							end
 							if t.passValue then
 								t.handler[t.set](t.handler, t.passValue, r,g,b)
@@ -1538,7 +1538,7 @@ local function handlerFunc(self, chat, msg, options)
 							end
 						else
 							if type(t.handler[t.get]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, t.get)
+								AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, t.get))
 							end
 							if t.passValue then
 								t.handler[t.set](t.handler, t.passValue, t.r,t.g,t.b,t.a)
@@ -1555,7 +1555,7 @@ local function handlerFunc(self, chat, msg, options)
 							end
 						else
 							if type(t.handler[t.set]) ~= "function" then
-								AceConsole:error(OPTION_HANDLER_NOT_FOUND, t.set)
+								AceConsole:error("%s: %s", tostring(handler), string.format(OPTION_HANDLER_NOT_FOUND, t.set))
 							end
 							if t.passValue then
 								t.handler[t.set](t.handler, t.passValue, t.r,t.g,t.b)
