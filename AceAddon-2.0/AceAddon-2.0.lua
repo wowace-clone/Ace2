@@ -20,7 +20,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
 -- Localization
-local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
+local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
 if GetLocale() == "deDE" then
 	STANDBY = "|cffff5050(Standby)|r" -- capitalized
 
@@ -32,6 +32,7 @@ if GetLocale() == "deDE" then
 	CATEGORY = "Kategorie"
 	EMAIL = "E-mail"
 	WEBSITE = "Webseite"
+	CREDITS = "Credits" -- fix
 		 
 	ABOUT = "\195\188ber"
 	PRINT_ADDON_INFO = "Gibt Addondaten aus"
@@ -83,6 +84,7 @@ elseif GetLocale() == "frFR" then
 	CATEGORY = "Cat\195\169gorie"
 	EMAIL = "E-mail"
 	WEBSITE = "Site web"
+	CREDITS = "Credits" -- fix
 	
 	ABOUT = "A propos"
 	PRINT_ADDON_INFO = "Afficher les informations sur l'addon"
@@ -134,6 +136,7 @@ elseif GetLocale() == "koKR" then
 	CATEGORY = "분류"
 	EMAIL = "E-mail"
 	WEBSITE = "웹사이트"
+	CREDITS = "Credits" -- fix
 	
 	ABOUT = "정보"
 	PRINT_ADDON_INFO = "애드온 정보 출력"
@@ -185,6 +188,7 @@ elseif GetLocale() == "zhTW" then
 	CATEGORY = "類別"
 	EMAIL = "E-mail"
 	WEBSITE = "網站"
+	CREDITS = "Credits" -- fix
 	
 	ABOUT = "關於"
 	PRINT_ADDON_INFO = "顯示插件資訊"
@@ -236,6 +240,7 @@ elseif GetLocale() == "zhCN" then
 	CATEGORY = "\229\136\134\231\177\187"
 	EMAIL = "\231\148\181\229\173\144\233\130\174\228\187\182"
 	WEBSITE = "\231\189\145\231\171\153"
+	CREDITS = "Credits" -- fix
 	
 	ABOUT = "\229\133\179\228\186\142"
 	PRINT_ADDON_INFO = "\229\141\176\229\136\151\229\135\186\230\143\146\228\187\182\228\191\161\230\129\175"
@@ -287,6 +292,7 @@ else -- enUS
 	CATEGORY = "Category"
 	EMAIL = "E-mail"
 	WEBSITE = "Website"
+	CREDITS = "Credits"
 	
 	ABOUT = "About"
 	PRINT_ADDON_INFO = "Print out addon info"
@@ -442,6 +448,10 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.author = GetAddOnMetadata(name, "Author")
 			addon.author = stripSpaces(addon.author)
 		end
+		if addon.credits == nil then
+			addon.credits = GetAddOnMetadata(name, "X-Credits")
+			addon.credits = stripSpaces(addon.credits)
+		end
 		if addon.date == nil then
 			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
 			if addon.date then
@@ -509,6 +519,9 @@ function AceAddon.prototype:PrintAddonInfo()
 	print(x)
 	if self.author then
 		print(" - |cffffff7f" .. AUTHOR .. ":|r " .. tostring(self.author))
+	end
+	if self.credits then
+		print(" - |cffffff7f" .. CREDITS .. ":|r " .. tostring(self.credits))
 	end
 	if self.date then
 		print(" - |cffffff7f" .. DATE .. ":|r " .. tostring(self.date))
