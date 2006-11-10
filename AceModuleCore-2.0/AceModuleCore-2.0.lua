@@ -310,6 +310,20 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		end
 	end
 	if not disable then
+		local current = module.class
+		while true do
+			if current == AceOO.Class then
+				break
+			end
+			if current.mixins then
+				for mixin in pairs(current.mixins) do
+					if type(mixin.OnEmbedEnable) == "function" then
+						mixin:OnEmbedEnable(module)
+					end
+				end
+			end
+			current = current.super
+		end
 		if type(module.OnEnable) == "function" then
 			module:OnEnable()
 		end
