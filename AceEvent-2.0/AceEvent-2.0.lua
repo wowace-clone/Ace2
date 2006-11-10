@@ -399,47 +399,51 @@ local pairs = pairs
 local unpack = unpack
 
 local delayRegistry
+local tmp = {}
 local function OnUpdate()
 	local t = GetTime()
-	local k,v = next(delayRegistry)
-	local last = nil
-	while k do
-		local v_time = v.time
-		if not v_time then
-			delayRegistry[k] = del(v)
-		elseif v_time <= t then
-			local v_repeatDelay = v.repeatDelay
-			if v_repeatDelay then
-				-- use the event time, not the current time, else timing inaccuracies add up over time
-				v.time = v_time + v_repeatDelay
-			end
-			local event = v.event
-			local mem, time
-			if AceEvent_debugTable then
-				mem, time = gcinfo(), GetTime()
-			end
-			if type(event) == "function" then
-				event(unpack(v))
-			else
-				AceEvent:TriggerEvent(event, unpack(v))
-			end
-			if AceEvent_debugTable then
-				mem, time = gcinfo() - mem, GetTime() - time
-				v.mem = v.mem + mem
-				v.timeSpent = v.timeSpent + time
-				v.count = v.count + 1
-			end
-			if not v_repeatDelay then
-				local x = delayRegistry[k]
-				if x and x.time == v_time then -- check if it was manually reset
-					delayRegistry[k] = del(v)
+	for k,v in pairs(delayRegistry) do
+		tmp[k] = true
+	end
+	for k in pairs(tmp) do
+		local v = delayRegistry[k]
+		if v then
+			local v_time = v.time
+			if not v_time then
+				delayRegistry[k] = del(v)
+			elseif v_time <= t then
+				local v_repeatDelay = v.repeatDelay
+				if v_repeatDelay then
+					-- use the event time, not the current time, else timing inaccuracies add up over time
+					v.time = v_time + v_repeatDelay
+				end
+				local event = v.event
+				local mem, time
+				if AceEvent_debugTable then
+					mem, time = gcinfo(), GetTime()
+				end
+				if type(event) == "function" then
+					event(unpack(v))
+				else
+					AceEvent:TriggerEvent(event, unpack(v))
+				end
+				if AceEvent_debugTable then
+					mem, time = gcinfo() - mem, GetTime() - time
+					v.mem = v.mem + mem
+					v.timeSpent = v.timeSpent + time
+					v.count = v.count + 1
+				end
+				if not v_repeatDelay then
+					local x = delayRegistry[k]
+					if x and x.time == v_time then -- check if it was manually reset
+						delayRegistry[k] = del(v)
+					end
 				end
 			end
 		end
-		if delayRegistry[k] then
-			last = k
-		end
-		k,v = next(delayRegistry, last)
+	end
+	for k in pairs(tmp) do
+		tmp[k] = nil
 	end
 	if not next(delayRegistry) then
 		AceEvent.frame:Hide()
