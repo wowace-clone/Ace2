@@ -208,6 +208,8 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 	end
 	local _G_event = _G.event
 	_G.event = event
+	local lastEvent = AceEvent.currentEvent
+	AceEvent.currentEvent = event
 
 	local AceEvent_onceRegistry = AceEvent.onceRegistry
 	local AceEvent_debugTable = AceEvent.debugTable
@@ -386,6 +388,7 @@ function AceEvent:TriggerEvent(event, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a
 		del(tmp)
 	end
 	_G.event = _G_event
+	AceEvent.currentEvent = lastEvent
 end
 
 -- local accessors
