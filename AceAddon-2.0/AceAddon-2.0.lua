@@ -19,8 +19,8 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
-local safecall(func,...)
-    local success, err = pcall(func,...)
+local safecall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+    local success, err = pcall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
     if not success then geterrorhandler()(err) end
 end
 
