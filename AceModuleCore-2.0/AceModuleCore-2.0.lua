@@ -20,6 +20,11 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(MAJOR_VERSION) then return end -- lua51 check
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
+local funciton safecall(func,a,b,c,d,e,f,g)
+	local success, err = pcall(func,a,b,c,d,e,f,g)
+	if not success then geterrorhandler()(err) end
+end
+
 local table_setn
 do
 	local version = GetBuildInfo()
@@ -319,14 +324,14 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedEnable) == "function" then
-						mixin:OnEmbedEnable(module)
+						safecall(mixin.OnEmbedEnable, mixin, module)
 					end
 				end
 			end
 			current = current.super
 		end
 		if type(module.OnEnable) == "function" then
-			module:OnEnable()
+			safecall(module.OnEnable, module)
 		end
 	else
 		local current = module.class
@@ -337,14 +342,14 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedDisable) == "function" then
-						mixin:OnEmbedDisable(module)
+						safecall(mixin.OnEmbedDisable, mixin, module)
 					end
 				end
 			end
 			current = current.super
 		end
 		if type(module.OnDisable) == "function" then
-			module:OnDisable()
+			safecall(module.OnDisable, module)
 		end
 	end
 	return not disable
