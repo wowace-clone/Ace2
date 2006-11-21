@@ -19,6 +19,7 @@ Dependencies: None
 local ACELIBRARY_MAJOR = "AceLibrary"
 local ACELIBRARY_MINOR = "$Revision$"
 
+if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(ACELIBRARY_MINOR) then return end -- lua51 check
 local table_setn
 do
 	local version = GetBuildInfo()
