@@ -20,7 +20,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(MAJOR_VERSION) then return end -- lua51 check
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
-local funciton safecall(func,a,b,c,d,e,f,g)
+local function safecall(func,a,b,c,d,e,f,g)
 	local success, err = pcall(func,a,b,c,d,e,f,g)
 	if not success then geterrorhandler()(err) end
 end
