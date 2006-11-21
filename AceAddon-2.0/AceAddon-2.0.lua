@@ -19,6 +19,11 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
+local safecall(func,...)
+    local success, err = pcall(func,...)
+    if not success then geterrorhandler()(err) end
+end
+
 -- Localization
 local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
 if GetLocale() == "deDE" then
@@ -386,20 +391,14 @@ local function RegisterOnEnable(self)
 				if current.mixins then
 					for mixin in pairs(current.mixins) do
 						if type(mixin.OnEmbedEnable) == "function" then
-							local success, err = pcall(mixin.OnEmbedEnable,mixin,self)
-							if not success then
-								geterrorhandler()(err)
-							end
+							safecall(mixin.OnEmbedEnable,mixin,self)
 						end
 					end
 				end
 				current = current.super
 			end
 			if type(self.OnEnable) == "function" then
-				local success, err = pcall(self.OnEnable,self)
-				if not success then
-					geterrorhandler()(err)
-				end
+				safecall(self.OnEnable,self)
 			end
 		end
 	else
@@ -497,7 +496,7 @@ function AceAddon:InitializeAddon(addon, name)
 		current = current.super
 	end
 	if type(addon.OnInitialize) == "function" then
-		addon:OnInitialize(name)
+		safecall(addon.OnInitialize, addon, name)
 	end
 	RegisterOnEnable(addon)
 end
@@ -577,20 +576,14 @@ function AceAddon:PLAYER_LOGIN()
 					if current.mixins then
 						for mixin in pairs(current.mixins) do
 							if type(mixin.OnEmbedEnable) == "function" then
-								local success, err = pcall(mixin.OnEmbedEnable,mixin,addon)
-								if not success then
-									geterrorhandler()(err)
-								 end
+								safecall(mixin.OnEmbedEnable,mixin,addon)
 							end
 						end
 					end
 					current = current.super
 				end
 				if type(addon.OnEnable) == "function" then
-					local success, err = pcall(addon.OnEnable,addon)
-					if not success then
-						geterrorhandler()(err)
-					end
+					safecall(addon.OnEnable,addon)
 				end
 			end
 		end
