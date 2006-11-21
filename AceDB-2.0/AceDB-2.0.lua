@@ -22,7 +22,7 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 local ACTIVE, ENABLED, STATE, TOGGLE_ACTIVE, MAP_ACTIVESUSPENDED, SET_PROFILE, SET_PROFILE_USAGE, PROFILE, PLAYER_OF_REALM, CHOOSE_PROFILE_DESC, CHOOSE_PROFILE_GUI, COPY_PROFILE_DESC, COPY_PROFILE_GUI, OTHER_PROFILE_DESC, OTHER_PROFILE_GUI, OTHER_PROFILE_USAGE, CHARACTER, REALM, CLASS
 
-local safecall(func,a,b,c,d,e,f,g,h,i)
+local function safecall(func,a,b,c,d,e,f,g,h,i)
 	local success, err = pcall(func,a,b,c,d,e,f,g,h,i)
 	if not success then geterrorhandler()(err) end
 end
