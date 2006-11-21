@@ -386,14 +386,20 @@ local function RegisterOnEnable(self)
 				if current.mixins then
 					for mixin in pairs(current.mixins) do
 						if type(mixin.OnEmbedEnable) == "function" then
-							mixin:OnEmbedEnable(self)
+							local success, err = pcall(mixin.OnEmbedEnable,mixin,self)
+							if not success then
+								geterrorhandler()(err)
+							end
 						end
 					end
 				end
 				current = current.super
 			end
 			if type(self.OnEnable) == "function" then
-				self:OnEnable()
+				local success, err = pcall(self.OnEnable,self)
+				if not success then
+					geterrorhandler()(err)
+				end
 			end
 		end
 	else
@@ -571,14 +577,20 @@ function AceAddon:PLAYER_LOGIN()
 					if current.mixins then
 						for mixin in pairs(current.mixins) do
 							if type(mixin.OnEmbedEnable) == "function" then
-								mixin:OnEmbedEnable(addon)
+								local success, err = pcall(mixin.OnEmbedEnable,mixin,addon)
+								if not success then
+									geterrorhandler()(err)
+								 end
 							end
 						end
 					end
 					current = current.super
 				end
 				if type(addon.OnEnable) == "function" then
-					addon:OnEnable()
+					local success, err = pcall(addon.OnEnable,addon)
+					if not success then
+						geterrorhandler()(err)
+					end
 				end
 			end
 		end
