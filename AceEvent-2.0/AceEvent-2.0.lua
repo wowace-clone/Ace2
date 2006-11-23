@@ -953,10 +953,13 @@ function AceEvent:activate(oldLib, oldDeactivate)
 		end)
 		self:RegisterEvent("LANGUAGE_LIST_CHANGED", function()
 			if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
+				registeringFromAceEvent = true
 				self:UnregisterEvent("MEETINGSTONE_CHANGED")
 				self:RegisterEvent("MINIMAP_ZONE_CHANGED", f, true)
+				registeringFromAceEvent = nil
 			end
 		end)
+		self:ScheduleEvent("AceEvent_FullyInitialized", func, 10)
 		registeringFromAceEvent = nil
 	end
 
