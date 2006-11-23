@@ -401,6 +401,9 @@ local function RegisterOnEnable(self)
 			if type(self.OnEnable) == "function" then
 				safecall(self.OnEnable,self)
 			end
+			if AceEvent then
+				AceEvent:TriggerEvent("Ace2_AddonEnabled", self)
+			end
 		end
 	else
 		if not AceAddon.addonsToOnEnable then
@@ -499,6 +502,9 @@ function AceAddon:InitializeAddon(addon, name)
 	if type(addon.OnInitialize) == "function" then
 		safecall(addon.OnInitialize, addon, name)
 	end
+	if AceEvent then
+		AceEvent:TriggerEvent("Ace2_AddonInitialized", addon)
+	end
 	RegisterOnEnable(addon)
 end
 
@@ -585,6 +591,9 @@ function AceAddon:PLAYER_LOGIN()
 				end
 				if type(addon.OnEnable) == "function" then
 					safecall(addon.OnEnable,addon)
+				end
+				if AceEvent then
+					AceEvent:TriggerEvent("Ace2_AddonEnabled", addon)
 				end
 			end
 		end

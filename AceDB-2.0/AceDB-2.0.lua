@@ -1067,6 +1067,9 @@ function AceDB:SetProfile(name, copyFrom)
 			if type(self.OnEnable) == "function" then
 				safecall(self.OnEnable, self)
 			end
+			if AceEvent then
+				AceEvent:TriggerEvent("Ace2_AddonEnabled", self)
+			end
 		else
 			local current = self.class
 			while current and current ~= AceOO.Class do
@@ -1081,6 +1084,9 @@ function AceDB:SetProfile(name, copyFrom)
 			end
 			if type(self.OnDisable) == "function" then
 				safecall(self.OnDisable, self)
+			end
+			if AceEvent then
+				AceEvent:TriggerEvent("Ace2_AddonDisabled", self)
 			end
 		end
 	end
@@ -1143,6 +1149,9 @@ function AceDB:ToggleActive(state)
 		if type(self.OnEnable) == "function" then
 			safecall(self.OnEnable, self)
 		end
+		if AceEvent then
+			AceEvent:TriggerEvent("Ace2_AddonEnabled", self)
+		end
 	else
 		local current = self.class
 		while current and current ~= AceOO.Class do
@@ -1157,6 +1166,9 @@ function AceDB:ToggleActive(state)
 		end
 		if type(self.OnDisable) == "function" then
 			safecall(self.OnDisable, self)
+		end
+		if AceEvent then
+			AceEvent:TriggerEvent("Ace2_AddonDisabled", self)
 		end
 	end
 	return not disable

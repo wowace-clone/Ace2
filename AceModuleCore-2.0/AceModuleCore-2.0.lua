@@ -8,7 +8,7 @@ Documentation: http://www.wowace.com/index.php/AceModuleCore-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceModuleCore-2.0
 Description: Mixin to provide a module system so that modules or plugins can
              use an addon as its core.
-Dependencies: AceLibrary, AceOO-2.0, AceAddon-2.0, Compost-2.0 (optional)
+Dependencies: AceLibrary, AceOO-2.0, AceAddon-2.0, AceEvent-2.0 (optional), Compost-2.0 (optional)
 ]]
 
 local MAJOR_VERSION = "AceModuleCore-2.0"
@@ -70,6 +70,7 @@ local AceModuleCore = AceOO.Mixin {
 									"IsModuleActive",
 									"ToggleModuleActive"
 								  }
+local AceEvent
 
 local Compost = AceLibrary:HasInstance("Compost-2.0") and AceLibrary("Compost-2.0")
 
@@ -143,7 +144,11 @@ function AceModuleCore:NewModule(name, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, 
 	module.title = name
 
 	AceModuleCore.totalModules[module] = self
-
+	
+	if AceEvent then
+		AceEvent:TriggerEvent("Ace2_ModuleCreated", module)
+	end
+	
 	for k in pairs(tmp) do
 		tmp[k] = nil
 	end
@@ -333,6 +338,9 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		if type(module.OnEnable) == "function" then
 			safecall(module.OnEnable, module)
 		end
+		if AceEvent then
+			AceEvent:TriggerEvent("Ace2_AddonEnabled", module)
+		end
 	else
 		local current = module.class
 		while true do
@@ -350,6 +358,9 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		end
 		if type(module.OnDisable) == "function" then
 			safecall(module.OnDisable, module)
+		end
+		if AceEvent then
+			AceEvent:TriggerEvent("Ace2_AddonDisabled", module)
 		end
 	end
 	return not disable
@@ -442,8 +453,10 @@ end
 local function external(self, major, instance)
 	if major == "Compost-2.0" then
 		Compost = instance
+	elseif major == "AceEvent-2.0" then
+		AceEvent = instance
 	end
 end
 
-AceLibrary:Register(AceModuleCore, MAJOR_VERSION, MINOR_VERSION, activate)
+AceLibrary:Register(AceModuleCore, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 AceModuleCore = AceLibrary(MAJOR_VERSION)
