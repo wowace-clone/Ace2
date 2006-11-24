@@ -21,8 +21,8 @@ if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
 local function safecall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-    local success, err = pcall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-    if not success then geterrorhandler()(err) end
+	local success, err = pcall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+	if not success then geterrorhandler()(err) end
 end
 
 -- Localization
@@ -428,31 +428,32 @@ function AceAddon:InitializeAddon(addon, name)
 		-- TOC checks
 		if addon.title == nil then
 			addon.title = GetAddOnMetadata(name, "Title")
-			if addon.title then
-				local num = string.find(addon.title, " |cff7fff7f %-Ace2%-|r$")
-				if num then
-					addon.title = string.sub(addon.title, 1, num - 1)
-				end
-				addon.title = stripSpaces(addon.title)
-			end
 		end
+		if addon.title then
+			local num = string.find(addon.title, " |cff7fff7f %-Ace2%-|r$")
+			if num then
+				addon.title = string.sub(addon.title, 1, num - 1)
+			end
+			addon.title = stripSpaces(addon.title)
+		end
+		
 		if addon.notes == nil then
 			addon.notes = GetAddOnMetadata(name, "Notes")
 			addon.notes = stripSpaces(addon.notes)
 		end
 		if addon.version == nil then
 			addon.version = GetAddOnMetadata(name, "Version")
-			if addon.version then
-				if string.find(addon.version, "%$Revision: (%d+) %$") then
-					addon.version = string.gsub(addon.version, "%$Revision: (%d+) %$", "%1")
-				elseif string.find(addon.version, "%$Rev: (%d+) %$") then
-					addon.version = string.gsub(addon.version, "%$Rev: (%d+) %$", "%1")
-				elseif string.find(addon.version, "%$LastChangedRevision: (%d+) %$") then
-					addon.version = string.gsub(addon.version, "%$LastChangedRevision: (%d+) %$", "%1")
-				end
-			end
-			addon.version = stripSpaces(addon.version)
 		end
+		if addon.version then
+			if string.find(addon.version, "%$Revision: (%d+) %$") then
+				addon.version = string.gsub(addon.version, "%$Revision: (%d+) %$", "%1")
+			elseif string.find(addon.version, "%$Rev: (%d+) %$") then
+				addon.version = string.gsub(addon.version, "%$Rev: (%d+) %$", "%1")
+			elseif string.find(addon.version, "%$LastChangedRevision: (%d+) %$") then
+				addon.version = string.gsub(addon.version, "%$LastChangedRevision: (%d+) %$", "%1")
+			end
+		end
+		addon.version = stripSpaces(addon.version)
 		if addon.author == nil then
 			addon.author = GetAddOnMetadata(name, "Author")
 			addon.author = stripSpaces(addon.author)
@@ -463,15 +464,16 @@ function AceAddon:InitializeAddon(addon, name)
 		end
 		if addon.date == nil then
 			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
-			if addon.date then
-				if string.find(addon.date, "%$Date: (.-) %$") then
-					addon.date = string.gsub(addon.date, "%$Date: (.-) %$", "%1")
-				elseif string.find(addon.date, "%$LastChangedDate: (.-) %$") then
-					addon.date = string.gsub(addon.date, "%$LastChangedDate: (.-) %$", "%1")
-				end
-			end
-			addon.date = stripSpaces(addon.date)
 		end
+		if addon.date then
+			if string.find(addon.date, "%$Date: (.-) %$") then
+				addon.date = string.gsub(addon.date, "%$Date: (.-) %$", "%1")
+			elseif string.find(addon.date, "%$LastChangedDate: (.-) %$") then
+				addon.date = string.gsub(addon.date, "%$LastChangedDate: (.-) %$", "%1")
+			end
+		end
+		addon.date = stripSpaces(addon.date)
+
 		if addon.category == nil then
 			addon.category = GetAddOnMetadata(name, "X-Category")
 			addon.category = stripSpaces(addon.category)
