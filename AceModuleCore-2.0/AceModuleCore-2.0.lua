@@ -440,14 +440,14 @@ end
 local function activate(self, oldLib, oldDeactivate)
 	AceModuleCore = self
 
-	self.super.activate(self, oldLib, oldDeactivate)
-
 	if oldLib then
 		self.totalModules = oldLib.totalModules
 	end
 	if not self.totalModules then
 		self.totalModules = {}
 	end
+
+	self.super.activate(self, oldLib, oldDeactivate)
 end
 
 local function external(self, major, instance)
