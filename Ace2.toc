@@ -1,4 +1,4 @@
-## Interface: 11200
+## Interface: 20000
 ## LoadOnDemand: 1
 
 ## Title: Ace |cffff00002|r

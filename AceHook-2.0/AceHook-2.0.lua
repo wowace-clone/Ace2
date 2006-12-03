@@ -17,7 +17,8 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(MAJOR_VERSION) then return end -- lua51 check
+local lua51 = loadstring("return function(...) return ... end") and true or false
+
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 --[[---------------------------------------------------------------------------------
@@ -34,15 +35,10 @@ local AceHook = AceOO.Mixin {
 								"HookScript",
 							}
 
-local table_setn
-do
-	local version = GetBuildInfo()
-	if string.find(version, "^2%.") then
-		-- 2.0.0
-		table_setn = function() end
-	else
-		table_setn = table.setn
-	end
+local table_setn = lua51 and function() end or table.setn
+
+if lua51 then
+	AceHook.__deprecated = MAJOR_VERSION .. " is deprecated in WoW 2.0"
 end
 
 --[[---------------------------------------------------------------------------------
@@ -111,8 +107,8 @@ do
 end
 
 local origMetatable = {
-	__call = function(self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-		return self.orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+	__call = function(self, ...)
+		return self.orig(...)
 	end
 }
 
@@ -123,20 +119,20 @@ local origMetatable = {
 local function _getFunctionHook(self, func, handler, orig)
 	if type(handler) == "string" then
 		-- The handler is a method, need to self it
-		return function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+		return function(...)
 			if actives[orig] then
-				return self[handler](self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				return self[handler](self, ...)
 			else
-				return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				return orig(...)
 			end
 		end
 	else
 		-- The handler is a function, just call it
-		return function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+		return function(...)
 			if actives[orig] then
-				return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				return handler(...)
 			else
-				return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+				return orig(...)
 			end
 		end
 	end
@@ -157,11 +153,11 @@ local function _getMethodHook(self, object, method, handler, orig, script)
 				end
 			end
 		else
-			return function(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			return function(obj,...)
 				if actives[orig] then
-					return self[handler](self, obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return self[handler](self, obj, ...)
 				else
-					return orig(obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return orig(obj, ...)
 				end
 			end
 		end
@@ -176,11 +172,11 @@ local function _getMethodHook(self, object, method, handler, orig, script)
 				end
 			end
 		else
-			return function(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			return function(obj, ...)
 				if actives[orig] then
-					return handler(obj,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return handler(obj, ...)
 				else
-					return orig(obj, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return orig(obj, ...)
 				end
 			end	
 		end
@@ -538,32 +534,17 @@ end
 local function activate(self, oldLib, oldDeactivate)
 	AceHook = self
 	
-	AceHook.super.activate(self, oldLib, oldDeactivate)
-	
-	if oldLib then
-		self.handlers = oldLib.handlers
-		self.funcs = oldLib.funcs
-		self.scripts = oldLib.scripts
-		self.actives = oldLib.actives
-	end
-	
-	if not self.handlers then
-		self.handlers = {}
-	end
-	if not self.funcs then
-		self.funcs = {}
-	end
-	if not self.scripts then
-		self.scripts = {}
-	end
-	if not self.actives then
-		self.actives = {}
-	end
+	self.handlers = oldLib and oldLib.handlers or {}
+	self.funcs = oldLib and oldLib.funcs or {}
+	self.scripts = oldLib and oldLib.scripts or {}
+	self.actives = oldLib and oldLib.actives or {}
 	
 	handlers = self.handlers
 	funcs = self.funcs
 	scripts = self.scripts
 	actives = self.actives
+	
+	self:activate(oldLib, oldDeactivate)
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)

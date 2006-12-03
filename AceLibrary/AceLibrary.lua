@@ -19,26 +19,12 @@ Dependencies: None
 local ACELIBRARY_MAJOR = "AceLibrary"
 local ACELIBRARY_MINOR = "$Revision$"
 
-if loadstring("return function(...) return ... end") and AceLibrary and AceLibrary:HasInstance(ACELIBRARY_MAJOR) then return end -- lua51 check
-local table_setn
-do
-	local version = GetBuildInfo()
-	if string.find(version, "^2%.") then
-		-- 2.0.0
-		table_setn = function() end
-	else
-		table_setn = table.setn
-	end
-end
-
-local string_gfind = string.gmatch or string.gfind
-
 local _G = getfenv(0)
 local previous = _G[ACELIBRARY_MAJOR]
 if previous and not previous:IsNewVersion(ACELIBRARY_MAJOR, ACELIBRARY_MINOR) then return end
 
-local function safecall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-    local success, err = pcall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function safecall(func,...)
+    local success, err = pcall(func,...)
     if not success then geterrorhandler()(err) end
 end
 
@@ -48,53 +34,27 @@ local AceLibrary = {}
 local AceLibrary_mt = {}
 setmetatable(AceLibrary, AceLibrary_mt)
 
-local tmp
-local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+local function error(self, message, ...)
 	if type(self) ~= "table" then
-		_G.error(string.format("Bad argument #1 to `error' (table expected, got %s)", type(self)), 2)
+		return _G.error(string.format("Bad argument #1 to `error' (table expected, got %s)", type(self)), 2)
 	end
-	if not tmp then
-		tmp = {}
-	else
-		for k in pairs(tmp) do tmp[k] = nil end
-		table_setn(tmp, 0)
-	end
-
-	table.insert(tmp, a1)
-	table.insert(tmp, a2)
-	table.insert(tmp, a3)
-	table.insert(tmp, a4)
-	table.insert(tmp, a5)
-	table.insert(tmp, a6)
-	table.insert(tmp, a7)
-	table.insert(tmp, a8)
-	table.insert(tmp, a9)
-	table.insert(tmp, a10)
-	table.insert(tmp, a11)
-	table.insert(tmp, a12)
-	table.insert(tmp, a13)
-	table.insert(tmp, a14)
-	table.insert(tmp, a15)
-	table.insert(tmp, a16)
-	table.insert(tmp, a17)
-	table.insert(tmp, a18)
-	table.insert(tmp, a19)
-	table.insert(tmp, a20)
-
+	
 	local stack = debugstack()
 	if not message then
 		local _,_,second = string.find(stack, "\n(.-)\n")
 		message = "error raised! " .. second
 	else
-		for i = 1,table.getn(tmp) do
-			tmp[i] = tostring(tmp[i])
+		local arg = { ... }
+		
+		for i = 1, #arg do
+			arg[i] = tostring(arg[i])
 		end
-		for i = 1,10 do
-			table.insert(tmp, "nil")
+		for i = 1, 10 do
+			table.insert(arg, "nil")
 		end
-		message = string.format(message, unpack(tmp))
+		message = string.format(message, unpack(arg))
 	end
-
+	
 	if getmetatable(self) and getmetatable(self).__tostring then
 		message = string.format("%s: %s", tostring(self), message)
 	elseif type(rawget(self, 'GetLibraryVersion')) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
@@ -102,50 +62,48 @@ local function error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 	elseif type(rawget(self, 'class')) == "table" and type(rawget(self.class, 'GetLibraryVersion')) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
 		message = string.format("%s: %s", self.class:GetLibraryVersion(), message)
 	end
-
+	
 	local first = string.gsub(stack, "\n.*", "")
 	local file = string.gsub(first, ".*\\(.*).lua:%d+: .*", "%1")
 	file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
-
+	
+	
 	local i = 0
-	for s in string_gfind(stack, "\n([^\n]*)") do
+	for s in string.gmatch(stack, "\n([^\n]*)") do
 		i = i + 1
-		if not string.find(s, file .. "%.lua:%d+:") then
+		if not string.find(s, file .. "%.lua:%d+:") and not string.find(s, "%(tail call%)") then
 			file = string.gsub(s, "^.*\\(.*).lua:%d+: .*", "%1")
 			file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 			break
 		end
 	end
 	local j = 0
-	for s in string_gfind(stack, "\n([^\n]*)") do
+	for s in string.gmatch(stack, "\n([^\n]*)") do
 		j = j + 1
-		if j > i and not string.find(s, file .. "%.lua:%d+:") then
-			_G.error(message, j + 1)
-			return
+		if j > i and not string.find(s, file .. "%.lua:%d+:") and not string.find(s, "%(tail call%)") then
+			return _G.error(message, j+1)
 		end
 	end
-	_G.error(message, 2)
-	return
+	return _G.error(message, 2)
 end
 
-local function assert(self, condition, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+local function assert(self, condition, message, ...)
 	if not condition then
 		if not message then
 			local stack = debugstack()
 			local _,_,second = string.find(stack, "\n(.-)\n")
 			message = "assertion failed! " .. second
 		end
-		error(self, message, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-		return
+		return error(self, message, ...)
 	end
 	return condition
 end
 
 local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
 	if type(num) ~= "number" then
-		error(self, "Bad argument #3 to `argCheck' (number expected, got %s)", type(num))
+		return error(self, "Bad argument #3 to `argCheck' (number expected, got %s)", type(num))
 	elseif type(kind) ~= "string" then
-		error(self, "Bad argument #4 to `argCheck' (string expected, got %s)", type(kind))
+		return error(self, "Bad argument #4 to `argCheck' (string expected, got %s)", type(kind))
 	end
 	local errored = false
 	arg = type(arg)
@@ -155,25 +113,31 @@ local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
 			_,_,func = string.find(debugstack(), "([`<].-['>])")
 		end
 		if kind5 then
-			error(self, "Bad argument #%s to %s (%s, %s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, kind5, arg)
+			return error(self, "Bad argument #%s to %s (%s, %s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, kind5, arg)
 		elseif kind4 then
-			error(self, "Bad argument #%s to %s (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, arg)
+			return error(self, "Bad argument #%s to %s (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, arg)
 		elseif kind3 then
-			error(self, "Bad argument #%s to %s (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, arg)
+			return error(self, "Bad argument #%s to %s (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, arg)
 		elseif kind2 then
-			error(self, "Bad argument #%s to %s (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, arg)
+			return error(self, "Bad argument #%s to %s (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, arg)
 		else
-			error(self, "Bad argument #%s to %s (%s expected, got %s)", tonumber(num) or 0/0, func, kind, arg)
+			return error(self, "Bad argument #%s to %s (%s expected, got %s)", tonumber(num) or 0/0, func, kind, arg)
 		end
 	end
 end
 
-local function pcall(self, func, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = _G.pcall(func, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
-	if not a1 then
-		error(self, string.gsub(a2, ".-%.lua:%d-: ", ""))
-	else
-		return a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20
+local pcall
+do
+	local function check(self, ret, ...)
+		if not ret then
+			return error(self, (string.gsub(..., ".-%.lua:%d-: ", "")))
+		else
+			return ...
+		end
+	end
+
+	function pcall(self, func, ...)
+		return check(self, _G.pcall(func, ...))
 	end
 end
 
@@ -233,7 +197,7 @@ do
 					func(v, to, from)
 				end
 			end
-
+			
 			if type(k) == "table" then
 				if not recurse[k] then
 					func(k, to, from)
@@ -262,39 +226,13 @@ end
 -- @param t  table to destroy
 local function destroyTable(t)
 	setmetatable(t, nil)
-	for k,v in pairs(t) do t[k] = nil end
-	table_setn(t, 0)
+	for k,v in pairs(t) do
+		t[k] = nil 
+	end
 end
 
 local function isFrame(frame)
 	return type(frame) == "table" and type(rawget(frame, 0)) == "userdata" and type(rawget(frame, 'IsFrameType')) == "function" and getmetatable(frame) and type(rawget(getmetatable(frame), '__index')) == "function"
-end
-
-local new, del
-do
-	local tables = setmetatable({}, {__mode = "k"})
-
-	function new()
-		local t = next(tables)
-		if t then
-			tables[t] = nil
-			return t
-		else
-			return {}
-		end
-	end
-
-	function del(t, depth)
-		if depth and depth > 0 then
-			for k,v in pairs(t) do
-				if type(v) == "table" and not isFrame(v) then
-					del(v, depth - 1)
-				end
-			end
-		end
-		destroyTable(t)
-		tables[t] = true
-	end
 end
 
 -- @function   copyTable
@@ -302,9 +240,10 @@ end
 -- @param from The table to copy from
 -- @return     A shallow copy of the table
 local function copyTable(from)
-	local to = new()
-	for k,v in pairs(from) do to[k] = v end
-	table_setn(to, table.getn(from))
+	local to = {}
+	for k,v in pairs(from) do
+		to[k] = v
+	end
 	setmetatable(to, getmetatable(from))
 	return to
 end
@@ -341,14 +280,12 @@ do
 		end
 		return list
 	end
-
+	
 	function deepTransfer(to, from, saveFields, major, list, list2)
 		setmetatable(to, nil)
-		local createdList
 		if not list then
-			createdList = true
-			list = new()
-			list2 = new()
+			list = {}
+			list2 = {}
 			examine(to, from, list, major)
 		end
 		list2[to] = to
@@ -374,7 +311,6 @@ do
 				rawset(to, k, from[k])
 			end
 		end
-		table_setn(to, table.getn(from))
 		setmetatable(to, getmetatable(from))
 		local mt = getmetatable(to)
 		if mt then
@@ -385,10 +321,6 @@ do
 			end
 		end
 		destroyTable(from)
-		if createdList then
-			del(list)
-			del(list2)
-		end
 	end
 end
 
@@ -499,7 +431,6 @@ function AceLibrary:GetInstance(major, minor)
 		argCheck(self, minor, 2, "number")
 		if data.minor ~= minor then
 			_G.error(string.format("Cannot find a library instance of %s, minor version %d.", major, minor), 2)
-			return
 		end
 	end
 	return data.instance
@@ -508,7 +439,7 @@ end
 -- Syntax sugar.  AceLibrary("FooBar-1.0")
 AceLibrary_mt.__call = AceLibrary.GetInstance
 
-local donothing
+local donothing = function() end
 
 local AceEvent
 
@@ -529,12 +460,22 @@ local AceEvent
 function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivateFunc, externalFunc)
 	argCheck(self, newInstance, 2, "table")
 	argCheck(self, major, 3, "string")
+	if major ~= ACELIBRARY_MAJOR then
+		for k,v in pairs(_G) do
+			if v == newInstance then
+				geterrorhandler()(string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+			end
+		end
+	end
+	if major ~= ACELIBRARY_MAJOR and not string.find(major, "^[%a%-][%a%d%-]+[%a%-]%-%d+%.%d+$") and not string.find(major, "^[%a%-]+%-%d+%.%d+$") then
+		_G.error(string.format("Bad argument #3 to `Register'. Must be in the form of \"Name-1.0\". %q is not appropriate", major), 2)
+	end
 	if type(minor) == "string" then
 		local m = svnRevisionToNumber(minor)
 		if m then
 			minor = m
 		else
-			_G.error(string.format("Bad argument #4 to  `Register'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
+			_G.error(string.format("Bad argument #4 to `Register'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
 		end
 	end
 	argCheck(self, minor, 4, "number")
@@ -545,9 +486,6 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	argCheck(self, deactivateFunc, 6, "function", "nil")
 	argCheck(self, externalFunc, 7, "function", "nil")
 	if not deactivateFunc then
-		if not donothing then
-			donothing = function() end
-		end
 		deactivateFunc = donothing
 	end
 	local data = self.libs[major]
@@ -584,8 +522,16 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		addToPositions(instance, major)
 		if activateFunc then
 			safecall(activateFunc, instance, nil, nil) -- no old version, so explicit nil
+			
+			if major ~= ACELIBRARY_MAJOR then
+				for k,v in pairs(_G) do
+					if v == instance then
+						geterrorhandler()(string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+					end
+				end
+			end
 		end
-
+		
 		if externalFunc then
 			for k,data in pairs(self.libs) do
 				if k ~= major then
@@ -593,7 +539,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 				end
 			end
 		end
-
+		
 		for k,data in pairs(self.libs) do
 			if k ~= major and data.externalFunc then
 				safecall(data.externalFunc, data.instance, major, instance)
@@ -605,7 +551,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		if AceEvent then
 			AceEvent.TriggerEvent(self, "AceLibrary_Register", major, instance)
 		end
-
+		
 		return instance
 	end
 	local instance = data.instance
@@ -615,20 +561,20 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		return
 	end
 	-- This is an update
-	local oldInstance = new()
-
+	local oldInstance = {}
+	
 	addToPositions(newInstance, major)
 	local isAceLibrary = (AceLibrary == newInstance)
 	local old_error, old_assert, old_argCheck, old_pcall
 	if isAceLibrary then
 		self = instance
 		AceLibrary = instance
-
+		
 		old_error = instance.error
 		old_assert = instance.assert
 		old_argCheck = instance.argCheck
 		old_pcall = instance.pcall
-
+		
 		self.error = error
 		self.assert = assert
 		self.argCheck = argCheck
@@ -675,12 +621,20 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		end
 	end
 	if activateFunc then
-		safecall(activateFunc, instance, oldInstance, oldDeactivateFunc)
+		safecall(activateFunc, instance, oldInstance, oldDeactivateFunc)	
+				
+		if major ~= ACELIBRARY_MAJOR then
+			for k,v in pairs(_G) do
+				if v == instance then
+					geterrorhandler()(string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+				end
+			end
+		end
 	else
 		safecall(oldDeactivateFunc, oldInstance)
 	end
-	del(oldInstance)
-
+	oldInstance = nil
+	
 	if externalFunc then
 		for k,data in pairs(self.libs) do
 			if k ~= major then
@@ -688,7 +642,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 			end
 		end
 	end
-
+	
 	return instance
 end
 
@@ -714,30 +668,18 @@ end
 -- @param oldLib        (optional) Reference to an old version of AceLibrary
 -- @param oldDeactivate (optional) Function to deactivate the old lib
 local function activate(self, oldLib, oldDeactivate)
+	AceLibrary = self
 	if not self.libs then
-		if oldLib then
-			self.libs = oldLib.libs
-			self.scannedlibs = oldLib.scannedlibs
-		end
-		if not self.libs then
-			self.libs = {}
-		end
-		if not self.scannedlibs then
-			self.scannedlibs = {}
-		end
+		self.libs = oldLib and oldLib.libs or {}
+		self.scannedlibs = oldLib and oldLib.scannedlibs or {}
 	end
 	if not self.positions then
-		if oldLib then
-			self.positions = oldLib.positions
-		end
-		if not self.positions then
-			self.positions = setmetatable({}, { __mode = "k" })
-		end
+		self.positions = oldLib and oldLib.positions or setmetatable({}, { __mode = "k" })
 	end
-
+	
 	-- Expose the library in the global environment
 	_G[ACELIBRARY_MAJOR] = self
-
+	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
 	end

@@ -17,14 +17,12 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(MAJOR_VERSION) then return end -- lua51 check
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
-local function safecall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
-	local success, err = pcall(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)
+local function safecall(func,...)
+	local success, err = pcall(func,...)
 	if not success then geterrorhandler()(err) end
 end
-
 -- Localization
 local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
 if GetLocale() == "deDE" then
@@ -51,7 +49,7 @@ if GetLocale() == "deDE" then
 		["Buffs"] = "Buffs",
 		["Chat/Communication"] = "Chat/Kommunikation",
 		["Druid"] = "Druide",
-		["Hunter"] = "J�ger",
+		["Hunter"] = "J?r",
 		["Mage"] = "Magier",
 		["Paladin"] = "Paladin",
 		["Priest"] = "Priester",
@@ -132,108 +130,108 @@ elseif GetLocale() == "frFR" then
 		["UnitFrame"] = "Fen\195\170tres d'unit\195\169",
 	}
 elseif GetLocale() == "koKR" then
-	STANDBY = "|cffff5050(사용가능)|r"
+	STANDBY = "|cffff5050(????)|r"
 	
-	TITLE = "제목"
-	NOTES = "노트"
-	VERSION = "버전"
-	AUTHOR = "저작자"
-	DATE = "날짜"
-	CATEGORY = "분류"
+	TITLE = "??"
+	NOTES = "??"
+	VERSION = "??"
+	AUTHOR = "???"
+	DATE = "??"
+	CATEGORY = "??"
 	EMAIL = "E-mail"
-	WEBSITE = "웹사이트"
+	WEBSITE = "????"
 	CREDITS = "Credits" -- fix
 	
-	ABOUT = "정보"
-	PRINT_ADDON_INFO = "애드온 정보 출력"
+	ABOUT = "??"
+	PRINT_ADDON_INFO = "??? ?? ??"
 	
 	CATEGORIES = {
-		["Action Bars"] = "액션바",
-		["Auction"] = "경매",
-		["Audio"] = "음향",
-		["Battlegrounds/PvP"] = "전장/PvP",
-		["Buffs"] = "버프",
-		["Chat/Communication"] = "대화/의사소통",
-		["Druid"] = "드루이드",
-		["Hunter"] = "사냥꾼",
-		["Mage"] = "마법사",
-		["Paladin"] = "성기사",
-		["Priest"] = "사제",
-		["Rogue"] = "도적",
-		["Shaman"] = "주술사",
-		["Warlock"] = "흑마법사",
-		["Warrior"] = "전사",
-		["Healer"] = "힐러",
-		["Tank"] = "탱커",
-		["Caster"] = "캐스터",
-		["Combat"] = "전투",
-		["Compilations"] = "복합",
-		["Data Export"] = "자료 출력",
-		["Development Tools"] = "개발 도구",
-		["Guild"] = "길드",
-		["Frame Modification"] = "구조 변경",
-		["Interface Enhancements"] = "인터페이스 강화",
-		["Inventory"] = "인벤토리",
-		["Library"] = "라이브러리",
-		["Map"] = "지도",
-		["Mail"] = "우편",
-		["Miscellaneous"] = "기타",
-		["Quest"] = "퀘스트",
-		["Raid"] = "공격대",
-		["Tradeskill"] = "전문기술",
-		["UnitFrame"] = "유닛 프레임",
+		["Action Bars"] = "???",
+		["Auction"] = "??",
+		["Audio"] = "??",
+		["Battlegrounds/PvP"] = "??/PvP",
+		["Buffs"] = "??",
+		["Chat/Communication"] = "??/????",
+		["Druid"] = "????",
+		["Hunter"] = "???",
+		["Mage"] = "???",
+		["Paladin"] = "???",
+		["Priest"] = "??",
+		["Rogue"] = "??",
+		["Shaman"] = "???",
+		["Warlock"] = "????",
+		["Warrior"] = "??",
+		["Healer"] = "??",
+		["Tank"] = "??",
+		["Caster"] = "???",
+		["Combat"] = "??",
+		["Compilations"] = "??",
+		["Data Export"] = "?? ??",
+		["Development Tools"] = "?? ??",
+		["Guild"] = "??",
+		["Frame Modification"] = "?? ??",
+		["Interface Enhancements"] = "????? ??",
+		["Inventory"] = "????",
+		["Library"] = "?????",
+		["Map"] = "??",
+		["Mail"] = "??",
+		["Miscellaneous"] = "??",
+		["Quest"] = "???",
+		["Raid"] = "???",
+		["Tradeskill"] = "????",
+		["UnitFrame"] = "?? ???",
 	}
 elseif GetLocale() == "zhTW" then
-	STANDBY = "|cffff5050(待命)|r"
+	STANDBY = "|cffff5050(??)|r"
 	
-	TITLE = "標題"
-	NOTES = "註記"
-	VERSION = "版本"
-	AUTHOR = "作者"
-	DATE = "日期"
-	CATEGORY = "類別"
+	TITLE = "??"
+	NOTES = "??"
+	VERSION = "??"
+	AUTHOR = "??"
+	DATE = "??"
+	CATEGORY = "??"
 	EMAIL = "E-mail"
-	WEBSITE = "網站"
+	WEBSITE = "??"
 	CREDITS = "Credits" -- fix
 	
-	ABOUT = "關於"
-	PRINT_ADDON_INFO = "顯示插件資訊"
+	ABOUT = "??"
+	PRINT_ADDON_INFO = "??????"
 	
 	CATEGORIES = {
-		["Action Bars"] = "動作列",
-		["Auction"] = "拍賣",
-		["Audio"] = "音樂",
-		["Battlegrounds/PvP"] = "戰場/PvP",
-		["Buffs"] = "增益",
-		["Chat/Communication"] = "聊天/通訊",
-		["Druid"] = "德魯伊",
-		["Hunter"] = "獵人",
-		["Mage"] = "法師",
-		["Paladin"] = "聖騎士",
-		["Priest"] = "牧師",
-		["Rogue"] = "盜賊",
-		["Shaman"] = "薩滿",
-		["Warlock"] = "術士",
-		["Warrior"] = "戰士",
-		["Healer"] = "治療者",
-		["Tank"] = "坦克",
-		["Caster"] = "施法者",
-		["Combat"] = "戰鬥",
-		["Compilations"] = "編輯",
-		["Data Export"] = "資料匯出",
-		["Development Tools"] = "開發工具",
-		["Guild"] = "公會",
-		["Frame Modification"] = "框架修改",
-		["Interface Enhancements"] = "介面增強",
-		["Inventory"] = "背包",
-		["Library"] = "資料庫",
-		["Map"] = "地圖",
-		["Mail"] = "郵件",
-		["Miscellaneous"] = "綜合",
-		["Quest"] = "任務",
-		["Raid"] = "團隊",
-		["Tradeskill"] = "商業技能",
-		["UnitFrame"] = "單位框架",
+		["Action Bars"] = "???",
+		["Auction"] = "??",
+		["Audio"] = "??",
+		["Battlegrounds/PvP"] = "??/PvP",
+		["Buffs"] = "??",
+		["Chat/Communication"] = "??/??",
+		["Druid"] = "???",
+		["Hunter"] = "??",
+		["Mage"] = "??",
+		["Paladin"] = "???",
+		["Priest"] = "??",
+		["Rogue"] = "??",
+		["Shaman"] = "??",
+		["Warlock"] = "??",
+		["Warrior"] = "??",
+		["Healer"] = "???",
+		["Tank"] = "??",
+		["Caster"] = "???",
+		["Combat"] = "??",
+		["Compilations"] = "??",
+		["Data Export"] = "????",
+		["Development Tools"] = "????",
+		["Guild"] = "??",
+		["Frame Modification"] = "????",
+		["Interface Enhancements"] = "????",
+		["Inventory"] = "??",
+		["Library"] = "???",
+		["Map"] = "??",
+		["Mail"] = "??",
+		["Miscellaneous"] = "??",
+		["Quest"] = "??",
+		["Raid"] = "??",
+		["Tradeskill"] = "????",
+		["UnitFrame"] = "????",
 	}
 elseif GetLocale() == "zhCN" then
 	STANDBY = "|cffff5050(\230\154\130\230\140\130)|r"
@@ -415,7 +413,7 @@ end
 
 local function stripSpaces(text)
 	if type(text) == "string" then
-		return (string.gsub(string.gsub(text, "^%s*(.-)%s*$", "%1"), "%s%s+", " "))
+		return strtrim(text)
 	end
 	return text
 end
@@ -436,14 +434,13 @@ function AceAddon:InitializeAddon(addon, name)
 			end
 			addon.title = stripSpaces(addon.title)
 		end
-		
 		if addon.notes == nil then
 			addon.notes = GetAddOnMetadata(name, "Notes")
 			addon.notes = stripSpaces(addon.notes)
 		end
 		if addon.version == nil then
 			addon.version = GetAddOnMetadata(name, "Version")
-		end
+		end	
 		if addon.version then
 			if string.find(addon.version, "%$Revision: (%d+) %$") then
 				addon.version = string.gsub(addon.version, "%$Revision: (%d+) %$", "%1")
@@ -637,8 +634,8 @@ function AceAddon.prototype:ToString()
 	return x
 end
 
-AceAddon.new = function(self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
-	local class = AceAddon:pcall(AceOO.Classpool, self, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20)
+AceAddon.new = function(self, ...)
+	local class = AceAddon:pcall(AceOO.Classpool, self, ...)
 	return class:new()
 end
 
@@ -842,7 +839,7 @@ local function external(self, major, instance)
 										else
 											s = " - " .. tostring(name)
 										end
-										if AceLibrary(name).slashCommand then
+										if rawget(AceLibrary(name), 'slashCommand') then
 											s = s .. " |cffffff7f(" .. tostring(AceLibrary(name).slashCommand) .. "|cffffff7f)"
 										end
 										print(s)
@@ -858,6 +855,7 @@ local function external(self, major, instance)
 							input = true,
 							get = false,
 							set = function(...)
+								local arg = { ... }
 								for i,v in ipairs(arg) do
 									arg[i] = string.lower(string.gsub(string.gsub(v, '%*', '.*'), '%%', '%%%%'))
 								end
@@ -936,7 +934,9 @@ local function external(self, major, instance)
 					func = function()
 						local mem, threshold = gcinfo()
 						print(string.format(" - |cffffff7fMemory usage [|r%.3f MiB|cffffff7f]|r", mem / 1024))
-						print(string.format(" - |cffffff7fThreshold [|r%.3f MiB|cffffff7f]|r", threshold / 1024))
+						if threshold then
+							print(string.format(" - |cffffff7fThreshold [|r%.3f MiB|cffffff7f]|r", threshold / 1024))
+						end
 						print(string.format(" - |cffffff7fFramerate [|r%.0f fps|cffffff7f]|r", GetFramerate()))
 						local bandwidthIn, bandwidthOut, latency = GetNetStats()
 						bandwidthIn, bandwidthOut = floor(bandwidthIn * 1024), floor(bandwidthOut * 1024)
@@ -1009,4 +1009,3 @@ local function activate(self, oldLib, oldDeactivate)
 end
 
 AceLibrary:Register(AceAddon, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
-AceAddon = AceLibrary(MAJOR_VERSION)

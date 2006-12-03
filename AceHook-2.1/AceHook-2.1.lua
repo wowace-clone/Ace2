@@ -17,7 +17,6 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(MAJOR_VERSION) then return end -- lua51 check
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 --[[---------------------------------------------------------------------------------
@@ -39,51 +38,13 @@ local AceHook = AceOO.Mixin {
   Library Definitions
 ----------------------------------------------------------------------------------]]
 
-local protFuncs = {
-	CameraOrSelectOrMoveStart = true, 	CameraOrSelectOrMoveStop = true,
-	TurnOrActionStart = true,			TurnOrActionStop = true,
-	PitchUpStart = true,				PitchUpStop = true,
-	PitchDownStart = true,				PitchDownStop = true,
-	MoveBackwardStart = true,			MoveBackwardStop = true,
-	MoveForwardStart = true,			MoveForwardStop = true,
-	Jump = true,						StrafeLeftStart = true,
-	StrafeLeftStop = true,				StrafeRightStart = true,
-	StrafeRightStop = true,				ToggleMouseMove = true,
-	ToggleRun = true,					TurnLeftStart = true,
-	TurnLeftStop = true,				TurnRightStart = true,
-	TurnRightStop = true,
-}
-
-local function issecurevariable(x)
-	if protFuncs[x] then
-		return 1
-	else
-		return nil
-	end
-end
-
-local _G = getfenv(0)
-
-local function hooksecurefunc(arg1, arg2, arg3)
-	if type(arg1) == "string" then
-		arg1, arg2, arg3 = _G, arg1, arg2
-	end
-	local orig = arg1[arg2]
-	arg1[arg2] = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-		local x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19,x20 = orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-		
-		arg3(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-		
-		return x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19,x20
-	end
-end
-
 local protectedScripts = {
 	OnClick = true,
 }
 
+local _G = getfenv(0)
 
-local handlers, scripts, actives, registry
+local handlers, scripts, actives, registry, onceSecure
 
 --[[---------------------------------------------------------------------------------
   Private definitions (Not exposed)
@@ -115,22 +76,22 @@ local function createFunctionHook(self, func, handler, orig, secure)
 		if type(handler) == "string" then
 			-- The handler is a method, need to self it
 			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			uid = function(...)
 				if actives[uid] then
-					return self[handler](self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return self[handler](self, ...)
 				else
-					return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return orig(...)
 				end
 			end
 			return uid
 		else
 			-- The handler is a function, just call it
 			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			uid = function(...)
 				if actives[uid] then
-					return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return handler(...)
 				else
-					return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return orig(...)
 				end
 			end
 			return uid
@@ -140,18 +101,18 @@ local function createFunctionHook(self, func, handler, orig, secure)
 		if type(handler) == "string" then
 			-- The handler is a method, need to self it
 			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			uid = function(...)
 				if actives[uid] then
-					return self[handler](self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return self[handler](self, ...)
 				end
 			end
 			return uid
 		else
 			-- The handler is a function, just call it
 			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			uid = function(...)
 				if actives[uid] then
-					return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return handler(...)
 				end
 			end
 			return uid
@@ -159,49 +120,26 @@ local function createFunctionHook(self, func, handler, orig, secure)
 	end
 end
 
-local function createMethodHook(self, object, method, handler, orig, secure, script)
-	if script then
+local function createMethodHook(self, object, method, handler, orig, secure)
+	if not secure then
 		if type(handler) == "string" then
 			local uid
-			uid = function()
+			uid = function(...)
 				if actives[uid] then
-					return self[handler](self, object)
+					return self[handler](self, ...)
 				else
-					return orig()
+					return orig(...)
 				end
 			end
 			return uid
 		else
 			-- The handler is a function, just call it
 			local uid
-			uid = function()
+			uid = function(...)
 				if actives[uid] then
-					return handler(object)
+					return handler(...)
 				else
-					return orig()
-				end
-			end
-			return uid
-		end
-	elseif not secure then
-		if type(handler) == "string" then
-			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				if actives[uid] then
-					return self[handler](self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				else
-					return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				end
-			end
-			return uid
-		else
-			-- The handler is a function, just call it
-			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				if actives[uid] then
-					return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-				else
-					return orig(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return orig(...)
 				end
 			end
 			return uid
@@ -210,18 +148,18 @@ local function createMethodHook(self, object, method, handler, orig, secure, scr
 		-- secure hooks don't call the original method
 		if type(handler) == "string" then
 			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			uid = function(...)
 				if actives[uid] then
-					return self[handler](self, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return self[handler](self, ...)
 				end
 			end
 			return uid
 		else
 			-- The handler is a function, just call it
 			local uid
-			uid = function(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+			uid = function(...)
 				if actives[uid] then
-					return handler(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					return handler(...)
 				end
 			end
 			return uid
@@ -355,15 +293,14 @@ local function hookMethod(self, obj, method, handler, script, secure)
 		AceHook:error("Could not find the method or script %q you are trying to hook.", method)
 	end
 	
+	if not self.hooks[obj] then
+		self.hooks[obj] = new()
+	end
 	if not registry[self][obj] then
 		registry[self][obj] = new()
 	end
 	
-	if not self.hooks[obj] then
-		self.hooks[obj] = new()
-	end
-	
-	local uid = createMethodHook(self, obj, method, handler, orig, secure, script)
+	local uid = createMethodHook(self, obj, method, handler, orig, secure)
 	registry[self][obj][method] = uid
 	actives[uid] = true
 	handlers[uid] = handler
@@ -429,23 +366,27 @@ function AceHook:Hook(object, method, handler, hookSecure)
 		if handler == true then
 			handler, hookSecure = nil, true
 		end
-		if not hookSecure and issecurevariable(method) then
-			AceHook:error("Attempt to hook secure function %q. Use `SecureHook' or add `true' to the argument list to override.", method)
-		end
 		AceHook:argCheck(handler, 3, "function", "string", "nil")
 		AceHook:argCheck(hookSecure, 4, "boolean", "nil")
+		if issecurevariable(method) or onceSecure[method] then
+			if hookSecure then
+				onceSecure[method] = true
+			else
+				AceHook:error("Attempt to hook secure function %q. Use `SecureHook' or add `true' to the argument list to override.", method)
+			end
+		end
 		hookFunction(self, method, handler, false)
 	else
 		if handler == true then
 			handler, hookSecure = nil, true
 		end
-		if not hookSecure and issecurevariable(object, method) then
-			AceHook:error("Attempt to hook secure method %q. Use `SecureHook' or add `true' to the argument list to override.", method)
-		end
 		AceHook:argCheck(object, 2, "table")
 		AceHook:argCheck(method, 3, "string")
 		AceHook:argCheck(handler, 4, "function", "string", "nil")
 		AceHook:argCheck(hookSecure, 5, "boolean", "nil")
+		if not hookSecure and issecurevariable(object, method) then
+			AceHook:error("Attempt to hook secure method %q. Use `SecureHook' or add `true' to the argument list to override.", method)
+		end
 		hookMethod(self, object, method, handler, false, false)
 	end
 end
@@ -466,11 +407,14 @@ end
 
 function AceHook:HookScript(frame, script, handler)
 	AceHook:argCheck(frame, 2, "table")
-	if not frame[0] or type(frame.IsFrameType) ~= "function" then
+	if not frame[0] or type(frame.IsProtected) ~= "function" then
 		AceHook:error("Bad argument #2 to `HookScript'. Expected frame.")
 	end
 	AceHook:argCheck(script, 3, "string")
 	AceHook:argCheck(handler, 4, "function", "string", "nil")
+	if frame:IsProtected() and protectedScripts[script] then
+		AceHook:error("Cannot hook secure script %q.", script)
+	end
 	hookMethod(self, frame, script, handler, true, false)
 end
 
@@ -553,13 +497,15 @@ local function activate(self, oldLib, oldDeactivate)
 	self.registry = oldLib and oldLib.registry or {}
 	self.scripts = oldLib and oldLib.scripts or {}
 	self.actives = oldLib and oldLib.actives or {}
+	self.onceSecure = oldLib and oldLib.onceSecure or {}
 	
 	handlers = self.handlers
 	registry = self.registry
 	scripts = self.scripts
 	actives = self.actives
+	onceSecure = self.onceSecure
 	
-	AceHook.super.activate(self, oldLib, oldDeactivate)
+	self:activate(oldLib, oldDeactivate)
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)

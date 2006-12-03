@@ -17,7 +17,6 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(MAJOR_VERSION) then return end -- lua51 check
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
 local _G = getfenv(0)
@@ -40,42 +39,6 @@ AceComm.hooks = {}
 
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
 
-local table_setn
-do
-	local version = GetBuildInfo()
-	if string.find(version, "^2%.") then
-		-- 2.0.0
-		table_setn = function() end
-	else
-		table_setn = table.setn
-	end
-end
-
-local new, del
-do
-	local list = setmetatable({}, {__mode="k"})
-	
-	function new()
-		local t = next(list)
-		if t then
-			list[t] = nil
-		else
-			t = {}
-		end
-		return t
-	end
-	
-	function del(t)
-		setmetatable(t, nil)
-		for k in pairs(t) do
-			t[k] = nil
-		end
-		table_setn(t, 0)
-		list[t] = true
-		return nil
-	end
-end
-
 local string_byte = string.byte
 
 local byte_a = string_byte('a')
@@ -88,6 +51,7 @@ local byte_deg = string_byte('°')
 local byte_percent = string_byte('%') -- 37
 
 local byte_b = string_byte('b')
+local byte_B = string_byte('B')
 local byte_nil = string_byte('/')
 local byte_plus = string_byte('+')
 local byte_minus = string_byte('-')
@@ -105,9 +69,6 @@ local byte_T = string_byte('T')
 local byte_u = string_byte('u')
 local byte_U = string_byte('U')
 local byte_i = string_byte('i')
-local byte_I = string_byte('I')
-local byte_j = string_byte('j')
-local byte_J = string_byte('J')
 local byte_inf = string_byte('@')
 local byte_ninf = string_byte('$')
 local byte_nan = string_byte('!')
@@ -116,8 +77,11 @@ local inf = 1/0
 local nan = 0/0
 
 local math_floor = math.floor
-local math_mod = math.mod or math.fmod
-local string_gfind = string.gmatch or string.gfind
+local math_mod = math.fmod
+local math_floormod = function(value, m)
+	return math_mod(math_floor(value), m)
+end
+local string_gmatch = string.gmatch
 local string_char = string.char
 local string_len = string.len
 local string_format = string.format
@@ -157,13 +121,13 @@ do
 	
 	function BinaryCheckSum(text)
 		local num = NumericCheckSum(text)
-		return string_char(num / 65536, math_mod(num / 256, 256), math_mod(num, 256))
+		return string_char(math_floor(num / 65536), math_floormod(num / 256, 256), math_mod(num, 256))
 	end
 	
 	function TailoredNumericCheckSum(text)
 		local hash = NumericCheckSum(text)
 		local a = math_floor(hash / 65536)
-		local b = math_floor(math_mod(hash / 256, 256))
+		local b = math_floormod(hash / 256, 256)
 		local c = math_mod(hash, 256)
 		-- \000, \n, |, °, s, S, \015, \020
 		if a == 0 or a == 10 or a == 124 or a == 176 or a == 115 or a == 83 or a == 15 or a == 20 or a == 37 then
@@ -191,7 +155,7 @@ do
 	
 	function TailoredBinaryCheckSum(text)
 		local num = TailoredNumericCheckSum(text)
-		return string_char(num / 65536, math_mod(num / 256, 256), math_mod(num, 256))
+		return string_char(math_floor(num / 65536), math_floormod(num / 256, 256), math_mod(num, 256))
 	end
 end
 
@@ -227,7 +191,6 @@ local func
 -- Clean a received message
 local function Decode(text, drunk)
 	if drunk then
-		local _,x = string_find(text, "^.*°")
 		text = string_gsub(text, "^(.*)°.-$", "%1")
 		-- get rid of " ...hic!"
 	end
@@ -285,10 +248,10 @@ local switches = {}
 local function SwitchChannel(former, latter)
 	if IsInChannel(former) then
 		LeaveChannelByName(former)
-		local t = new()
-		t.former = former
-		t.latter = latter
-		switches[t] = true
+		switches[{
+			former = former,
+			latter = latter
+		}] = true
 		return
 	end
 	if not IsInChannel(latter) then
@@ -328,30 +291,32 @@ local function SupposedToBeInChannel(chan)
 	end
 end
 
+local tmp = {}
 local function LeaveAceCommChannels(all)
 	if all then
 		shutdown = true
 	end
 	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
-	local t = new()
-	t[1] = a
-	t[2] = b
-	t[3] = c
-	t[4] = d
-	t[5] = e
-	t[6] = f
-	t[7] = g
-	t[8] = h
-	t[9] = i
-	t[10] = j
-	for _,v in ipairs(t) do
+	tmp[1] = a
+	tmp[2] = b
+	tmp[3] = c
+	tmp[4] = d
+	tmp[5] = e
+	tmp[6] = f
+	tmp[7] = g
+	tmp[8] = h
+	tmp[9] = i
+	tmp[10] = j
+	for _,v in ipairs(tmp) do
 		if v and string_find(v, "^AceComm") then
 			if not SupposedToBeInChannel(v) then
 				LeaveChannelByName(v)
 			end
 		end
 	end
-	t = del(t)
+	for i = 1, 10 do
+		tmp[i] = nil
+	end
 end
 
 local lastRefix = 0
@@ -444,7 +409,6 @@ do
 		if not IsInChannel(k.latter) then
 			JoinChannelByName(k.latter)
 		end
-		del(k)
 		switches[k] = nil
 	end
 	
@@ -469,7 +433,7 @@ do
 				self:ScheduleEvent(JoinChannel, 0, channel)
 			end
 			if AceComm.userRegistry[channel] then
-				AceComm.userRegistry[channel] = del(AceComm.userRegistry[channel])
+				AceComm.userRegistry[channel] = nil
 			end
 		elseif kind == "YOU_JOINED" then
 			if not string_find(num == 0 and deadName or channel, "^AceComm") then
@@ -477,10 +441,10 @@ do
 			end
 			if num == 0 then
 				self:ScheduleEvent(LeaveChannelByName, 0, deadName)
-				local t = new()
-				t.former = deadName
-				t.latter = deadName
-				switches[t] = true
+				switches[{
+					former = deadName,
+					latter = deadName,
+				}] = true
 			elseif channel == GetCurrentZoneChannel() then
 				self:TriggerEvent("AceComm_JoinedChannel", "ZONE")
 			elseif channel == "AceComm" then
@@ -506,11 +470,11 @@ do
 		local kind = type(v)
 		if kind == "boolean" then
 			if v then
-				return "by"
+				return "B" -- true
 			else
-				return "bn"
+				return "b" -- false
 			end
-		elseif not v then -- nil
+		elseif not v then
 			return "/"
 		elseif kind == "number" then
 			if v == math_floor(v) then
@@ -523,17 +487,17 @@ do
 					if v < 0 then
 						v = v + 65536
 					end
-					return string_char(byte_D, v / 256, math_mod(v, 256))
+					return string_char(byte_D, math_floor(v / 256), math_mod(v, 256))
 				elseif v <= 2147483647 and v >= -2147483648 then
 					if v < 0 then
 						v = v + 4294967296
 					end
-					return string_char(byte_e, v / 16777216, math_mod(v / 65536, 256), math_mod(v / 256, 256), math_mod(v, 256))
+					return string_char(byte_e, math_floor(v / 16777216), math_floormod(v / 65536, 256), math_floormod(v / 256, 256), math_mod(v, 256))
 				elseif v <= 9223372036854775807 and v >= -9223372036854775808 then
 					if v < 0 then
 						v = v + 18446744073709551616
 					end
-					return string_char(byte_E, v / 72057594037927936, math_mod(v / 281474976710656, 256), math_mod(v / 1099511627776, 256), math_mod(v / 4294967296, 256), math_mod(v / 16777216, 256), math_mod(v / 65536, 256), math_mod(v / 256, 256), math_mod(v, 256))
+					return string_char(byte_E, math_floor(v / 72057594037927936), math_floormod(v / 281474976710656, 256), math_floormod(v / 1099511627776, 256), math_floormod(v / 4294967296, 256), math_floormod(v / 16777216, 256), math_floormod(v / 65536, 256), math_floormod(v / 256, 256), math_mod(v, 256))
 				end
 			elseif v == inf then
 				return string_char(64 --[[byte_inf]])
@@ -555,41 +519,45 @@ do
 			m = m * 9007199254740992
 			local x = exp + 1023
 			local b = math_mod(m, 256)
-			local c = math_mod(math_floor(m / 256), 256)
+			local c = math_floormod(m / 256, 256)
 			m = math_floor(m / 65536)
 			m = m + x * 137438953472
-			return string_char(sign and byte_minus or byte_plus, math_mod(m / 1099511627776, 256), math_mod(m / 4294967296, 256), math_mod(m / 16777216, 256), math_mod(m / 65536, 256), math_mod(m / 256, 256), math_mod(m, 256), c, b)
+			return string_char(sign and byte_minus or byte_plus, math_floormod(m / 1099511627776, 256), math_floormod(m / 4294967296, 256), math_floormod(m / 16777216, 256), math_floormod(m / 65536, 256), math_floormod(m / 256, 256), math_mod(m, 256), c, b)
 		elseif kind == "string" then
 			local hash = textToHash and textToHash[v]
 			if hash then
-				return string_char(byte_m, hash / 65536, math_mod(hash / 256, 256), math_mod(hash, 256))
+				return string_char(byte_m, math_floor(hash / 65536), math_floormod(hash / 256, 256), math_mod(hash, 256))
 			end
-			local _,_,A,B,C = string_find(v, "|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):%d+|h%[.+%]|h|r")
+			local _,_,A,B,C,D,E,F,G,H = string_find(v, "^|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[.+%]|h|r$")
 			if A then
 				-- item link
-				A = tonumber(A)
-				B = tonumber(B)
-				C = tonumber(C)
-				if C ~= 0 then
-					if B ~= 0 then
-						return string_char(byte_I, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256), math_mod(B / 256, 256), math_mod(B, 256), math_mod(C / 256, 256), math_mod(C, 256))
-					else
-						return string_char(byte_j, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256), math_mod(C / 256, 256), math_mod(C, 256))
-					end
-				else
-					if B ~= 0 then
-						return string_char(byte_J, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256), math_mod(B / 256, 256), math_mod(B, 256))
-					else
-						return string_char(byte_i, math_mod(A / 65536, 256), math_mod(A / 256, 256), math_mod(A, 256))
-					end
+				
+				A = A+0 -- convert to number
+				B = B+0
+				C = C+0
+				D = D+0
+				E = E+0
+				F = F+0
+				G = G+0
+				H = H+0
+				
+				-- (1-35000):(1-3093):(1-3093):(1-3093):(1-3093):(?):(-57 to 2164):(0-4294967295)
+				
+				F = nil -- don't care
+				if G < 0 then
+					G = G + 65536 -- handle negatives
 				end
+				
+				H = math_mod(H, 65536) -- only lower 16 bits matter
+				
+				return string_char(byte_i, math_floormod(A / 256, 256), math_mod(A, 256), math_floormod(B / 256, 256), math_mod(B, 256), math_floormod(C / 256, 256), math_mod(C, 256), math_floormod(D / 256, 256), math_mod(D, 256), math_floormod(E / 256, 256), math_mod(E, 256), math_floormod(G / 256, 256), math_mod(G, 256), math_floormod(H / 256, 256), math_mod(H, 256))
 			else
 				-- normal string
 				local len = string_len(v)
 				if len <= 255 then
 					return string_char(byte_s, len) .. v
 				else
-					return string_char(byte_S, len / 256, math_mod(len, 256)) .. v
+					return string_char(byte_S, math_floor(len / 256), math_mod(len, 256)) .. v
 				end
 			end
 		elseif kind == "function" then
@@ -614,71 +582,44 @@ do
 					AceComm:error("Cannot serialize an AceOO object if the class is not registered with AceLibrary.")
 				end
 				local classHash = TailoredBinaryCheckSum(v.class:GetLibraryVersion())
-				local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = v:Serialize()
-				local t = new()
-				t[2] = a1
-				t[3] = a2
-				t[4] = a3
-				t[5] = a4
-				t[6] = a5
-				t[7] = a6
-				t[8] = a7
-				t[9] = a8
-				t[10] = a9
-				t[11] = a10
-				t[12] = a11
-				t[13] = a12
-				t[14] = a13
-				t[15] = a14
-				t[16] = a15
-				t[17] = a16
-				t[18] = a17
-				t[19] = a18
-				t[20] = a19
-				t[21] = a20
-				local n = 21
-				while n > 1 do
-					if t[i] ~= nil then
-						break
-					end
-					n = n - 1
-				end
-				for i = 2, n do
+				local t = { classHash, v:Serialize() }
+				for i = 2, #t do
 					t[i] = _Serialize(t[i], textToHash)
 				end
-				t[1] = classHash
 				if not notFirst then
 					for k in pairs(recurse) do
 						recurse[k] = nil
 					end
 				end
-				table_setn(t, n)
 				local s = table.concat(t)
-				t = del(t)
+				t = nil
 				local len = string_len(s)
 				if len <= 255 then
 					return string_char(byte_o, len) .. s
 				else
-					return string_char(byte_O, len / 256, math_mod(len, 256)) .. s
+					return string_char(byte_O, math_floor(len / 256), math_mod(len, 256)) .. s
 				end
 			end
-			local t = new()
+			local t = {}
 			local islist = false
-			local n = table.getn(v)
-			if n >= 1 or n <= 40 then
+			local n = #v
+			if n >= 1 then
 				islist = true
 				for k,u in pairs(v) do
-					if (type(k) ~= "number" or k > n or k < 1) and (k ~= "n" or type(v) ~= "number") then
+					if type(k) ~= "number" or k < 1 then
 						islist = false
 						break
 					end
 				end
 			end
 			if islist then
+				n = n * 4
+				while v[n] == nil do
+					n = n - 1
+				end
 				for i = 1, n do
 					t[i] = _Serialize(v[i], textToHash)
 				end
-				table_setn(t, n)
 			else
 				local i = 1
 				for k,u in pairs(v) do
@@ -686,7 +627,6 @@ do
 					t[i+1] = _Serialize(u, textToHash)
 					i = i + 2
 				end
-				table_setn(t, i - 1)
 			end
 			if not notFirst then
 				for k in pairs(recurse) do
@@ -694,19 +634,19 @@ do
 				end
 			end
 			local s = table.concat(t)
-			t = del(t)
+			t = nil
 			local len = string_len(s)
 			if islist then
 				if len <= 255 then
 					return string_char(byte_u, len) .. s
 				else
-					return "U" .. string_char(len / 256, math_mod(len, 256)) .. s
+					return "U" .. string_char(math_floor(len / 256), math_mod(len, 256)) .. s
 				end
 			else
 				if len <= 255 then
 					return "t" .. string_char(len) .. s
 				else
-					return "T" .. string_char(len / 256, math_mod(len, 256)) .. s
+					return "T" .. string_char(math_floor(len / 256), math_mod(len, 256)) .. s
 				end
 			end
 		end
@@ -714,7 +654,7 @@ do
 	
 	function Serialize(value, textToHash)
 		if not recurse then
-			recurse = new()
+			recurse = {}
 		end
 		local chunk = _Serialize(value, textToHash)
 		for k in pairs(recurse) do
@@ -726,92 +666,50 @@ end
 
 local Deserialize
 do
+	local tmp = {}
 	local function _Deserialize(value, position, hashToText)
 		if not position then
 			position = 1
 		end
 		local x = string_byte(value, position)
 		if x == byte_b then
-			-- boolean
-			local v = string_byte(value, position + 1)
-			if v == 110 then -- 'n'
-				return false, position + 1
-			elseif v == 121 then -- 'y'
-				return true, position + 1
-			else
-				error("Improper serialized value provided")
-			end
+			-- false
+			return false, position
+		elseif x == byte_B then
+			-- true
+			return true, position
 		elseif x == byte_nil then
 			-- nil
 			return nil, position
-		elseif x == byte_I then
-			-- 7-byte item link
-			local a1 = string_byte(value, position + 1)
-			local a2 = string_byte(value, position + 2)
-			local a3 = string_byte(value, position + 3)
-			local b1 = string_byte(value, position + 4)
-			local b2 = string_byte(value, position + 5)
-			local c1 = string_byte(value, position + 6)
-			local c2 = string_byte(value, position + 7)
-			local A = a1 * 65536 + a2 * 256 + a3
-			local B = b1 * 256 + b2
-			local C = c1 * 256 + c2
-			local s = "item:" .. A .. ":" .. B .. ":" .. C .. ":0"
-			local name, code, quality = GetItemInfo(s)
-			if name then
-				local _,_,_,color = GetItemQualityColor(quality)
-				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 7
-			else
-				return nil, position + 7
-			end
 		elseif x == byte_i then
-			-- 3-byte item link
+			-- 14-byte item link
 			local a1 = string_byte(value, position + 1)
 			local a2 = string_byte(value, position + 2)
-			local a3 = string_byte(value, position + 3)
-			local A = a1 * 65536 + a2 * 256 + a3
-			local s = "item:" .. A .. ":0:0:0"
-			local name, code, quality = GetItemInfo(s)
-			if name then
-				local _,_,_,color = GetItemQualityColor(quality)
-				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 3
-			else
-				return nil, position + 3
-			end
-		elseif x == byte_j then
-			-- 5-byte item link
-			local a1 = string_byte(value, position + 1)
-			local a2 = string_byte(value, position + 2)
-			local a3 = string_byte(value, position + 3)
-			local c1 = string_byte(value, position + 4)
-			local c2 = string_byte(value, position + 5)
-			local A = a1 * 65536 + a2 * 256 + a3
-			local C = c1 * 256 + c2
-			local s = "item:" .. A .. ":0:" .. C .. ":0"
-			local name, code, quality = GetItemInfo(s)
-			if name then
-				local _,_,_,color = GetItemQualityColor(quality)
-				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 5
-			else
-				return nil, position + 5
-			end
-		elseif x == byte_J then
-			-- 5-byte item link
-			local a1 = string_byte(value, position + 1)
-			local a2 = string_byte(value, position + 2)
-			local a3 = string_byte(value, position + 3)
-			local b1 = string_byte(value, position + 4)
-			local b2 = string_byte(value, position + 5)
-			local A = a1 * 65536 + a2 * 256 + a3
+			local b1 = string_byte(value, position + 3)
+			local b2 = string_byte(value, position + 4)
+			local c1 = string_byte(value, position + 5)
+			local c2 = string_byte(value, position + 6)
+			local d1 = string_byte(value, position + 7)
+			local d2 = string_byte(value, position + 8)
+			local e1 = string_byte(value, position + 9)
+			local e2 = string_byte(value, position + 10)
+			local g1 = string_byte(value, position + 11)
+			local g2 = string_byte(value, position + 12)
+			local h1 = string_byte(value, position + 13)
+			local h2 = string_byte(value, position + 14)
+			local A = a1 * 256 + a2
 			local B = b1 * 256 + b2
-			local s = "item:" .. A .. ":" .. B .. ":0:0"
-			local name, code, quality = GetItemInfo(s)
-			if name then
-				local _,_,_,color = GetItemQualityColor(quality)
-				return color .. "|H" .. code .. "|h[" .. name .. "]|h|r", position + 5
-			else
-				return nil, position + 5
+			local C = c1 * 256 + c2
+			local D = d1 * 256 + d2
+			local E = e1 * 256 + e2
+			local G = g1 * 256 + g2
+			local H = h1 * 256 + h2
+			if G >= 32768 then
+				G = G - 65536
 			end
+			local s = string.format("item:%d:%d:%d:%d:%d:%d:%d:%d", A, B, C, D, E, 0, G, H)
+			local _, link = GetItemInfo(s)
+			return link, position + 14
 		elseif x == byte_m then
 			local hash = string_byte(value, position + 1) * 65536 + string_byte(value, position + 2) * 256 + string_byte(value, position + 3)
 			return hashToText[hash], position + 3
@@ -904,7 +802,7 @@ do
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local t = new()
+			local t = {}
 			local n = 0
 			local curr = start - 1
 			while curr < finish do
@@ -913,7 +811,6 @@ do
 				n = n + 1
 				t[n] = v
 			end
-			table_setn(t, n)
 			return t, finish
 		elseif x == byte_o or x == byte_O then
 			-- numerically-indexed table
@@ -937,17 +834,17 @@ do
 			if type(class.Deserialize) ~= "function" or type(class.prototype.Serialize) ~= "function" then
 				return nil, finish
 			end
-			local t = new()
 			local n = 0
 			while curr < finish do
 				local v
 				v, curr = _Deserialize(value, curr + 1, hashToText)
 				n = n + 1
-				t[n] = v
+				tmp[n] = v
 			end
-			table_setn(t, n)
-			local object = class:Deserialize(unpack(t))
-			del(t)
+			local object = class:Deserialize(unpack(tmp))
+			for i = 1, n do
+				tmp[i] = nil
+			end
 			return object, finish
 		elseif x == byte_t or x == byte_T then
 			-- table
@@ -962,7 +859,7 @@ do
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local t = new()
+			local t = {}
 			local curr = start - 1
 			while curr < finish do
 				local key, l = _Deserialize(value, curr + 1, hashToText)
@@ -975,7 +872,6 @@ do
 				while t[i] ~= nil do
 					i = i + 1
 				end
-				table_setn(t, i - 1)
 			end
 			return t, finish
 		else
@@ -1057,20 +953,20 @@ function AceComm:RegisterComm(prefix, distribution, method, a4)
 	
 	local registry = AceComm_registry
 	if not registry[distribution] then
-		registry[distribution] = new()
+		registry[distribution] = {}
 	end
 	if customChannel then
 		customChannel = "AceComm" .. customChannel
 		if not registry[distribution][customChannel] then
-			registry[distribution][customChannel] = new()
+			registry[distribution][customChannel] = {}
 		end
 		if not registry[distribution][customChannel][prefix] then
-			registry[distribution][customChannel][prefix] = new()
+			registry[distribution][customChannel][prefix] = {}
 		end
 		registry[distribution][customChannel][prefix][self] = method
 	else
 		if not registry[distribution][prefix] then
-			registry[distribution][prefix] = new()
+			registry[distribution][prefix] = {}
 		end
 		registry[distribution][prefix][self] = method
 	end
@@ -1128,11 +1024,11 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 		registry[distribution][customChannel][prefix][self] = nil
 		
 		if not next(registry[distribution][customChannel][prefix]) then
-			registry[distribution][customChannel][prefix] = del(registry[distribution][customChannel][prefix])
+			registry[distribution][customChannel][prefix] = nil
 		end
 		
 		if not next(registry[distribution][customChannel]) then
-			registry[distribution][customChannel] = del(registry[distribution][customChannel])
+			registry[distribution][customChannel] = nil
 		end
 	else
 		if not registry[distribution] or not registry[distribution][prefix] or not registry[distribution][prefix][self] then
@@ -1141,12 +1037,12 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 		registry[distribution][prefix][self] = nil
 		
 		if not next(registry[distribution][prefix]) then
-			registry[distribution][prefix] = del(registry[distribution][prefix])
+			registry[distribution][prefix] = nil
 		end
 	end
 	
 	if not next(registry[distribution]) then
-		registry[distribution] = del(registry[distribution])
+		registry[distribution] = nil
 	end
 	
 	RefixAceCommChannelsAndEvents()
@@ -1396,19 +1292,20 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	return false
 end
 
-function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+local tmp = {}
+function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	AceComm:argCheck(priority, 2, "string")
 	if priority ~= "NORMAL" and priority ~= "BULK" and priority ~= "ALERT" then
 		AceComm:error('Argument #2 to `SendPrioritizedCommMessage\' must be either "NORMAL", "BULK", or "ALERT"')
 	end
 	AceComm:argCheck(distribution, 3, "string")
+	local includePerson = true
 	if distribution == "WHISPER" or distribution == "CUSTOM" then
+		includePerson = false
 		AceComm:argCheck(person, 4, "string")
 		if string_len(person) == 0 then
 			AceComm:error("Argument #4 to `SendPrioritizedCommMessage' must be a non-zero-length string")
 		end
-	else
-		a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19
 	end
 	if self == AceComm then
 		AceComm:error("Cannot send a comm message from AceComm directly.")
@@ -1423,58 +1320,45 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, a1, 
 	end
 	
 	local message
-	if a2 == nil and type(a1) ~= "table" then
-		message = a1
+	
+	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
+		message = person
+	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
+		message = ...
 	else
-		message = new()
-		message[1] = a1
-		message[2] = a2
-		message[3] = a3
-		message[4] = a4
-		message[5] = a5
-		message[6] = a6
-		message[7] = a7
-		message[8] = a8
-		message[9] = a9
-		message[10] = a10
-		message[11] = a11
-		message[12] = a12
-		message[13] = a13
-		message[14] = a14
-		message[15] = a15
-		message[16] = a16
-		message[17] = a17
-		message[18] = a18
-		message[19] = a19
-		message[20] = a20
-		local n = 20
-		while n > 0 do
-			if message[n] ~= nil then
-				break
-			end
-			n = n - 1
+		message = tmp
+		local n = 1
+		if includePerson then
+			tmp[1] = person
+			n = 2
 		end
-		table_setn(message, n)
+		for i = 1, select('#', ...) do
+			tmp[n] = select(i, ...)
+			n = n + 1
+		end
 	end
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
-	if message ~= a1 then
-		message = del(message)
+	if message == tmp then
+		local n = #tmp
+		for i = 1, n do
+			tmp[i] = nil
+		end
 	end
 	
 	return ret
 end
 
-function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20)
+function AceComm:SendCommMessage(distribution, person, ...)
 	AceComm:argCheck(distribution, 2, "string")
+	local includePerson = true
 	if distribution == "WHISPER" or distribution == "CUSTOM" then
+		includePerson = false
 		AceComm:argCheck(person, 3, "string")
 		if string_len(person) == 0 then
 			AceComm:error("Argument #3 to `SendCommMessage' must be a non-zero-length string")
 		end
-	else
-		a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20 = person, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19
 	end
 	if self == AceComm then
 		AceComm:error("Cannot send a comm message from AceComm directly.")
@@ -1488,47 +1372,32 @@ function AceComm:SendCommMessage(distribution, person, a1, a2, a3, a4, a5, a6, a
 		AceComm:error("`SetCommPrefix' must be called before sending a message.")
 	end
 	
-	local message
-	if a2 == nil and type(a1) ~= "table" then
-		message = a1
+	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
+		message = person
+	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
+		message = ...
 	else
-		message = new()
-		message[1] = a1
-		message[2] = a2
-		message[3] = a3
-		message[4] = a4
-		message[5] = a5
-		message[6] = a6
-		message[7] = a7
-		message[8] = a8
-		message[9] = a9
-		message[10] = a10
-		message[11] = a11
-		message[12] = a12
-		message[13] = a13
-		message[14] = a14
-		message[15] = a15
-		message[16] = a16
-		message[17] = a17
-		message[18] = a18
-		message[19] = a19
-		message[20] = a20
-		local n = 20
-		while n > 0 do
-			if message[n] ~= nil then
-				break
-			end
-			n = n - 1
+		message = tmp
+		local n = 1
+		if includePerson then
+			tmp[1] = person
+			n = 2
 		end
-		table_setn(message, n)
+		for i = 1, select('#', ...) do
+			tmp[n] = select(i, ...)
+			n = n + 1
+		end
 	end
 	
 	local priority = self.commPriority or "NORMAL"
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
-	if message ~= a1 then
-		message = del(message)
+	if message == tmp then
+		local n = #tmp
+		for i = 1, n do
+			tmp[i] = nil
+		end
 	end
 	
 	return ret
@@ -1585,8 +1454,8 @@ function AceComm:RegisterMemoizations(values)
 	elseif AceComm.prefixMemoizations[self.commPrefix] then
 		AceComm:error("Another addon with prefix %q has already registered memoizations.", self.commPrefix)
 	end
-	local hashToText = new()
-	local textToHash = new()
+	local hashToText = {}
+	local textToHash = {}
 	for _,text in ipairs(values) do
 		local hash = TailoredNumericCheckSum(text)
 		if hashToText[hash] then
@@ -1596,35 +1465,10 @@ function AceComm:RegisterMemoizations(values)
 			hashToText[hash] = text
 		end
 	end
-	values = del(values)
+	values = nil
 	self.commMemoHashToText = hashToText
 	self.commMemoTextToHash = textToHash
 	AceComm.prefixMemoizations[self.commPrefix] = hashToText
-end
-
-local DeepReclaim
-do
-	local recurse
-	local function _DeepReclaim(t)
-		if recurse[t] then
-			return
-		end
-		recurse[t] = true
-		for k,v in pairs(t) do
-			if type(k) == "table" and not AceOO.inherits(k, AceOO.Class) then
-				_DeepReclaim(k)
-			end
-			if type(v) == "table" and not AceOO.inherits(v, AceOO.Class) then
-				_DeepReclaim(v)
-			end
-		end
-		del(t)
-	end
-	function DeepReclaim(t)
-		recurse = new()
-		_DeepReclaim(t)
-		recurse = del(recurse)
-	end
 end
 
 local lastCheck = GetTime()
@@ -1635,6 +1479,7 @@ local function CheckRefix()
 	end
 end
 
+local stack = setmetatable({}, {__mode='k'})
 local function HandleMessage(prefix, message, distribution, sender, customChannel)
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	local isCustom = distribution == "CUSTOM"
@@ -1682,21 +1527,37 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			if current ~= 1 then
 				return
 			end
-			queue[x] = new()
+			local t = next(stack) or {}
+			stack[t] = nil
+			queue[x] = t
 		end
 		local chunk = queue[x]
 		chunk.time = GetTime()
 		chunk[current] = message
 		if current == max then
-			table_setn(chunk, max)
 			message = table_concat(chunk)
-			queue[x] = del(queue[x])
+			local t = queue[x]
+			queue[x] = nil
+			for k in pairs(t) do
+				t[k] = nil
+			end
+			stack[t] = true
 		else
 			return
 		end
 	end
 	message = Deserialize(message, AceComm.prefixMemoizations[prefix])
 	local isTable = type(message) == "table"
+	local n
+	if isTable then
+		n = #message * 4
+		if n < 40 then
+			n = 40
+		end
+		while message[n] == nil do
+			n = n - 1
+		end
+	end
 	if AceComm_registry[distribution] then
 		if isTable then
 			if isCustom then
@@ -1706,36 +1567,34 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 						if type_v == "string" then
 							local f = k[v]
 							if type(f) == "table" then
-								local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
-								local g = f[a1]
-								if g then
-									if type(g) == "table" then
-										local h = g[a2]
-										if h then
-											h(k, prefix, sender, distribution, smallCustomChannel, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-										end
-									else -- function
-										g(k, prefix, sender, distribution, smallCustomChannel, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+								local i = 1
+								local g = f[message[i]]
+								while g do
+									if type(g) ~= "table" then -- function
+										g(k, prefix, sender, distribution, smallCustomChannel, unpack(message, i+1, n))
+										break
+									else
+										i = i + 1
+										g = g[message[i]]
 									end
 								end
 							else -- function
-								f(k, prefix, sender, distribution, smallCustomChannel, unpack(message))
+								f(k, prefix, sender, distribution, smallCustomChannel, unpack(message, 1, n))
 							end
 						elseif type_v == "table" then
-							local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
-							local g = v[a1]
-							if g then
-								if type(g) == "table" then
-									local h = g[a2]
-									if h then
-										h(prefix, sender, distribution, smallCustomChannel, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-									end
-								else -- function
-									g(prefix, sender, distribution, smallCustomChannel, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+							local i = 1
+							local g = v[message[i]]
+							while g do
+								if type(g) ~= "table" then -- function
+									g(prefix, sender, distribution, smallCustomChannel, unpack(message, i+1, n))
+									break
+								else
+									i = i + 1
+									g = g[message[i]]
 								end
 							end
 						else -- function
-							v(prefix, sender, distribution, smallCustomChannel, unpack(message))
+							v(prefix, sender, distribution, smallCustomChannel, unpack(message, 1, n))
 						end
 					end
 				end
@@ -1746,36 +1605,34 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 						if type_v == "string" then
 							local f = k[v]
 							if type(f) == "table" then
-								local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
-								local g = f[a1]
-								if g then
-									if type(g) == "table" then
-										local h = g[a2]
-										if h then
-											h(k, prefix, sender, distribution, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-										end
-									else -- function
-										g(k, prefix, sender, distribution, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+								local i = 1
+								local g = f[message[i]]
+								while g do
+									if type(g) ~= "table" then -- function
+										g(k, prefix, sender, distribution, unpack(message, i+1, n))
+										break
+									else
+										i = i + 1
+										g = g[message[i]]
 									end
 								end
 							else -- function
-								f(k, prefix, sender, distribution, unpack(message))
+								f(k, prefix, sender, distribution, unpack(message, 1, n))
 							end
 						elseif type_v == "table" then
-							local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
-							local g = v[a1]
-							if g then
-								if type(g) == "table" then
-									local h = g[a2]
-									if h then
-										h(prefix, sender, distribution, a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-									end
-								else -- function
-									g(prefix, sender, distribution, a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+							local i = 1
+							local g = v[message[i]]
+							while g do
+								if type(g) ~= "table" then -- function
+									g(prefix, sender, distribution, unpack(message, i+1, n))
+									break
+								else
+									i = i + 1
+									g = g[message[i]]
 								end
 							end
 						else -- function
-							v(prefix, sender, distribution, unpack(message))
+							v(prefix, sender, distribution, unpack(message, 1, n))
 						end
 					end
 				end
@@ -1839,36 +1696,34 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 				if type_v == "string" then
 					local f = k[v]
 					if type(f) == "table" then
-						local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
-						local g = f[a1]
-						if g then
-							if type(g) == "table" then
-								local h = g[a2]
-								if h then
-									h(k, prefix, sender, "GROUP", a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-								end
-							else -- function
-								g(k, prefix, sender, "GROUP", a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+						local i = 1
+						local g = f[message[i]]
+						while g do
+							if type(g) ~= "table" then -- function
+								g(k, prefix, sender, "GROUP", unpack(message, i+1, n))
+								break
+							else
+								i = i + 1
+								g = g[message[i]]
 							end
 						end
 					else -- function
-						f(k, prefix, sender, "GROUP", unpack(message))
+						f(k, prefix, sender, "GROUP", unpack(message, 1, n))
 					end
 				elseif type_v == "table" then
-					local a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20 = unpack(message)
-					local g = v[a1]
-					if g then
-						if type(g) == "table" then
-							local h = g[a2]
-							if h then
-								h(prefix, sender, "GROUP", a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-							end
-						else -- function
-							g(prefix, sender, "GROUP", a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
+					local i = 1
+					local g = v[message[i]]
+					while g do
+						if type(g) ~= "table" then -- function
+							g(prefix, sender, "GROUP", unpack(message, i+1, n))
+							break
+						else
+							i = i + 1
+							g = g[message[i]]
 						end
 					end
 				else -- function
-					v(prefix, sender, "GROUP", unpack(message))
+					v(prefix, sender, "GROUP", unpack(message, 1, n))
 				end
 			end
 		else
@@ -1894,9 +1749,6 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 				end
 			end
 		end
-	end
-	if isTable then
-		DeepReclaim(message)
 	end
 end
 
@@ -1973,10 +1825,10 @@ function AceComm:CHAT_MSG_CHANNEL_LIST(text, _, _, _, _, _, _, _, channel)
 	end
 	
 	if not AceComm.userRegistry[channel] then
-		AceComm.userRegistry[channel] = new()
+		AceComm.userRegistry[channel] = {}
 	end
 	local t = AceComm.userRegistry[channel]
-	for k in string_gfind(text, "[^, @%*#]+") do
+	for k in string_gmatch(text, "[^, @%*#]+") do
 		t[k] = true
 	end
 end
@@ -1990,9 +1842,7 @@ function AceComm:CHAT_MSG_CHANNEL_JOIN(_, user, _, _, _, _, _, _, channel)
 		AceComm.userRegistry[channel] = {}
 	end
 	local t = AceComm.userRegistry[channel]
-	if not t[user] then
-		t[user] = true
-	end
+	t[user] = true
 end
 
 function AceComm:CHAT_MSG_CHANNEL_LEAVE(_, user, _, _, _, _, _, _, channel)
@@ -2037,7 +1887,10 @@ function AceComm:embed(target)
 	end
 end
 
-function AceComm.hooks:ChatFrame_OnEvent(orig, event)
+local recentNotSeen = {}
+local notSeenString = '^' .. string_gsub(string_gsub(ERR_CHAT_PLAYER_NOT_FOUND_S, "%%s", "(.-)"), "%%1%$s", "(.-)") .. '$'
+local ambiguousString = '^' .. string_gsub(string_gsub(ERR_CHAT_PLAYER_AMBIGUOUS_S, "%%s", "(.-)"), "%%1%$s", "(.-)") .. '$'
+function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
 	if event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM" then
 		if string_find(arg1, "^/") then
 			return
@@ -2050,6 +1903,20 @@ function AceComm.hooks:ChatFrame_OnEvent(orig, event)
 	elseif event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST" then
 		if string_find(arg9, "^AceComm") then
 			return
+		end
+	elseif event == "CHAT_MSG_SYSTEM" then
+		local _,_,player = string_find(arg1, notSeenString)
+		if not player then
+			_,_,player = string_find(arg1, ambiguousString)
+		end
+		if player then
+			local t = GetTime()
+			if recentNotSeen[player] and recentNotSeen[player] > t then
+				recentNotSeen[player] = t + 10
+				return
+			else
+				recentNotSeen[player] = t + 10
+			end
 		end
 	end
 	return orig(event)
@@ -2087,9 +1954,9 @@ function AceComm.hooks:Quit(orig)
 	return orig()
 end
 
-function AceComm.hooks:FCFDropDown_LoadChannels(orig, a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-	local arg = {a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20}
-	for i = 1, table.getn(arg), 2 do
+function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
+	local arg = { ... }
+	for i = 1, #arg, 2 do
 		if not arg[i] then
 			break
 		end
@@ -2151,9 +2018,10 @@ end
 
 local function activate(self, oldLib, oldDeactivate)
 	AceComm = self
-	self:activate(oldLib, oldDeactivate)
 	
 	if oldLib then
+		self.frame = oldLib.frame
+		self.frame:UnregisterAllEvents()
 		self.recvQueue = oldLib.recvQueue
 		self.registry = oldLib.registry
 		self.channels = oldLib.channels
@@ -2165,12 +2033,12 @@ local function activate(self, oldLib, oldDeactivate)
 		self.recentWhispers = oldLib.recentWhispers
 		self.userRegistry = oldLib.userRegistry
 	else
-		local old_ChatFrame_OnEvent = ChatFrame_OnEvent
-		function ChatFrame_OnEvent(event)
-			if self.hooks.ChatFrame_OnEvent then
-				return self.hooks.ChatFrame_OnEvent(self, old_ChatFrame_OnEvent, event)
+		local old_ChatFrame_MessageEventHandler = ChatFrame_MessageEventHandler
+		function ChatFrame_MessageEventHandler(event)
+			if self.hooks.ChatFrame_MessageEventHandler then
+				return self.hooks.ChatFrame_MessageEventHandler(self, old_ChatFrame_MessageEventHandler, event)
 			else
-				return old_ChatFrame_OnEvent(event)
+				return old_ChatFrame_MessageEventHandler(event)
 			end
 		end
 		local id
@@ -2200,12 +2068,11 @@ local function activate(self, oldLib, oldDeactivate)
 			end
 		end
 		local old_FCFDropDown_LoadChannels = FCFDropDown_LoadChannels
-		function FCFDropDown_LoadChannels(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20)
-			local arg = {a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,a20}
+		function FCFDropDown_LoadChannels(...)
 			if self.hooks.FCFDropDown_LoadChannels then
-				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, unpack(arg))
+				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, ...)
 			else
-				return old_FCFDropDown_LoadChannels(unpack(arg))
+				return old_FCFDropDown_LoadChannels(...)
 			end
 		end
 		local old_JoinChannelByName = JoinChannelByName
@@ -2250,6 +2117,10 @@ local function activate(self, oldLib, oldDeactivate)
 	if not self.userRegistry then
 		self.userRegistry = {}
 	end
+	
+	SetCVar("spamFilter", 0)
+	
+	self:activate(oldLib, oldDeactivate)
 	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
@@ -2750,5 +2621,3 @@ if(WOWB_VER) then
 	ChatThrottleLib.Frame:RegisterEvent("CHAT_MSG_SAY");
 end
 ]]
-
-

@@ -17,46 +17,10 @@ local MINOR_VERSION = "$Revision$"
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
-if loadstring("return function(...) return ... end") and AceLibrary:HasInstance(MAJOR_VERSION) then return end -- lua51 check
-
 local AceLocale = {}
 
 local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
-
-local table_setn
-do
-	local version = GetBuildInfo()
-	if string.find(version, "^2%.") then
-		-- 2.0.0
-		table_setn = function() end
-	else
-		table_setn = table.setn
-	end
-end
-
-local new, del
-do
-	local list = setmetatable({}, {__mode='k'})
-	function new()
-		local t = next(list)
-		if t then
-			list[t] = nil
-			return t
-		else
-			return {}
-		end
-	end
-	function del(t)
-		setmetatable(t, nil)
-		for k in pairs(t) do
-			t[k] = nil
-		end
-		table_setn(t, 0)
-		list[t] = true
-		return nil
-	end
-end
 
 local __baseTranslations__, __debugging__, __translations__, __baseLocale__, __translationTables__, __reverseTranslations__, __strictness__
 
@@ -98,51 +62,51 @@ end
 
 local refixInstance = function(instance)
 	if getmetatable(instance) then
-		setmetatable(instance, del(getmetatable(instance)))
+		setmetatable(instance, nil)
 	end
 	local translations = instance[__translations__]
 	if translations then
 		if getmetatable(translations) then
-			setmetatable(translations, del(getmetatable(translations)))
+			setmetatable(translations, nil)
 		end
 		local baseTranslations = instance[__baseTranslations__]
 		if getmetatable(baseTranslations) then
-			setmetatable(baseTranslations, del(getmetatable(baseTranslations)))
+			setmetatable(baseTranslations, nil)
 		end
 		if translations == baseTranslations or instance[__strictness__] then
-			local mt = new()
-			mt.__index = __index
-			mt.__newindex = __newindex
-			mt.__call = __call
-			mt.__tostring = __tostring
-			setmetatable(instance, mt)
+			setmetatable(instance, {
+				__index = __index,
+				__newindex = __newindex,
+				__call = __call,
+				__tostring = __tostring
+			})
 			
-			local mt2 = new()
-			mt2.__index = AceLocale.prototype
-			setmetatable(translations, mt2)
+			setmetatable(translations, {
+				__index = AceLocale.prototype
+			})
 		else
-			local mt = new()
-			mt.__index = __index
-			mt.__newindex = __newindex
-			mt.__call = __call
-			mt.__tostring = __tostring
-			setmetatable(instance, mt)
+			setmetatable(instance, {
+				__index = __index,
+				__newindex = __newindex,
+				__call = __call,
+				__tostring = __tostring
+			})
 			
-			local mt2 = new()
-			mt2.__index = baseTranslations
-			setmetatable(translations, mt2)
+			setmetatable(translations, {
+				__index = baseTranslations,
+			})
 			
-			local mt3 = new()
-			mt3.__index = AceLocale.prototype
-			setmetatable(baseTranslations, mt3)
+			setmetatable(baseTranslations, {
+				__index = AceLocale.prototype,
+			})
 		end
 	else
-		local mt = new()
-		mt.__index = __index
-		mt.__newindex = __newindex
-		mt.__call = __call
-		mt.__tostring = __tostring
-		setmetatable(instance, mt)
+		setmetatable(instance, {
+			__index = __index,
+			__newindex = __newindex,
+			__call = __call,
+			__tostring = __tostring,
+		})
 	end
 end
 
@@ -153,9 +117,10 @@ function AceLocale:new(name)
 		return self.registry[name]
 	end
 	
-	local self = new()
-	self[__strictness__] = false
-	self[__name__] = name
+	local self = {
+		[__strictness__] = false,
+		[__name__] = name,
+	}
 	refixInstance(self)
 	
 	AceLocale.registry[name] = self
