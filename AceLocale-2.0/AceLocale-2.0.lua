@@ -111,6 +111,7 @@ local refixInstance = function(instance)
 end
 
 function AceLocale:new(name)
+	error(MAJOR_VERSION .. " is not supported in WoW 2.0", 2)
 	self:argCheck(name, 2, "string")
 	
 	if self.registry[name] and type(rawget(self.registry[name], 'GetLibraryVersion')) ~= "function" then

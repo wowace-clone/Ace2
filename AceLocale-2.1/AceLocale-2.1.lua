@@ -68,6 +68,7 @@ local function NewInstance(self, uid)
 end
 
 function AceLocale:RegisterTranslation(uid, locale, func)
+	error(MAJOR_VERSION .. " is not supported in WoW 2.0", 2)
    self:argCheck(uid, 1, "string")
    self:argCheck(locale, 2, "string")
    self:argCheck(func, 3, "function")
