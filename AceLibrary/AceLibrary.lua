@@ -523,13 +523,13 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		if activateFunc then
 			safecall(activateFunc, instance, nil, nil) -- no old version, so explicit nil
 			
-			if major ~= ACELIBRARY_MAJOR then
+--[[			if major ~= ACELIBRARY_MAJOR then
 				for k,v in pairs(_G) do
 					if v == instance then
 						geterrorhandler()(string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
 					end
 				end
-			end
+			end]]
 		end
 		
 		if externalFunc then
