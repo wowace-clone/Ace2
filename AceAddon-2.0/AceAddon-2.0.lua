@@ -884,12 +884,14 @@ local function external(self, major, instance)
 					usage = "<addon>",
 					get = false,
 					set = function(text)
-						local name,title,_,_,_,reason = GetAddOnInfo(text)
+						local name,title,_,enabled,_,reason = GetAddOnInfo(text)
 						if reason == "MISSING" then
 							print(string.format("|cffffff7fAce2:|r AddOn %q does not exist", text))
-						else
+						elseif not enabled then
 							EnableAddOn(text)
 							print(string.format("|cffffff7fAce2:|r %s is now enabled", title or name))
+						else
+							print(string.format("|cffffff7fAce2:|r %s is already enabled", title or name))
 						end
 					end,
 				},
@@ -900,12 +902,14 @@ local function external(self, major, instance)
 					usage = "<addon>",
 					get = false,
 					set = function(text)
-						local name,title,_,_,_,reason = GetAddOnInfo(text)
+						local name,title,_,enabled,_,reason = GetAddOnInfo(text)
 						if reason == "MISSING" then
 							print(string.format("|cffffff7fAce2:|r AddOn %q does not exist", text))
-						else
+						elseif enabled then
 							DisableAddOn(text)
 							print(string.format("|cffffff7fAce2:|r %s is now disabled", title or name))
+						else
+							print(string.format("|cffffff7fAce2:|r %s is already disabled", title or name))
 						end
 					end,
 				},
