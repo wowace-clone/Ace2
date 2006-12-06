@@ -299,7 +299,7 @@ else -- enUS
 	CREDITS = "Credits"
 	
 	ABOUT = "About"
-	PRINT_ADDON_INFO = "Print out addon info"
+	PRINT_ADDON_INFO = "Show information about the addon"
 	
 	CATEGORIES = {
 		["Action Bars"] = "Action Bars",
