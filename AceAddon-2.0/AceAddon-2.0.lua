@@ -357,7 +357,7 @@ local AceConsole
 local AceModuleCore
 
 function AceAddon:GetLocalizedCategory(name)
-	return CATEGORIES[name] or name
+	return CATEGORIES[name] or UNKNOWN
 end
 
 function AceAddon:ToString()
