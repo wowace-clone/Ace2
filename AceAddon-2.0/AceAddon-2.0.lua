@@ -356,6 +356,10 @@ local AceEvent
 local AceConsole
 local AceModuleCore
 
+function AceAddon:GetLocalizedCategory(name)
+	return CATEGORIES[name] or name
+end
+
 function AceAddon:ToString()
 	return "AceAddon"
 end
