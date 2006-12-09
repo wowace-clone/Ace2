@@ -116,6 +116,17 @@ local function print(text, name, r, g, b, frame, delay)
 	end
 end
 
+local real_tostring = tostring
+
+local function tostring(t)
+	if type(t) == "table" then
+		if type(rawget(t, 0)) == "userdata" and type(t.GetFrameType) == "function" then
+			return string.format("<%s:%s>", t:GetFrameType(), t:GetName() or "(anon)")
+		end
+	end
+	return real_tostring(t)
+end
+
 local function _tostring(...)
 	if select('#', ...) < 1 then
 		return
