@@ -433,6 +433,7 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.title = GetAddOnMetadata(name, "Title")
 		end
 		if addon.title then
+			addon.title = tostring(addon.title)
 			local num = addon.title:find(" |cff7fff7f %-Ace2%-|r$")
 			if num then
 				addon.title = addon.title:sub(1, num - 1)
@@ -443,12 +444,14 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.notes = GetAddOnMetadata(name, "Notes")
 		end
 		if addon.notes then
+			addon.notes = tostring(addon.notes)
 			addon.notes = addon.notes:trim()
 		end
 		if addon.version == nil then
 			addon.version = GetAddOnMetadata(name, "Version")
 		end	
 		if addon.version then
+			addon.version = tostring(addon.version)
 			if addon.version:find("%$Revision: (%d+) %$") then
 				addon.version = addon.version:gsub("%$Revision: (%d+) %$", "%1")
 			elseif addon.version:find("%$Rev: (%d+) %$") then
@@ -462,18 +465,21 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.author = GetAddOnMetadata(name, "Author")
 		end
 		if addon.author then
+			addon.author = tostring(addon.author)
 			addon.author = addon.author:trim()
 		end
 		if addon.credits == nil then
 			addon.credits = GetAddOnMetadata(name, "X-Credits")
 		end
 		if addon.credits then
+			addon.credits = tostring(addon.credits)
 			addon.credits = addon.credits:trim()
 		end
 		if addon.date == nil then
 			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
 		end
 		if addon.date then
+			addon.date = tostring(addon.date)
 			if addon.date:find("%$Date: (.-) %$") then
 				addon.date = addon.date:gsub("%$Date: (.-) %$", "%1")
 			elseif addon.date:find("%$LastChangedDate: (.-) %$") then
@@ -486,18 +492,21 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.category = GetAddOnMetadata(name, "X-Category")
 		end
 		if addon.category then
+			addon.category = tostring(addon.category)
 			addon.category = addon.category:trim()
 		end
 		if addon.email == nil then
 			addon.email = GetAddOnMetadata(name, "X-eMail") or GetAddOnMetadata(name, "X-Email")
 		end
 		if addon.email then
+			addon.email = tostring(addon.email)
 			addon.email = addon.email:trim()
 		end
 		if addon.website == nil then
 			addon.website = GetAddOnMetadata(name, "X-Website")
 		end
 		if addon.website then
+			addon.website = tostring(addon.website)
 			addon.website = addon.website:trim()
 		end
 	end
