@@ -50,6 +50,14 @@ local eventsWhichHappenOnce = {
 	VARIABLES_LOADED = true,
 	PLAYER_LOGOUT = true,
 }
+local next = next
+local pairs = pairs
+local pcall = pcall
+local type = type
+local GetTime = GetTime
+local gcinfo = gcinfo
+local unpack = unpack
+local geterrorhandler = geterrorhandler
 
 local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
@@ -215,10 +223,12 @@ function AceEvent:TriggerEvent(event, ...)
 			if type(method) == "string" then
 				local obj_method = obj[method]
 				if obj_method then
-					obj_method(obj, ...)
+					local success, err = pcall(obj_method, obj, ...)
+					if not success then geterrorhandler()(err) end
 				end
 			elseif method then -- function
-				method(...)
+				local success, err = pcall(method, ...)
+				if not success then geterrorhandler()(err) end
 			end
 			if AceEvent_debugTable then
 				local dmem, dtime = memdiff, timediff
@@ -282,10 +292,12 @@ function AceEvent:TriggerEvent(event, ...)
 				if type(method) == "string" then
 					local obj_method = obj[method]
 					if obj_method then
-						obj_method(obj, ...)
+						local success, err = pcall(obj_method, obj, ...)
+						if not success then geterrorhandler()(err) end
 					end
 				elseif method then -- function
-					method(...)
+					local success, err = pcall(method, ...)
+					if not success then geterrorhandler()(err) end
 				end
 				if AceEvent_debugTable then
 					local dmem, dtime = memdiff, timediff
@@ -334,9 +346,12 @@ function AceEvent:TriggerEvent(event, ...)
 				local obj_method = obj[method]
 				if obj_method then
 					obj_method(obj, ...)
+					local success, err = pcall(obj_method, obj, ...)
+					if not success then geterrorhandler()(err) end
 				end
 			elseif method then -- function
-				method(...)
+				local success, err = pcall(method, ...)
+				if not success then geterrorhandler()(err) end
 			end
 			if AceEvent_debugTable then
 				local dmem, dtime = memdiff, timediff
@@ -358,12 +373,6 @@ function AceEvent:TriggerEvent(event, ...)
 	stack[tmp] = true
 	AceEvent.currentEvent = lastEvent
 end
-
--- local accessors
-local GetTime = GetTime
-local next = next
-local pairs = pairs
-local unpack = unpack
 
 local delayRegistry
 local tmp = {}
@@ -390,7 +399,8 @@ local function OnUpdate()
 					mem, time = gcinfo(), GetTime()
 				end
 				if type(event) == "function" then
-					event(unpack(v))
+					local success, err = pcall(event, unpack(v))
+					if not success then geterrorhandler()(err) end
 				else
 					AceEvent:TriggerEvent(event, unpack(v))
 				end
