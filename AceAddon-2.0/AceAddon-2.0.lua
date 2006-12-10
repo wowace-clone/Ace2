@@ -340,9 +340,9 @@ else -- enUS
 end
 
 setmetatable(CATEGORIES, { __index = function(self, key) -- case-insensitive
-	local lowerKey = string.lower(key)
+	local lowerKey = key:lower()
 	for k,v in pairs(CATEGORIES) do
-		if string.lower(k) == lowerKey then
+		if k:lower() == lowerKey then
 			return v
 		end
 	end
@@ -357,6 +357,7 @@ local AceConsole
 local AceModuleCore
 
 function AceAddon:GetLocalizedCategory(name)
+	self:argCheck(name, 2, "string")
 	return CATEGORIES[name] or UNKNOWN
 end
 
@@ -432,60 +433,70 @@ function AceAddon:InitializeAddon(addon, name)
 			addon.title = GetAddOnMetadata(name, "Title")
 		end
 		if addon.title then
-			local num = string.find(addon.title, " |cff7fff7f %-Ace2%-|r$")
+			local num = addon.title:find(" |cff7fff7f %-Ace2%-|r$")
 			if num then
-				addon.title = string.sub(addon.title, 1, num - 1)
+				addon.title = addon.title:sub(1, num - 1)
 			end
-			addon.title = stripSpaces(addon.title)
+			addon.title = addon.title:trim()
 		end
 		if addon.notes == nil then
 			addon.notes = GetAddOnMetadata(name, "Notes")
-			addon.notes = stripSpaces(addon.notes)
+			addon.notes = addon.notes:trim()
 		end
 		if addon.version == nil then
 			addon.version = GetAddOnMetadata(name, "Version")
 		end	
 		if addon.version then
-			if string.find(addon.version, "%$Revision: (%d+) %$") then
-				addon.version = string.gsub(addon.version, "%$Revision: (%d+) %$", "%1")
-			elseif string.find(addon.version, "%$Rev: (%d+) %$") then
-				addon.version = string.gsub(addon.version, "%$Rev: (%d+) %$", "%1")
-			elseif string.find(addon.version, "%$LastChangedRevision: (%d+) %$") then
-				addon.version = string.gsub(addon.version, "%$LastChangedRevision: (%d+) %$", "%1")
+			if addon.version:find("%$Revision: (%d+) %$") then
+				addon.version = addon.version:gsub("%$Revision: (%d+) %$", "%1")
+			elseif addon.version:find("%$Rev: (%d+) %$") then
+				addon.version = addon.version:gsub("%$Rev: (%d+) %$", "%1")
+			elseif addon.version:find("%$LastChangedRevision: (%d+) %$") then
+				addon.version = addon.version:gsub("%$LastChangedRevision: (%d+) %$", "%1")
 			end
+			addon.version = addon.version:trim()
 		end
-		addon.version = stripSpaces(addon.version)
 		if addon.author == nil then
 			addon.author = GetAddOnMetadata(name, "Author")
-			addon.author = stripSpaces(addon.author)
+		end
+		if addon.author then
+			addon.author = addon.author:trim()
 		end
 		if addon.credits == nil then
 			addon.credits = GetAddOnMetadata(name, "X-Credits")
-			addon.credits = stripSpaces(addon.credits)
+		end
+		if addon.credits then
+			addon.credits = addon.credits:trim()
 		end
 		if addon.date == nil then
 			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
 		end
 		if addon.date then
-			if string.find(addon.date, "%$Date: (.-) %$") then
-				addon.date = string.gsub(addon.date, "%$Date: (.-) %$", "%1")
-			elseif string.find(addon.date, "%$LastChangedDate: (.-) %$") then
-				addon.date = string.gsub(addon.date, "%$LastChangedDate: (.-) %$", "%1")
+			if addon.date:find("%$Date: (.-) %$") then
+				addon.date = addon.date:gsub("%$Date: (.-) %$", "%1")
+			elseif addon.date:find("%$LastChangedDate: (.-) %$") then
+				addon.date = addon.date:gsub("%$LastChangedDate: (.-) %$", "%1")
 			end
+			addon.date = addon.date:trim()
 		end
-		addon.date = stripSpaces(addon.date)
 
 		if addon.category == nil then
 			addon.category = GetAddOnMetadata(name, "X-Category")
-			addon.category = stripSpaces(addon.category)
+		end
+		if addon.category then
+			addon.category = addon.category:trim()
 		end
 		if addon.email == nil then
 			addon.email = GetAddOnMetadata(name, "X-eMail") or GetAddOnMetadata(name, "X-Email")
-			addon.email = stripSpaces(addon.email)
+		end
+		if addon.email then
+			addon.email = addon.email:trim()
 		end
 		if addon.website == nil then
 			addon.website = GetAddOnMetadata(name, "X-Website")
-			addon.website = stripSpaces(addon.website)
+		end
+		if addon.website then
+			addon.website = addon.website:trim()
 		end
 	end
 	local current = addon.class
@@ -663,7 +674,7 @@ local function external(self, major, instance)
 				depth = 0
 			end
 			
-			local s = string.rep("  ", depth) .. " - " .. tostring(addon)
+			local s = ("  "):rep(depth) .. " - " .. tostring(addon)
 			if rawget(addon, 'version') then
 				s = s .. " - |cffffff7f" .. tostring(addon.version) .. "|r"
 			end
@@ -676,7 +687,7 @@ local function external(self, major, instance)
 				for k,v in pairs(addon.modules) do
 					i = i + 1
 					if i == 6 then
-						print(string.rep("  ", depth + 1) .. " - more...")
+						print(("  "):rep(depth + 1) .. " - more...")
 						break
 					else
 						listAddon(v, depth + 1)
@@ -698,12 +709,12 @@ local function external(self, major, instance)
 				local s = " - " .. tostring(GetAddOnMetadata(i, "Title") or name)
 				local version = GetAddOnMetadata(i, "Version")
 				if version then
-					if string.find(version, "%$Revision: (%d+) %$") then
-						version = string.gsub(version, "%$Revision: (%d+) %$", "%1")
-					elseif string.find(version, "%$Rev: (%d+) %$") then
-						version = string.gsub(version, "%$Rev: (%d+) %$", "%1")
-					elseif string.find(version, "%$LastChangedRevision: (%d+) %$") then
-						version = string.gsub(version, "%$LastChangedRevision: (%d+) %$", "%1")
+					if version:find("%$Revision: (%d+) %$") then
+						version = version:gsub("%$Revision: (%d+) %$", "%1")
+					elseif version:find("%$Rev: (%d+) %$") then
+						version = version:gsub("%$Rev: (%d+) %$", "%1")
+					elseif version:find("%$LastChangedRevision: (%d+) %$") then
+						version = version:gsub("%$LastChangedRevision: (%d+) %$", "%1")
 					end
 					s = s .. " - |cffffff7f" .. version .. "|r"
 				end
@@ -729,7 +740,7 @@ local function external(self, major, instance)
 					name = "About",
 					type = "execute",
 					func = function()
-						print("|cffffff7fAce2|r - |cffffff7f2.0." .. string.gsub(MINOR_VERSION, "%$Revision: (%d+) %$", "%1") .. "|r - AddOn development framework")
+						print("|cffffff7fAce2|r - |cffffff7f2.0." .. MINOR_VERSION:gsub("%$Revision: (%d+) %$", "%1") .. "|r - AddOn development framework")
 						print(" - |cffffff7f" .. AUTHOR .. ":|r Ace Development Team")
 						print(" - |cffffff7f" .. WEBSITE .. ":|r http://www.wowace.com/")
 					end
@@ -861,14 +872,14 @@ local function external(self, major, instance)
 							set = function(...)
 								local arg = { ... }
 								for i,v in ipairs(arg) do
-									arg[i] = string.lower(string.gsub(string.gsub(v, '%*', '.*'), '%%', '%%%%'))
+									arg[i] = v:gsub('%*', '.*'):gsub('%%', '%%%%'):lower()
 								end
 								local count = GetNumAddOns()
 								for i = 1, count do
 									local name = GetAddOnInfo(i)
 									local good = true
 									for _,v in ipairs(arg) do
-										if not string.find(string.lower(name), v) then
+										if not name:lower():find(v) then
 											good = false
 											break
 										end
