@@ -442,7 +442,7 @@ function AceAddon:InitializeAddon(addon, name)
 		if addon.notes == nil then
 			addon.notes = GetAddOnMetadata(name, "Notes")
 		end
-		if addon.notes
+		if addon.notes then
 			addon.notes = addon.notes:trim()
 		end
 		if addon.version == nil then
