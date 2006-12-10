@@ -106,7 +106,7 @@ local Dewdrop
 local _G = getfenv(0)
 
 local function print(text, name, r, g, b, frame, delay)
-	if not text or string.len(text) == 0 then
+	if not text or text:len() == 0 then
 		text = " "
 	end
 	if not name or name == AceConsole then
@@ -134,10 +134,10 @@ local function _tostring(...)
 	return tostring((...)), _tostring(select(2, ...))
 end
 function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, ...)
-	if string.find(tostring(a1), "%%") and select('#', ...) >= 1 then
+	if tostring(a1):find("%%") and select('#', ...) >= 1 then
 		print(string.format(_tostring(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
 	else
-		print(strjoin(connector or " ", _tostring(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
+		print((connector or " "):join(_tostring(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
 	end
 end
 
@@ -166,19 +166,19 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			work = {}
 			argwork = {}
 		end
-		local len = string.len(text)
+		local len = text:len()
 		local count
 		repeat
-			text, count = string.gsub(text, "(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[[^%]]-) (.-%]|h|r)", "%1\001%2")
+			text, count = text:gsub("(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[[^%]]-) (.-%]|h|r)", "%1\001%2")
 		until count == 0
-		text = string.gsub(text, "(%]|h|r)(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[)", "%1 %2")
-		for token in string.gmatch(text, "([^%s]+)") do
+		text = text:gsub("(%]|h|r)(|cff%x%x%x%x%x%x|Hitem:%d-:%d-:%d-:%d-|h%[)", "%1 %2")
+		for token in text:gmatch("([^%s]+)") do
 			local token = token
 			local num = tonumber(token)
 			if num then
 				token = num
 			else
-				token = string.gsub(token, "\001", " ")
+				token = token:gsub("\001", " ")
 			end
 			table.insert(work, token)
 		end
@@ -196,10 +196,18 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 				hidden = hidden()
 			elseif type(hidden) == "string" then
 				local handler = options.handler or self
-				if type(handler[hidden]) ~= "function" then
-					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, hidden))
+				local f = hidden
+				local neg = f:match("^~(.-)$")
+				if neg then
+					f = neg
 				end
-				hidden = handler[hidden](handler)
+				if type(handler[f]) ~= "function" then
+					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+				end
+				hidden = handler[f](handler)
+				if neg then
+					hidden = not hidden
+				end
 			end
 		end
 		if hidden then
@@ -209,27 +217,35 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 				disabled = disabled()
 			elseif type(disabled) == "string" then
 				local handler = options.handler or self
-				if type(handler[disabled]) ~= "function" then
-					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, disabled))
+				local f = disabled
+				local neg = f:match("^~(.-)$")
+				if neg then
+					f = neg
 				end
-				disabled = handler[disabled](handler)
+				if type(handler[f]) ~= "function" then
+					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+				end
+				disabled = handler[f](handler)
+				if neg then
+					disabled = not disabled
+				end
 			end
 		end
 		if not disabled then
-			local next = work[index] and string.lower(work[index])
+			local next = work[index] and work[index]:lower()
 			if next then
 				for k,v in pairs(options.args) do
 					local good = false
-					if string.lower(k) == next then
+					if k:lower() == next then
 						good = true
 					elseif type(v.aliases) == "table" then
 						for _,alias in ipairs(v.aliases) do
-							if string.lower(alias) == next then
+							if alias:lower() == next then
 								good = true
 								break
 							end
 						end
-					elseif type(v.aliases) == "string" and string.lower(v.aliases) == next then
+					elseif type(v.aliases) == "string" and v.aliases:lower() == next then
 						good = true
 					end
 					if good then
@@ -262,8 +278,14 @@ local function validateOptionsMethods(self, options, position)
 			if type(options.get) ~= "string" and type(options.get) ~= "function" then
 				return "get must be a string or function", position
 			end
-			if type(options.get) == "string" and type(self[options.get]) ~= "function" then
-				return string.format("%q is not a proper function", options.get), position
+			if type(options.get) == "string" then
+				local f = options.get
+				if options.type == "toggle" then
+					f = f:match("^~(.-)$") or f
+				end
+				if type(self[f]) ~= "function" then
+					return string.format("%q is not a proper function", f), position
+				end
 			end
 		end
 		if options.set then
@@ -283,17 +305,33 @@ local function validateOptionsMethods(self, options, position)
 			end
 		end
 	end
-	if options.disabled and type(options.disabled) == "string" and type(self[options.disabled]) ~= "function" then
-		return string.format("%q is not a proper function", options.disabled), position
+	if options.disabled and type(options.disabled) == "string" then
+		local f = options.disabled
+		f = f:match("^~(.-)$") or f
+		if type(self[f]) ~= "function" then
+			return string.format("%q is not a proper function", f), position
+		end
 	end
-	if options.cmdHidden and type(options.cmdHidden) == "string" and type(self[options.cmdHidden]) ~= "function" then
-		return string.format("%q is not a proper function", options.cmdHidden), position
+	if options.cmdHidden and type(options.cmdHidden) == "string" then
+		local f = options.cmdHidden
+		f = f:match("^~(.-)$") or f
+		if type(self[f]) ~= "function" then
+			return string.format("%q is not a proper function", f), position
+		end
 	end
-	if options.guiHidden and type(options.guiHidden) == "string" and type(self[options.guiHidden]) ~= "function" then
-		return string.format("%q is not a proper function", options.guiHidden), position
+	if options.guiHidden and type(options.guiHidden) == "string" then
+		local f = options.guiHidden
+		f = f:match("^~(.-)$") or f
+		if type(self[f]) ~= "function" then
+			return string.format("%q is not a proper function", f), position
+		end
 	end
-	if options.hidden and type(options.hidden) == "string" and type(self[options.hidden]) ~= "function" then
-		return string.format("%q is not a proper function", options.hidden), position
+	if options.hidden and type(options.hidden) == "string" then
+		local f = options.hidden
+		f = f:match("^~(.-)$") or f
+		if type(self[f]) ~= "function" then
+			return string.format("%q is not a proper function", f), position
+		end
 	end
 	if options.type == "group" and type(options.args) == "table" then
 		for k,v in pairs(options.args) do
@@ -368,7 +406,7 @@ local function validateOptions(options, position, baseOptions, fromPass)
 		if kind == "header" then
 		elseif type(options.desc) ~= "string" then
 			return '"desc" must be a string', position
-		elseif string.len(options.desc) == 0 then
+		elseif options.desc:len() == 0 then
 			return '"desc" cannot be a 0-length string', position
 		end
 	end
@@ -378,20 +416,20 @@ local function validateOptions(options, position, baseOptions, fromPass)
 		elseif options.cmdName then
 			if type(options.cmdName) ~= "string" then
 				return '"cmdName" must be a string or nil', position
-			elseif string.len(options.cmdName) == 0 then
+			elseif options.cmdName:len() == 0 then
 				return '"cmdName" cannot be a 0-length string', position
 			end
 			if type(options.guiName) ~= "string" then
 				if not options.guiNameIsMap then
 					return '"guiName" must be a string or nil', position
 				end
-			elseif string.len(options.guiName) == 0 then
+			elseif options.guiName:len() == 0 then
 				return '"guiName" cannot be a 0-length string', position
 			end
 		else
 			if type(options.name) ~= "string" then
 				return '"name" must be a string', position
-			elseif string.len(options.name) == 0 then
+			elseif options.name:len() == 0 then
 				return '"name" cannot be a 0-length string', position
 			end
 		end
@@ -516,9 +554,9 @@ local function validateOptions(options, position, baseOptions, fromPass)
 		for k,v in pairs(options.args) do
 			if type(k) ~= "string" then
 				return '"args" keys must be strings', position
-			elseif string.find(k, "%s") then
+			elseif k:find("%s") then
 				return string.format('"args" keys must not include spaces. %q is not appropriate.', k), position
-			elseif string.len(k) == 0 then
+			elseif k:len() == 0 then
 				return '"args" keys must not be 0-length strings.', position
 			end
 			if type(v) ~= "table" then
@@ -546,7 +584,7 @@ local function keybindingValidateFunc(text)
 	if text == nil or text == "NONE" then
 		return nil
 	end
-	text = string.upper(text)
+	text = text:upper()
 	local shift, ctrl, alt
 	local modifier
 	while true do
@@ -581,7 +619,7 @@ local function keybindingValidateFunc(text)
 			break
 		end
 	end
-	if not string.find(text, "^F%d+$") and string.len(text) ~= 1 and (string.byte(text) < 128 or string.len(text) > 4) and not _G["KEY_" .. text] then
+	if not text:find("^F%d+$") and text:len() ~= 1 and (text:byte() < 128 or text:len() > 4) and not _G["KEY_" .. text] then
 		return false
 	end
 	local s = text
@@ -605,17 +643,25 @@ local mysort
 
 local function printUsage(self, handler, realOptions, options, path, args, quiet, filter)
 	if filter then
-		filter = "^" .. string.gsub(filter, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
+		filter = "^" .. filter:gsub("([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 	end
 	local hidden, disabled = options.cmdHidden or options.hidden, options.disabled
 	if hidden then
 		if type(hidden) == "function" then
 			hidden = hidden()
 		elseif type(hidden) == "string" then
-			if type(handler[hidden]) ~= "function" then
-				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, hidden))
+			local f = hidden
+			local neg = f:match("^~(.-)$")
+			if neg then
+				f = neg
 			end
-			hidden = handler[hidden](handler)
+			if type(handler[f]) ~= "function" then
+				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+			end
+			hidden = handler[f](handler)
+			if neg then
+				hidden = not hidden
+			end
 		end
 	end
 	if hidden then
@@ -624,13 +670,21 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 		if type(disabled) == "function" then
 			disabled = disabled()
 		elseif type(disabled) == "string" then
-			if type(handler[disabled]) ~= "function" then
-				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, disabled))
+			local f = disabled
+			local neg = f:match("^~(.-)$")
+			if neg then
+				f = neg
 			end
-			disabled = handler[disabled](handler)
+			if type(handler[f]) ~= "function" then
+				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+			end
+			disabled = handler[f](handler)
+			if neg then
+				disabled = not disabled
+			end
 		end
 	end
-	local kind = string.lower(options.type or "group")
+	local kind = (options.type or "group"):lower()
 	if disabled then
 		print(string.format(OPTION_IS_DISABLED, path), realOptions.cmdName or realOptions.name or self)
 	elseif kind == "text" then
@@ -666,7 +720,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					order = {}
 				end
 				for k,v in pairs(options.validate) do
-					if string.find(v, filter) then
+					if v:find(filter) then
 						table.insert(order, v)
 					end
 				end
@@ -751,26 +805,33 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						if type(hidden) == "function" then
 							hidden = hidden()
 						elseif type(hidden) == "string" then
-							local handler = v.handler or handler
-							if type(handler[hidden]) ~= "function" then
-								AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, hidden))
+							local f = hidden
+							local neg = f:match("^~(.-)$")
+							if neg then
+								f = neg
 							end
-							hidden = handler[hidden](handler)
+							if type(handler[f]) ~= "function" then
+								AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+							end
+							hidden = handler[f](handler)
+							if neg then
+								hidden = not hidden
+							end
 						end
 					end
 					if not hidden then
 						if filter then
-							if string.find(k, filter) then
+							if k:find(filter) then
 								table.insert(order, k)
 							elseif type(v.aliases) == "table" then
 								for _,bit in ipairs(v.aliases) do
-									if string.find(v.aliases, filter) then
+									if bit:find(filter) then
 										table.insert(order, k)
 										break
 									end
 								end
 							elseif type(v.aliases) == "string" then
-								if string.find(v.aliases, filter) then
+								if v.aliases:find(filter) then
 									table.insert(order, k)
 								end
 							end
@@ -835,11 +896,18 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						if type(disabled) == "function" then
 							disabled = disabled()
 						elseif type(disabled) == "string" then
-							local handler = v.handler or handler
-							if type(handler[disabled]) ~= "function" then
-								AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, disabled))
+							local f = disabled
+							local neg = f:match("^~(.-)$")
+							if neg then
+								f = neg
 							end
-							disabled = handler[disabled](handler)
+							if type(handler[f]) ~= "function" then
+								AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+							end
+							disabled = handler[f](handler)
+							if neg then
+								disabled = not disabled
+							end
 						end
 					end
 					if type(v.aliases) == "table" then
@@ -857,13 +925,24 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							end
 						else
 							local handler = v.handler or handler
-							if type(handler[v.get]) ~= "function" then
-								AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, v.get))
+							local f = v.get
+							local neg
+							if v.type == "toggle" then
+								neg = f:match("^~(.-)$")
+								if neg then
+									f = neg
+								end
+							end
+							if type(handler[f]) ~= "function" then
+								AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
 							end
 							if options.pass then
-								a1,a2,a3,a4 = handler[v.get](handler, k)
+								a1,a2,a3,a4 = handler[f](handler, k)
 							else
-								a1,a2,a3,a4 = handler[v.get](handler)
+								a1,a2,a3,a4 = handler[f](handler)
+							end
+							if neg then
+								a1 = not a1
 							end
 						end
 						if v.type == "color" then
@@ -898,15 +977,15 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							s = tostring(a1 or NONE)
 						end
 						if disabled then
-							local s = string.gsub(s, "|cff%x%x%x%x%x%x(.-)|r", "%1")
-							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							local s = s:gsub("|cff%x%x%x%x%x%x(.-)|r", "%1")
+							local desc = (v.desc or NONE):gsub("|cff%x%x%x%x%x%x(.-)|r", "%1")
 							print(string.format("|cffcfcfcf - %s: [%s] %s|r", k, s, desc))
 						else
 							print(string.format(" - |cffffff7f%s: [|r%s|cffffff7f]|r %s", k, s, v.desc or NONE))
 						end
 					else
 						if disabled then
-							local desc = string.gsub(v.desc or NONE, "|cff%x%x%x%x%x%x(.-)|r", "%1")
+							local desc = (v.desc or NONE):gsub("|cff%x%x%x%x%x%x(.-)|r", "%1")
 							print(string.format("|cffcfcfcf - %s: %s", k, desc))
 						else
 							print(string.format(" - |cffffff7f%s:|r %s", k, v.desc or NONE))
@@ -937,8 +1016,8 @@ local function handlerFunc(self, chat, msg, options)
 	if not msg then
 		msg = ""
 	else
-		msg = string.gsub(msg, "^%s*(.-)%s*$", "%1")
-		msg = string.gsub(msg, "%s+", " ")
+		msg = msg:gsub("^%s*(.-)%s*$", "%1")
+		msg = msg:gsub("%s+", " ")
 	end
 	
 	local realOptions = options
@@ -949,10 +1028,18 @@ local function handlerFunc(self, chat, msg, options)
 		if type(hidden) == "function" then
 			hidden = hidden()
 		elseif type(hidden) == "string" then
-			if type(handler[hidden]) ~= "function" then
-				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, hidden))
+			local f = hidden
+			local neg = f:match("^~(.-)$")
+			if neg then
+				f = neg
 			end
-			hidden = handler[hidden](handler)
+			if type(handler[f]) ~= "function" then
+				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+			end
+			hidden = handler[f](handler)
+			if neg then
+				hidden = not hidden
+			end
 		end
 	end
 	if hidden then
@@ -961,14 +1048,22 @@ local function handlerFunc(self, chat, msg, options)
 		if type(disabled) == "function" then
 			disabled = disabled()
 		elseif type(disabled) == "string" then
-			if type(handler[disabled]) ~= "function" then
-				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, disabled))
+			local f = disabled
+			local neg = f:match("^~(.-)$")
+			if neg then
+				f = neg
 			end
-			disabled = handler[disabled](handler)
+			if type(handler[f]) ~= "function" then
+				AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+			end
+			disabled = handler[f](handler)
+			if neg then
+				disabled = not disabled
+			end
 		end
 	end
 	local _G_this = this
-	local kind = string.lower(options.type or "group")
+	local kind = (options.type or "group"):lower()
 	if disabled then
 		print(string.format(OPTION_IS_DISABLED, path), realOptions.cmdName or realOptions.name or self)
 	elseif kind == "text" then
@@ -986,9 +1081,9 @@ local function handlerFunc(self, chat, msg, options)
 					good = options.validate(unpack(args))
 				elseif type(options.validate) == "table" then
 					local arg = args[1]
-					arg = string.lower(tostring(arg))
+					arg = tostring(arg):lower()
 					for k,v in pairs(options.validate) do
-						if string.lower(v) == arg then
+						if v:lower() == arg then
 							args[1] = type(k) == "string" and k or v
 							good = true
 							break
@@ -996,7 +1091,7 @@ local function handlerFunc(self, chat, msg, options)
 					end
 					if not good and type((next(options.validate))) == "string" then
 						for k,v in pairs(options.validate) do
-							if type(k) == "string" and string.lower(k) == arg then
+							if type(k) == "string" and k:lower() == arg then
 								args[1] = k
 								good = true
 								break
@@ -1148,10 +1243,18 @@ local function handlerFunc(self, chat, msg, options)
 			if type(passTable.get) == "function" then
 				var = passTable.get(passValue)
 			else
-				if type(handler[passTable.get]) ~= "function" then
-					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, passTable.get))
+				local f = passTable.get
+				local neg = f:match("^~(.-)$")
+				if neg then
+					f = neg
 				end
-				var = handler[passTable.get](handler, passValue)
+				if type(handler[f]) ~= "function" then
+					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+				end
+				var = handler[f](handler, passValue)
+				if neg then
+					var = not var
+				end
 			end
 			if type(passTable.set) == "function" then
 				passTable.set(passValue, not var)
@@ -1164,17 +1267,33 @@ local function handlerFunc(self, chat, msg, options)
 			if type(passTable.get) == "function" then
 				var = passTable.get(passValue)
 			else
-				var = handler[passTable.get](handler, passValue)
+				local f = passTable.get
+				local neg = f:match("^~(.-)$")
+				if neg then
+					f = neg
+				end
+				var = handler[f](handler, passValue)
+				if neg then
+					var = not var
+				end
 			end
 		else
 			local handler = options.handler or self
 			if type(options.get) == "function" then
 				var = options.get()
 			else
-				if type(handler[options.get]) ~= "function" then
-					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, options.get))
+				local f = options.get
+				local neg = f:match("^~(.-)$")
+				if neg then
+					f = neg
 				end
-				var = handler[options.get](handler)
+				if type(handler[f]) ~= "function" then
+					AceConsole:error("%s: %s", handler, string.format(OPTION_HANDLER_NOT_FOUND, f))
+				end
+				var = handler[f](handler)
+				if neg then
+					var = not var
+				end
 			end
 			if type(options.set) == "function" then
 				options.set(not var)
@@ -1187,7 +1306,15 @@ local function handlerFunc(self, chat, msg, options)
 			if type(options.get) == "function" then
 				var = options.get()
 			else
-				var = handler[options.get](handler)
+				local f = options.get
+				local neg = f:match("^~(.-)$")
+				if neg then
+					f = neg
+				end
+				var = handler[f](handler)
+				if neg then
+					var = not var
+				end
 			end
 		end
 		
@@ -1326,26 +1453,26 @@ local function handlerFunc(self, chat, msg, options)
 			if #args == 1 then
 				local arg = tostring(args[1])
 				if options.hasAlpha then
-					if string.len(arg) == 8 and string.find(arg, "^%x*$")  then
-						r,g,b,a = tonumber(string.sub(arg, 1, 2), 16) / 255, tonumber(string.sub(arg, 3, 4), 16) / 255, tonumber(string.sub(arg, 5, 6), 16) / 255, tonumber(string.sub(arg, 7, 8), 16) / 255
+					if arg:len() == 8 and arg:find("^%x*$")  then
+						r,g,b,a = tonumber(arg:sub(1, 2), 16) / 255, tonumber(arg:sub(3, 4), 16) / 255, tonumber(arg:sub(5, 6), 16) / 255, tonumber(arg:sub(7, 8), 16) / 255
 					end
 				else
-					if string.len(arg) == 6 and string.find(arg, "^%x*$") then
-						r,g,b = tonumber(string.sub(arg, 1, 2), 16) / 255, tonumber(string.sub(arg, 3, 4), 16) / 255, tonumber(string.sub(arg, 5, 6), 16) / 255
+					if arg:len() == 6 and arg:find("^%x*$") then
+						r,g,b = tonumber(arg:sub(1, 2), 16) / 255, tonumber(arg:sub(3, 4), 16) / 255, tonumber(arg:sub(5, 6), 16) / 255
 					end
 				end
 			elseif #args == 4 and options.hasAlpha then
 				local a1,a2,a3,a4 = args[1], args[2], args[3], args[4]
 				if type(a1) == "number" and type(a2) == "number" and type(a3) == "number" and type(a4) == "number" and a1 <= 1 and a2 <= 1 and a3 <= 1 and a4 <= 1 then
 					r,g,b,a = a1,a2,a3,a4
-				elseif (type(a1) == "number" or string.len(a1) == 2) and string.find(a1, "^%x*$") and (type(a2) == "number" or string.len(a2) == 2) and string.find(a2, "^%x*$") and (type(a3) == "number" or string.len(a3) == 2) and string.find(a3, "^%x*$") and (type(a4) == "number" or string.len(a4) == 2) and string.find(a4, "^%x*$") then
+				elseif (type(a1) == "number" or a1:len() == 2) and a1:find("^%x*$") and (type(a2) == "number" or a2:len() == 2) and a2:find("^%x*$") and (type(a3) == "number" or a3:len() == 2) and a3:find("^%x*$") and (type(a4) == "number" or a4:len() == 2) and a4:find("^%x*$") then
 					r,g,b,a = tonumber(a1, 16) / 255, tonumber(a2, 16) / 255, tonumber(a3, 16) / 255, tonumber(a4, 16) / 255
 				end
 			elseif #args == 3 and not options.hasAlpha then
 				local a1,a2,a3 = args[1], args[2], args[3]
 				if type(a1) == "number" and type(a2) == "number" and type(a3) == "number" and a1 <= 1 and a2 <= 1 and a3 <= 1 then
 					r,g,b = a1,a2,a3
-				elseif (type(a1) == "number" or string.len(a1) == 2) and string.find(a1, "^%x*$") and (type(a2) == "number" or string.len(a2) == 2) and string.find(a2, "^%x*$") and (type(a3) == "number" or string.len(a3) == 2) and string.find(a3, "^%x*$") then
+				elseif (type(a1) == "number" or a1:len() == 2) and a1:find("^%x*$") and (type(a2) == "number" or a2:len() == 2) and a2:find("^%x*$") and (type(a3) == "number" or a3:len() == 2) and a3:find("^%x*$") then
 					r,g,b = tonumber(a1, 16) / 255, tonumber(a2, 16) / 255, tonumber(a3, 16) / 255
 				end
 			end
@@ -1644,7 +1771,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	if name then
 		if type(name) ~= "string" then
 			AceConsole:error("Bad argument #4 to `RegisterChatCommand' (expected string or nil, got %s)", type(name))
-		elseif not string.find(name, "^%w+$") or string.upper(name) ~= name or string.len(name) == 0 then
+		elseif not name:find("^%w+$") or name:upper() ~= name or name:len() == 0 then
 			AceConsole:error("Argument #4 must be an uppercase, letters-only string with at least 1 character")
 		end
 	end
@@ -1659,7 +1786,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			end
 			if type(v) ~= "string" then
 				AceConsole:error("All values in argument #2 to `RegisterChatCommand' must be strings")
-			elseif not string.find(v, "^/[A-Za-z][A-Za-z0-9_]*$") then
+			elseif not v:find("^/[A-Za-z][A-Za-z0-9_]*$") then
 				AceConsole:error("All values in argument #2 to `RegisterChatCommand' must be in the form of \"/word\"")
 			end
 		end
@@ -1687,7 +1814,7 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 			options.handler = self
 		end
 		
-		if options.handler == self and string.lower(options.type) == "group" and self.class then
+		if options.handler == self and options.type:lower() == "group" and self.class then
 			AceConsole:InjectAceOptionsTable(self, options)
 		end
 	end
@@ -1721,8 +1848,9 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	end
 	
 	if not name then
+		local A = ('A'):byte()
 		repeat
-			name = string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1) .. string.char(math.random(26) + string.byte('A') - 1)
+			name = string.char(math.random(26) + A - 1) .. string.char(math.random(26) + A - 1) .. string.char(math.random(26) + A - 1) .. string.char(math.random(26) + A - 1) .. string.char(math.random(26) + A - 1) .. string.char(math.random(26) + A - 1) .. string.char(math.random(26) + A - 1) .. string.char(math.random(26) + A - 1)
 		until not _G.SlashCmdList[name]
 	end
 	
@@ -1743,9 +1871,9 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		for _,command in ipairs(slashCommands) do
 			i = i + 1
 			_G["SLASH_"..name..i] = command
-			if string.lower(command) ~= command then
+			if command:lower() ~= command then
 				i = i + 1
-				_G["SLASH_"..name..i] = string.lower(command)
+				_G["SLASH_"..name..i] = command:lower()
 			end
 		end
 	end
@@ -1775,7 +1903,7 @@ end
 function AceConsole:InjectAceOptionsTable(handler, options)
 	self:argCheck(handler, 2, "table")
 	self:argCheck(options, 3, "table")
-	if string.lower(options.type) ~= "group" then
+	if options.type:lower() ~= "group" then
 		self:error('Cannot inject into options table argument #3 if its type is not "group"')
 	end
 	if options.handler ~= nil and options.handler ~= handler then
@@ -1835,11 +1963,11 @@ function AceConsole:PLAYER_LOGIN()
 end
 
 function AceConsole:TabCompleteInfo(cmdpath)
-	local _, _, cmd =  string.find(cmdpath, "(/%S+)")
+	local cmd =  cmdpath:match("(/%S+)")
 	if not cmd then
 		return
 	end
-	local path = string.sub(cmdpath, string.len(cmd) + 2)
+	local path = cmdpath:sub(cmd:len() + 2)
 	for name in pairs(SlashCmdList) do --global
 		if AceConsole.registry[name] then
 			local i = 0
@@ -1865,7 +1993,7 @@ function external(self, major, instance)
 	elseif major == "AceTab-2.0" then
 		instance:RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath, pos)
 			local ac = AceLibrary("AceConsole-2.0")
-			local name, cmd, path = ac:TabCompleteInfo(string.sub(cmdpath, 1, pos))
+			local name, cmd, path = ac:TabCompleteInfo(cmdpath:sub(1, pos))
 
 			if not ac.registry[name] then
 				return false
