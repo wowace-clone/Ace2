@@ -135,10 +135,13 @@ local function _tostring(...)
 end
 function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, ...)
 	if tostring(a1):find("%%") and select('#', ...) >= 1 then
-		print(string.format(_tostring(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
-	else
-		print((connector or " "):join(_tostring(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
+		local success, text = pcall(string.format, _tostring(a1, ...))
+		if success then
+			print(text, self, r, g, b, frame or self.printFrame, delay)
+			return
+		end
 	end
+	print((connector or " "):join(_tostring(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
 end
 
 function AceConsole:Print(...)
