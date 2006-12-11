@@ -118,7 +118,7 @@ local function print(text, name, r, g, b, frame, delay)
 	end
 end
 
-local realtostring_args = tostring
+local real_tostring = tostring
 
 local function tostring(t)
 	if type(t) == "table" then
@@ -126,7 +126,7 @@ local function tostring(t)
 			return string.format("<%s:%s>", t:GetObjectType(), t:GetName() or "(anon)")
 		end
 	end
-	return realtostring_args(t)
+	return real_tostring(t)
 end
 
 local getkeystring
@@ -146,17 +146,26 @@ end
 local findGlobal = setmetatable({}, {__index=function(self, t)
 	for k,v in pairs(_G) do
 		if v == t then
+			k = tostring(k)
 			self[v] = k
 			return k
 		end
 	end
+	self[t] = false
+	return false
 end})
 
 local recurse = {}
+local timeToEnd
+local GetTime = GetTime
+local type = type
 local function literal_tostring_prime(t, depth)
 	if type(t) == "string" then
 		return "|cff00ff00" .. string.format("%q", (t:gsub("|", "||"))) .. "|r"
 	elseif type(t) == "table" then
+		if t == _G then
+			return "|cffffea00_G|r"
+		end
 		if type(rawget(t, 0)) == "userdata" and type(t.GetObjectType) == "function" then
 			return string.format("|cffffea00<%s:%s>|r", t:GetObjectType(), t:GetName() or "(anon)")
 		end
@@ -165,7 +174,15 @@ local function literal_tostring_prime(t, depth)
 			if g then
 				return string.format("|cff9f9f9f<Recursion _G[%q]>|r", g)
 			else
-				return string.format("|cff9f9f9f<Recursion %s>|r", realtostring_args(t):gsub("|", "||"))
+				return string.format("|cff9f9f9f<Recursion %s>|r", real_tostring(t):gsub("|", "||"))
+			end
+		end
+		if GetTime() > timeToEnd then
+			local g = findGlobal[t]
+			if g then
+				return string.format("|cff9f9f9f<Timeout _G[%q]>|r", g)
+			else
+				return string.format("|cff9f9f9f<Timeout %s>|r", real_tostring(t):gsub("|", "||"))
 			end
 		end
 		recurse[t] = true
@@ -184,7 +201,7 @@ local function literal_tostring_prime(t, depth)
 		if g then
 			s = string.format("{ |cff9f9f9f-- _G[%q]|r\n", g)
 		else
-			s = "{ |cff9f9f9f-- " .. realtostring_args(t):gsub("|", "||") .. "|r\n"
+			s = "{ |cff9f9f9f-- " .. real_tostring(t):gsub("|", "||") .. "|r\n"
 		end
 		if isList(t) then
 			for i = 1, #t do
@@ -199,11 +216,11 @@ local function literal_tostring_prime(t, depth)
 		return s
 	end
 	if type(t) == "number" then
-		return "|cffff7fff" .. realtostring_args(t) .. "|r"
+		return "|cffff7fff" .. real_tostring(t) .. "|r"
 	elseif type(t) == "boolean" then
-		return "|cffff9100" .. realtostring_args(t) .. "|r"
+		return "|cffff9100" .. real_tostring(t) .. "|r"
 	else
-		return "|cffffea00" .. realtostring_args(t) .. "|r"
+		return "|cffffea00" .. real_tostring(t) .. "|r"
 	end
 end
 
@@ -217,6 +234,7 @@ function getkeystring(t, depth)
 end
 
 local function literal_tostring(t)
+	timeToEnd = GetTime() + 0.02
 	local s = literal_tostring_prime(t, 0)
 	for k,v in pairs(recurse) do
 		recurse[k] = nil
