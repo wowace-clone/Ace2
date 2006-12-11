@@ -226,7 +226,7 @@ end
 
 function getkeystring(t, depth)
 	if type(t) == "string" then
-		if t:find("^%a[%a%d_]*$") then
+		if t:find("^[%a_][%a%d_]*$") then
 			return "|cff7fd5ff" .. t .. "|r"
 		end
 	end
@@ -2171,8 +2171,12 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 	
 	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, ReloadUI, "RELOAD")
-	
-	self:RegisterChatCommand({ "/print", "/echo", "/dump" }, function(text)
+	local t = { "/print", "/echo" }
+	local _,_,_,enabled,loadable = GetAddOnInfo("DevTools")
+	if not enabled or not loadable then
+		table.insert(t, "/dump")
+	end
+	self:RegisterChatCommand(t, function(text)
 		local f, err = loadstring("AceLibrary('AceConsole-2.0'):PrintLiteral(" .. text .. ")")
 		if not f then
 			self:Print("|cffff0000Error:|r", err)
