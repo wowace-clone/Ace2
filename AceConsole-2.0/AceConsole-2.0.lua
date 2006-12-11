@@ -100,7 +100,7 @@ local NONE = NONE or "None"
 local AceOO = AceLibrary("AceOO-2.0")
 local AceEvent
 
-local AceConsole = AceOO.Mixin { "Print", "PrintComma", "CustomPrint", "RegisterChatCommand" }
+local AceConsole = AceOO.Mixin { "Print", "PrintComma", "PrintLiteral", "CustomPrint", "RegisterChatCommand" }
 local Dewdrop
 
 local _G = getfenv(0)
@@ -110,13 +110,15 @@ local function print(text, name, r, g, b, frame, delay)
 		text = " "
 	end
 	if not name or name == AceConsole then
-		(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, nil, delay or 5)
 	else
-		(frame or DEFAULT_CHAT_FRAME):AddMessage("|cffffff78" .. tostring(name) .. ":|r " .. text, r, g, b, nil, delay or 5)
+		text = "|cffffff78" .. tostring(name) .. ":|r " .. text
+	end
+	for t in text:gmatch("[^\n]+") do
+		(frame or DEFAULT_CHAT_FRAME):AddMessage(t, r, g, b, nil, delay or 5)
 	end
 end
 
-local real_tostring = tostring
+local realtostring_args = tostring
 
 local function tostring(t)
 	if type(t) == "table" then
@@ -124,24 +126,133 @@ local function tostring(t)
 			return string.format("<%s:%s>", t:GetObjectType(), t:GetName() or "(anon)")
 		end
 	end
-	return real_tostring(t)
+	return realtostring_args(t)
 end
 
-local function _tostring(...)
-	if select('#', ...) < 1 then
-		return
+local getkeystring
+
+local function isList(t)
+	local n = #t
+	for k,v in pairs(t) do
+		if type(k) ~= "number" then
+			return false
+		elseif k < 1 or k > n then
+			return false
+		end
 	end
-	return tostring((...)), _tostring(select(2, ...))
+	return true
 end
+
+local findGlobal = setmetatable({}, {__index=function(self, t)
+	for k,v in pairs(_G) do
+		if v == t then
+			self[v] = k
+			return k
+		end
+	end
+end})
+
+local recurse = {}
+local function literal_tostring_prime(t, depth)
+	if type(t) == "string" then
+		return "|cff00ff00" .. string.format("%q", (t:gsub("|", "||"))) .. "|r"
+	elseif type(t) == "table" then
+		if type(rawget(t, 0)) == "userdata" and type(t.GetObjectType) == "function" then
+			return string.format("|cffffea00<%s:%s>|r", t:GetObjectType(), t:GetName() or "(anon)")
+		end
+		if recurse[t] then
+			local g = findGlobal[t]
+			if g then
+				return string.format("|cff9f9f9f<Recursion _G[%q]>|r", g)
+			else
+				return string.format("|cff9f9f9f<Recursion %s>|r", realtostring_args(t):gsub("|", "||"))
+			end
+		end
+		recurse[t] = true
+		if next(t) == nil then
+			return "{}"
+		elseif next(t, (next(t))) == nil then
+			local k, v = next(t)
+			if k == 1 then
+				return "{ " .. literal_tostring_prime(v, depth+1) .. " }"
+			else
+				return "{ " .. getkeystring(k, depth+1) .. " = " .. literal_tostring_prime(v, depth+1) .. " }"
+			end
+		end
+		local s
+		local g = findGlobal[t]
+		if g then
+			s = string.format("{ |cff9f9f9f-- _G[%q]|r\n", g)
+		else
+			s = "{ |cff9f9f9f-- " .. realtostring_args(t):gsub("|", "||") .. "|r\n"
+		end
+		if isList(t) then
+			for i = 1, #t do
+				s = s .. ("    "):rep(depth+1) .. literal_tostring_prime(t[i], depth+1) .. (i == #t and "\n" or ",\n")
+			end
+		else
+			for k,v in pairs(t) do
+				s = s .. ("    "):rep(depth+1) .. getkeystring(k, depth+1) .. " = " .. literal_tostring_prime(v, depth+1) .. (next(t, k) == nil and "\n" or ",\n")
+			end
+		end
+		s = s .. ("    "):rep(depth) .. "}"
+		return s
+	end
+	if type(t) == "number" then
+		return "|cffff7fff" .. realtostring_args(t) .. "|r"
+	elseif type(t) == "boolean" then
+		return "|cffff9100" .. realtostring_args(t) .. "|r"
+	else
+		return "|cffffea00" .. realtostring_args(t) .. "|r"
+	end
+end
+
+function getkeystring(t, depth)
+	if type(t) == "string" then
+		if t:find("^%a[%a%d_]*$") then
+			return "|cff7fd5ff" .. t .. "|r"
+		end
+	end
+	return "[" .. literal_tostring_prime(t, depth) .. "]"
+end
+
+local function literal_tostring(t)
+	local s = literal_tostring_prime(t, 0)
+	for k,v in pairs(recurse) do
+		recurse[k] = nil
+	end
+	for k,v in pairs(findGlobal) do
+		findGlobal[k] = nil
+	end
+	return s
+end
+
+local function tostring_args(a1, ...)
+	if select('#', ...) < 1 then
+		return tostring(a1)
+	end
+	return tostring(a1), tostring_args(...)
+end
+
+local function literal_tostring_args(a1, ...)
+	if select('#', ...) < 1 then
+		return literal_tostring(a1)
+	end
+	return literal_tostring(a1), literal_tostring_args(...)
+end
+
 function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, ...)
-	if tostring(a1):find("%%") and select('#', ...) >= 1 then
-		local success, text = pcall(string.format, _tostring(a1, ...))
+	if connector == true then
+		print((", "):join(literal_tostring_args(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
+		return
+	elseif tostring(a1):find("%%") and select('#', ...) >= 1 then
+		local success, text = pcall(string.format, tostring_args(a1, ...))
 		if success then
 			print(text, self, r, g, b, frame or self.printFrame, delay)
 			return
 		end
 	end
-	print((connector or " "):join(_tostring(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
+	print((connector or " "):join(tostring_args(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
 end
 
 function AceConsole:Print(...)
@@ -150,6 +261,10 @@ end
 
 function AceConsole:PrintComma(...)
 	return AceConsole.CustomPrint(self, nil, nil, nil, nil, nil, ", ", ...)
+end
+
+function AceConsole:PrintLiteral(...)
+	return AceConsole.CustomPrint(self, nil, nil, nil, nil, nil, true, ...)
 end
 
 local work
@@ -2039,8 +2154,8 @@ local function activate(self, oldLib, oldDeactivate)
 	
 	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, ReloadUI, "RELOAD")
 	
-	self:RegisterChatCommand({ "/print" }, function(text)
-		local f, err = loadstring("AceLibrary('AceConsole-2.0'):PrintComma(" .. text .. ")")
+	self:RegisterChatCommand({ "/print", "/echo", "/dump" }, function(text)
+		local f, err = loadstring("AceLibrary('AceConsole-2.0'):PrintLiteral(" .. text .. ")")
 		if not f then
 			self:Print("|cffff0000Error:|r", err)
 		else
