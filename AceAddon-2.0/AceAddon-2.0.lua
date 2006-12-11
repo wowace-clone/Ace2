@@ -34,11 +34,11 @@ if GetLocale() == "deDE" then
 	AUTHOR = "Autor"
 	DATE = "Datum"
 	CATEGORY = "Kategorie"
-	EMAIL = "E-mail"
+	EMAIL = "E-Mail"
 	WEBSITE = "Webseite"
 	CREDITS = "Credits" -- fix
-		 
-	ABOUT = "\195\188ber"
+
+	ABOUT = "\195\156ber"
 	PRINT_ADDON_INFO = "Gibt Addondaten aus"
 
 	CATEGORIES = {
@@ -46,10 +46,10 @@ if GetLocale() == "deDE" then
 		["Auction"] = "Auktion",
 		["Audio"] = "Audio",
 		["Battlegrounds/PvP"] = "Schlachtfeld/PvP",
-		["Buffs"] = "Buffs",
+		["Buffs"] = "St\195\164rkungszauber",
 		["Chat/Communication"] = "Chat/Kommunikation",
 		["Druid"] = "Druide",
-		["Hunter"] = "J?r",
+		["Hunter"] = "J\195\164ger",
 		["Mage"] = "Magier",
 		["Paladin"] = "Paladin",
 		["Priest"] = "Priester",
@@ -58,24 +58,24 @@ if GetLocale() == "deDE" then
 		["Warlock"] = "Hexenmeister",
 		["Warrior"] = "Krieger",
 		["Healer"] = "Heiler",
-		["Tank"] = "Tank", -- noone use "Brecher"...
-		["Caster"] = "Caster",
+		["Tank"] = "Tank",
+		["Caster"] = "Zauberer",
 		["Combat"] = "Kampf",
-		["Compilations"] = "Compilations", -- whats that o_O
+		["Compilations"] = "Zusammenstellungen",
 		["Data Export"] = "Datenexport",
 		["Development Tools"] = "Entwicklungs Tools",
 		["Guild"] = "Gilde",
-		["Frame Modification"] = "Frame Modifikation",
+		["Frame Modification"] = "Frame Ver\195\164nderungen",
 		["Interface Enhancements"] = "Interface Verbesserungen",
 		["Inventory"] = "Inventar",
-		["Library"] = "Library",
-		["Map"] = "Map",
-		["Mail"] = "Mail",
+		["Library"] = "Bibliotheken",
+		["Map"] = "Karte",
+		["Mail"] = "Post",
 		["Miscellaneous"] = "Diverses",
 		["Quest"] = "Quest",
 		["Raid"] = "Schlachtzug",
-		["Tradeskill"] = "Handelsf\195\164higkeit",
-		["UnitFrame"] = "UnitFrame",
+		["Tradeskill"] = "Beruf",
+		["UnitFrame"] = "Einheiten-Fenster",
 	}
 elseif GetLocale() == "frFR" then
 	STANDBY = "|cffff5050(attente)|r"
@@ -414,13 +414,6 @@ local function RegisterOnEnable(self)
 		end
 		table.insert(AceAddon.addonsToOnEnable, self)
 	end
-end
-
-local function stripSpaces(text)
-	if type(text) == "string" then
-		return strtrim(text)
-	end
-	return text
 end
 
 function AceAddon:InitializeAddon(addon, name)
