@@ -178,9 +178,8 @@ local function hookFunction(self, func, handler, secure)
 		handler = func
 	end
 
-	if registry[self][func] then
-		local uid = registry[self][func]
-		
+	local uid = registry[self][func]
+	if uid then
 		if actives[uid] then
 			-- We have an active hook from this source.  Don't multi-hook
 			AceHook:error("%q already has an active hook from this source.", func)
@@ -191,7 +190,10 @@ local function hookFunction(self, func, handler, secure)
 			actives[uid] = true
 			return
 		else
-			AceHook:error("There is a stale hook for %q can't hook or reactivate.", func)
+			self.hooks[func] = nil
+			registry[self][func] = nil
+			handlers[uid] = nil
+			uid = nil
 		end
 	end
 	
@@ -203,7 +205,7 @@ local function hookFunction(self, func, handler, secure)
 		AceHook:error("Could not find the handler you supplied when hooking %q", func)
 	end
 	
-	local uid = createFunctionHook(self, func, handler, orig, secure)
+	uid = createFunctionHook(self, func, handler, orig, secure)
 	registry[self][func] = uid
 	actives[uid] = true
 	handlers[uid] = handler
@@ -230,7 +232,6 @@ local function unhookFunction(self, func)
 			self.hooks[func] = nil
 			registry[self][func] = nil
 			handlers[uid] = nil
-			scripts[uid] = nil
 			actives[uid] = nil
 			-- Magically all-done
 		else
@@ -260,7 +261,14 @@ local function hookMethod(self, obj, method, handler, script, secure)
 			actives[uid] = true
 			return
 		else
-			AceHook:error("There is a stale hook for %q can't hook or reactivate.", method)
+			if self.hooks[obj] then
+				self.hooks[obj][method] = nil
+			end
+			registry[self][obj][method] = nil
+			handlers[uid] = nil
+			actives[uid] = nil
+			scripts[uid] = nil
+			uid = nil
 		end
 	end
 	
