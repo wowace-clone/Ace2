@@ -287,6 +287,11 @@ local function literal_tostring_frame(t)
 		if k == "GetPoint" then
 			for i = 1, t:GetNumPoints() do
 				s = s .. "    " .. getkeystring(k) .. "(" .. literal_tostring_prime(i, 1) .. ") => " .. get_stringed_args(v, t, i)
+				if tmp[i+1] == nil and i == t:GetNumPoints() then
+					s = s .. "\n"
+				else
+					s = s .. ",\n"
+				end
 			end
 		elseif type(v) == "function" and type(k) == "string" and (k:find("^Is") or k:find("^Get") or k:find("^Can")) then
 			local q = get_stringed_args(v, t)
