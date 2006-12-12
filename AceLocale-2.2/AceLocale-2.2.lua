@@ -216,6 +216,17 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 		end
 	end
 	rawset(self, CURRENT_LOCALE, locale)
+	if not rawget(self, 'reverse') then
+		rawset(self, 'reverse', setmetatable({}, { __index = function(self2, key)
+			local self = AceLocale.reverseToBase[self2]
+			if not rawget(self, REVERSE_TRANSLATIONS) then
+				self:GetReverseTranslation(key)
+			end
+			self.reverse = self[REVERSE_TRANSLATIONS]
+			return self.reverse[key]
+		end }))
+		AceLocale.reverseToBase[self.reverse] = self
+	end
 	refixInstance(self)
 	if rawget(self, DEBUGGING) or rawget(self, DYNAMIC_LOCALES) then
 		if not rawget(self, TRANSLATION_TABLES) then
@@ -297,7 +308,9 @@ function AceLocale.prototype:SetStrictness(strict)
 end
 
 local function initReverse(self)
-	rawset(self, REVERSE_TRANSLATIONS, {})
+	rawset(self, REVERSE_TRANSLATIONS, setmetatable({}, { __index = function(_, key)
+		AceLocale.error(self, "Reverse translation for %q does not exist", key)
+	end }))
 	local alpha = self[TRANSLATIONS]
 	local bravo = self[REVERSE_TRANSLATIONS]
 	for base, localized in pairs(alpha) do
@@ -380,7 +393,7 @@ function AceLocale.prototype:HasReverseTranslation(text)
 		initReverse(self)
 		x = self[REVERSE_TRANSLATIONS]
 	end
-	return x[text] and true
+	return rawget(x, text) and true
 end
 
 function AceLocale.prototype:Debug()
@@ -470,6 +483,7 @@ local function activate(self, oldLib, oldDeactivate)
 	self.NAME = oldLib and oldLib.NAME or {}
 	self.DYNAMIC_LOCALES = oldLib and oldLib.DYNAMIC_LOCALES or {}
 	self.CURRENT_LOCALE = oldLib and oldLib.CURRENT_LOCALE or {}
+	self.reverseToBase = oldLib and oldLib.reverseToBase or {}
 	
 	BASE_TRANSLATIONS = self.BASE_TRANSLATIONS
 	DEBUGGING = self.DEBUGGING
