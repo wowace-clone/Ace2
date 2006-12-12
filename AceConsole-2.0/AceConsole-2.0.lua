@@ -292,7 +292,7 @@ local function literal_tostring_frame(t)
 				else
 					first = false
 				end
-				s = s .. "    " .. getkeystring(k) .. "(" .. literal_tostring_prime(i, 1) .. ") => " .. get_stringed_args(v, t, i)
+				s = s .. "    " .. getkeystring(k, 1) .. "(" .. literal_tostring_prime(i, 1) .. ") => " .. get_stringed_args(v, t, i)
 			end
 		elseif type(v) == "function" and type(k) == "string" and (k:find("^Is") or k:find("^Get") or k:find("^Can")) then
 			local q = get_stringed_args(v, t)
@@ -302,7 +302,7 @@ local function literal_tostring_frame(t)
 				else
 					first = false
 				end
-				s = s .. "    " .. getkeystring(k) .. "() => " .. q
+				s = s .. "    " .. getkeystring(k, 1) .. "() => " .. q
 			end
 		elseif type(v) ~= "function" then
 			if not first then
@@ -310,7 +310,7 @@ local function literal_tostring_frame(t)
 			else
 				first = false
 			end
-			s = s .. "    " .. getkeystring(k) .. " = " .. literal_tostring_prime(v)
+			s = s .. "    " .. getkeystring(k, 1) .. " = " .. literal_tostring_prime(v, 1)
 		else
 			good = false
 		end
