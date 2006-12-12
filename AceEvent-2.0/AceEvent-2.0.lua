@@ -381,6 +381,7 @@ local function OnUpdate()
 	for k,v in pairs(delayRegistry) do
 		tmp[k] = true
 	end
+	local AceEvent_debugTable = AceEvent.debugTable
 	for k in pairs(tmp) do
 		local v = delayRegistry[k]
 		if v then
@@ -470,7 +471,7 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 	t.self = self
 	t.id = id or t
 	t.repeatDelay = repeating and delay
-	if AceEvent_debugTable then
+	if AceEvent.debugTable then
 		t.mem = 0
 		t.count = 0
 		t.timeSpent = 0
