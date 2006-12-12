@@ -281,40 +281,44 @@ local function literal_tostring_frame(t)
 		tmp2[k] = nil
 	end
 	table.sort(tmp, my_sort)
+	local first = true
 	for i,k in ipairs(tmp) do
 		local v = t[k]
 		local good = true
 		if k == "GetPoint" then
 			for i = 1, t:GetNumPoints() do
-				s = s .. "    " .. getkeystring(k) .. "(" .. literal_tostring_prime(i, 1) .. ") => " .. get_stringed_args(v, t, i)
-				if tmp[i+1] == nil and i == t:GetNumPoints() then
-					s = s .. "\n"
-				else
+				if not first then
 					s = s .. ",\n"
+				else
+					first = false
 				end
+				s = s .. "    " .. getkeystring(k) .. "(" .. literal_tostring_prime(i, 1) .. ") => " .. get_stringed_args(v, t, i)
 			end
 		elseif type(v) == "function" and type(k) == "string" and (k:find("^Is") or k:find("^Get") or k:find("^Can")) then
 			local q = get_stringed_args(v, t)
 			if q then
+				if not first then
+					s = s .. ",\n"
+				else
+					first = false
+				end
 				s = s .. "    " .. getkeystring(k) .. "() => " .. q
 			end
 		elseif type(v) ~= "function" then
+			if not first then
+				s = s .. ",\n"
+			else
+				first = false
+			end
 			s = s .. "    " .. getkeystring(k) .. " = " .. literal_tostring_prime(v)
 		else
 			good = false
-		end
-		if good then
-			if tmp[i+1] == nil then
-				s = s .. "\n"
-			else
-				s = s .. ",\n"
-			end
 		end
 	end
 	for k in pairs(tmp) do
 		tmp[k] = nil
 	end
-	s = s .. "|cffffea00>|r"
+	s = s .. "\n|cffffea00>|r"
 	return s
 end
 
