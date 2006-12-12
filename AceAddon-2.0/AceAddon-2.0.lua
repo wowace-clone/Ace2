@@ -285,6 +285,58 @@ elseif GetLocale() == "zhCN" then
 		["Tradeskill"] = "\229\149\134\228\184\154\230\138\128\232\131\189",
 		["UnitFrame"] = "\229\164\180\229\131\143\230\161\134\230\158\182",
 	}
+elseif GetLocale() == "esES" then
+	STANDBY = "|cffff5050(espera)|r"
+
+	TITLE = "T\195\173tulo"
+	NOTES = "Notas"
+	VERSION = "Versi\195\179n"
+	AUTHOR = "Autor"
+	DATE = "Fecha"
+	CATEGORY = "Categor\195\173a"
+	EMAIL = "E-mail"
+	WEBSITE = "Web"
+	CREDITS = "Cr\195\169ditos"
+
+	ABOUT = "Acerca de"
+	PRINT_ADDON_INFO = "Muestra informaci\195\179n acerca del accesorio."
+
+	CATEGORIES = {
+		["Action Bars"] = "Barras de Acci\195\179n",
+		["Auction"] = "Subasta",
+		["Audio"] = "Audio",
+		["Battlegrounds/PvP"] = "Campos de Batalla/PvP",
+		["Buffs"] = "Buffs",
+		["Chat/Communication"] = "Chat/Comunicaci\195\179n",
+		["Druid"] = "Druida",
+		["Hunter"] = "Cazador",
+		["Mage"] = "Mago",
+		["Paladin"] = "Palad\195\173n",
+		["Priest"] = "Sacerdote",
+		["Rogue"] = "P\195\173caro",
+		["Shaman"] = "Cham\195\161n",
+		["Warlock"] = "Brujo",
+		["Warrior"] = "Guerrero",
+		["Healer"] = "Sanador",
+		["Tank"] = "Tanque",
+		["Caster"] = "Conjurador",
+		["Combat"] = "Combate",
+		["Compilations"] = "Compilaciones",
+		["Data Export"] = "Exportar Datos",
+		["Development Tools"] = "Herramientas de Desarrollo",
+		["Guild"] = "Hermandad",
+		["Frame Modification"] = "Modificaci\195\179n de Marcos",
+		["Interface Enhancements"] = "Mejoras de la Interfaz",
+		["Inventory"] = "Inventario",
+		["Library"] = "Biblioteca",
+		["Map"] = "Mapa",
+		["Mail"] = "Correo",
+		["Miscellaneous"] = "Miscel\195\161neo",
+		["Quest"] = "Misi\195\179n",
+		["Raid"] = "Banda",
+		["Tradeskill"] = "Habilidad de Comercio",
+		["UnitFrame"] = "Marco de Unidades",
+	}
 else -- enUS
 	STANDBY = "|cffff5050(standby)|r"
 	

@@ -146,6 +146,30 @@ elseif GetLocale() == "zhCN" then
 	
 	DEFAULT = "Default" -- fix
 	ALTERNATIVE = "Alternative" -- fix
+elseif GetLocale() == "esES" then
+	ACTIVE = "Activo"
+	ENABLED = "Activado"
+	STATE = "Estado"
+	TOGGLE_ACTIVE = "Parar/Resumir este accesorio"
+	MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00Activo|r", [false] = "|cffff0000Parado|r" }
+	SET_PROFILE = "S\195\169lectionne le profil pour cet addon."
+	SET_PROFILE_USAGE = "{perso || clase || reino || <nombre del perfil>}"
+	PROFILE = "Perfil"
+	PLAYER_OF_REALM = "%s de %s"
+	CHOOSE_PROFILE_DESC = "Elige un perfil."
+	CHOOSE_PROFILE_GUI = "Elige"
+	COPY_PROFILE_DESC = "Copiar de un perfil a otro."
+	COPY_PROFILE_GUI = "Copiar desde"
+	OTHER_PROFILE_DESC = "Elige otro perfil."
+	OTHER_PROFILE_GUI = "Otro"
+	OTHER_PROFILE_USAGE = "<nombre del perfil>"
+
+	CHARACTER_COLON = "Personaje: "
+	REALM_COLON = "Reino: "
+	CLASS_COLON = "Clase: "
+	
+	DEFAULT = "Por defecto"
+	ALTERNATIVE = "Alternativo"
 else -- enUS
 	ACTIVE = "Active"
 	ENABLED = "Enabled"

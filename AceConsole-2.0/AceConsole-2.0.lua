@@ -81,6 +81,18 @@ elseif GetLocale() == "zhTW" then
 	OPTION_HANDLER_NOT_VALID = "選項處理器不符合規定。"
 	OPTION_IS_DISABLED = "|cffffff7f%s|r 已被停用。"
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>" -- fix
+elseif GetLocale() == "esES" then
+	MAP_ONOFF = { [false] = "|cffff0000Desactivado|r", [true] = "|cff00ff00Activado|r" }
+	USAGE = "Uso"
+	IS_CURRENTLY_SET_TO = "|cffffff7f%s|r est\195\161 establecido actualmente a |cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOW_SET_TO = "|cffffff7f%s|r se ha establecido a |cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOT_A_VALID_OPTION_FOR = "[|cffffff7f%s|r] no es una opci\195\179n valida para |cffffff7f%s|r"
+	IS_NOT_A_VALID_VALUE_FOR = "[|cffffff7f%s|r] no es un valor v\195\161lido para |cffffff7f%s|r"
+	NO_OPTIONS_AVAILABLE = "No hay opciones disponibles"
+	OPTION_HANDLER_NOT_FOUND = "Gestor de opciones |cffffff7f%q|r no encontrado."
+	OPTION_HANDLER_NOT_VALID = "Gestor de opciones no v\195\161lido."
+	OPTION_IS_DISABLED = "La opci\195\179n |cffffff7f%s|r est\195\161 desactivada."
+	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>"
 else -- enUS
 	MAP_ONOFF = { [false] = "|cffff0000Off|r", [true] = "|cff00ff00On|r" }
 	USAGE = "Usage"
