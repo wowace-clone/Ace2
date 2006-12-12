@@ -176,13 +176,19 @@ local function literal_tostring_prime(t, depth)
 			else
 				return string.format("|cff9f9f9f<Recursion %s>|r", real_tostring(t):gsub("|", "||"))
 			end
-		end
-		if GetTime() > timeToEnd then
+		elseif GetTime() > timeToEnd then
 			local g = findGlobal[t]
 			if g then
 				return string.format("|cff9f9f9f<Timeout _G[%q]>|r", g)
 			else
 				return string.format("|cff9f9f9f<Timeout %s>|r", real_tostring(t):gsub("|", "||"))
+			end
+		elseif depth >= 2 then
+			local g = findGlobal[t]
+			if g then
+				return string.format("|cff9f9f9f<_G[%q]>|r", g)
+			else
+				return string.format("|cff9f9f9f<%s>|r", real_tostring(t):gsub("|", "||"))
 			end
 		end
 		recurse[t] = true
@@ -323,7 +329,7 @@ local function literal_tostring_frame(t)
 end
 
 local function literal_tostring(t, only)
-	timeToEnd = GetTime() + 0.02
+	timeToEnd = GetTime() + 0.2
 	local s
 	if only and type(t) == "table" and type(rawget(t, 0)) == "userdata" and type(t.GetObjectType) == "function" then
 		s = literal_tostring_frame(t)
@@ -2282,10 +2288,11 @@ local function activate(self, oldLib, oldDeactivate)
 	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, ReloadUI, "RELOAD")
 	local t = { "/print", "/echo" }
 	local _,_,_,enabled,loadable = GetAddOnInfo("DevTools")
-	if not enabled or not loadable then
+	if not enabled and not loadable then
 		table.insert(t, "/dump")
 	end
 	self:RegisterChatCommand(t, function(text)
+		text = text:trim():match("^(.-);*$")
 		local f, err = loadstring("AceLibrary('AceConsole-2.0'):PrintLiteral(" .. text .. ")")
 		if not f then
 			self:Print("|cffff0000Error:|r", err)
