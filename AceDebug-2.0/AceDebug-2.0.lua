@@ -18,6 +18,11 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end 
 
+local function safecall(func,...)
+	local success, err = pcall(func,...)
+	if not success then geterrorhandler()(err) end
+end
+
 if GetLocale() == "frFR" then
 	DEBUGGING = "D\195\169boguage"
 	TOGGLE_DEBUGGING = "Activer/d\195\169sactiver le d\195\169boguage"
@@ -55,11 +60,11 @@ function AceDebug:CustomDebug(r, g, b, frame, delay, a1, ...)
 	local output = string.format("|cff7fff7f(DEBUG) %s:[%s.%3d]|r",  tostring(self), date("%H:%M:%S"), math.fmod(GetTime(), 1) * 1000)
 	
 	a1 = tostring(a1)
-	if string.find(a1, "%%") and select('#', ...) >= 1 then
+	if a1:find("%%") and select('#', ...) >= 1 then
 		for i = 1, select('#', ...) do
 			tmp[i] = tostring((select(i, ...)))
 		end
-		output = output .. " " .. string.format(a1, unpack(tmp))
+		output = output .. " " .. a1:format(unpack(tmp))
 		for i = 1, select('#', ...) do
 			tmp[i] = nil
 		end
@@ -85,12 +90,22 @@ function AceDebug:Debug(...)
 	AceDebug.CustomDebug(self, nil, nil, nil, nil, nil, ...)
 end
 
-function AceDebug:IsDebugging() 
+function AceDebug:IsDebugging()
 	return self.debugging
 end
 
 function AceDebug:SetDebugging(debugging)
 	self.debugging = debugging
+
+	if debugging then
+		if type(self.OnDebugEnable) == "function" then
+			safecall(self.OnDebugEnable, self)
+		end
+	else
+		if type(self.OnDebugDisable) == "function" then
+			safecall(self.OnDebugDisable, self)
+		end
+	end
 end
 
 -- Takes a number 1-3
@@ -99,37 +114,37 @@ end
 -- Level 3: Very verbose debugging, will dump everything and anything
 -- If set to nil, you will receive no debug information
 function AceDebug:SetDebugLevel(level)
-    AceDebug:argCheck(level, 1, "number", "nil")
-    if not level then
-        self.debuglevel = nil
-        return
-    end
-    if level < 1 or level > 3 then
-        AceDebug:error("Bad argument #1 to `SetDebugLevel`, must be a number 1-3")
-    end
-    self.debuglevel = level
+	AceDebug:argCheck(level, 1, "number", "nil")
+	if not level then
+		self.debuglevel = nil
+		return
+	end
+	if level < 1 or level > 3 then
+		AceDebug:error("Bad argument #1 to `SetDebugLevel`, must be a number 1-3")
+	end
+	self.debuglevel = level
 end
 
 function AceDebug:GetDebugLevel()
-    return self.debuglevel
+	return self.debuglevel
 end
 
 function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, ...)
 	if not self.debugging or not self.debuglevel then return end
-    AceDebug:argCheck(level, 1, "number")
-    if level < 1 or level > 3 then
-        AceDebug:error("Bad argument #1 to `LevelDebug`, must be a number 1-3")
-    end
-    if level > self.debuglevel then return end
+	AceDebug:argCheck(level, 1, "number")
+	if level < 1 or level > 3 then
+		AceDebug:error("Bad argument #1 to `LevelDebug`, must be a number 1-3")
+	end
+	if level > self.debuglevel then return end
 
 	local output = string.format("|cff7fff7f(DEBUG) %s:[%s.%3d]|r",  tostring(self), date("%H:%M:%S"), math.fmod(GetTime(), 1) * 1000)
-    
+
 	a1 = tostring(a1)
-	if string.find(a1, "%%") and select('#', ...) >= 2 then
+	if a1:find("%%") and select('#', ...) >= 2 then
 		for i = 1, select('#', ...) do
 			tmp[i] = tostring((select(i, ...)))
 		end
-		output = output .. " " .. string.format(a1, unpack(tmp))
+		output = output .. " " .. a1:format(unpack(tmp))
 		for i = 1, select('#', ...) do
 			tmp[i] = nil
 		end
@@ -153,11 +168,11 @@ end
 
 function AceDebug:LevelDebug(level, ...)
 	if not self.debugging or not self.debuglevel then return end
-    AceDebug:argCheck(level, 1, "number")
-    if level < 1 or level > 3 then
-        AceDebug:error("Bad argument #1 to `LevelDebug`, must be a number 1-3")
-    end
-    if level > self.debuglevel then return end
+	AceDebug:argCheck(level, 1, "number")
+	if level < 1 or level > 3 then
+		AceDebug:error("Bad argument #1 to `LevelDebug`, must be a number 1-3")
+	end
+	if level > self.debuglevel then return end
 
 	AceDebug.CustomLevelDebug(self, level, nil, nil, nil, nil, nil, ...)
 end
@@ -182,3 +197,4 @@ end
 
 AceLibrary:Register(AceDebug, MAJOR_VERSION, MINOR_VERSION, AceDebug.activate)
 AceDebug = AceLibrary(MAJOR_VERSION)
+
