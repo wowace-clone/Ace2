@@ -219,6 +219,8 @@ local function literal_tostring_prime(t, depth)
 		return "|cffff7fff" .. real_tostring(t) .. "|r"
 	elseif type(t) == "boolean" then
 		return "|cffff9100" .. real_tostring(t) .. "|r"
+	elseif t == nil then
+		return "|cffff7f7f" .. real_tostring(t) .. "|r"
 	else
 		return "|cffffea00" .. real_tostring(t) .. "|r"
 	end
@@ -233,9 +235,92 @@ function getkeystring(t, depth)
 	return "[" .. literal_tostring_prime(t, depth) .. "]"
 end
 
-local function literal_tostring(t)
+local get_stringed_args
+do
+	local function g(value, ...)
+		if select('#', ...) == 0 then
+			return literal_tostring_prime(value, 1)
+		end
+		return literal_tostring_prime(value, 1) .. ", " .. g(...)
+	end
+
+	local function f(success, ...)
+		if not success then
+			return
+		end
+		return g(...)
+	end
+
+	function get_stringed_args(func, ...)
+		return f(pcall(func, ...))
+	end
+end
+
+local function my_sort(alpha, bravo)
+	if not alpha or not bravo then
+		return false
+	end
+	return tostring(alpha):lower() < tostring(bravo):lower()
+end
+
+local tmp = {}
+local tmp2 = {}
+local function literal_tostring_frame(t)
+	local s = string.format("|cffffea00<%s:%s|r\n", t:GetObjectType(), t:GetName() or "(anon)")
+	local __index = getmetatable(t).__index
+	for k in pairs(t) do
+		if k ~= 0 then
+			tmp2[k] = true
+		end
+	end
+	for k in pairs(__index) do
+		tmp2[k] = true
+	end
+	for k in pairs(tmp2) do
+		tmp[#tmp+1] = k
+		tmp2[k] = nil
+	end
+	table.sort(tmp, my_sort)
+	for i,k in ipairs(tmp) do
+		local v = t[k]
+		local good = true
+		if k == "GetPoint" then
+			for i = 1, t:GetNumPoints() do
+				s = s .. "    " .. getkeystring(k) .. "(" .. literal_tostring_prime(i, 1) .. ") => " .. get_stringed_args(v, t, i)
+			end
+		elseif type(v) == "function" and type(k) == "string" and (k:find("^Is") or k:find("^Get") or k:find("^Can")) then
+			local q = get_stringed_args(v, t)
+			if q then
+				s = s .. "    " .. getkeystring(k) .. "() => " .. q
+			end
+		elseif type(v) ~= "function" then
+			s = s .. "    " .. getkeystring(k) .. " = " .. literal_tostring_prime(v)
+		else
+			good = false
+		end
+		if good then
+			if tmp[i+1] == nil then
+				s = s .. "\n"
+			else
+				s = s .. ",\n"
+			end
+		end
+	end
+	for k in pairs(tmp) do
+		tmp[k] = nil
+	end
+	s = s .. "|cffffea00>|r"
+	return s
+end
+
+local function literal_tostring(t, only)
 	timeToEnd = GetTime() + 0.02
-	local s = literal_tostring_prime(t, 0)
+	local s
+	if only and type(t) == "table" and type(rawget(t, 0)) == "userdata" and type(t.GetObjectType) == "function" then
+		s = literal_tostring_frame(t)
+	else
+		s = literal_tostring_prime(t, 0)
+	end
 	for k,v in pairs(recurse) do
 		recurse[k] = nil
 	end
@@ -261,7 +346,13 @@ end
 
 function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, ...)
 	if connector == true then
-		print((", "):join(literal_tostring_args(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
+		local s
+		if select('#', ...) == 0 then
+			s = literal_tostring(a1, true)
+		else
+			s = (", "):join(literal_tostring_args(a1, ...))
+		end
+		print(s, self, r, g, b, frame or self.printFrame, delay)
 		return
 	elseif tostring(a1):find("%%") and select('#', ...) >= 1 then
 		local success, text = pcall(string.format, tostring_args(a1, ...))
