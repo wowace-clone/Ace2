@@ -1534,8 +1534,12 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 		local chunk = queue[x]
 		chunk.time = GetTime()
 		chunk[current] = message
-		if current == max then
-			message = table_concat(chunk)
+		if chunk[max] then
+			local success
+			success, message = pcall(table_concat, chunk)
+			if not success then
+				return
+			end
 			local t = queue[x]
 			queue[x] = nil
 			for k in pairs(t) do
