@@ -240,6 +240,8 @@ local function unhookFunction(self, func)
 	end
 end
 
+local donothing = function() end
+
 local function hookMethod(self, obj, method, handler, script, secure)
 	if not handler then
 		handler = method
@@ -292,7 +294,7 @@ local function hookMethod(self, obj, method, handler, script, secure)
 		orig = obj:GetScript(method)
 		if type(orig) ~= "function" then
 			-- Sometimes there is not a original function for a script.
-			orig = function() end
+			orig = donothing
 		end
 	else
 		orig = obj[method]
@@ -337,7 +339,11 @@ local function unhookMethod(self, obj, method)
 		if scripts[uid] then -- If this is a script
 			if obj:GetScript(method) == uid then
 				-- We own the script.  Revert to normal.
-				obj:SetScript(method, self.hooks[obj][method])
+				if self.hooks[obj][method] == donothing then
+					obj:SetScript(method, nil)
+				else
+					obj:SetScript(method, self.hooks[obj][method])
+				end
 				self.hooks[obj][method] = nil
 				registry[self][obj][method] = nil
 				handlers[uid] = nil
