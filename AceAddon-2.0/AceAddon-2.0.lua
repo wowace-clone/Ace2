@@ -748,10 +748,7 @@ local function external(self, major, instance)
 				enabled = false
 			end
 			if self.addons[name] then
-				local addon = self.addons[name]
-				if not AceCoreAddon or not AceCoreAddon:IsModule(addon) then
-					listAddon(addon)
-				end
+				listAddon(self.addons[name])
 			else
 				local s = " - " .. tostring(GetAddOnMetadata(i, "Title") or name)
 				local version = GetAddOnMetadata(i, "Version")
@@ -803,12 +800,9 @@ local function external(self, major, instance)
 							type = "execute",
 							func = function()
 								print("|cffffff7fAddon list:|r")
-								local AceCoreAddon = AceLibrary:HasInstance("AceCoreAddon-2.0") and AceLibrary("AceCoreAddon-2.0")
 								table.sort(self.addons, mySort)
 								for _,v in ipairs(self.addons) do
-									if not AceCoreAddon or not AceCoreAddon:IsModule(v) then
-										listAddon(v)
-									end
+									listAddon(v)
 								end
 							end
 						},
@@ -818,7 +812,6 @@ local function external(self, major, instance)
 							type = "execute",
 							func = function()
 								print("|cffffff7fAddon list:|r")
-								local AceCoreAddon = AceLibrary:HasInstance("AceCoreAddon-2.0") and AceLibrary("AceCoreAddon-2.0")
 								local count = GetNumAddOns()
 								for i = 1, count do
 									listNormalAddon(i)
@@ -831,7 +824,6 @@ local function external(self, major, instance)
 							type = "execute",
 							func = function()
 								print("|cffffff7fAddon list:|r")
-								local AceCoreAddon = AceLibrary:HasInstance("AceCoreAddon-2.0") and AceLibrary("AceCoreAddon-2.0")
 								local count = GetNumAddOns()
 								for i = 1, count do
 									local _,_,_,enabled,loadable = GetAddOnInfo(i)
@@ -847,7 +839,6 @@ local function external(self, major, instance)
 							type = "execute",
 							func = function()
 								print("|cffffff7fAddon list:|r")
-								local AceCoreAddon = AceLibrary:HasInstance("AceCoreAddon-2.0") and AceLibrary("AceCoreAddon-2.0")
 								local count = GetNumAddOns()
 								for i = 1, count do
 									local _,_,_,enabled,loadable = GetAddOnInfo(i)
@@ -863,7 +854,6 @@ local function external(self, major, instance)
 							type = "execute",
 							func = function()
 								print("|cffffff7fAddon list:|r")
-								local AceCoreAddon = AceLibrary:HasInstance("AceCoreAddon-2.0") and AceLibrary("AceCoreAddon-2.0")
 								local count = GetNumAddOns()
 								for i = 1, count do
 									if IsAddOnLoadOnDemand(i) then
