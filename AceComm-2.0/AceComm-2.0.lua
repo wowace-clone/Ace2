@@ -2024,8 +2024,6 @@ local function activate(self, oldLib, oldDeactivate)
 	AceComm = self
 	
 	if oldLib then
-		self.frame = oldLib.frame
-		self.frame:UnregisterAllEvents()
 		self.recvQueue = oldLib.recvQueue
 		self.registry = oldLib.registry
 		self.channels = oldLib.channels
