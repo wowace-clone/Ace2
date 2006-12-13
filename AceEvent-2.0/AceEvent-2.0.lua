@@ -224,11 +224,11 @@ function AceEvent:TriggerEvent(event, ...)
 				local obj_method = obj[method]
 				if obj_method then
 					local success, err = pcall(obj_method, obj, ...)
-					if not success then geterrorhandler()(err) end
+					if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 				end
 			elseif method then -- function
 				local success, err = pcall(method, ...)
-				if not success then geterrorhandler()(err) end
+				if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 			end
 			if AceEvent_debugTable then
 				local dmem, dtime = memdiff, timediff
@@ -293,11 +293,11 @@ function AceEvent:TriggerEvent(event, ...)
 					local obj_method = obj[method]
 					if obj_method then
 						local success, err = pcall(obj_method, obj, ...)
-						if not success then geterrorhandler()(err) end
+						if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 					end
 				elseif method then -- function
 					local success, err = pcall(method, ...)
-					if not success then geterrorhandler()(err) end
+					if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 				end
 				if AceEvent_debugTable then
 					local dmem, dtime = memdiff, timediff
@@ -347,11 +347,11 @@ function AceEvent:TriggerEvent(event, ...)
 				if obj_method then
 					obj_method(obj, ...)
 					local success, err = pcall(obj_method, obj, ...)
-					if not success then geterrorhandler()(err) end
+					if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 				end
 			elseif method then -- function
 				local success, err = pcall(method, ...)
-				if not success then geterrorhandler()(err) end
+				if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 			end
 			if AceEvent_debugTable then
 				local dmem, dtime = memdiff, timediff
@@ -401,7 +401,7 @@ local function OnUpdate()
 				end
 				if type(event) == "function" then
 					local success, err = pcall(event, unpack(v))
-					if not success then geterrorhandler()(err) end
+					if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 				else
 					AceEvent:TriggerEvent(event, unpack(v))
 				end

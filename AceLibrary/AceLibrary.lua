@@ -25,7 +25,7 @@ if previous and not previous:IsNewVersion(ACELIBRARY_MAJOR, ACELIBRARY_MINOR) th
 
 local function safecall(func,...)
     local success, err = pcall(func,...)
-    if not success then geterrorhandler()(err) end
+    if not success then geterrorhandler()((debugstack():match("\n(.-: )in.-\n") or "") .. err) end
 end
 
 -- @table AceLibrary
@@ -463,7 +463,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	if major ~= ACELIBRARY_MAJOR then
 		for k,v in pairs(_G) do
 			if v == newInstance then
-				geterrorhandler()(string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+				geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
 			end
 		end
 	end
@@ -526,7 +526,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 --[[			if major ~= ACELIBRARY_MAJOR then
 				for k,v in pairs(_G) do
 					if v == instance then
-						geterrorhandler()(string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+						geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
 					end
 				end
 			end]]
@@ -626,7 +626,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 --[[		if major ~= ACELIBRARY_MAJOR then
 			for k,v in pairs(_G) do
 				if v == instance then
-					geterrorhandler()(string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+					geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
 				end
 			end
 		end]]

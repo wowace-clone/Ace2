@@ -21,7 +21,7 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 local function safecall(func,...)
 	local success, err = pcall(func,...)
-	if not success then geterrorhandler()(err) end
+	if not success then geterrorhandler()((debugstack():match("\n(.-: )in.-\n") or "") .. err) end
 end
 -- Localization
 local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
