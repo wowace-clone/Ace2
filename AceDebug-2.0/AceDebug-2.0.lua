@@ -132,7 +132,7 @@ function AceDebug:GetDebugLevel()
 	return self.debuglevel
 end
 
-function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, ...)
+function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, ...)
 	if not self.debugging or not self.debuglevel then return end
 	AceDebug:argCheck(level, 1, "number")
 	if level < 1 or level > 3 then
@@ -143,7 +143,7 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, ...)
 	local output = string.format("|cff7fff7f(DEBUG) %s:[%s.%3d]|r",  tostring(self), date("%H:%M:%S"), math.fmod(GetTime(), 1) * 1000)
 
 	a1 = tostring(a1)
-	if a1:find("%%") and select('#', ...) >= 2 then
+	if a1:find("%%") and select('#', ...) >= 1 then
 		for i = 1, select('#', ...) do
 			tmp[i] = tostring((select(i, ...)))
 		end
