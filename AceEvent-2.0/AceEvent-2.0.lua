@@ -345,7 +345,6 @@ function AceEvent:TriggerEvent(event, ...)
 			if type(method) == "string" then
 				local obj_method = obj[method]
 				if obj_method then
-					obj_method(obj, ...)
 					local success, err = pcall(obj_method, obj, ...)
 					if not success then geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. err) end
 				end
