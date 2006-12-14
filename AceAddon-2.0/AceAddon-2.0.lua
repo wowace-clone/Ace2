@@ -287,7 +287,7 @@ elseif GetLocale() == "zhCN" then
 	}
 elseif GetLocale() == "esES" then
 	STANDBY = "|cffff5050(espera)|r"
-
+	
 	TITLE = "T\195\173tulo"
 	NOTES = "Notas"
 	VERSION = "Versi\195\179n"
@@ -297,15 +297,15 @@ elseif GetLocale() == "esES" then
 	EMAIL = "E-mail"
 	WEBSITE = "Web"
 	CREDITS = "Cr\195\169ditos"
-
+	
 	ABOUT = "Acerca de"
 	PRINT_ADDON_INFO = "Muestra informaci\195\179n acerca del accesorio."
-
+	
 	CATEGORIES = {
 		["Action Bars"] = "Barras de Acci\195\179n",
 		["Auction"] = "Subasta",
 		["Audio"] = "Audio",
-		["Battlegrounds/PvP"] = "Campos de Batalla/PvP",
+		["Battlegrounds/PvP"] = "Campos de Batalla/JcJ",
 		["Buffs"] = "Buffs",
 		["Chat/Communication"] = "Chat/Comunicaci\195\179n",
 		["Druid"] = "Druida",
