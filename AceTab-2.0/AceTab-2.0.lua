@@ -22,12 +22,40 @@ local _G = getfenv()
 local hookedFrames = {}
 local framesHooked = {}
 
+local function hookFrame(Gframe)
+	framesHooked[Gframe] = true
+	if Gframe == ChatFrameEditBox then
+		local orig = ChatEdit_CustomTabPressed
+		function ChatEdit_CustomTabPressed()
+			if AceTab:OnTabPressed(Gframe) then
+				return orig()
+			else
+				return true
+			end
+		end
+	else
+		local orig = Gframe:GetScript("OnTabPressed")
+		if type(orig) ~= "function" then
+			orig = function() end
+		end
+		
+		Gframe:SetScript("OnTabPressed", function()
+			if AceTab:OnTabPressed(Gframe) then
+				return orig()
+			end
+		end)
+	end
+	Gframe.curMatch = 0
+	Gframe.matches = {}
+	Gframe.pMatchLen = 0
+end
+
 function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editframes)
 	self:argCheck(descriptor, 2, "string")
 	self:argCheck(regex, 3, "string", "table")
 	self:argCheck(wlfunc, 4, "string", "function", "nil")
 	self:argCheck(usage, 5, "string", "function", "boolean", "nil")
-	self:argCheck(editframe, 6, "string", "table", "nil")
+	self:argCheck(editframes, 6, "string", "table", "nil")
 
 	if type(regex) == "string" then regex = {regex} end
 
@@ -39,9 +67,13 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 		self:error("Cannot register usage function %q; it does not exist", usage)
 	end
 
-	if not editframes then editframes = {"ChatFrameEditBox"} end
-
-	if type(editframes) == "table" and editframes.Show then editframes = {editframes:GetName()} end
+	if not editframes then
+		editframes = {"ChatFrameEditBox"}
+	elseif type(editframes) ~= "table" then
+		editframes = { editframes }
+	elseif type(editframes) == "table" and type(editframes[0]) == "userdata" and type(editframes.IsFrameType) == "function" then
+		editframes = {editframes:GetName()}
+	end
 	
 	for _, frame in pairs(editframes) do
 		local Gframe
@@ -52,7 +84,7 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 			Gframe = _G[frame]
 		end
 
-		if type(Gframe) ~= "table" or not Gframe.Show then
+		if type(Gframe) ~= "table" or type(Gframe[0]) ~= "userdata" or type(Gframe.IsFrameType) ~= "function" then
 			self:error("Cannot register frame %q; it does not exist", frame)
 			frame = nil
 		end
@@ -64,19 +96,7 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 			else
 				if AceEvent and AceEvent:IsFullyInitialized() then
 					if not framesHooked[Gframe] then
-						framesHooked[Gframe] = true
-						local orig = Gframe:GetScript("OnTabPressed")
-						if type(orig) ~= "function" then
-							orig = function() end
-						end
-						Gframe:SetScript("OnTabPressed", function()
-							if self:OnTabPressed(Gframe) then
-								return orig()
-							end
-						end)
-						Gframe.curMatch = 0
-						Gframe.matches = {}
-						Gframe.pMatchLen = 0
+						hookFrame(Gframe)
 					end
 				else
 					hookedFrames[frame] = true
@@ -93,16 +113,6 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 		self.registry[descriptor][self] = {}
 	end
 	self.registry[descriptor][self] = {patterns = regex, wlfunc = wlfunc,  usage = usage, frames = editframes}
-	
-	
-	if not AceEvent and AceLibrary:HasInstance("AceEvent-2.0") then
-		external(AceTab, "AceEvent-2.0", AceLibrary("AceEvent-2.0"))
-	end
-	if AceEvent then
-		if not self:IsEventRegistered("AceEvent_FullyInitialized") then
-			self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
-		end
-	end
 end
 
 function AceTab:IsTabCompletionRegistered(descriptor)
@@ -119,24 +129,23 @@ function AceTab:UnregisterTabCompletion(descriptor)
 	end
 end
 
-local GCS
-GCS = function(s1, s2)
+local function GCS(s1, s2)
 	if not s1 and not s2 then return end
 	if not s1 then s1 = s2 end
 	if not s2 then s2 = s1 end
-	local s1len, s2len = string.len(s1), string.len(s2)
+	local s1len, s2len = s1:len(), s2:len()
 	if s2len < s1len then
 		s1, s2 = s2, s1
 	end
-	if string.find(string.lower(s2), string.lower(s1)) then
+	if s2:lower():find(s1:lower()) then
 		return s1
 	else
-		return GCS(string.sub(s1, 1, -2), s2)
+		return GCS(s1:sub(1, -2), s2)
 	end
 end
 local pos
 local function CycleTab()
-	this.pMatchLen = string.len(this.lMatch)
+	this.pMatchLen = this.lMatch:len()
 	local cMatch = 0
 	local matched = false
 	for desc, mList in pairs(this.matches) do
@@ -160,7 +169,10 @@ local function CycleTab()
 	this:Insert(this.lMatch)
 end
 
-function AceTab:OnTabPressed()
+function AceTab:OnTabPressed(this)
+	if this == ChatFrameEditBox and this:GetText():find("^/[%a%d_]+$") then
+		return true
+	end
 	local ost = this:GetScript("OnTextSet")
 	if type(ost) ~= "function" then
 		ost = nil
@@ -168,22 +180,22 @@ function AceTab:OnTabPressed()
 	if ost then this:SetScript("OnTextSet", nil) end
 	if this:GetText() == "" then return true end
 	this:Insert("\255")
-	pos = string.find(this:GetText(), "\255", 1) - 1
+	pos = this:GetText():find("\255", 1) - 1
 	this:HighlightText(pos, pos+1)
 	this:Insert("\0")
 	if ost then this:SetScript("OnTextSet", ost) end
 	local fulltext = this:GetText()
-	local text = string.sub(fulltext, 0, pos) or ""
+	local text = fulltext:sub(1, pos) or ""
 
-	local left = string.find(string.sub(text, 1, pos), "%w+$")
+	local left = text:sub(1, pos):find("%w+$")
 	left = left and left-1 or pos
-	if not left or left == 1 and string.sub(text, 1, 1) == "/" then return true end
+	if not left or left == 1 and text:sub(1, 1) == "/" then return true end
 
-	local _, _, word = string.find(string.sub(text, left, pos), "(%w+)")
+	local word = text:sub(left, pos):match("(%w+)")
 	word = word or ""
 	this.lMatch = this.curMatch > 0 and (this.lMatch or this.origWord)
 
-	if this.lMatch and this.lMatch ~= "" and string.find(string.sub(text, 1, pos), this.lMatch.."$") then
+	if this.lMatch and this.lMatch ~= "" and text:sub(1, pos):find(this.lMatch.."$") then
 		return CycleTab()
 	else
 		this.matches = {}
@@ -201,13 +213,13 @@ function AceTab:OnTabPressed()
 				if _G[f] == this then
 					for _, regex in ipairs(s.patterns) do
 						local cands = {}
-						if string.find(string.sub(text, 1, left), regex.."$") then
+						if text:sub(1, left):find(regex.."$") then
 							local c = s.wlfunc(cands, fulltext, left)
 							if c ~= false then
 								local mtemp = {}
 								this.matches[desc] = this.matches[desc] or {}
 								for _, cand in ipairs(cands) do
-									if string.find(string.lower(cand), string.lower(word), 1, 1) == 1 then
+									if cand:lower():find(word:lower(), 1, 1) == 1 then
 										mtemp[cand] = true
 										numMatches = numMatches + 1
 										if numMatches == 1 then firstMatch = cand end
@@ -232,7 +244,7 @@ function AceTab:OnTabPressed()
 	local _, set = next(this.matches)
 	if not set or numMatches == 0 and not hasNonFallback then return true end
 	
-	this:HighlightText(left, left + string.len(word))
+	this:HighlightText(left, left + word:len())
 	if numMatches == 1 then
 		this:Insert(firstMatch)
 		this:Insert(" ")
@@ -260,13 +272,13 @@ function AceTab:OnTabPressed()
 			gcs = GCS(gcs, gcs2)
 			if u then
 				if type(u) == "function" then
-					local us = u(candUsage, c, gcs2, string.sub(text, 1, left))
+					local us = u(candUsage, c, gcs2, text:sub(1, left))
 					if candUsage and next(candUsage) then us = candUsage end
 					if type(us) == "string" then
 						DEFAULT_CHAT_FRAME:AddMessage(us)
 					elseif type(us) == "table" and numMatches > 0 then
 						for _, v in ipairs(c) do
-							if us[v] then DEFAULT_CHAT_FRAME:AddMessage(string.format("%s - %s", v, us[v])) end
+							if us[v] then DEFAULT_CHAT_FRAME:AddMessage(("%s - %s"):format(v, us[v])) end
 						end
 					end
 				end
@@ -282,19 +294,7 @@ function AceTab:AceEvent_FullyInitialized()
 	for frame in pairs(hookedFrames) do
 		local Gframe = _G[frame]
 		if not framesHooked[Gframe] then
-			framesHooked[Gframe] = true
-			local orig = Gframe:GetScript("OnTabPressed")
-			if type(orig) ~= "function" then
-				orig = function() end
-			end
-			Gframe:SetScript("OnTabPressed", function()
-				if self:OnTabPressed(Gframe) then
-					return orig()
-				end
-			end)
-			Gframe.curMatch = 0
-			Gframe.matches = {}
-			Gframe.pMatchLen = 0
+			hookFrame(Gframe)
 		end
 	end
 end
@@ -305,6 +305,8 @@ local function external(self, major, instance)
 			AceEvent = instance
 			
 			AceEvent:embed(self)
+			
+			self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
 		end
 	end
 end
