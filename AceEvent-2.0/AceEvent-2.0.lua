@@ -584,37 +584,38 @@ function AceEvent:UnregisterAllEvents()
 	if AceEvent_registry[ALL_EVENTS] and AceEvent_registry[ALL_EVENTS][self] then
 		AceEvent_registry[ALL_EVENTS][self] = nil
 		if not next(AceEvent_registry[ALL_EVENTS]) then
+			AceEvent_registry[ALL_EVENTS] = nil
 			AceEvent.frame:UnregisterAllEvents()
 			for k,v in pairs(AceEvent_registry) do
-				if k ~= ALL_EVENTS then
-					AceEvent.frame:RegisterEvent(k)
-				end
+				AceEvent.frame:RegisterEvent(k)
 			end
-			AceEvent_registry[ALL_EVENTS] = nil
 		end
 	end
-	local first = true
-	for event, data in pairs(AceEvent_registry) do
-		if first then
-			if AceEvent_registry.AceEvent_EventUnregistered then
-				event = "AceEvent_EventUnregistered"
-			else
-				first = false
-			end
-		end
+	if AceEvent_registry.AceEvent_EventUnregistered then
+		local event, data = "AceEvent_EventUnregistered", AceEvent_registry.AceEvent_EventUnregistered
 		local x = data[self]
 		data[self] = nil
-		if x and event ~= ALL_EVENTS then
+		if x then
 			if not next(data) then
-				if not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS]) then
+				if not AceEvent_registry[ALL_EVENTS] then
 					AceEvent.frame:UnregisterEvent(event)
 				end
 				AceEvent_registry[event] = nil
 			end
 			AceEvent:TriggerEvent("AceEvent_EventUnregistered", self, event)
 		end
-		if first then
-			event = nil
+	end
+	for event, data in pairs(AceEvent_registry) do
+		local x = data[self]
+		data[self] = nil
+		if x and event ~= ALL_EVENTS then
+			if not next(data) then
+				if not AceEvent_registry[ALL_EVENTS] then
+					AceEvent.frame:UnregisterEvent(event)
+				end
+				AceEvent_registry[event] = nil
+			end
+			AceEvent:TriggerEvent("AceEvent_EventUnregistered", self, event)
 		end
 	end
 	if AceEvent.onceRegistry then
