@@ -873,6 +873,7 @@ local function activate(self, oldLib, oldDeactivate)
 	if not self.playerLogin then
 		registeringFromAceEvent = true
 		self:RegisterEvent("PLAYER_LOGIN", function()
+			collectgarbage('collect')
 			self.playerLogin = true
 		end, true)
 		registeringFromAceEvent = nil
@@ -895,6 +896,7 @@ local function activate(self, oldLib, oldDeactivate)
 			if self.registry["LANGUAGE_LIST_CHANGED"] and self.registry["LANGUAGE_LIST_CHANGED"][self] then
 				self:UnregisterEvent("LANGUAGE_LIST_CHANGED")
 			end
+			collectgarbage('collect')
 		end
 		registeringFromAceEvent = true
 		local f = function()
