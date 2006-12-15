@@ -839,7 +839,7 @@ local function activate(self, oldLib, oldDeactivate)
 	ALL_EVENTS = self.ALL_EVENTS
 	FAKE_NIL = self.FAKE_NIL
 	RATE = self.RATE
-	local inPlw = false
+	local inPlw = not self.playerLogin
 	local blacklist = {
 		UNIT_INVENTORY_CHANGED = true,
 		BAG_UPDATE = true,
