@@ -239,6 +239,12 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		end
 	end
 	if not disable then
+		if AceOO.inherits(module, "AceAddon-2.0") then
+			local AceAddon = AceLibrary("AceAddon-2.0")
+			if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[self] then
+				first = true
+			end
+		end
 		local current = module.class
 		while true do
 			if current == AceOO.Class then
@@ -247,17 +253,17 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedEnable) == "function" then
-						safecall(mixin.OnEmbedEnable, mixin, module)
+						safecall(mixin.OnEmbedEnable, mixin, module, first)
 					end
 				end
 			end
 			current = current.super
 		end
 		if type(module.OnEnable) == "function" then
-			safecall(module.OnEnable, module)
+			safecall(module.OnEnable, module, first)
 		end
 		if AceEvent then
-			AceEvent:TriggerEvent("Ace2_AddonEnabled", module)
+			AceEvent:TriggerEvent("Ace2_AddonEnabled", module, first)
 		end
 	else
 		local current = module.class

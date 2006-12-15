@@ -439,6 +439,7 @@ local function RegisterOnEnable(self)
 	if AceAddon.playerLoginFired then
 		AceAddon.addonsStarted[self] = true
 		if (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
+			AceAddon.addonsEnabled[self] = true
 			local current = self.class
 			while true do
 				if current == AceOO.Class then
@@ -447,17 +448,17 @@ local function RegisterOnEnable(self)
 				if current.mixins then
 					for mixin in pairs(current.mixins) do
 						if type(mixin.OnEmbedEnable) == "function" then
-							safecall(mixin.OnEmbedEnable,mixin,self)
+							safecall(mixin.OnEmbedEnable,mixin,self,true)
 						end
 					end
 				end
 				current = current.super
 			end
 			if type(self.OnEnable) == "function" then
-				safecall(self.OnEnable,self)
+				safecall(self.OnEnable,self,true)
 			end
 			if AceEvent then
-				AceEvent:TriggerEvent("Ace2_AddonEnabled", self)
+				AceEvent:TriggerEvent("Ace2_AddonEnabled", self, true)
 			end
 		end
 	else
@@ -636,6 +637,7 @@ function AceAddon:PLAYER_LOGIN()
 			local addon = table.remove(self.addonsToOnEnable, 1)
 			self.addonsStarted[addon] = true
 			if (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
+				self.addonsEnabled[addon] = true
 				local current = addon.class
 				while true do
 					if current == AceOO.Class then
@@ -644,17 +646,17 @@ function AceAddon:PLAYER_LOGIN()
 					if current.mixins then
 						for mixin in pairs(current.mixins) do
 							if type(mixin.OnEmbedEnable) == "function" then
-								safecall(mixin.OnEmbedEnable,mixin,addon)
+								safecall(mixin.OnEmbedEnable, mixin, addon, true)
 							end
 						end
 					end
 					current = current.super
 				end
 				if type(addon.OnEnable) == "function" then
-					safecall(addon.OnEnable,addon)
+					safecall(addon.OnEnable, addon, true)
 				end
 				if AceEvent then
-					AceEvent:TriggerEvent("Ace2_AddonEnabled", addon)
+					AceEvent:TriggerEvent("Ace2_AddonEnabled", addon, true)
 				end
 			end
 		end
@@ -938,12 +940,12 @@ local function external(self, major, instance)
 					set = function(text)
 						local name,title,_,enabled,_,reason = GetAddOnInfo(text)
 						if reason == "MISSING" then
-							print(string.format("|cffffff7fAce2:|r AddOn %q does not exist", text))
+							print(("|cffffff7fAce2:|r AddOn %q does not exist"):format(text))
 						elseif not enabled then
 							EnableAddOn(text)
-							print(string.format("|cffffff7fAce2:|r %s is now enabled", title or name))
+							print(("|cffffff7fAce2:|r %s is now enabled"):format(title or name))
 						else
-							print(string.format("|cffffff7fAce2:|r %s is already enabled", title or name))
+							print(("|cffffff7fAce2:|r %s is already enabled"):format(title or name))
 						end
 					end,
 				},
@@ -956,12 +958,12 @@ local function external(self, major, instance)
 					set = function(text)
 						local name,title,_,enabled,_,reason = GetAddOnInfo(text)
 						if reason == "MISSING" then
-							print(string.format("|cffffff7fAce2:|r AddOn %q does not exist", text))
+							print(("|cffffff7fAce2:|r AddOn %q does not exist"):format(text))
 						elseif enabled then
 							DisableAddOn(text)
-							print(string.format("|cffffff7fAce2:|r %s is now disabled", title or name))
+							print(("|cffffff7fAce2:|r %s is now disabled"):format(title or name))
 						else
-							print(string.format("|cffffff7fAce2:|r %s is already disabled", title or name))
+							print(("|cffffff7fAce2:|r %s is already disabled"):format(title or name))
 						end
 					end,
 				},
@@ -974,12 +976,12 @@ local function external(self, major, instance)
 					set = function(text)
 						local name,title,_,_,loadable,reason = GetAddOnInfo(text)
 						if reason == "MISSING" then
-							print(string.format("|cffffff7fAce2:|r AddOn %q does not exist.", text))
+							print(("|cffffff7fAce2:|r AddOn %q does not exist."):format(text))
 						elseif not loadable then
-							print(string.format("|cffffff7fAce2:|r AddOn %q is not loadable. Reason: %s", text, reason))
+							print(("|cffffff7fAce2:|r AddOn %q is not loadable. Reason: %s"):format(text, reason))
 						else
 							LoadAddOn(text)
-							print(string.format("|cffffff7fAce2:|r %s is now loaded", title or name))
+							print(("|cffffff7fAce2:|r %s is now loaded"):format(title or name))
 						end
 					end
 				},
@@ -989,18 +991,18 @@ local function external(self, major, instance)
 					type = "execute",
 					func = function()
 						local mem, threshold = gcinfo()
-						print(string.format(" - |cffffff7fMemory usage [|r%.3f MiB|cffffff7f]|r", mem / 1024))
+						print((" - |cffffff7fMemory usage [|r%.3f MiB|cffffff7f]|r"):format(mem / 1024))
 						if threshold then
-							print(string.format(" - |cffffff7fThreshold [|r%.3f MiB|cffffff7f]|r", threshold / 1024))
+							print((" - |cffffff7fThreshold [|r%.3f MiB|cffffff7f]|r"):format(threshold / 1024))
 						end
-						print(string.format(" - |cffffff7fFramerate [|r%.0f fps|cffffff7f]|r", GetFramerate()))
+						print((" - |cffffff7fFramerate [|r%.0f fps|cffffff7f]|r"):format(GetFramerate()))
 						local bandwidthIn, bandwidthOut, latency = GetNetStats()
 						bandwidthIn, bandwidthOut = floor(bandwidthIn * 1024), floor(bandwidthOut * 1024)
-						print(string.format(" - |cffffff7fLatency [|r%.0f ms|cffffff7f]|r", latency))
-						print(string.format(" - |cffffff7fBandwidth in [|r%.0f B/s|cffffff7f]|r", bandwidthIn))
-						print(string.format(" - |cffffff7fBandwidth out [|r%.0f B/s|cffffff7f]|r", bandwidthOut))
-						print(string.format(" - |cffffff7fTotal addons [|r%d|cffffff7f]|r", GetNumAddOns()))
-						print(string.format(" - |cffffff7fAce2 addons [|r%d|cffffff7f]|r", table.getn(self.addons)))
+						print((" - |cffffff7fLatency [|r%.0f ms|cffffff7f]|r"):format(latency))
+						print((" - |cffffff7fBandwidth in [|r%.0f B/s|cffffff7f]|r"):format(bandwidthIn))
+						print((" - |cffffff7fBandwidth out [|r%.0f B/s|cffffff7f]|r"):format(bandwidthOut))
+						print((" - |cffffff7fTotal addons [|r%d|cffffff7f]|r"):format(GetNumAddOns()))
+						print((" - |cffffff7fAce2 addons [|r%d|cffffff7f]|r"):format(table.getn(self.addons)))
 						local ace = 0
 						local enabled = 0
 						local disabled = 0
@@ -1020,17 +1022,17 @@ local function external(self, major, instance)
 								enabled = enabled + 1
 							end
 						end
-						print(string.format(" - |cffffff7fAce 1.x addons [|r%d|cffffff7f]|r", ace))
-						print(string.format(" - |cffffff7fLoadOnDemand addons [|r%d|cffffff7f]|r", lod))
-						print(string.format(" - |cffffff7fenabled addons [|r%d|cffffff7f]|r", enabled))
-						print(string.format(" - |cffffff7fdisabled addons [|r%d|cffffff7f]|r", disabled))
+						print((" - |cffffff7fAce 1.x addons [|r%d|cffffff7f]|r"):format(ace))
+						print((" - |cffffff7fLoadOnDemand addons [|r%d|cffffff7f]|r"):format(lod))
+						print((" - |cffffff7fenabled addons [|r%d|cffffff7f]|r"):format(enabled))
+						print((" - |cffffff7fdisabled addons [|r%d|cffffff7f]|r"):format(disabled))
 						local libs = 0
 						if type(AceLibrary) == "table" and type(AceLibrary.libs) == "table" then
 							for _ in pairs(AceLibrary.libs) do
 								libs = libs + 1
 							end
 						end
-						print(string.format(" - |cffffff7fAceLibrary instances [|r%d|cffffff7f]|r", libs))
+						print((" - |cffffff7fAceLibrary instances [|r%d|cffffff7f]|r"):format(libs))
 					end
 				}
 			}
@@ -1043,22 +1045,13 @@ end
 local function activate(self, oldLib, oldDeactivate)
 	AceAddon = self
 	
-	if oldLib then
-		self.playerLoginFired = oldLib.playerLoginFired or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage
-		self.addonsToOnEnable = oldLib.addonsToOnEnable
-		self.addons = oldLib.addons
-		self.nextAddon = oldLib.nextAddon
-		self.addonsStarted = oldLib.addonsStarted
-	end
-	if not self.addons then
-		self.addons = {}
-	end
-	if not self.nextAddon then
-		self.nextAddon = {}
-	end
-	if not self.addonsStarted then
-		self.addonsStarted = {}
-	end
+	self.playerLoginFired = oldLib and oldLib.playerLoginFired or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage
+	self.addonsToOnEnable = oldLib and oldLib.addonsToOnEnable
+	self.addons = oldLib and oldLib.addons or {}
+	self.nextAddon = oldLib and oldLib.nextAddon or {}
+	self.addonsStarted = oldLib and oldLib.addonsStarted or {}
+	self.addonsEnabled = oldLib and oldLib.addonsEnabled or {}
+	
 	if oldDeactivate then
 		oldDeactivate(oldLib)
 	end

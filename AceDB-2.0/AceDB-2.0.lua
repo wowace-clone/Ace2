@@ -1138,10 +1138,14 @@ function AceDB:SetProfile(name)
 	end
 	local newactive = self:IsActive()
 	if active ~= newactive then
+		local first = nil
 		if AceOO.inherits(self, "AceAddon-2.0") then
 			local AceAddon = AceLibrary("AceAddon-2.0")
 			if not AceAddon.addonsStarted[self] then
 				return
+			end
+			if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[self] then
+				first = true
 			end
 		end
 		if newactive then
@@ -1150,17 +1154,17 @@ function AceDB:SetProfile(name)
 				if current.mixins then
 					for mixin in pairs(current.mixins) do
 						if type(mixin.OnEmbedEnable) == "function" then
-							safecall(mixin.OnEmbedEnable, mixin, self)
+							safecall(mixin.OnEmbedEnable, mixin, self, first)
 						end
 					end
 				end
 				current = current.super
 			end
 			if type(self.OnEnable) == "function" then
-				safecall(self.OnEnable, self)
+				safecall(self.OnEnable, self, first)
 			end
 			if AceEvent then
-				AceEvent:TriggerEvent("Ace2_AddonEnabled", self)
+				AceEvent:TriggerEvent("Ace2_AddonEnabled", self, first)
 			end
 		else
 			local current = self.class
