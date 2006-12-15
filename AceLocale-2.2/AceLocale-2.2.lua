@@ -406,7 +406,7 @@ function AceLocale.prototype:Debug()
 	DEFAULT_CHAT_FRAME:AddMessage("--- AceLocale Debug ---")
 	for _,locale in ipairs(locales) do
 		if not self[TRANSLATION_TABLES][locale] then
-			DEFAULT_CHAT_FRAME:AddMessage(string.format("Locale %q not found", locale))
+			DEFAULT_CHAT_FRAME:AddMessage(("Locale %q not found"):format(locale))
 		else
 			localizations[locale] = self[TRANSLATION_TABLES][locale]
 		end
@@ -448,11 +448,11 @@ function AceLocale.prototype:Debug()
 	end
 	for locale, t in pairs(localeDebug) do
 		if not next(t) then
-			DEFAULT_CHAT_FRAME:AddMessage(string.format("Locale %q complete", locale))
+			DEFAULT_CHAT_FRAME:AddMessage(("Locale %q complete"):format(locale))
 		else
-			DEFAULT_CHAT_FRAME:AddMessage(string.format("Locale %q missing:", locale))
+			DEFAULT_CHAT_FRAME:AddMessage(("Locale %q missing:"):format(locale))
 			for word in pairs(t) do
-				DEFAULT_CHAT_FRAME:AddMessage(string.format("    %q", word))
+				DEFAULT_CHAT_FRAME:AddMessage(("    %q"):format(word))
 			end
 		end
 	end

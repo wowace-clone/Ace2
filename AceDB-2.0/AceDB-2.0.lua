@@ -269,8 +269,8 @@ if race == "Orc" or race == "Scourge" or race == "Troll" or race == "Tauren" or 
 else
 	faction = FACTION_ALLIANCE
 end
-local charID = string.format(PLAYER_OF_REALM, UnitName("player"), (string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1")))
-local realm = string.gsub(GetRealmName(), "^%s*(.-)%s*$", "%1")
+local realm = GetRealmName():trim()
+local charID = PLAYER_OF_REALM:format(UnitName("player"), realm)
 local realmID = realm .. " - " .. faction
 local classID = UnitClass("player")
 
@@ -309,9 +309,9 @@ local caseInsensitive_mt = {
 		if type(key) ~= "string" then
 			return nil
 		end
-		local lowerKey = string.lower(key)
+		local lowerKey = key:lower()
 		for k,v in pairs(self) do
-			if string.lower(k) == lowerKey then
+			if k:lower() == lowerKey then
 				return self[k]
 			end
 		end
@@ -320,9 +320,9 @@ local caseInsensitive_mt = {
 		if type(key) ~= "string" then
 			return error("table index is nil", 2)
 		end
-		local lowerKey = string.lower(key)
+		local lowerKey = key:lower()
 		for k in pairs(self) do
-			if string.lower(k) == lowerKey then
+			if k:lower() == lowerKey then
 				rawset(self, k, nil)
 				rawset(self, key, value)
 				return
@@ -429,9 +429,9 @@ local db_mt = { __index = function(db, key)
 	elseif key == "raw" or key == "defaults" or key == "name" or key == "charName" or key == "namespaces" then
 		return nil
 	end
-	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
+	error(("Cannot access key %q in db table. You may want to use db.profile[%q]"):format(tostring(key), tostring(key)), 2)
 end, __newindex = function(db, key, value)
-	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
+	error(("Cannot access key %q in db table. You may want to use db.profile[%q]"):format(tostring(key), tostring(key)), 2)
 end }
 
 local function RecalculateAceDBCopyFromList(target)
@@ -445,14 +445,14 @@ local function RecalculateAceDBCopyFromList(target)
 		if db.raw.profiles then
 			for k in pairs(db.raw.profiles) do
 				if currentProfile ~= k then
-					if string.find(k, '^char/') then
-						local name = string.sub(k, 6)
+					if k:find("^char/") then
+						local name = k:sub(6)
 						t[k] = CHARACTER_COLON .. name
-					elseif string.find(k, '^realm/') then
-						local name = string.sub(k, 7)
+					elseif k:find("^realm/") then
+						local name = k:sub(7)
 						t[k] = REALM_COLON .. name
-					elseif string.find(k, '^class/') then
-						local name = string.sub(k, 7)
+					elseif k:find("^class/") then
+						local name = k:sub(7)
 						t[k] = CLASS_COLON .. name
 					else
 						t[k] = k
@@ -465,14 +465,14 @@ local function RecalculateAceDBCopyFromList(target)
 				if n.profiles then
 					for k in pairs(n.profiles) do
 						if currentProfile ~= k then
-							if string.find(k, '^char/') then
-								local name = string.sub(k, 6)
+							if k:find('^char/') then
+								local name = k:sub(6)
 								t[k] = CHARACTER_COLON .. name
-							elseif string.find(k, '^realm/') then
-								local name = string.sub(k, 7)
+							elseif k:find('^realm/') then
+								local name = k:sub(7)
 								t[k] = REALM_COLON .. name
-							elseif string.find(k, '^class/') then
-								local name = string.sub(k, 7)
+							elseif k:find('^class/') then
+								local name = k:sub(7)
 								t[k] = CLASS_COLON .. name
 							else
 								t[k] = k
@@ -504,7 +504,7 @@ local function RecalculateAceDBProfileList(target)
 	if db and db.raw then
 		if db.raw.profiles then
 			for k in pairs(db.raw.profiles) do
-				if not string.find(k, '^char/') and not string.find(k, '^realm/') and not string.find(k, '^class/') then
+				if not k:find("^char/") and not k:find("^realm/") and not k:find("^class/") then
 					t[k] = k
 				end
 			end
@@ -513,7 +513,7 @@ local function RecalculateAceDBProfileList(target)
 			for _,n in pairs(db.raw.namespaces) do
 				if n.profiles then
 					for k in pairs(n.profiles) do
-						if not string.find(k, '^char/') and not string.find(k, '^realm/') and not string.find(k, '^class/') then
+						if not k:find("^char/") and not k:find("^realm/") and not k:find("^class/") then
 							t[k] = k
 						end
 					end
@@ -751,9 +751,9 @@ local namespace_mt = { __index = function(namespace, key)
 	elseif key == "defaults" or key == "name" or key == "db" then
 		return nil
 	end
-	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
+	error(("Cannot access key %q in db table. You may want to use db.profile[%q]"):format(tostring(key), tostring(key)), 2)
 end, __newindex = function(db, key, value)
-	error(string.format('Cannot access key %q in db table. You may want to use db.profile[%q]', tostring(key), tostring(key)), 2)
+	error(("Cannot access key %q in db table. You may want to use db.profile[%q]"):format(tostring(key), tostring(key)), 2)
 end }
 
 function AceDB:InitializeDB(addonName)
@@ -812,7 +812,7 @@ function AceDB:RegisterDB(name, charName)
 		AceDB:error("Cannot call \"RegisterDB\" if self.db is set.")
 	end
 	local stack = debugstack()
-	local addonName = string.gsub(stack, ".-\n.-\\AddOns\\(.-)\\.*", "%1")
+	local addonName = stack:gsub(".-\n.-\\AddOns\\(.-)\\.*", "%1")
 	self.db = {
 		name = name,
 		charName = charName
@@ -1072,17 +1072,17 @@ function AceDB:SetProfile(name)
 		AceDB:error("Cannot call \"SetProfile\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
 	local db = self.db
-	local lowerName = string.lower(name)
-	if string.sub(lowerName, 1, 5) == "char/" or string.sub(lowerName, 1, 6) == "realm/" or string.sub(lowerName, 1, 6) == "class/" then
-		if string.sub(lowerName, 1, 5) == "char/" then
+	local lowerName = name:lower()
+	if lowerName:find("^char/") or lowerName:find("^realm/") or lowerName:find("^class/") then
+		if lowerName:find("^char/") then
 			name = "char"
 		else
-			name = string.sub(lowerName, 1, 5)
+			name = lowerName:sub(1, 5)
 		end
-		lowerName = string.lower(name)
+		lowerName = name:lower()
 	end
 	local oldName = db.raw.currentProfile[charID]
-	if string.lower(oldName) == string.lower(name) then
+	if oldName:lower() == name:lower() then
 		return
 	end
 	local oldProfileData = db.profile
@@ -1207,7 +1207,7 @@ function AceDB:CopyProfileFrom(copyFrom)
 		AceDB:error("Cannot call \"CopyProfileFrom\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
 	local db = self.db
-	local lowerCopyFrom = string.lower(copyFrom)
+	local lowerCopyFrom = copyFrom:lower()
 	if not db.raw.profiles or not db.raw.profiles[copyFrom] then
 		local good = false
 		if db.raw.namespaces then
@@ -1223,7 +1223,7 @@ function AceDB:CopyProfileFrom(copyFrom)
 		end
 	end
 	local currentProfile = db.raw.currentProfile[charID]
-	if string.lower(currentProfile) == lowerCopyFrom then
+	if currentProfile:lower() == lowerCopyFrom then
 		AceDB:error("Cannot copy from profile %q, it is currently in use.", copyFrom)
 	end
 	local oldProfileData = db.profile
@@ -1552,7 +1552,7 @@ function AceDB:PLAYER_LOGOUT()
 			end
 			if db.raw.currentProfile then
 				for k,v in pairs(db.raw.currentProfile) do
-					if string.lower(v) == "default" then
+					if v:lower() == "default" then
 						db.raw.currentProfile[k] = nil
 					end
 				end

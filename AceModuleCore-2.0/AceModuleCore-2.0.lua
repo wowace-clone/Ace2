@@ -52,7 +52,7 @@ function AceModuleCore:NewModule(name, ...)
 		AceModuleCore:error("CreatePrototype() must be called before attempting to create a new module.", 2)
 	end
 	AceModuleCore:argCheck(name, 2, "string")
-	if string.len(name) == 0 then
+	if name:len() == 0 then
 		AceModuleCore:error("Bad argument #2 to `NewModule`, string must not be empty")
 	end
 	if self.modules[name] then

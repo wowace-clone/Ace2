@@ -571,7 +571,7 @@ function AceEvent:UnregisterEvent(event)
 		end
 	else
 		if self == AceEvent then
-			error(string.format("Cannot unregister event %q. Improperly unregistering from AceEvent-2.0.", event), 2)
+			error(("Cannot unregister event %q. Improperly unregistering from AceEvent-2.0."):format(event), 2)
 		else
 			AceEvent:error("Cannot unregister event %q. %q is not registered with it.", event, self)
 		end

@@ -422,7 +422,7 @@ local function print(text)
 end
 
 function AceAddon:ADDON_LOADED(name)
-	while table.getn(self.nextAddon) > 0 do
+	while #self.nextAddon > 0 do
 		local addon = table.remove(self.nextAddon, 1)
 		table.insert(self.addons, addon)
 		if not self.addons[name] then
@@ -633,7 +633,7 @@ end
 function AceAddon:PLAYER_LOGIN()
 	self.playerLoginFired = true
 	if self.addonsToOnEnable then
-		while table.getn(self.addonsToOnEnable) > 0 do
+		while #self.addonsToOnEnable > 0 do
 			local addon = table.remove(self.addonsToOnEnable, 1)
 			self.addonsStarted[addon] = true
 			if (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
@@ -1002,7 +1002,7 @@ local function external(self, major, instance)
 						print((" - |cffffff7fBandwidth in [|r%.0f B/s|cffffff7f]|r"):format(bandwidthIn))
 						print((" - |cffffff7fBandwidth out [|r%.0f B/s|cffffff7f]|r"):format(bandwidthOut))
 						print((" - |cffffff7fTotal addons [|r%d|cffffff7f]|r"):format(GetNumAddOns()))
-						print((" - |cffffff7fAce2 addons [|r%d|cffffff7f]|r"):format(table.getn(self.addons)))
+						print((" - |cffffff7fAce2 addons [|r%d|cffffff7f]|r"):format(#self.addons))
 						local ace = 0
 						local enabled = 0
 						local disabled = 0

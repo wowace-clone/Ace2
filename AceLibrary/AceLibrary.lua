@@ -36,15 +36,15 @@ setmetatable(AceLibrary, AceLibrary_mt)
 
 local function error(self, message, ...)
 	if type(self) ~= "table" then
-		return _G.error(string.format("Bad argument #1 to `error' (table expected, got %s)", type(self)), 2)
+		return _G.error(("Bad argument #1 to `error' (table expected, got %s)"):format(type(self)), 2)
 	end
 	
 	local stack = debugstack()
 	if not message then
-		local _,_,second = string.find(stack, "\n(.-)\n")
+		local _,_,second = stack:find("\n(.-)\n")
 		message = "error raised! " .. second
 	else
-		local arg = { ... }
+		local arg = { ... } -- not worried about table creation, as errors don't happen often
 		
 		for i = 1, #arg do
 			arg[i] = tostring(arg[i])
@@ -52,35 +52,35 @@ local function error(self, message, ...)
 		for i = 1, 10 do
 			table.insert(arg, "nil")
 		end
-		message = string.format(message, unpack(arg))
+		message = message:format(unpack(arg))
 	end
 	
 	if getmetatable(self) and getmetatable(self).__tostring then
-		message = string.format("%s: %s", tostring(self), message)
+		message = ("%s: %s"):format(tostring(self), message)
 	elseif type(rawget(self, 'GetLibraryVersion')) == "function" and AceLibrary:HasInstance(self:GetLibraryVersion()) then
-		message = string.format("%s: %s", self:GetLibraryVersion(), message)
+		message = ("%s: %s"):format(self:GetLibraryVersion(), message)
 	elseif type(rawget(self, 'class')) == "table" and type(rawget(self.class, 'GetLibraryVersion')) == "function" and AceLibrary:HasInstance(self.class:GetLibraryVersion()) then
-		message = string.format("%s: %s", self.class:GetLibraryVersion(), message)
+		message = ("%s: %s"):format(self.class:GetLibraryVersion(), message)
 	end
 	
-	local first = string.gsub(stack, "\n.*", "")
-	local file = string.gsub(first, ".*\\(.*).lua:%d+: .*", "%1")
-	file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
+	local first = stack:gsub("\n.*", "")
+	local file = first:gsub(".*\\(.*).lua:%d+: .*", "%1")
+	file = file:gsub("([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 	
 	
 	local i = 0
-	for s in string.gmatch(stack, "\n([^\n]*)") do
+	for s in stack:gmatch("\n([^\n]*)") do
 		i = i + 1
-		if not string.find(s, file .. "%.lua:%d+:") and not string.find(s, "%(tail call%)") then
-			file = string.gsub(s, "^.*\\(.*).lua:%d+: .*", "%1")
-			file = string.gsub(file, "([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
+		if not s:find(file .. "%.lua:%d+:") and not s:find("%(tail call%)") then
+			file = s:gsub("^.*\\(.*).lua:%d+: .*", "%1")
+			file = file:gsub("([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
 			break
 		end
 	end
 	local j = 0
-	for s in string.gmatch(stack, "\n([^\n]*)") do
+	for s in stack:gmatch("\n([^\n]*)") do
 		j = j + 1
-		if j > i and not string.find(s, file .. "%.lua:%d+:") and not string.find(s, "%(tail call%)") then
+		if j > i and not s:find(file .. "%.lua:%d+:") and not s:find("%(tail call%)") then
 			return _G.error(message, j+1)
 		end
 	end
@@ -91,7 +91,7 @@ local function assert(self, condition, message, ...)
 	if not condition then
 		if not message then
 			local stack = debugstack()
-			local _,_,second = string.find(stack, "\n(.-)\n")
+			local _,_,second = stack:find("\n(.-)\n")
 			message = "assertion failed! " .. second
 		end
 		return error(self, message, ...)
@@ -108,9 +108,10 @@ local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
 	local errored = false
 	arg = type(arg)
 	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 and arg ~= kind5 then
-		local _,_,func = string.find(debugstack(), "`argCheck'.-([`<].-['>])")
+		local stack = debugstack()
+		local _,_,func = stack:find("`argCheck'.-([`<].-['>])")
 		if not func then
-			_,_,func = string.find(debugstack(), "([`<].-['>])")
+			_,_,func = stack:find("([`<].-['>])")
 		end
 		if kind5 then
 			return error(self, "Bad argument #%s to %s (%s, %s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, kind5, arg)
@@ -130,7 +131,8 @@ local pcall
 do
 	local function check(self, ret, ...)
 		if not ret then
-			return error(self, (string.gsub(..., ".-%.lua:%d-: ", "")))
+			local s = ...
+			return error(self, (s:gsub(".-%.lua:%d-: ", "")))
 		else
 			return ...
 		end
@@ -164,12 +166,12 @@ end
 
 local function svnRevisionToNumber(text)
 	if type(text) == "string" then
-		if string.find(text, "^%$Revision: (%d+) %$$") then
-			return tonumber((string.gsub(text, "^%$Revision: (%d+) %$$", "%1")))
-		elseif string.find(text, "^%$Rev: (%d+) %$$") then
-			return tonumber((string.gsub(text, "^%$Rev: (%d+) %$$", "%1")))
-		elseif string.find(text, "^%$LastChangedRevision: (%d+) %$$") then
-			return tonumber((string.gsub(text, "^%$LastChangedRevision: (%d+) %$$", "%1")))
+		if text:find("^%$Revision: (%d+) %$$") then
+			return tonumber((text:gsub("^%$Revision: (%d+) %$$", "%1")))
+		elseif text:find("^%$Rev: (%d+) %$$") then
+			return tonumber((text:gsub("^%$Rev: (%d+) %$$", "%1")))
+		elseif text:find("^%$LastChangedRevision: (%d+) %$$") then
+			return tonumber((text:gsub("^%$LastChangedRevision: (%d+) %$$", "%1")))
 		end
 	elseif type(text) == "number" then
 		return text
@@ -367,7 +369,7 @@ function AceLibrary:IsNewVersion(major, minor)
 		if m then
 			minor = m
 		else
-			_G.error(string.format("Bad argument #3 to  `IsNewVersion'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
+			_G.error(("Bad argument #3 to  `IsNewVersion'. Must be a number or SVN revision string. %q is not appropriate"):format(minor), 2)
 		end
 	end
 	argCheck(self, minor, 3, "number")
@@ -393,7 +395,7 @@ function AceLibrary:HasInstance(major, minor)
 			if m then
 				minor = m
 			else
-				_G.error(string.format("Bad argument #3 to  `HasInstance'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
+				_G.error(("Bad argument #3 to  `HasInstance'. Must be a number or SVN revision string. %q is not appropriate"):format(minor), 2)
 			end
 		end
 		argCheck(self, minor, 3, "number")
@@ -416,7 +418,7 @@ function AceLibrary:GetInstance(major, minor)
 
 	local data = self.libs[major]
 	if not data then
-		_G.error(string.format("Cannot find a library instance of %s.", major), 2)
+		_G.error(("Cannot find a library instance of %s."):format(major), 2)
 		return
 	end
 	if minor then
@@ -425,12 +427,12 @@ function AceLibrary:GetInstance(major, minor)
 			if m then
 				minor = m
 			else
-				_G.error(string.format("Bad argument #3 to  `GetInstance'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
+				_G.error(("Bad argument #3 to  `GetInstance'. Must be a number or SVN revision string. %q is not appropriate"):format(minor), 2)
 			end
 		end
 		argCheck(self, minor, 2, "number")
 		if data.minor ~= minor then
-			_G.error(string.format("Cannot find a library instance of %s, minor version %d.", major, minor), 2)
+			_G.error(("Cannot find a library instance of %s, minor version %d."):format(major, minor), 2)
 		end
 	end
 	return data.instance
@@ -463,11 +465,11 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	if major ~= ACELIBRARY_MAJOR then
 		for k,v in pairs(_G) do
 			if v == newInstance then
-				geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+				geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. ("Cannot register library %q. It is part of the global table in _G[%q]."):format(major, k))
 			end
 		end
 	end
-	if major ~= ACELIBRARY_MAJOR and not string.find(major, "^[%a%-][%a%d%-]+[%a%-]%-%d+%.%d+$") and not string.find(major, "^[%a%-]+%-%d+%.%d+$") then
+	if major ~= ACELIBRARY_MAJOR and not major:find("^[%a%-][%a%d%-]*%-%d+%.%d+$") then
 		_G.error(string.format("Bad argument #3 to `Register'. Must be in the form of \"Name-1.0\". %q is not appropriate", major), 2)
 	end
 	if type(minor) == "string" then
@@ -475,7 +477,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		if m then
 			minor = m
 		else
-			_G.error(string.format("Bad argument #4 to `Register'. Must be a number or SVN revision string. %q is not appropriate", minor), 2)
+			_G.error(("Bad argument #4 to `Register'. Must be a number or SVN revision string. %q is not appropriate"):format(minor), 2)
 		end
 	end
 	argCheck(self, minor, 4, "number")
@@ -526,7 +528,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 --[[			if major ~= ACELIBRARY_MAJOR then
 				for k,v in pairs(_G) do
 					if v == instance then
-						geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+						geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. ("Cannot register library %q. It is part of the global table in _G[%q]."):format(major, k))
 					end
 				end
 			end]]
@@ -557,7 +559,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	local instance = data.instance
 	if minor <= data.minor then
 		-- This one is already obsolete, raise an error.
-		_G.error(string.format("Obsolete library registered. %s is already registered at version %d. You are trying to register version %d. Hint: if not AceLibrary:IsNewVersion(%q, %d) then return end", major, data.minor, minor, major, minor), 2)
+		_G.error(("Obsolete library registered. %s is already registered at version %d. You are trying to register version %d. Hint: if not AceLibrary:IsNewVersion(%q, %d) then return end"):format(major, data.minor, minor, major, minor), 2)
 		return
 	end
 	-- This is an update
@@ -626,7 +628,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 --[[		if major ~= ACELIBRARY_MAJOR then
 			for k,v in pairs(_G) do
 				if v == instance then
-					geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. string.format("Cannot register library %q. It is part of the global table in _G[%q].", major, k))
+					geterrorhandler()((debugstack():match("(.-: )in.-\n") or "") .. ("Cannot register library %q. It is part of the global table in _G[%q]."):format(major, k))
 				end
 			end
 		end]]

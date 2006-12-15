@@ -27,17 +27,20 @@ local AceOO = {
 -- @param t		The object to obtain the uid for.
 -- @return		The uid string.
 local function pad(cap)
-	return string.rep('0', 8 - string.len(cap)) .. cap
+	return ("0"):rep(8 - cap:len()) .. cap
 end
 local function getuid(t)
 	local mt = getmetatable(t)
 	setmetatable(t, nil)
 	local str = tostring(t)
 	setmetatable(t, mt)
-	local _,_,cap = string.find(str, '[^:]*: 0x(.*)$')
-	if cap then return pad(cap) end
-	_,_,cap = string.find(str, '[^:]*: (.*)$')
-	if cap then return pad(cap) end
+	local cap = str:match("[^:]*: 0x(.*)$")
+	if not cap then
+		cap = str:match("[^:]*: (.*)$")
+	end
+	if cap then
+		return pad(cap)
+	end
 end
 
 local function getlibrary(o)

@@ -481,10 +481,10 @@ function AceHook:HookReport()
 	for key, value in pairs(registry[self]) do
 		if type(value) == "table" then
 			for method, uid in pairs(value) do
-				DEFAULT_CHAT_FRAME:AddMessage(string.format("object: %s method: %q |cff%s|r%s", tostring(key), method, actives[uid] and "00ff00Active" or "ffff00Inactive", not self.hooks[key][method] and " |cff7f7fff-Secure-|r" or ""))
+				DEFAULT_CHAT_FRAME:AddMessage(("object: %s method: %q |cff%s|r%s"):format(tostring(key), method, actives[uid] and "00ff00Active" or "ffff00Inactive", not self.hooks[key][method] and " |cff7f7fff-Secure-|r" or ""))
 			end
 		else
-			DEFAULT_CHAT_FRAME:AddMessage(string.format("function: %q |cff%s|r%s", tostring(key), actives[value] and "00ff00Active" or "ffff00Inactive", not self.hooks[key] and " |cff7f7fff-Secure-|r" or ""))
+			DEFAULT_CHAT_FRAME:AddMessage(("function: %q |cff%s|r%s"):format(tostring(key), actives[value] and "00ff00Active" or "ffff00Inactive", not self.hooks[key] and " |cff7f7fff-Secure-|r" or ""))
 		end
 	end
 end
