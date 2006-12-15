@@ -28,7 +28,7 @@ if GetLocale() == "frFR" then
 	TOGGLE_DEBUGGING = "Activer/d\195\169sactiver le d\195\169boguage"
 elseif GetLocale() == "deDE" then
 	DEBUGGING = "Debuggen"
-	TOGGLE_DEBUGGING = "Aktiviert/Deaktiviert Debugging"
+	TOGGLE_DEBUGGING = "Aktiviert/Deaktiviert Debugging."
 elseif GetLocale() == "koKR" then
 	DEBUGGING = "디버깅"
 	TOGGLE_DEBUGGING = "디버깅 기능 사용함/사용안함"
@@ -37,13 +37,13 @@ elseif GetLocale() == "zhTW" then
 	TOGGLE_DEBUGGING = "啟用/停用除錯功能"
 elseif GetLocale() == "zhCN" then
 	DEBUGGING = "\232\176\131\232\175\149"
-	TOGGLE_DEBUGGING = "\229\144\175\231\148\168/\231\166\129\231\148\168 \232\176\131\232\175\149"
+	TOGGLE_DEBUGGING = "\229\144\175\231\148\168/\231\166\129\231\148\168 \232\176\131\232\175\149."
 elseif GetLocale() == "esES" then
 	DEBUGGING = "Debugging"
-	TOGGLE_DEBUGGING = "Activar/desactivar Debugging"
+	TOGGLE_DEBUGGING = "Activar/desactivar Debugging."
 else -- enUS
 	DEBUGGING = "Debugging"
-	TOGGLE_DEBUGGING = "Enable/disable debugging"
+	TOGGLE_DEBUGGING = "Toggle debugging for this addon."
 end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
