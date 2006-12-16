@@ -60,7 +60,7 @@ function AceDebug:CustomDebug(r, g, b, frame, delay, a1, ...)
 		return
 	end
 
-	local output = ("|cff7fff7f(DEBUG) %s:[%s.%3d]|r"):format(tostring(self), date("%H:%M:%S"), math.fmod(GetTime(), 1) * 1000)
+	local output = ("|cff7fff7f(DEBUG) %s:[%s.%3d]|r"):format(tostring(self), date("%H:%M:%S"), (GetTime() % 1) * 1000)
 	
 	a1 = tostring(a1)
 	if a1:find("%%") and select('#', ...) >= 1 then
@@ -140,7 +140,7 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, ...)
 	end
 	if level > self.debuglevel then return end
 
-	local output = ("|cff7fff7f(DEBUG) %s:[%s.%3d]|r"):format( tostring(self), date("%H:%M:%S"), math.fmod(GetTime(), 1) * 1000)
+	local output = ("|cff7fff7f(DEBUG) %s:[%s.%3d]|r"):format( tostring(self), date("%H:%M:%S"), (GetTime() % 1) * 1000)
 
 	a1 = tostring(a1)
 	if a1:find("%%") and select('#', ...) >= 1 then

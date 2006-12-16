@@ -75,17 +75,11 @@ local inf = 1/0
 local nan = 0/0
 
 local math_floor = math.floor
-local math_mod = math.fmod
-local math_floormod = function(value, m)
-	return math_mod(math_floor(value), m)
-end
 local string_char = string.char
-local table_insert = table.insert
-local table_concat = table.concat
-local table_remove = table.remove
 
 local type = type
 local unpack = unpack
+local ipairs = ipairs
 local pairs = pairs
 local next = next
 
@@ -99,12 +93,12 @@ do
 		local counter = 1
 		local len = text:len()
 		for i = 1, len, 3 do
-			counter = math_mod(counter*8257, 16777259) +
+			counter = (counter*8257 % 16777259) +
 				(text:byte(i)) +
 				((text:byte(i+1) or 1)*127) +
 				((text:byte(i+2) or 2)*16383)
 		end
-		return math_mod(counter, 16777213)
+		return counter % 16777213
 	end
 	
 	function HexCheckSum(text)
@@ -113,14 +107,14 @@ do
 	
 	function BinaryCheckSum(text)
 		local num = NumericCheckSum(text)
-		return string_char(math_floor(num / 65536), math_floormod(num / 256, 256), math_mod(num, 256))
+		return string_char(math_floor(num / 256^2), math_floor(num / 256) % 256, num % 256)
 	end
 	
 	function TailoredNumericCheckSum(text)
 		local hash = NumericCheckSum(text)
-		local a = math_floor(hash / 65536)
-		local b = math_floormod(hash / 256, 256)
-		local c = math_mod(hash, 256)
+		local a = math_floor(hash / 256^2)
+		local b = math_floor(hash / 256) % 256
+		local c = hash % 256
 		-- \000, \n, |, °, s, S, \015, \020
 		if a == 0 or a == 10 or a == 124 or a == 176 or a == 115 or a == 83 or a == 15 or a == 20 or a == 37 then
 			a = a + 1
@@ -138,7 +132,7 @@ do
 		elseif c == 9 or c == 255 then
 			c = c - 1
 		end
-		return a * 65536 + b * 256 + c
+		return a * 256^2 + b * 256 + c
 	end
 	
 	function TailoredHexCheckSum(text)
@@ -147,7 +141,7 @@ do
 	
 	function TailoredBinaryCheckSum(text)
 		local num = TailoredNumericCheckSum(text)
-		return string_char(math_floor(num / 65536), math_floormod(num / 256, 256), math_mod(num, 256))
+		return string_char(math_floor(num / 256^2), math_floor(num / 256) % 256, num % 256)
 	end
 end
 
@@ -470,26 +464,26 @@ do
 			return "/"
 		elseif kind == "number" then
 			if v == math_floor(v) then
-				if v <= 127 and v >= -128 then
+				if v <= 2^7-1 and v >= -2^7 then
 					if v < 0 then
 						v = v + 256
 					end
 					return string_char(byte_d, v)
-				elseif v <= 32767 and v >= -32768 then
+				elseif v <= 2^15-1 and v >= -2^15 then
 					if v < 0 then
-						v = v + 65536
+						v = v + 256^2
 					end
-					return string_char(byte_D, math_floor(v / 256), math_mod(v, 256))
-				elseif v <= 2147483647 and v >= -2147483648 then
+					return string_char(byte_D, math_floor(v / 256), v % 256)
+				elseif v <= 2^31-1 and v >= -2^31 then
 					if v < 0 then
-						v = v + 4294967296
+						v = v + 256^4
 					end
-					return string_char(byte_e, math_floor(v / 16777216), math_floormod(v / 65536, 256), math_floormod(v / 256, 256), math_mod(v, 256))
-				elseif v <= 9223372036854775807 and v >= -9223372036854775808 then
+					return string_char(byte_e, math_floor(v / 256^3), math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+				elseif v <= 2^63-1 and v >= -2^63 then
 					if v < 0 then
-						v = v + 18446744073709551616
+						v = v + 256^8
 					end
-					return string_char(byte_E, math_floor(v / 72057594037927936), math_floormod(v / 281474976710656, 256), math_floormod(v / 1099511627776, 256), math_floormod(v / 4294967296, 256), math_floormod(v / 16777216, 256), math_floormod(v / 65536, 256), math_floormod(v / 256, 256), math_mod(v, 256))
+					return string_char(byte_E, math_floor(v / 256^7), math_floor(v / 256^6) % 256, math_floor(v / 256^5) % 256, math_floor(v / 256^4) % 256, math_floor(v / 256^3) % 256, math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
 				end
 			elseif v == inf then
 				return string_char(64 --[[byte_inf]])
@@ -508,17 +502,17 @@ do
 				v = -v
 			end
 			local m, exp = math.frexp(v)
-			m = m * 9007199254740992
+			m = m * 2^53
 			local x = exp + 1023
-			local b = math_mod(m, 256)
-			local c = math_floormod(m / 256, 256)
-			m = math_floor(m / 65536)
-			m = m + x * 137438953472
-			return string_char(sign and byte_minus or byte_plus, math_floormod(m / 1099511627776, 256), math_floormod(m / 4294967296, 256), math_floormod(m / 16777216, 256), math_floormod(m / 65536, 256), math_floormod(m / 256, 256), math_mod(m, 256), c, b)
+			local b = m % 256
+			local c = math_floor(m / 256) % 256
+			m = math_floor(m / 256^2)
+			m = m + x * 2^37
+			return string_char(sign and byte_minus or byte_plus, math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
 		elseif kind == "string" then
 			local hash = textToHash and textToHash[v]
 			if hash then
-				return string_char(byte_m, math_floor(hash / 65536), math_floormod(hash / 256, 256), math_mod(hash, 256))
+				return string_char(byte_m, math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
 			end
 			local _,_,A,B,C,D,E,F,G,H = v:find("^|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[.+%]|h|r$")
 			if A then
@@ -537,19 +531,19 @@ do
 				
 				F = nil -- don't care
 				if G < 0 then
-					G = G + 65536 -- handle negatives
+					G = G + 256^2 -- handle negatives
 				end
 				
-				H = math_mod(H, 65536) -- only lower 16 bits matter
+				H = H % 256^2 -- only lower 16 bits matter
 				
-				return string_char(byte_i, math_floormod(A / 256, 256), math_mod(A, 256), math_floormod(B / 256, 256), math_mod(B, 256), math_floormod(C / 256, 256), math_mod(C, 256), math_floormod(D / 256, 256), math_mod(D, 256), math_floormod(E / 256, 256), math_mod(E, 256), math_floormod(G / 256, 256), math_mod(G, 256), math_floormod(H / 256, 256), math_mod(H, 256))
+				return string_char(byte_i, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256)
 			else
 				-- normal string
 				local len = v:len()
 				if len <= 255 then
 					return string_char(byte_s, len) .. v
 				else
-					return string_char(byte_S, math_floor(len / 256), math_mod(len, 256)) .. v
+					return string_char(byte_S, math_floor(len / 256), len % 256) .. v
 				end
 			end
 		elseif kind == "function" then
@@ -589,7 +583,7 @@ do
 				if len <= 255 then
 					return string_char(byte_o, len) .. s
 				else
-					return string_char(byte_O, math_floor(len / 256), math_mod(len, 256)) .. s
+					return string_char(byte_O, math_floor(len / 256), len % 256) .. s
 				end
 			end
 			local t = {}
@@ -632,13 +626,13 @@ do
 				if len <= 255 then
 					return string_char(byte_u, len) .. s
 				else
-					return "U" .. string_char(math_floor(len / 256), math_mod(len, 256)) .. s
+					return "U" .. string_char(math_floor(len / 256), len % 256) .. s
 				end
 			else
 				if len <= 255 then
 					return "t" .. string_char(len) .. s
 				else
-					return "T" .. string_char(math_floor(len / 256), math_mod(len, 256)) .. s
+					return "T" .. string_char(math_floor(len / 256), len % 256) .. s
 				end
 			end
 		end
@@ -696,14 +690,14 @@ do
 			local E = e1 * 256 + e2
 			local G = g1 * 256 + g2
 			local H = h1 * 256 + h2
-			if G >= 32768 then
-				G = G - 65536
+			if G >= 2^15 then
+				G = G - 256^2
 			end
 			local s = ("item:%d:%d:%d:%d:%d:%d:%d:%d"):format(A, B, C, D, E, 0, G, H)
 			local _, link = GetItemInfo(s)
 			return link, position + 14
 		elseif x == byte_m then
-			local hash = value:byte(position + 1) * 65536 + value:byte(position + 2) * 256 + value:byte(position + 3)
+			local hash = value:byte(position + 1) * 256^2 + value:byte(position + 2) * 256 + value:byte(position + 3)
 			return hashToText[hash], position + 3
 		elseif x == byte_s then
 			-- 0-255-byte string
@@ -731,8 +725,8 @@ do
 			local a = value:byte(position + 1)
 			local b = value:byte(position + 2)
 			local N = a * 256 + b
-			if N >= 32768 then
-				N = N - 65536
+			if N >= 2^15 then
+				N = N - 256^2
 			end
 			return N, position + 2
 		elseif x == byte_e then
@@ -741,9 +735,9 @@ do
 			local b = value:byte(position + 2)
 			local c = value:byte(position + 3)
 			local d = value:byte(position + 4)
-			local N = a * 16777216 + b * 65536 + c * 256 + d
-			if N >= 2147483648 then
-				N = N - 4294967296
+			local N = a * 256^3 + b * 256^2 + c * 256 + d
+			if N >= 2^31 then
+				N = N - 256^4
 			end
 			return N, position + 4
 		elseif x == byte_E then
@@ -756,9 +750,9 @@ do
 			local f = value:byte(position + 6)
 			local g = value:byte(position + 7)
 			local h = value:byte(position + 8)
-			local N = a * 72057594037927936 + b * 281474976710656 + c * 1099511627776 + d * 4294967296 + e * 16777216 + f * 65536 + g * 256 + h
-			if N >= 9223372036854775808 then
-				N = N - 18446744073709551616
+			local N = a * 256^7 + b * 256^6 + c * 256^5 + d * 256^4 + e * 256^3 + f * 256^2 + g * 256 + h
+			if N >= 2^63 then
+				N = N - 2^64
 			end
 			return N, position + 8
 		elseif x == byte_plus or x == byte_minus then
@@ -770,11 +764,11 @@ do
 			local f = value:byte(position + 6)
 			local g = value:byte(position + 7)
 			local h = value:byte(position + 8)
-			local N = a * 1099511627776 + b * 4294967296 + c * 16777216 + d * 65536 + e * 256 + f
+			local N = a * 256^5 + b * 256^4 + c * 256^3 + d * 256^2 + e * 256 + f
 			local sign = x
-			local x = math.floor(N / 137438953472)
-			local m = math_mod(N, 137438953472) * 65536 + g * 256 + h
-			local mantissa = m / 9007199254740992
+			local x = math.floor(N / 2^37)
+			local m = (N % 2^37) * 256^2 + g * 256 + h
+			local mantissa = m / 2^53
 			local exp = x - 1023
 			local val = math.ldexp(mantissa, exp)
 			if sign == byte_minus then
@@ -817,7 +811,7 @@ do
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local hash = value:byte(start) * 65536 + value:byte(start + 1) * 256 + value:byte(start + 2)
+			local hash = value:byte(start) * 256^2 + value:byte(start + 1) * 256 + value:byte(start + 2)
 			local curr = start + 2
 			if not AceComm.classes[hash] then
 				return nil, finish
@@ -833,7 +827,7 @@ do
 				n = n + 1
 				tmp[n] = v
 			end
-			local object = class:Deserialize(unpack(tmp))
+			local object = class:Deserialize(unpack(tmp, 1, n))
 			for i = 1, n do
 				tmp[i] = nil
 			end
@@ -1529,7 +1523,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 		chunk[current] = message
 		if chunk[max] then
 			local success
-			success, message = pcall(table_concat, chunk)
+			success, message = pcall(table.concat, chunk)
 			if not success then
 				return
 			end
@@ -1951,19 +1945,18 @@ function AceComm.hooks:Quit(orig)
 	return orig()
 end
 
-function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
-	local arg = { ... }
-	for i = 1, #arg, 2 do
-		if not arg[i] then
-			break
-		end
-		if type(arg[i + 1]) == "string" and arg[i + 1]:find("^AceComm") then
-			table.remove(arg, i + 1)
-			table.remove(arg, i)
-			i = i - 2
-		end
+local function filterAceComm(k, v, ...)
+	if not k or not v then
+		return
 	end
-	return orig(unpack(arg))
+	if v:find("^AceComm") then
+		return filterAceComm(...)
+	else
+		return k, v, filterAceComm(...)
+	end
+end
+function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
+	return orig(filterAceComm(...))
 end
 
 function AceComm:CHAT_MSG_SYSTEM(text)
