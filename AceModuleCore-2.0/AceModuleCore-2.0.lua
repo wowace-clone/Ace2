@@ -239,6 +239,7 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		end
 	end
 	if not disable then
+		local first = nil
 		if AceOO.inherits(module, "AceAddon-2.0") then
 			local AceAddon = AceLibrary("AceAddon-2.0")
 			if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[self] then
