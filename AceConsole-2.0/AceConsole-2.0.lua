@@ -5,10 +5,10 @@ Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
 Documentation: http://www.wowace.com/index.php/AceConsole-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceConsole-2.0
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceConsole-2.0
 Description: Mixin to allow for input/output capabilities. This uses the
              AceOptions data table format to determine input.
-             http://wiki.wowace.com/index.php/AceOptions_data_table
+             http://www.wowace.com/index.php/AceOptions_data_table
 Dependencies: AceLibrary, AceOO-2.0
 ]]
 
@@ -234,7 +234,11 @@ local function literal_tostring_prime(t, depth)
 				s = s .. ("    "):rep(depth+1) .. getkeystring(k, depth+1) .. " = " .. literal_tostring_prime(v, depth+1) .. (next(t, k) == nil and "\n" or ",\n")
 			end
 		end
-		s = s .. ("    "):rep(depth) .. "}"
+		if g then
+			s = s .. ("    "):rep(depth) .. string.format("} |cff9f9f9f-- _G[%q]|r", g)
+		else
+			s = s .. ("    "):rep(depth) .. "} |cff9f9f9f-- " .. real_tostring(t):gsub("|", "||")
+		end
 		return s
 	end
 	if type(t) == "number" then
