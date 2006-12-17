@@ -499,18 +499,18 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			if next then
 				for k,v in pairs(options.args) do
 					local good = false
-					if tostring(k):lower() == next then
+					if tostring(k):gsub("%s", "-"):lower() == next then
 						good = true
 					elseif k == next_num then
 						good = true
 					elseif type(v.aliases) == "table" then
 						for _,alias in ipairs(v.aliases) do
-							if alias:lower() == next then
+							if alias:gsub("%s", "-"):lower() == next then
 								good = true
 								break
 							end
 						end
-					elseif type(v.aliases) == "string" and v.aliases:lower() == next then
+					elseif type(v.aliases) == "string" and v.aliases:gsub("%s", "-"):lower() == next then
 						good = true
 					end
 					if good then
@@ -820,8 +820,6 @@ local function validateOptions(options, position, baseOptions, fromPass)
 			if type(k) ~= "number" then
 				if type(k) ~= "string" then
 					return '"args" keys must be strings or numbers', position
-				elseif k:find("%s") then
-					return ('"args" keys must not include spaces. %q is not appropriate.'):format(k), position
 				elseif k:len() == 0 then
 					return '"args" keys must not be 0-length strings.', position
 				end
@@ -1118,7 +1116,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					local alpha_order = alpha and alpha.order or 100
 					local bravo_order = bravo and bravo.order or 100
 					if alpha_order == bravo_order then
-						return tostring(a) < tostring(b)
+						return tostring(a):lower() < tostring(b):lower()
 					else
 						if alpha_order < 0 then
 							if bravo_order > 0 then
@@ -1130,7 +1128,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							end
 						end
 						if alpha_order > 0 and bravo_order > 0 then
-							return tostring(a) < tostring(b)
+							return tostring(a):lower() < tostring(b):lower()
 						end
 						return alpha_order < bravo_order
 					end
@@ -1160,8 +1158,10 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				end
 			end
 			for _,k in ipairs(order) do
+				local real_k = k
 				local v = options.args[k]
 				if v then
+					local k = k:gsub("%s", "-")
 					local disabled = v.disabled
 					if disabled then
 						if type(disabled) == "function" then
@@ -1182,15 +1182,17 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						end
 					end
 					if type(v.aliases) == "table" then
-						k = k .. " || " .. table.concat(v.aliases, " || ")
+						for _,s in ipairs(v.aliases) do
+							k = k .. " || " .. s:gsub("%s", "-")
+						end
 					elseif type(v.aliases) == "string" then
-						k = k .. " || " .. v.aliases
+						k = k .. " || " .. v.aliases:gsub("%s", "-")
 					end
 					if v.get then
 						local a1,a2,a3,a4
 						if type(v.get) == "function" then
 							if options.pass then
-								a1,a2,a3,a4 = v.get(k)
+								a1,a2,a3,a4 = v.get(real_k)
 							else
 								a1,a2,a3,a4 = v.get()
 							end
@@ -1208,7 +1210,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 								AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(f))
 							end
 							if options.pass then
-								a1,a2,a3,a4 = handler[f](handler, k)
+								a1,a2,a3,a4 = handler[f](handler, real_k)
 							else
 								a1,a2,a3,a4 = handler[f](handler)
 							end
@@ -2272,7 +2274,7 @@ function external(self, major, instance)
 				local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
 				if validArgs.args then
 					for arg in pairs(validArgs.args) do
-						table.insert(t, arg)
+						table.insert(t, (tostring(arg):gsub("%s", "-")))
 					end
 				end
 			end
