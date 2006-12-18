@@ -2312,7 +2312,7 @@ function external(self, major, instance)
 								end
 							end
 						end
-						if not hidden and not disabled then
+						if not hidden and not disabled and v.type ~= "header" then
 							table.insert(t, (tostring(arg):gsub("%s", "-")))
 						end
 					end
