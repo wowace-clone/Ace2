@@ -25,7 +25,7 @@ if previous and not previous:IsNewVersion(ACELIBRARY_MAJOR, ACELIBRARY_MINOR) th
 
 local function safecall(func,...)
     local success, err = pcall(func,...)
-    if not success then geterrorhandler()((debugstack():match("\n(.-: )in.-\n") or "") .. err) end
+    if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("\n(.-: )in.-\n") or "") .. err) end
 end
 
 -- @table AceLibrary

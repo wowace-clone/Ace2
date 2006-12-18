@@ -21,7 +21,7 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 
 local function safecall(func, ...)
 	local success, err = pcall(func, ...)
-	if not success then geterrorhandler()((debugstack():match("\n(.-: )in.-\n") or "") .. err) end
+	if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("\n(.-: )in.-\n") or "") .. err) end
 end
 
 local AceEvent
