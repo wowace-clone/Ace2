@@ -2265,25 +2265,64 @@ function external(self, major, instance)
 		end
 	elseif major == "AceTab-2.0" then
 		instance:RegisterTabCompletion("AceConsole", "%/.*", function(t, cmdpath, pos)
-			local ac = AceLibrary("AceConsole-2.0")
-			local name, cmd, path = ac:TabCompleteInfo(cmdpath:sub(1, pos))
+			local name, cmd, path = self:TabCompleteInfo(cmdpath:sub(1, pos))
 
-			if not ac.registry[name] then
+			if not self.registry[name] then
 				return false
 			else
-				local validArgs = findTableLevel(ac, ac.registry[name], cmd, path or "")
+				local validArgs, _, _, handler = findTableLevel(self, self.registry[name], cmd, path or "")
 				if validArgs.args then
-					for arg in pairs(validArgs.args) do
-						table.insert(t, (tostring(arg):gsub("%s", "-")))
+					for arg, v in pairs(validArgs.args) do
+						local hidden = v.hidden
+						local handler = v.handler or handler
+						if hidden then
+							if type(hidden) == "function" then
+								v = hidden()
+							elseif type(hidden) == "string" then
+								local f = hidden
+								local neg = f:match("^~(.-)$")
+								if neg then
+									f = neg
+								end
+								if type(handler[f]) ~= "function" then
+									self:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(f))
+								end
+								hidden = handler[f](handler)
+								if neg then
+									hidden = not hidden
+								end
+							end
+						end
+						local disabled = hidden or v.disabled
+						if disabled then
+							if type(disabled) == "function" then
+								disabled = disabled()
+							elseif type(disabled) == "string" then
+								local f = disabled
+								local neg = f:match("^~(.-)$")
+								if neg then
+									f = neg
+								end
+								if type(handler[f]) ~= "function" then
+									self:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(f))
+								end
+								disabled = handler[f](handler)
+								if neg then
+									disabled = not disabled
+								end
+							end
+						end
+						if not hidden and not disabled then
+							table.insert(t, (tostring(arg):gsub("%s", "-")))
+						end
 					end
 				end
 			end
 		end, function(u, matches, gcs, cmdpath)
-			local ac = AceLibrary("AceConsole-2.0")
-			local name, cmd, path = ac:TabCompleteInfo(cmdpath)
-			if ac.registry[name] then
-				local validArgs, path2, argwork = findTableLevel(ac, ac.registry[name], cmd, path)
-				printUsage(ac, validArgs.handler, ac.registry[name], validArgs, path2, argwork, not gcs or gcs ~= "", gcs)
+			local name, cmd, path = self:TabCompleteInfo(cmdpath)
+			if self.registry[name] then
+				local validArgs, path2, argwork, handler = findTableLevel(self, self.registry[name], cmd, path)
+				printUsage(self, validArgs.handler or handler, self.registry[name], validArgs, path2, argwork, not gcs or gcs ~= "", gcs)
 			end
 		end)
 	elseif major == "Dewdrop-2.0" then
