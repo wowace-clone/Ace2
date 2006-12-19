@@ -2277,7 +2277,7 @@ function external(self, major, instance)
 						local handler = v.handler or handler
 						if hidden then
 							if type(hidden) == "function" then
-								v = hidden()
+								hidden = hidden()
 							elseif type(hidden) == "string" then
 								local f = hidden
 								local neg = f:match("^~(.-)$")
