@@ -422,13 +422,21 @@ local function print(text)
 end
 
 function AceAddon:ADDON_LOADED(name)
-	while #self.nextAddon > 0 do
-		local addon = table.remove(self.nextAddon, 1)
-		table.insert(self.addons, addon)
-		if not self.addons[name] then
-			self.addons[name] = addon
+	local i = 1
+	while #self.nextAddon >= i do
+		local addon = self.nextAddon[i]
+		local n = self.nextAddonFolders[addon]
+		if not n or n == name then
+			table.remove(self.nextAddon, i)
+			self.nextAddonFolders[addon] = nil
+			table.insert(self.addons, addon)
+			if not self.addons[name] then
+				self.addons[name] = addon
+			end
+			self:InitializeAddon(addon, name)
+		else
+			i = i + 1
 		end
-		self:InitializeAddon(addon, name)
 	end
 end
 
@@ -679,7 +687,10 @@ function AceAddon.prototype:init()
 	
 	self.super = self.class.prototype
 	
-	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED", true)
+	if not AceAddon:IsEventRegistered("ADDON_LOADED") then
+		AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED")
+	end
+	AceAddon.nextAddonFolders[self] = debugstack(4):match("[A%.][d%.][d%.][Oo]ns\\([^\\]+)\\")
 	table.insert(AceAddon.nextAddon, self)
 end
 
@@ -1049,6 +1060,7 @@ local function activate(self, oldLib, oldDeactivate)
 	self.addonsToOnEnable = oldLib and oldLib.addonsToOnEnable
 	self.addons = oldLib and oldLib.addons or {}
 	self.nextAddon = oldLib and oldLib.nextAddon or {}
+	self.nextAddonFolders = oldLib and oldLib.nextAddonFolders or {}
 	self.addonsStarted = oldLib and oldLib.addonsStarted or {}
 	self.addonsEnabled = oldLib and oldLib.addonsEnabled or {}
 	
