@@ -888,7 +888,7 @@ local function keybindingValidateFunc(text)
 			break
 		end
 	end
-	if not text:find("^F%d+$") and text:len() ~= 1 and (text:byte() < 128 or text:len() > 4) and not _G["KEY_" .. text] then
+	if not text:find("^F%d+$") and text ~= "CAPSLOCK" and text:len() ~= 1 and (text:byte() < 128 or text:len() > 4) and not _G["KEY_" .. text] then
 		return false
 	end
 	local s = text
