@@ -4,8 +4,8 @@ Revision: $Rev$
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
-Documentation: http://www.wowace.com/index.php/AceAddon-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceAddon-2.0
+Documentation: http://www.wowace.com/wiki/AceAddon-2.0
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceAddon-2.0
 Description: Base for all Ace addons to inherit from.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0, (optional) AceConsole-2.0
 ]]
@@ -422,21 +422,13 @@ local function print(text)
 end
 
 function AceAddon:ADDON_LOADED(name)
-	local i = 1
-	while #self.nextAddon >= i do
-		local addon = self.nextAddon[i]
-		local n = self.nextAddonFolders[addon]
-		if not n or n == name then
-			table.remove(self.nextAddon, i)
-			self.nextAddonFolders[addon] = nil
-			table.insert(self.addons, addon)
-			if not self.addons[name] then
-				self.addons[name] = addon
-			end
-			self:InitializeAddon(addon, name)
-		else
-			i = i + 1
+	while #self.nextAddon > 0 do
+		local addon = table.remove(self.nextAddon, 1)
+		table.insert(self.addons, addon)
+		if not self.addons[name] then
+			self.addons[name] = addon
 		end
+		self:InitializeAddon(addon, name)
 	end
 end
 
@@ -687,10 +679,7 @@ function AceAddon.prototype:init()
 	
 	self.super = self.class.prototype
 	
-	if not AceAddon:IsEventRegistered("ADDON_LOADED") then
-		AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED")
-	end
-	AceAddon.nextAddonFolders[self] = debugstack(4):match("[A%.][d%.][d%.][Oo]ns\\([^\\]+)\\")
+	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED", true)
 	table.insert(AceAddon.nextAddon, self)
 end
 
@@ -1060,7 +1049,6 @@ local function activate(self, oldLib, oldDeactivate)
 	self.addonsToOnEnable = oldLib and oldLib.addonsToOnEnable
 	self.addons = oldLib and oldLib.addons or {}
 	self.nextAddon = oldLib and oldLib.nextAddon or {}
-	self.nextAddonFolders = oldLib and oldLib.nextAddonFolders or {}
 	self.addonsStarted = oldLib and oldLib.addonsStarted or {}
 	self.addonsEnabled = oldLib and oldLib.addonsEnabled or {}
 	
