@@ -422,13 +422,24 @@ local function print(text)
 end
 
 function AceAddon:ADDON_LOADED(name)
+	local unregister = true
 	while #self.nextAddon > 0 do
 		local addon = table.remove(self.nextAddon, 1)
-		table.insert(self.addons, addon)
-		if not self.addons[name] then
-			self.addons[name] = addon
+		if addon.possibleNames[name] then
+			table.insert(self.addons, addon)
+			if not self.addons[name] then
+				self.addons[name] = addon
+			end
+			addon.possibleNames = nil
+			self:InitializeAddon(addon, name)
+		else
+			unregister = nil
+			table.insert(self.skipAddon, addon)
 		end
-		self:InitializeAddon(addon, name)
+	end
+	self.nextAddon, self.skipAddon = self.skipAddon, self.nextAddon
+	if unregister then
+		AceAddon:UnregisterEvent("ADDON_LOADED")
 	end
 end
 
@@ -676,10 +687,15 @@ function AceAddon.prototype:init()
 		error(MAJOR_VERSION .. " requires AceEvent-2.0", 4)
 	end
 	AceAddon.super.prototype.init(self)
-	
+
 	self.super = self.class.prototype
-	
-	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED", true)
+
+	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED")
+	local names = {}
+	for i = 1, GetNumAddOns() do
+		if IsAddOnLoaded(i) then names[GetAddOnInfo(i)] = true end
+	end
+	self.possibleNames = names
 	table.insert(AceAddon.nextAddon, self)
 end
 
@@ -1049,6 +1065,7 @@ local function activate(self, oldLib, oldDeactivate)
 	self.addonsToOnEnable = oldLib and oldLib.addonsToOnEnable
 	self.addons = oldLib and oldLib.addons or {}
 	self.nextAddon = oldLib and oldLib.nextAddon or {}
+	self.skipAddon = oldLib and oldLib.skipAddon or {}
 	self.addonsStarted = oldLib and oldLib.addonsStarted or {}
 	self.addonsEnabled = oldLib and oldLib.addonsEnabled or {}
 	
