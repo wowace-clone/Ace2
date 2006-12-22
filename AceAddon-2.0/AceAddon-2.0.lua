@@ -423,15 +423,11 @@ end
 
 function AceAddon:ADDON_LOADED(name)
 	local unregister = true
+	local initAddon = {}
 	while #self.nextAddon > 0 do
 		local addon = table.remove(self.nextAddon, 1)
 		if addon.possibleNames[name] then
-			table.insert(self.addons, addon)
-			if not self.addons[name] then
-				self.addons[name] = addon
-			end
-			addon.possibleNames = nil
-			self:InitializeAddon(addon, name)
+			table.insert(initAddon, addon)
 		else
 			unregister = nil
 			table.insert(self.skipAddon, addon)
@@ -440,6 +436,15 @@ function AceAddon:ADDON_LOADED(name)
 	self.nextAddon, self.skipAddon = self.skipAddon, self.nextAddon
 	if unregister then
 		AceAddon:UnregisterEvent("ADDON_LOADED")
+	end
+	while #initAddon > 0 do
+		local addon = table.remove(initAddon, 1)
+		table.insert(self.addons, addon)
+		if not self.addons[name] then
+			self.addons[name] = addon
+		end
+		addon.possibleNames = nil
+		self:InitializeAddon(addon, name)
 	end
 end
 
