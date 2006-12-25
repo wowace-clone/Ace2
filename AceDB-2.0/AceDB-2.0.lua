@@ -521,7 +521,7 @@ local function RecalculateAceDBProfileList(target)
 			end
 		end
 		local curr = db.raw.currentProfile and db.raw.currentProfile[charID]
-		if curr then
+		if curr and not t[curr] then
 			t[curr] = curr
 		end
 	end
