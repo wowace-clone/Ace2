@@ -37,6 +37,9 @@ local AceEvent = Mixin {
 						"UnregisterBucketEvent",
 						"UnregisterAllBucketEvents",
 						"IsBucketEventRegistered",
+						"ScheduleLeaveCombatAction",
+						"ScheduleEnterCombatAction",
+						"CancelAllCombatSchedules",
 					   }
 
 local weakKey = {__mode="k"}
@@ -421,10 +424,10 @@ local function OnUpdate()
 					mem, time = gcinfo(), GetTime()
 				end
 				if type(event) == "function" then
-					local success, err = pcall(event, unpack(v))
+					local success, err = pcall(event, unpack(v, 1, v.n))
 					if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
 				else
-					AceEvent:TriggerEvent(event, unpack(v))
+					AceEvent:TriggerEvent(event, unpack(v, 1, v.n))
 				end
 				if AceEvent_debugTable then
 					mem, time = gcinfo() - mem, GetTime() - time
@@ -485,10 +488,12 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 		for i = 2, select('#', ...) do
 			t[i-1] = select(i, ...)
 		end
+		t.n = select('#', ...) - 1
 	elseif id then
 		t = new(select(2, ...))
+		t.n = select('#', ...) - 1
 	else
-		t = { ... }
+		t = { n = select('#', ...), ... }
 	end
 	t.event = event
 	t.time = GetTime() + delay
@@ -805,12 +810,94 @@ function AceEvent:UnregisterAllBucketEvents()
 	end
 end
 
+local combatSchedules
+function AceEvent:CancelAllCombatSchedules()
+	local i = 0
+	while true do
+		i = i + 1
+		if not combatSchedules[i] then
+			break
+		end
+		local v = combatSchedules[i]
+		if v.self == self then
+			v = del(v)
+			table.remove(combatSchedules, i)
+			i = i - 1
+		end
+	end
+end
+
+local inCombat = false
+local tmp = {}
+function AceEvent:PLAYER_REGEN_DISABLED()
+	inCombat = (self.currentEvent == "PLAYER_REGEN_DISABLED")
+	for i, v in ipairs(combatSchedules) do
+		tmp[i] = v
+		combatSchedules[i] = nil
+	end
+	for i, v in ipairs(tmp) do
+		local func = v.func
+		if func then
+			local success, err = pcall(func, unpack(v, 1, v.n))
+			if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+		else
+			local obj = v.self
+			local method = v.method
+			local obj_method = obj.method
+			local obj_method = obj[method]
+			if obj_method then
+				local success, err = pcall(obj_method, obj, unpack(v, 1, v.n))
+				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+			end
+		end
+		tmp[i] = del(v)
+	end
+end
+AceEvent.PLAYER_REGEN_ENABLED = AceEvent.PLAYER_REGEN_DISABLED
+
+local function scheduleCombatAction(method, ...)
+	if self == AceEvent then
+		AceEvent:argCheck(method, 2, "function")
+		self = func
+	else
+		AceEvent:argCheck(method, 2, "function", "string")
+		if type(method) == "string" and type(self[method]) ~= "function" then
+			AceEvent:error("Cannot schedule a combat action to method %q, it does not exist", method)
+		end
+	end
+	local t = new(...)
+	t.n = select('#', ...)
+	if type(method) == "function" then
+		t.func = method
+	else
+		t.method = method
+	end
+	t.self = self
+	table.insert(combatSchedules, t)
+end
+
+function AceEvent:ScheduleLeaveCombatAction(method, ...)
+	if not inCombat then
+		AceEvent:error("Cannot schedule a leave-combat action if not in combat already")
+	end
+	return scheduleCombatAction(method, ...)
+end
+
+function AceEvent:ScheduleEnterCombatAction(method, ...)
+	if inCombat then
+		AceEvent:error("Cannot schedule an enter-combat action if in combat already")
+	end
+	return scheduleCombatAction(method, ...)
+end
+
 function AceEvent:OnEmbedDisable(target)
 	self.UnregisterAllEvents(target)
 
 	self.CancelAllScheduledEvents(target)
 
 	self.UnregisterAllBucketEvents(target)
+	
+	self.CancelAllCombatSchedules(target)
 end
 
 function AceEvent:EnableDebugging()
@@ -839,36 +926,22 @@ end
 
 local function activate(self, oldLib, oldDeactivate)
 	AceEvent = self
-
-	if oldLib then
-		self.onceRegistry = oldLib.onceRegistry
-		self.throttleRegistry = oldLib.throttleRegistry
-		self.delayRegistry = oldLib.delayRegistry
-		self.buckets = oldLib.buckets
-		self.registry = oldLib.registry
-		self.frame = oldLib.frame
-		self.debugTable = oldLib.debugTable
-		self.playerLogin = oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
-		self.postInit = oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
-		self.ALL_EVENTS = oldLib.ALL_EVENTS
-		self.FAKE_NIL = oldLib.FAKE_NIL
-		self.RATE = oldLib.RATE
-	end
-	if not self.registry then
-		self.registry = {}
-	end
-	if not self.frame then
-		self.frame = CreateFrame("Frame", "AceEvent20Frame")
-	end
-	if not self.ALL_EVENTS then
-		self.ALL_EVENTS = {}
-	end
-	if not self.FAKE_NIL then
-		self.FAKE_NIL = {}
-	end
-	if not self.RATE then
-		self.RATE = {}
-	end
+	
+	self.onceRegistry = oldLib and oldLib.onceRegistry or {}
+	self.throttleRegistry = oldLib and oldLib.throttleRegistry or {}
+	self.delayRegistry = oldLib and oldLib.delayRegistry or {}
+	self.buckets = oldLib and oldLib.buckets or {}
+	self.registry = oldLib and oldLib.registry or {}
+	self.frame = oldLib and oldLib.frame or CreateFrame("Frame", "AceEvent20Frame")
+	self.debugTable = oldLib and oldLib.debugTable
+	self.playerLogin = oldLib and oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
+	self.postInit = oldLib and oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
+	self.ALL_EVENTS = oldLib and oldLib.ALL_EVENTS or {}
+	self.FAKE_NIL = oldLib and oldLib.FAKE_NIL or {}
+	self.RATE = oldLib and oldLib.RATE or {}
+	self.combatSchedules = oldLib and oldLib.combatSchedules or {}
+	
+	combatSchedules = self.combatSchedules
 	ALL_EVENTS = self.ALL_EVENTS
 	FAKE_NIL = self.FAKE_NIL
 	RATE = self.RATE
@@ -951,6 +1024,12 @@ local function activate(self, oldLib, oldDeactivate)
 		self:ScheduleEvent("AceEvent_FullyInitialized", func, 10)
 		registeringFromAceEvent = nil
 	end
+	
+	registeringFromAceEvent = true
+	self:RegisterEvent("PLAYER_REGEN_ENABLED")
+	self:RegisterEvent("PLAYER_REGEN_DISABLED")
+	inCombat = InCombatLockdown()
+	registeringFromAceEvent = nil
 
 	self:activate(oldLib, oldDeactivate)
 	if oldLib then
