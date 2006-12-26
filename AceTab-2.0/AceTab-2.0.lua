@@ -169,43 +169,62 @@ local function CycleTab()
 	this:Insert(this.lMatch)
 end
 
-local SecureCmdList = SecureCmdList or {
-	["STOPATTACK"] = true,
-	["STARTATTACK"] = true,
-	["CAST"] = true,
-	["CASTRANDOM"] = true,
-	["CASTSEQUENCE"] = true,
-	["STOPCASTING"] = true,
-	["CANCELAURA"] = true,
-	["EQUIP"] = true,
-	["EQUIP_TO_SLOT"] = true,
-	["USE"] = true,
-	["USERANDOM"] = true,
-	["CHANGEACTIONBAR"] = true,
-	["SWAPACTIONBAR"] = true,
-	["TARGET"] = true,
-	["TARGET_NEAREST_ENEMY"] = true,
-	["TARGET_NEAREST_FRIEND"] = true,
-	["TARGET_NEAREST_PARTY"] = true,
-	["TARGET_NEAREST_RAID"] = true,
-	["CLEARTARGET"] = true,
-	["TARGET_LAST_TARGET"] = true,
-	["ASSIST"] = true,
-	["FOCUS"] = true,
-	["CLEARFOCUS"] = true,
-	["DUEL"] = true,
-	["DUEL_CANCEL"] = true,
-	["PET_ATTACK"] = true,
-	["PET_FOLLOW"] = true,
-	["PET_STAY"] = true,
-	["PET_PASSIVE"] = true,
-	["PET_DEFENSIVE"] = true,
-	["PET_AGGRESSIVE"] = true,
-	["PET_AUTOCASTON"] = true,
-	["PET_AUTOCASTOFF"] = true,
-	["STOPMACRO"] = true,
-	["CLICK"] = true,
-}
+local IsSecureCmd = IsSecureCmd
+---- REMOVE THIS SECTION WHEN 2.0.3 COMES OUT ----
+if not IsSecureCmd then
+	local SecureCmdList = SecureCmdList or {
+		["STOPATTACK"] = true,
+		["STARTATTACK"] = true,
+		["CAST"] = true,
+		["CASTRANDOM"] = true,
+		["CASTSEQUENCE"] = true,
+		["STOPCASTING"] = true,
+		["CANCELAURA"] = true,
+		["EQUIP"] = true,
+		["EQUIP_TO_SLOT"] = true,
+		["USE"] = true,
+		["USERANDOM"] = true,
+		["CHANGEACTIONBAR"] = true,
+		["SWAPACTIONBAR"] = true,
+		["TARGET"] = true,
+		["TARGET_NEAREST_ENEMY"] = true,
+		["TARGET_NEAREST_FRIEND"] = true,
+		["TARGET_NEAREST_PARTY"] = true,
+		["TARGET_NEAREST_RAID"] = true,
+		["CLEARTARGET"] = true,
+		["TARGET_LAST_TARGET"] = true,
+		["ASSIST"] = true,
+		["FOCUS"] = true,
+		["CLEARFOCUS"] = true,
+		["DUEL"] = true,
+		["DUEL_CANCEL"] = true,
+		["PET_ATTACK"] = true,
+		["PET_FOLLOW"] = true,
+		["PET_STAY"] = true,
+		["PET_PASSIVE"] = true,
+		["PET_DEFENSIVE"] = true,
+		["PET_AGGRESSIVE"] = true,
+		["PET_AUTOCASTON"] = true,
+		["PET_AUTOCASTOFF"] = true,
+		["STOPMACRO"] = true,
+		["CLICK"] = true,
+	}
+	function IsSecureCmd(cmd)
+		for index in pairs(SecureCmdList) do
+			local i = 1
+			local cmdString = getglobal("SLASH_"..index..i) -- this is how blizz does it
+			while cmdString do
+				if cmd == cmdString then
+					return true
+				end
+				i = i + 1
+				cmdString = getglobal("SLASH_"..index..i)
+			end
+		end
+		return nil
+	end
+end
+---- REMOVE THIS SECTION WHEN 2.0.3 COMES OUT ----
 
 function AceTab:OnTabPressed(this)
 	if this == ChatFrameEditBox then
@@ -213,16 +232,9 @@ function AceTab:OnTabPressed(this)
 		if command:find("^/[%a%d_]+$") then
 			return true
 		end
-		for index in pairs(SecureCmdList) do
-			local i = 1
-			local cmdString = TEXT(getglobal("SLASH_"..index..i)) -- this is how blizz does it
-			while cmdString do
-				if command:find(cmdString, 1, true) == 1 then
-					return true
-				end
-				i = i + 1
-				cmdString = TEXT(getglobal("SLASH_"..index..i))
-			end
+		local cmd = command:match("^/[%a%d_]+")
+		if cmd and IsSecureCmd(cmd) then
+			return true
 		end
 	end
 	local ost = this:GetScript("OnTextSet")
