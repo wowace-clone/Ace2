@@ -38,7 +38,6 @@ local AceEvent = Mixin {
 						"UnregisterAllBucketEvents",
 						"IsBucketEventRegistered",
 						"ScheduleLeaveCombatAction",
-						"ScheduleEnterCombatAction",
 						"CancelAllCombatSchedules",
 					   }
 
@@ -829,8 +828,13 @@ end
 
 local inCombat = false
 local tmp = {}
+
 function AceEvent:PLAYER_REGEN_DISABLED()
-	inCombat = (self.currentEvent == "PLAYER_REGEN_DISABLED")
+	inCombat = true
+end
+
+function AceEvent:PLAYER_REGEN_ENABLED()
+	inCombat = false
 	for i, v in ipairs(combatSchedules) do
 		tmp[i] = v
 		combatSchedules[i] = nil
@@ -852,9 +856,8 @@ function AceEvent:PLAYER_REGEN_DISABLED()
 		tmp[i] = del(v)
 	end
 end
-AceEvent.PLAYER_REGEN_ENABLED = AceEvent.PLAYER_REGEN_DISABLED
 
-local function scheduleCombatAction(method, ...)
+function AceEvent:ScheduleLeaveCombatAction(method, ...)
 	if self == AceEvent then
 		AceEvent:argCheck(method, 2, "function")
 		self = func
@@ -863,6 +866,17 @@ local function scheduleCombatAction(method, ...)
 		if type(method) == "string" and type(self[method]) ~= "function" then
 			AceEvent:error("Cannot schedule a combat action to method %q, it does not exist", method)
 		end
+	end
+	
+	if not inCombat then
+		local success, err
+		if type(method) == "function" then
+			success, err = pcall(method, ...)
+		else
+			success, err = pcall(self[method], self, ...)
+		end
+		if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+		return
 	end
 	local t = new(...)
 	t.n = select('#', ...)
@@ -873,33 +887,6 @@ local function scheduleCombatAction(method, ...)
 	end
 	t.self = self
 	table.insert(combatSchedules, t)
-end
-
-function AceEvent:ScheduleLeaveCombatAction(method, ...)
-	if not inCombat then
-		AceEvent:argCheck(method, 2, "function", "string")
-		if type(method) == "function" then
-			local success, err = pcall(method, ...)
-			if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
-		else
-			local obj_method = self[method]
-			if obj_method then
-				local success, err = pcall(obj_method, self, ...)
-				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
-			else
-				AceEvent:error("Cannot schedule a combat action to method %q, it does not exist", method)
-			end
-		end
-		return
-	end
-	return scheduleCombatAction(method, ...)
-end
-
-function AceEvent:ScheduleEnterCombatAction(method, ...)
-	if inCombat then
-		AceEvent:error("Cannot schedule an enter-combat action if in combat already")
-	end
-	return scheduleCombatAction(method, ...)
 end
 
 function AceEvent:OnEmbedDisable(target)
