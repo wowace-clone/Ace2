@@ -59,6 +59,30 @@ local gcinfo = gcinfo
 local unpack = unpack
 local geterrorhandler = geterrorhandler
 
+local new, del
+do
+	local cache = setmetatable({}, {__mode='k'})
+	function new(...)
+		local t = next(cache)
+		if t then
+			cache[t] = nil
+			for i = 1, select('#', ...) do
+				t[i] = select(i, ...)
+			end
+			return t
+		else
+			return { ... }
+		end
+	end
+	function del(t)
+		for k in pairs(t) do
+			t[k] = nil
+		end
+		cache[t] = true
+		return nil
+	end
+end
+
 local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
@@ -91,7 +115,7 @@ function AceEvent:RegisterEvent(event, method, once)
 
 	local AceEvent_registry = AceEvent.registry
 	if not AceEvent_registry[event] then
-		AceEvent_registry[event] = {}
+		AceEvent_registry[event] = new()
 		AceEvent.frame:RegisterEvent(event)
 	end
 
@@ -108,14 +132,14 @@ function AceEvent:RegisterEvent(event, method, once)
 			AceEvent_onceRegistry = AceEvent.onceRegistry
 		end
 		if not AceEvent_onceRegistry[event] then
-			AceEvent_onceRegistry[event] = {}
+			AceEvent_onceRegistry[event] = new()
 		end
 		AceEvent_onceRegistry[event][self] = true
 	else
 		if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
 			AceEvent_onceRegistry[event][self] = nil
 			if not next(AceEvent_onceRegistry[event]) then
-				AceEvent_onceRegistry[event] = nil
+				AceEvent_onceRegistry[event] = del(AceEvent_onceRegistry[event])
 			end
 		end
 	end
@@ -127,12 +151,12 @@ function AceEvent:RegisterEvent(event, method, once)
 			AceEvent_throttleRegistry = AceEvent.throttleRegistry
 		end
 		if not AceEvent_throttleRegistry[event] then
-			AceEvent_throttleRegistry[event] = {}
+			AceEvent_throttleRegistry[event] = new()
 		end
 		if AceEvent_throttleRegistry[event][self] then
 			AceEvent_throttleRegistry[event][self] = nil
 		end
-		AceEvent_throttleRegistry[event][self] = setmetatable({}, weakKey)
+		AceEvent_throttleRegistry[event][self] = setmetatable(new(), weakKey)
 		local t = AceEvent_throttleRegistry[event][self]
 		t[RATE] = throttleRate
 	else
@@ -141,7 +165,7 @@ function AceEvent:RegisterEvent(event, method, once)
 				AceEvent_throttleRegistry[event][self] = nil
 			end
 			if not next(AceEvent_throttleRegistry[event]) then
-				AceEvent_throttleRegistry[event] = nil
+				AceEvent_throttleRegistry[event] = del(AceEvent_throttleRegistry[event])
 			end
 		end
 	end
@@ -166,7 +190,7 @@ function AceEvent:RegisterAllEvents(method)
 
 	local AceEvent_registry = AceEvent.registry
 	if not AceEvent_registry[ALL_EVENTS] then
-		AceEvent_registry[ALL_EVENTS] = {}
+		AceEvent_registry[ALL_EVENTS] = new()
 		AceEvent.frame:RegisterAllEvents()
 	end
 
@@ -176,10 +200,8 @@ end
 local memstack, timestack = {}, {}
 local memdiff, timediff
 
-local stack = setmetatable({}, {__mode='k'})
 function AceEvent:TriggerEvent(event, ...)
-	local tmp = next(stack) or {}
-	stack[tmp] = nil
+	local tmp = new()
 	if type(event) ~= "string" then
 		DEFAULT_CHAT_FRAME:AddMessage(debugstack())
 	end
@@ -369,7 +391,7 @@ function AceEvent:TriggerEvent(event, ...)
 			obj = next(tmp)
 		end
 	end
-	stack[tmp] = true
+	tmp = del(tmp)
 	AceEvent.currentEvent = lastEvent
 end
 
@@ -413,6 +435,9 @@ local function OnUpdate()
 				if not v_repeatDelay then
 					local x = delayRegistry[k]
 					if x and x.time == v_time then -- check if it was manually reset
+						if type(k) == "string" then
+							del(delayRegistry[k])
+						end
 						delayRegistry[k] = nil
 					end
 				end
@@ -461,7 +486,7 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 			t[i-1] = select(i, ...)
 		end
 	elseif id then
-		t = { select(2, ...) }
+		t = new(select(2, ...))
 	else
 		t = { ... }
 	end
@@ -523,6 +548,9 @@ function AceEvent:CancelScheduledEvent(t)
 	if delayRegistry then
 		local v = delayRegistry[t]
 		if v then
+			if type(t) == "string" then
+				del(delayRegistry[t])
+			end
 			delayRegistry[t] = nil
 			if not next(delayRegistry) then
 				AceEvent.frame:Hide()
@@ -553,18 +581,18 @@ function AceEvent:UnregisterEvent(event)
 		if AceEvent_onceRegistry and AceEvent_onceRegistry[event] and AceEvent_onceRegistry[event][self] then
 			AceEvent_onceRegistry[event][self] = nil
 			if not next(AceEvent_onceRegistry[event]) then
-				AceEvent_onceRegistry[event] = nil
+				AceEvent_onceRegistry[event] = del(AceEvent_onceRegistry[event])
 			end
 		end
 		local AceEvent_throttleRegistry = AceEvent.throttleRegistry
 		if AceEvent_throttleRegistry and AceEvent_throttleRegistry[event] and AceEvent_throttleRegistry[event][self] then
 			AceEvent_throttleRegistry[event][self] = nil
 			if not next(AceEvent_throttleRegistry[event]) then
-				AceEvent_throttleRegistry[event] = nil
+				AceEvent_throttleRegistry[event] = del(AceEvent_throttleRegistry[event])
 			end
 		end
 		if not next(AceEvent_registry[event]) then
-			AceEvent_registry[event] = nil
+			AceEvent_registry[event] = del(AceEvent_registry[event])
 			if not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS]) then
 				AceEvent.frame:UnregisterEvent(event)
 			end
@@ -584,7 +612,7 @@ function AceEvent:UnregisterAllEvents()
 	if AceEvent_registry[ALL_EVENTS] and AceEvent_registry[ALL_EVENTS][self] then
 		AceEvent_registry[ALL_EVENTS][self] = nil
 		if not next(AceEvent_registry[ALL_EVENTS]) then
-			AceEvent_registry[ALL_EVENTS] = nil
+			AceEvent_registry[ALL_EVENTS] = del(AceEvent_registry[ALL_EVENTS])
 			AceEvent.frame:UnregisterAllEvents()
 			for k,v in pairs(AceEvent_registry) do
 				AceEvent.frame:RegisterEvent(k)
@@ -600,7 +628,7 @@ function AceEvent:UnregisterAllEvents()
 				if not AceEvent_registry[ALL_EVENTS] then
 					AceEvent.frame:UnregisterEvent(event)
 				end
-				AceEvent_registry[event] = nil
+				AceEvent_registry[event] = del(AceEvent_registry[event])
 			end
 			AceEvent:TriggerEvent("AceEvent_EventUnregistered", self, event)
 		end
@@ -613,7 +641,7 @@ function AceEvent:UnregisterAllEvents()
 				if not AceEvent_registry[ALL_EVENTS] then
 					AceEvent.frame:UnregisterEvent(event)
 				end
-				AceEvent_registry[event] = nil
+				AceEvent_registry[event] = del(AceEvent_registry[event])
 			end
 			AceEvent:TriggerEvent("AceEvent_EventUnregistered", self, event)
 		end
@@ -629,6 +657,9 @@ function AceEvent:CancelAllScheduledEvents()
 	if delayRegistry then
 		for k,v in pairs(delayRegistry) do
 			if v.self == self then
+				if type(k) == "string" then
+					del(delayRegistry[k])
+				end
 				delayRegistry[k] = nil
 			end
 		end
@@ -684,13 +715,13 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 		AceEvent.buckets = {}
 	end
 	if not AceEvent.buckets[event] then
-		AceEvent.buckets[event] = {}
+		AceEvent.buckets[event] = new()
 	end
 	if not AceEvent.buckets[event][self] then
-		AceEvent.buckets[event][self] = {
-			current = {},
-			self = self
-		}
+		local t = new()
+		t.current = new()
+		t.self = self
+		AceEvent.buckets[event][self] = t
 	else
 		AceEvent.CancelScheduledEvent(self, AceEvent.buckets[event][self].id)
 	end
@@ -755,9 +786,10 @@ function AceEvent:UnregisterBucketEvent(event)
 	end
 	AceEvent:CancelScheduledEvent(bucket.id)
 
-	AceEvent.buckets[event][self] = nil
+	bucket.current = del(bucket.current)
+	AceEvent.buckets[event][self] = del(bucket)
 	if not next(AceEvent.buckets[event]) then
-		AceEvent.buckets[event] = nil
+		AceEvent.buckets[event] = del(AceEvent.buckets[event])
 	end
 end
 
