@@ -54,6 +54,20 @@ local function getlibrary(o)
 	end
 end
 
+local function deeprawget(self, k)
+	while true do
+		local v = rawget(self, k)
+		if v ~= nil then
+			return v
+		end
+		local mt = getmetatable(self)
+		if not mt or type(mt.__index) ~= "table" then
+			return nil
+		end
+		self = mt.__index
+	end
+end
+
 -- @function		Factory
 -- @brief			Construct a factory for the creation of objects.
 -- @param obj		The object whose init method will be called on the new factory
@@ -221,8 +235,9 @@ local function inherits(object, parent)
 		return false
 	end
 	local current
-	if object.class then
-		current = object.class
+	local class = deeprawget(object, 'class')
+	if class then
+		current = class
 	else
 		current = object
 	end
@@ -251,7 +266,7 @@ local function inherits(object, parent)
 					end
 				end
 			end
-			current = current.super
+			current = deeprawget(current, 'super')
 			if type(current) ~= "table" then
 				break
 			end
@@ -266,7 +281,7 @@ local function inherits(object, parent)
 				isInterface = true
 				break
 			end
-			curr = curr.super
+			curr = deeprawget(curr, 'super')
 			if type(curr) ~= "table" then
 				break
 			end
@@ -279,7 +294,7 @@ local function inherits(object, parent)
 			elseif rawequal(current, Object) then
 				return false
 			end
-			current = current.super
+			current = deeprawget(current, 'super')
 			if type(current) ~= "table" then
 				return false
 			end

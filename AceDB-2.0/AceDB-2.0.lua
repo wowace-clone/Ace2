@@ -227,6 +227,7 @@ local function inheritDefaults(t, defaults)
 						if key == nil then
 							return nil
 						end
+						AceLibrary("AceConsole-2.0"):PrintLiteral(key, debugstack())
 						self[key] = {}
 						inheritDefaults(self[key], v)
 						return self[key]
@@ -238,6 +239,7 @@ local function inheritDefaults(t, defaults)
 						if key == nil then
 							return nil
 						end
+						AceLibrary("AceConsole-2.0"):PrintLiteral(debugstack())
 						self[key] = v
 						return self[key]
 					end
@@ -557,7 +559,7 @@ function CrawlForSerialization(t)
 		tmp[k] = v
 	end
 	for k,v in pairs(tmp) do
-		if type(v) == "table" and type(v[0]) ~= "userdata" then
+		if type(v) == "table" and type(rawget(v, 0)) ~= "userdata" then
 			if IsSerializable(v) then
 				v = SerializeObject(v)
 				t[k] = v
@@ -565,7 +567,7 @@ function CrawlForSerialization(t)
 				CrawlForSerialization(v)
 			end
 		end
-		if type(k) == "table" and type(k[0]) ~= "userdata" then
+		if type(k) == "table" and type(rawget(k, 0)) ~= "userdata" then
 			if IsSerializable(k) then
 				t[k] = nil
 				t[SerializeObject(k)] = v
@@ -580,7 +582,7 @@ function CrawlForSerialization(t)
 end
 
 local function IsDeserializable(t)
-	return type(t[0]) == "string" and AceLibrary:HasInstance(t[0])
+	return type(rawget(t, 0)) == "string" and AceLibrary:HasInstance(rawget(t, 0))
 end
 
 function CrawlForDeserialization(t)
@@ -594,7 +596,7 @@ function CrawlForDeserialization(t)
 				t[k] = DeserializeObject(v)
 				del(v)
 				v = t[k]
-			elseif type(v[0]) ~= "userdata" then
+			elseif type(rawget(v, 0)) ~= "userdata" then
 				CrawlForDeserialization(v)
 			end
 		end
@@ -603,7 +605,7 @@ function CrawlForDeserialization(t)
 				t[k] = nil
 				t[DeserializeObject(k)] = v
 				del(k)
-			elseif type(k[0]) ~= "userdata" then
+			elseif type(rawget(k, 0)) ~= "userdata" then
 				CrawlForDeserialization(k)
 			end
 		end
