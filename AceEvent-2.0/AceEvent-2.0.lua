@@ -843,7 +843,6 @@ function AceEvent:PLAYER_REGEN_DISABLED()
 		else
 			local obj = v.self
 			local method = v.method
-			local obj_method = obj.method
 			local obj_method = obj[method]
 			if obj_method then
 				local success, err = pcall(obj_method, obj, unpack(v, 1, v.n))
@@ -878,7 +877,20 @@ end
 
 function AceEvent:ScheduleLeaveCombatAction(method, ...)
 	if not inCombat then
-		AceEvent:error("Cannot schedule a leave-combat action if not in combat already")
+		AceEvent:argCheck(method, 2, "function", "string")
+		if type(method) == "function" then
+			local success, err = pcall(method, ...)
+			if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+		else
+			local obj_method = self[method]
+			if obj_method then
+				local success, err = pcall(obj_method, self, ...)
+				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+			else
+				AceEvent:error("Cannot schedule a combat action to method %q, it does not exist", method)
+			end
+		end
+		return
 	end
 	return scheduleCombatAction(method, ...)
 end
