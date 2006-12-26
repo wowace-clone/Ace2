@@ -227,7 +227,6 @@ local function inheritDefaults(t, defaults)
 						if key == nil then
 							return nil
 						end
-						AceLibrary("AceConsole-2.0"):PrintLiteral(key, debugstack())
 						self[key] = {}
 						inheritDefaults(self[key], v)
 						return self[key]
@@ -239,7 +238,6 @@ local function inheritDefaults(t, defaults)
 						if key == nil then
 							return nil
 						end
-						AceLibrary("AceConsole-2.0"):PrintLiteral(debugstack())
 						self[key] = v
 						return self[key]
 					end
