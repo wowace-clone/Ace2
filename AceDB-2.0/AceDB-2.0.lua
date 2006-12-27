@@ -269,9 +269,9 @@ if race == "Orc" or race == "Scourge" or race == "Troll" or race == "Tauren" or 
 else
 	faction = FACTION_ALLIANCE
 end
-local realm = GetRealmName():trim()
-local charID = PLAYER_OF_REALM:format(UnitName("player"), realm)
-local realmID = realm .. " - " .. faction
+local server = GetRealmName():trim()
+local charID = PLAYER_OF_REALM:format(UnitName("player"), server)
+local realmID = server .. " - " .. faction
 local classID = UnitClass("player")
 
 AceDB.CHAR_ID = charID
@@ -279,7 +279,7 @@ AceDB.REALM_ID = realmID
 AceDB.CLASS_ID = classID
 
 AceDB.FACTION = faction
-AceDB.REALM = realm
+AceDB.REALM = server
 AceDB.NAME = UnitName("player")
 
 local new, del
@@ -369,6 +369,19 @@ local db_mt = { __index = function(db, key)
 			inheritDefaults(db.realm, db.defaults.realm)
 		end
 		return db.realm
+	elseif key == "server" then
+		if type(db.raw.servers) ~= "table" then
+			db.raw.servers = {}
+		end
+		local id = server
+		if type(db.raw.servers[id]) ~= "table" then
+			db.raw.servers[id] = {}
+		end
+		rawset(db, 'server', db.raw.servers[id])
+		if db.defaults and db.defaults.server then
+			inheritDefaults(db.server, db.defaults.server)
+		end
+		return db.server
 	elseif key == "account" then
 		if type(db.raw.account) ~= "table" then
 			db.raw.account = {}
@@ -667,6 +680,25 @@ local namespace_mt = { __index = function(namespace, key)
 			inheritDefaults(namespace.realm, namespace.defaults.realm)
 		end
 		return namespace.realm
+	elseif key == "server" then
+		if type(db.raw.namespaces) ~= "table" then
+			db.raw.namespaces = {}
+		end
+		if type(db.raw.namespaces[name]) ~= "table" then
+			db.raw.namespaces[name] = {}
+		end
+		if type(db.raw.namespaces[name].servers) ~= "table" then
+			db.raw.namespaces[name].servers = {}
+		end
+		local id = server
+		if type(db.raw.namespaces[name].servers[id]) ~= "table" then
+			db.raw.namespaces[name].servers[id] = {}
+		end
+		rawset(namespace, 'server', db.raw.namespaces[name].servers[id])
+		if namespace.defaults and namespace.defaults.server then
+			inheritDefaults(namespace.server, namespace.defaults.server)
+		end
+		return namespace.server
 	elseif key == "account" then
 		if type(db.raw.namespaces) ~= "table" then
 			db.raw.namespaces = {}
@@ -836,8 +868,8 @@ function AceDB:RegisterDefaults(kind, defaults, a3)
 		AceDB:argCheck(kind, 2, "string")
 		AceDB:argCheck(defaults, 3, "table")
 	end
-	if kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" and kind ~= "faction" then
-		AceDB:error("Bad argument #%d to `RegisterDefaults' (\"char\", \"class\", \"profile\", \"account\", \"realm\", or \"faction\" expected, got %q)", a3 and 3 or 2, kind)
+	if kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" and kind ~= "faction" and kind ~= "server" then
+		AceDB:error("Bad argument #%d to `RegisterDefaults' (\"char\", \"class\", \"profile\", \"account\", \"realm\", \"server\", or \"faction\" expected, got %q)", a3 and 3 or 2, kind)
 	end
 	if type(self.db) ~= "table" or type(self.db.name) ~= "string" then
 		AceDB:error("Cannot call \"RegisterDefaults\" unless \"RegisterDB\" has been previously called.")
@@ -884,6 +916,7 @@ function AceDB:ResetDB(kind)
 				rawset(v, 'class', nil)
 				rawset(v, 'profile', nil)
 				rawset(v, 'realm', nil)
+				rawset(v, 'server', nil)
 				rawset(v, 'faction', nil)
 			end
 		end
@@ -931,6 +964,23 @@ function AceDB:ResetDB(kind)
 		if db.namespaces then
 			for name,v in pairs(db.namespaces) do
 				rawset(v, 'realm', nil)
+			end
+		end
+	elseif kind == "server" then
+		if db.raw.servers then
+			db.raw.servers[server] = nil
+		end
+		rawset(db, 'server', nil)
+		if db.raw.namespaces then
+			for name,v in pairs(db.raw.namespaces) do
+				if v.servers then
+					v.servers[server] = nil
+				end
+			end
+		end
+		if db.namespaces then
+			for name,v in pairs(db.namespaces) do
+				rawset(v, 'server', nil)
 			end
 		end
 	elseif kind == "faction" then
@@ -1454,6 +1504,14 @@ function AceDB:PLAYER_LOGOUT()
 					end
 				end
 			end
+			if db.server and cleanDefaults(db.server, db.defaults and db.defaults.server) then
+				if db.raw.servers then
+					db.raw.servers[server] = nil
+					if not next(db.raw.servers) then
+						db.raw.servers = nil
+					end
+				end
+			end
 			if db.faction and cleanDefaults(db.faction, db.defaults and db.defaults.faction) then
 				if db.raw.factions then
 					db.raw.factions[faction] = nil
@@ -1508,6 +1566,14 @@ function AceDB:PLAYER_LOGOUT()
 								db.raw.namespaces[name].realms[realmID] = nil
 								if not next(db.raw.namespaces[name].realms) then
 									db.raw.namespaces[name].realms = nil
+								end
+							end
+						end
+						if v.server and cleanDefaults(v.server, v.defaults and v.defaults.server) then
+							if db.raw.namespaces[name].servers then
+								db.raw.namespaces[name].servers[server] = nil
+								if not next(db.raw.namespaces[name].servers) then
+									db.raw.namespaces[name].servers = nil
 								end
 							end
 						end
@@ -1665,6 +1731,7 @@ local function activate(self, oldLib, oldDeactivate)
 			rawset(t.db, 'realm', nil)
 			rawset(t.db, 'class', nil)
 			rawset(t.db, 'account', nil)
+			rawset(t.db, 'server', nil)
 			rawset(t.db, 'faction', nil)
 			rawset(t.db, 'profile', nil)
 			setmetatable(t.db, db_mt)
