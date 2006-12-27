@@ -80,30 +80,24 @@ end
 --					or when it is called directly (__call metamethod).
 local Factory
 do
+	local function getlibraries(...)
+		if select('#', ...) == 0 then
+			return
+		end
+		return getlibrary((select(1, ...))), getlibraries(select(2, ...))
+	end
 	local arg = {}
 	local function new(obj, ...)
 		local t = {}
 		local uid = getuid(t)
-		for i = 1, select('#', ...) do
-			arg[i] = getlibrary(select(i, ...))
-		end
-		obj:init(t, unpack(arg))
-		for i = 1, select('#', ...) do
-			arg[i] = nil
-		end
+		obj:init(t, getlibraries(...))
 		t.uid = uid
 		return t
 	end
 	
 	local function createnew(self, ...)
 		local o = self.prototype
-		for i = 1, select('#', ...) do
-			arg[i] = getlibrary(select(i, ...))
-		end
-		local x = new(o, unpack(arg))
-		for i = 1, select('#', ...) do
-			arg[i] = nil
-		end
+		local x = new(o, getlibraries(...))
 		return x
 	end
 
