@@ -98,9 +98,8 @@ function AceDebug:IsDebugging()
 end
 
 function AceDebug:SetDebugging(debugging)
-	self.debugging = debugging
-
 	if debugging then
+		self.debugging = debugging
 		if type(self.OnDebugEnable) == "function" then
 			safecall(self.OnDebugEnable, self)
 		end
@@ -108,6 +107,7 @@ function AceDebug:SetDebugging(debugging)
 		if type(self.OnDebugDisable) == "function" then
 			safecall(self.OnDebugDisable, self)
 		end
+		self.debugging = debugging		
 	end
 end
 
