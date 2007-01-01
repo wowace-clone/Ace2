@@ -175,6 +175,57 @@ local recurse = {}
 local timeToEnd
 local GetTime = GetTime
 local type = type
+
+local new, del
+do
+	local cache = setmetatable({},{__mode='k'})
+	function new()
+		local t = next(cache)
+		if t then
+			cache[t] = nil
+			return t
+		else
+			return {}
+		end
+	end
+	
+	function del(t)
+		for k in pairs(t) do
+			t[k] = nil
+		end
+		cache[t] = true
+		return nil
+	end
+end
+
+local function ignoreCaseSort(alpha, bravo)
+	if not alpha or not bravo then
+		return false
+	end
+	return tostring(alpha):lower() < tostring(bravo):lower()
+end
+
+local function specialSort(alpha, bravo)
+	if alpha == nil or bravo == nil then
+		return false
+	end
+	local type_alpha, type_bravo = type(alpha), type(bravo)
+	if type_alpha ~= type_bravo then
+		return type_alpha < type_bravo
+	end
+	if type_alpha == "string" then
+		return alpha:lower() < bravo:lower()
+	elseif type_alpha == "number" then
+		return alpha < bravo
+	elseif type_alpha == "table" then
+		return #alpha < #bravo
+	elseif type_alpha == "boolean" then
+		return not alpha
+	else
+		return false
+	end
+end
+
 local function literal_tostring_prime(t, depth)
 	if type(t) == "string" then
 		return ("|cff00ff00%q|r"):format((t:gsub("|", "||")))
@@ -230,9 +281,17 @@ local function literal_tostring_prime(t, depth)
 				s = s .. ("    "):rep(depth+1) .. literal_tostring_prime(t[i], depth+1) .. (i == #t and "\n" or ",\n")
 			end
 		else
-			for k,v in pairs(t) do
-				s = s .. ("    "):rep(depth+1) .. getkeystring(k, depth+1) .. " = " .. literal_tostring_prime(v, depth+1) .. (next(t, k) == nil and "\n" or ",\n")
+			local tmp = new()
+			for k in pairs(t) do
+				tmp[#tmp+1] = k
 			end
+			table.sort(tmp, specialSort)
+			for i,k in ipairs(tmp) do
+				tmp[i] = nil
+				local v = t[k]
+				s = s .. ("    "):rep(depth+1) .. getkeystring(k, depth+1) .. " = " .. literal_tostring_prime(v, depth+1) .. (tmp[i+1] == nil and "\n" or ",\n")
+			end
+			tmp = del(tmp)
 		end
 		if g then
 			s = s .. ("    "):rep(depth) .. string.format("} |cff9f9f9f-- _G[%q]|r", g)
@@ -282,18 +341,10 @@ do
 	end
 end
 
-local function my_sort(alpha, bravo)
-	if not alpha or not bravo then
-		return false
-	end
-	return tostring(alpha):lower() < tostring(bravo):lower()
-end
-
-local tmp = {}
-local tmp2 = {}
 local function literal_tostring_frame(t)
 	local s = ("|cffffea00<%s:%s|r\n"):format(t:GetObjectType(), t:GetName() or "(anon)")
 	local __index = getmetatable(t).__index
+	local tmp, tmp2 = new(), new()
 	for k in pairs(t) do
 		if k ~= 0 then
 			tmp2[k] = true
@@ -306,7 +357,7 @@ local function literal_tostring_frame(t)
 		tmp[#tmp+1] = k
 		tmp2[k] = nil
 	end
-	table.sort(tmp, my_sort)
+	table.sort(tmp, ignoreCaseSort)
 	local first = true
 	for i,k in ipairs(tmp) do
 		local v = t[k]
@@ -341,9 +392,7 @@ local function literal_tostring_frame(t)
 			good = false
 		end
 	end
-	for k in pairs(tmp) do
-		tmp[k] = nil
-	end
+	tmp, tmp2 = del(tmp), del(tmp2)
 	s = s .. "\n|cffffea00>|r"
 	return s
 end
