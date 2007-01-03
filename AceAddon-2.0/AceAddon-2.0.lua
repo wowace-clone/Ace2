@@ -24,7 +24,7 @@ local function safecall(func,...)
 	if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("\n(.-: )in.-\n") or "") .. err) end
 end
 -- Localization
-local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, PRINT_ADDON_INFO
+local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, LICENSE, PRINT_ADDON_INFO
 if GetLocale() == "deDE" then
 	STANDBY = "|cffff5050(Standby)|r" -- capitalized
 
@@ -37,6 +37,7 @@ if GetLocale() == "deDE" then
 	EMAIL = "E-Mail"
 	WEBSITE = "Webseite"
 	CREDITS = "Credits" -- fix
+	LICENSE = "License" -- fix
 
 	ABOUT = "Über"
 	PRINT_ADDON_INFO = "Gibt Addondaten aus"
@@ -89,6 +90,7 @@ elseif GetLocale() == "frFR" then
 	EMAIL = "E-mail"
 	WEBSITE = "Site web"
 	CREDITS = "Credits" -- fix
+	LICENSE = "License" -- fix
 	
 	ABOUT = "A propos"
 	PRINT_ADDON_INFO = "Afficher les informations sur l'addon"
@@ -141,6 +143,7 @@ elseif GetLocale() == "koKR" then
 	EMAIL = "E-mail"
 	WEBSITE = "웹사이트"
 	CREDITS = "Credits" -- fix
+	LICENSE = "License" -- fix
 	
 	ABOUT = "정보"
 	PRINT_ADDON_INFO = "애드온 정보 출력"
@@ -193,6 +196,7 @@ elseif GetLocale() == "zhTW" then
 	EMAIL = "E-mail"
 	WEBSITE = "網站"
 	CREDITS = "Credits" -- fix
+	LICENSE = "License" -- fix
 	
 	ABOUT = "關於"
 	PRINT_ADDON_INFO = "顯示插件資訊"
@@ -245,6 +249,7 @@ elseif GetLocale() == "zhCN" then
 	EMAIL = "电子邮件"
 	WEBSITE = "网站"
 	CREDITS = "Credits" -- fix
+	LICENSE = "License" -- fix
 	
 	ABOUT = "关于"
 	PRINT_ADDON_INFO = "印列出插件信息"
@@ -297,6 +302,7 @@ elseif GetLocale() == "esES" then
 	EMAIL = "E-mail"
 	WEBSITE = "Web"
 	CREDITS = "Créditos"
+	LICENSE = "License" -- fix
 	
 	ABOUT = "Acerca de"
 	PRINT_ADDON_INFO = "Muestra información acerca del accesorio."
@@ -349,6 +355,7 @@ else -- enUS
 	EMAIL = "E-mail"
 	WEBSITE = "Website"
 	CREDITS = "Credits"
+	LICENSE = "License"
 	
 	ABOUT = "About"
 	PRINT_ADDON_INFO = "Show information about the addon."
@@ -556,6 +563,12 @@ function AceAddon:InitializeAddon(addon, name)
 		if type(addon.email) == "string" then
 			addon.email = addon.email:trim()
 		end
+		if addon.license == nil then
+			addon.license = GetAddOnMetadata(name, "X-License")
+		end
+		if type(addon.license) == "string" then
+			addon.license = addon.license:trim()
+		end
 		if addon.website == nil then
 			addon.website = GetAddOnMetadata(name, "X-Website")
 		end
@@ -586,11 +599,14 @@ function AceAddon:InitializeAddon(addon, name)
 	RegisterOnEnable(addon)
 end
 
+local function isGoodVariable(var)
+	return type(var) == "string" or type(var) == "number"
+end
 function AceAddon.prototype:PrintAddonInfo()
 	local x
-	if self.title then
+	if isGoodVariable(self.title) then
 		x = "|cffffff7f" .. tostring(self.title) .. "|r"
-	elseif self.name then
+	elseif isGoodVariable(self.name) then
 		x = "|cffffff7f" .. tostring(self.name) .. "|r"
 	else
 		x = "|cffffff7f<" .. tostring(self.class) .. " instance>|r"
@@ -600,20 +616,20 @@ function AceAddon.prototype:PrintAddonInfo()
 			x = x .. " " .. STANDBY
 		end
 	end
-	if self.version then
+	if isGoodVariable(self.version) then
 		x = x .. " - |cffffff7f" .. tostring(self.version) .. "|r"
 	end
-	if self.notes then
+	if isGoodVariable(self.notes) then
 		x = x .. " - " .. tostring(self.notes)
 	end
 	print(x)
-	if self.author then
+	if isGoodVariable(self.author) then
 		print(" - |cffffff7f" .. AUTHOR .. ":|r " .. tostring(self.author))
 	end
-	if self.credits then
+	if isGoodVariable(self.credits) then
 		print(" - |cffffff7f" .. CREDITS .. ":|r " .. tostring(self.credits))
 	end
-	if self.date then
+	if isGoodVariable(self.date) then
 		print(" - |cffffff7f" .. DATE .. ":|r " .. tostring(self.date))
 	end
 	if self.category then
@@ -622,11 +638,14 @@ function AceAddon.prototype:PrintAddonInfo()
 			print(" - |cffffff7f" .. CATEGORY .. ":|r " .. category)
 		end
 	end
-	if self.email then
+	if isGoodVariable(self.email) then
 		print(" - |cffffff7f" .. EMAIL .. ":|r " .. tostring(self.email))
 	end
-	if self.website then
+	if isGoodVariable(self.website) then
 		print(" - |cffffff7f" .. WEBSITE .. ":|r " .. tostring(self.website))
+	end
+	if isGoodVariable(self.license) then
+		print(" - |cffffff7f" .. LICENSE .. ":|r " .. tostring(self.license))
 	end
 end
 
