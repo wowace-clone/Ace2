@@ -8,6 +8,7 @@ Documentation: http://www.wowace.com/wiki/AceAddon-2.0
 SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceAddon-2.0
 Description: Base for all Ace addons to inherit from.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0, (optional) AceConsole-2.0
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceAddon-2.0"

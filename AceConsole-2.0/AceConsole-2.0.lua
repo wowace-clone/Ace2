@@ -10,6 +10,7 @@ Description: Mixin to allow for input/output capabilities. This uses the
              AceOptions data table format to determine input.
              http://www.wowace.com/index.php/AceOptions_data_table
 Dependencies: AceLibrary, AceOO-2.0
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceConsole-2.0"

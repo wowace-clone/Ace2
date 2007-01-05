@@ -8,6 +8,7 @@ Documentation: http://www.wowace.com/index.php/AceDebug-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceDebug-2.0
 Description: Mixin to allow for simple debugging capabilities.
 Dependencies: AceLibrary, AceOO-2.0
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceDebug-2.0"

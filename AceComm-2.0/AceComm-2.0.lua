@@ -9,6 +9,7 @@ SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceComm-2.0
 Description: Mixin to allow for inter-player addon communications.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0,
               ChatThrottleLib by Mikk (included)
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceComm-2.0"

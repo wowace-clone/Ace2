@@ -7,6 +7,7 @@ Documentation: http://www..wowace.com/index.php/AceTab-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceTab-2.0
 Description: A tab-completion library
 Dependencies: AceLibrary, AceEvent-2.0
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceTab-2.0"

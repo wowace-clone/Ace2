@@ -9,6 +9,7 @@ SVN: http://svn.wowace.com/root/trunk/Ace2/AceDB-2.0
 Description: Mixin to allow for fast, clean, and featureful saved variable
              access.
 Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceDB-2.0"

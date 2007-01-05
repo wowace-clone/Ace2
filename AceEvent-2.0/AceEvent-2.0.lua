@@ -9,6 +9,7 @@ SVN: http://svn.wowace.com/root/trunk/Ace2/AceEvent-2.0
 Description: Mixin to allow for event handling, scheduling, and inter-addon
              communication.
 Dependencies: AceLibrary, AceOO-2.0
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceEvent-2.0"

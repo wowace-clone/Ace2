@@ -14,6 +14,7 @@ Description: Versioning library to handle other library instances, upgrading,
              proper error tools. It is handy because all the errors occur in the
              file that called it, not in the library file itself.
 Dependencies: None
+License: LGPL v2.1
 ]]
 
 local ACELIBRARY_MAJOR = "AceLibrary"

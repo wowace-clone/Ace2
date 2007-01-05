@@ -8,6 +8,7 @@ Documentation: http://www.wowace.com/index.php/AceHook-2.1
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceHook-2.1
 Description: Mixin to allow for safe hooking of functions, methods, and scripts.
 Dependencies: AceLibrary, AceOO-2.0
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceHook-2.1"

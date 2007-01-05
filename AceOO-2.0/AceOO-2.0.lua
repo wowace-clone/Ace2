@@ -8,6 +8,7 @@ Documentation: http://www.wowace.com/index.php/AceOO-2.0
 SVN: http://svn.wowace.com/root/trunk/Ace2/AceOO-2.0
 Description: Library to provide an object-orientation framework.
 Dependencies: AceLibrary
+License: MIT
 ]]
 
 local MAJOR_VERSION = "AceOO-2.0"

@@ -9,6 +9,7 @@ SVN: http://svn.wowace.com/root/trunk/Ace2/AceLocale-2.2
 Description: Localization library for addons to use to handle proper
              localization and internationalization.
 Dependencies: AceLibrary
+License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceLocale-2.2"
