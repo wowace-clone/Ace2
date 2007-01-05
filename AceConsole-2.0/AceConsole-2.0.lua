@@ -1207,10 +1207,13 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					end
 				end
 			end
+			local passTable = options.pass and options or nil
 			for _,k in ipairs(order) do
+				local passValue = passTable and k
 				local real_k = k
 				local v = options.args[k]
 				if v then
+					local v_p = passTable or v
 					local k = k:gsub("%s", "-")
 					local disabled = v.disabled
 					if disabled then
@@ -1238,17 +1241,13 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					elseif type(v.aliases) == "string" then
 						k = k .. " || " .. v.aliases:gsub("%s", "-")
 					end
-					if v.get then
+					if v_p.get then
 						local a1,a2,a3,a4
-						if type(v.get) == "function" then
-							if options.pass then
-								a1,a2,a3,a4 = v.get(real_k)
-							else
-								a1,a2,a3,a4 = v.get()
-							end
+						if type(v_p.get) == "function" then
+							a1,a2,a3,a4 = v_p.get(passValue)
 						else
-							local handler = v.handler or handler
-							local f = v.get
+							local handler = v_p.handler or handler
+							local f = v_p.get
 							local neg
 							if v.type == "toggle" then
 								neg = f:match("^~(.-)$")
@@ -1259,11 +1258,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							if type(handler[f]) ~= "function" then
 								AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(f))
 							end
-							if options.pass then
-								a1,a2,a3,a4 = handler[f](handler, real_k)
-							else
-								a1,a2,a3,a4 = handler[f](handler)
-							end
+							a1,a2,a3,a4 = handler[f](handler, passValue)
 							if neg then
 								a1 = not a1
 							end
