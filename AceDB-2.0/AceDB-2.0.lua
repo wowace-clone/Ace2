@@ -897,128 +897,255 @@ function AceDB:RegisterDefaults(kind, defaults, a3)
 	end
 end
 
-function AceDB:ResetDB(kind)
-	AceDB:argCheck(kind, 2, "nil", "string")
+function AceDB:ResetDB(kind, a2)
+	local name
+	if a2 then
+		name, kind = kind, a2
+		AceDB:argCheck(name, 2, "nil", "string")
+		AceDB:argCheck(kind, 3, "nil", "string")
+	else	
+		AceDB:argCheck(kind, 2, "nil", "string")
+		if kind ~= "char" and kind ~= "class" and kind ~= "profile" and kind ~= "account" and kind ~= "realm" and kind ~= "faction" and kind ~= "server" then
+			name, kind = kind, nil
+		end
+	end
 	if not self.db or not self.db.raw then
 		AceDB:error("Cannot call \"ResetDB\" before \"RegisterDB\" has been called and before \"ADDON_LOADED\" has been fired.")
 	end
 	local db = self.db
-	if kind == nil then
-		if db.charName then
-			_G[db.charName] = nil
-		end
-		_G[db.name] = nil
-		rawset(db, 'raw', nil)
-		AceDB.InitializeDB(self)
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'account', nil)
-				rawset(v, 'char', nil)
-				rawset(v, 'class', nil)
-				rawset(v, 'profile', nil)
-				rawset(v, 'realm', nil)
-				rawset(v, 'server', nil)
-				rawset(v, 'faction', nil)
+	if not kind then
+		if not name then
+			if db.charName then
+				_G[db.charName] = nil
+			end
+			_G[db.name] = nil
+			rawset(db, 'raw', nil)
+			AceDB.InitializeDB(self)
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'account', nil)
+					rawset(v, 'char', nil)
+					rawset(v, 'class', nil)
+					rawset(v, 'profile', nil)
+					rawset(v, 'realm', nil)
+					rawset(v, 'server', nil)
+					rawset(v, 'faction', nil)
+				end
+			end
+		else
+			if db.raw.namespaces then
+				db.raw.namespaces[name] = nil
+			end	
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'account', nil)
+					rawset(v, 'char', nil)
+					rawset(v, 'class', nil)
+					rawset(v, 'profile', nil)
+					rawset(v, 'realm', nil)
+					rawset(v, 'server', nil)
+					rawset(v, 'faction', nil)
+				end
 			end
 		end
 	elseif kind == "account" then
-		db.raw.account = nil
-		rawset(db, 'account', nil)
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'account', nil)
+		if name then
+			db.raw.account = nil
+			rawset(db, 'account', nil)
+			if db.raw.namespaces then
+				for name,v in pairs(db.raw.namespaces) do
+					v.account = nil
+				end
+			end
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'account', nil)
+				end
+			end
+		else
+			if db.raw.namespaces and db.raw.namespaces[name] then
+				db.raw.namespaces[name].account = nil
+			end
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'account', nil)
+				end
 			end
 		end
 	elseif kind == "char" then
-		if db.charName then
-			_G[db.charName] = nil
-		else
-			if db.raw.chars then
-				db.raw.chars[charID] = nil
+		if name then
+			if db.charName then
+				_G[db.charName] = nil
+			else
+				if db.raw.chars then
+					db.raw.chars[charID] = nil
+				end
+				if db.raw.namespaces then
+					for name,v in pairs(db.raw.namespaces) do
+						if v.chars then
+							v.chars[charID] = nil
+						end
+					end
+				end
 			end
-			if db.raw.namespaces then
-				for name,v in pairs(db.raw.namespaces) do
-					if v.chars then
+			rawset(db, 'char', nil)
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'char', nil)
+				end
+			end
+		else
+			if db.charName then
+				local x = _G[db.charName]
+				if x.namespaces then
+					x.namespaces[name] = nil
+				end
+			else
+				if db.raw.namespaces then
+					local v = db.namespaces[name]
+					if v and v.chars then
 						v.chars[charID] = nil
 					end
 				end
 			end
-		end
-		rawset(db, 'char', nil)
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'char', nil)
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'char', nil)
+				end
 			end
 		end
 	elseif kind == "realm" then
-		if db.raw.realms then
-			db.raw.realms[realmID] = nil
-		end
-		rawset(db, 'realm', nil)
-		if db.raw.namespaces then
-			for name,v in pairs(db.raw.namespaces) do
-				if v.realms then
+		if not name then
+			if db.raw.realms then
+				db.raw.realms[realmID] = nil
+			end
+			rawset(db, 'realm', nil)
+			if db.raw.namespaces then
+				for name,v in pairs(db.raw.namespaces) do
+					if v.realms then
+						v.realms[realmID] = nil
+					end
+				end
+			end
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'realm', nil)
+				end
+			end
+		else	
+			if db.raw.namespaces then
+				local v = db.raw.namespaces[name]
+				if v and v.realms then
 					v.realms[realmID] = nil
 				end
 			end
-		end
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'realm', nil)
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'realm', nil)
+				end
 			end
 		end
 	elseif kind == "server" then
-		if db.raw.servers then
-			db.raw.servers[server] = nil
-		end
-		rawset(db, 'server', nil)
-		if db.raw.namespaces then
-			for name,v in pairs(db.raw.namespaces) do
-				if v.servers then
+		if not name then
+			if db.raw.servers then
+				db.raw.servers[server] = nil
+			end
+			rawset(db, 'server', nil)
+			if db.raw.namespaces then
+				for name,v in pairs(db.raw.namespaces) do
+					if v.servers then
+						v.servers[server] = nil
+					end
+				end
+			end
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'server', nil)
+				end
+			end
+		else
+			if db.raw.namespaces then
+				local v = db.raw.namespaces[name]
+				if v and v.servers then
 					v.servers[server] = nil
 				end
 			end
-		end
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'server', nil)
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'server', nil)
+				end
 			end
 		end
 	elseif kind == "faction" then
-		if db.raw.factions then
-			db.raw.factions[faction] = nil
-		end
-		rawset(db, 'faction', nil)
-		if db.raw.namespaces then
-			for name,v in pairs(db.raw.namespaces) do
-				if v.factions then
+		if not name then
+			if db.raw.factions then
+				db.raw.factions[faction] = nil
+			end
+			rawset(db, 'faction', nil)
+			if db.raw.namespaces then
+				for name,v in pairs(db.raw.namespaces) do
+					if v.factions then
+						v.factions[faction] = nil
+					end
+				end
+			end
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'faction', nil)
+				end
+			end
+		else
+			if db.raw.namespaces then
+				local v = db.raw.namespaces[name]
+				if v and v.factions then
 					v.factions[faction] = nil
 				end
 			end
-		end
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'faction', nil)
-			end
-		end
-	elseif kind == "class" then
-		if db.raw.realms then
-			db.raw.realms[classID] = nil
-		end
-		rawset(db, 'class', nil)
-		if db.raw.namespaces then
-			for name,v in pairs(db.raw.namespaces) do
-				if v.classes then
-					v.classes[classID] = nil
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'faction', nil)
 				end
 			end
 		end
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'class', nil)
+	elseif kind == "class" then
+		if not name then
+			if db.raw.realms then
+				db.raw.realms[classID] = nil
+			end
+			rawset(db, 'class', nil)
+			if db.raw.namespaces then
+				for name,v in pairs(db.raw.namespaces) do
+					if v.classes then
+						v.classes[classID] = nil
+					end
+				end
+			end
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'class', nil)
+				end
+			end
+		else
+			if db.raw.namespaces then
+				local v = db.raw.namespaces[name]
+				if v and v.classes then
+					v.classes[classID] = nil
+				end
+			end
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'class', nil)
+				end
 			end
 		end
-	elseif kind == "profile" then
+	elseif kind == "profile" then	
 		local id = db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"
 		if id == "char" then
 			id = "char/" .. charID
@@ -1027,20 +1154,35 @@ function AceDB:ResetDB(kind)
 		elseif id == "realm" then
 			id = "realm/" .. realmID
 		end
-		if db.raw.profiles then
-			db.raw.profiles[id] = nil
-		end
-		rawset(db, 'profile', nil)
-		if db.raw.namespaces then
-			for name,v in pairs(db.raw.namespaces) do
-				if v.profiles then
+		if not name then
+			if db.raw.profiles then
+				db.raw.profiles[id] = nil
+			end
+			rawset(db, 'profile', nil)
+			if db.raw.namespaces then
+				for name,v in pairs(db.raw.namespaces) do
+					if v.profiles then
+						v.profiles[id] = nil
+					end
+				end
+			end
+			if db.namespaces then
+				for name,v in pairs(db.namespaces) do
+					rawset(v, 'profile', nil)
+				end
+			end
+		else
+			if db.raw.namespaces then
+				local v = db.raw.namespaces[name]
+				if v and v.profiles then
 					v.profiles[id] = nil
 				end
 			end
-		end
-		if db.namespaces then
-			for name,v in pairs(db.namespaces) do
-				rawset(v, 'profile', nil)
+			if db.namespaces then
+				local v = db.namespaces[name]
+				if v then
+					rawset(v, 'profile', nil)
+				end
 			end
 		end
 	end
