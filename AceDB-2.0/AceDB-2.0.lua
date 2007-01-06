@@ -196,6 +196,17 @@ else -- enUS
 	DEFAULT = "Default"
 	ALTERNATIVE = "Alternative"
 end
+local convertFromOldCharID
+do
+	local matchStr = "^" .. PLAYER_OF_REALM:gsub("([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1"):gsub("%%s", "(.+)") .. "$"
+	function convertFromOldCharID(str)
+		local player, realm = str:match(matchStr)
+		if not player then
+			return str
+		end
+		return player .. " - " .. realm
+	end
+end
 
 local AceOO = AceLibrary("AceOO-2.0")
 local AceEvent
@@ -271,7 +282,7 @@ else
 	faction = FACTION_ALLIANCE
 end
 local server = GetRealmName():trim()
-local charID = PLAYER_OF_REALM:format(UnitName("player"), server)
+local charID = UnitName("player") .. " - " .. server
 local realmID = server .. " - " .. faction
 local classID = UnitClass("player")
 
@@ -461,6 +472,10 @@ local function RecalculateAceDBCopyFromList(target)
 				if currentProfile ~= k then
 					if k:find("^char/") then
 						local name = k:sub(6)
+						local player, realm = name:match("^(.*) %- (.*)$")
+						if player then
+							name = PLAYER_OF_REALM:format(player, realm)
+						end
 						t[k] = CHARACTER_COLON .. name
 					elseif k:find("^realm/") then
 						local name = k:sub(7)
@@ -481,6 +496,10 @@ local function RecalculateAceDBCopyFromList(target)
 						if currentProfile ~= k then
 							if k:find('^char/') then
 								local name = k:sub(6)
+								local player, realm = name:match("^(.*) %- (.*)$")
+								if player then
+									name = PLAYER_OF_REALM:format(player, realm)
+								end
 								t[k] = CHARACTER_COLON .. name
 							elseif k:find('^realm/') then
 								local name = k:sub(7)
@@ -510,7 +529,7 @@ local function RecalculateAceDBProfileList(target)
 	for k,v in pairs(t) do
 		t[k] = nil
 	end
-	t.char = CHARACTER_COLON .. charID
+	t.char = CHARACTER_COLON .. PLAYER_OF_REALM:format(UnitName("player"), server)
 	t.realm = REALM_COLON .. realmID
 	t.class = CLASS_COLON .. classID
 	t.Default = DEFAULT
@@ -789,6 +808,7 @@ end, __newindex = function(db, key, value)
 	error(("Cannot access key %q in db table. You may want to use db.profile[%q]"):format(tostring(key), tostring(key)), 2)
 end }
 
+local tmp = {}
 function AceDB:InitializeDB(addonName)
 	local db = self.db
 	
@@ -815,9 +835,59 @@ function AceDB:InitializeDB(addonName)
 	rawset(db, 'raw', _G[db.name])
 	if not db.raw.currentProfile then
 		db.raw.currentProfile = {}
+	else
+		for k,v in pairs(db.raw.currentProfile) do
+			if v:find("^char/") then
+				v = "char/" .. convertFromOldCharID(v:sub(6))
+			end
+			tmp[convertFromOldCharID(k)] = v
+			db.raw.currentProfile[k] = nil
+		end
+		for k,v in pairs(tmp) do
+			db.raw.currentProfile[k] = v
+			tmp[k] = nil
+		end
 	end
 	if not db.raw.currentProfile[charID] then
 		db.raw.currentProfile[charID] = "Default"
+	end
+	if db.raw.disabledModules then -- AceModuleCore-2.0
+		for k,v in pairs(db.raw.disabledModules) do
+			local new_k = k
+			if k:find("^char/") then
+				new_k = "char/" .. convertFromOldCharID(k:sub(6))
+			end
+			tmp[new_k] = v
+			db.raw.disabledModules[k] = nil
+		end
+		for k,v in pairs(tmp) do
+			db.raw.disabledModules[k] = v
+			tmp[k] = nil
+		end
+	end
+	if db.raw.chars then
+		for k,v in pairs(db.raw.chars) do
+			tmp[convertFromOldCharID(k)] = v
+			db.raw.chars[k] = nil
+		end
+		for k,v in pairs(tmp) do
+			db.raw.chars[k] = v
+			tmp[k] = nil
+		end
+	end
+	if db.raw.namespaces then
+		for l,u in pairs(db.raw.namespaces) do
+			if u.chars then
+				for k,v in pairs(u.chars) do
+					tmp[convertFromOldCharID(k)] = v
+					u.chars[k] = nil
+				end
+				for k,v in pairs(tmp) do
+					u.chars[k] = v
+					tmp[k] = nil
+				end
+			end
+		end
 	end
 	if db.raw.disabled then
 		setmetatable(db.raw.disabled, caseInsensitive_mt)
