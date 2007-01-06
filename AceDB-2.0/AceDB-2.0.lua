@@ -837,10 +837,11 @@ function AceDB:InitializeDB(addonName)
 		db.raw.currentProfile = {}
 	else
 		for k,v in pairs(db.raw.currentProfile) do
-			if v:find("^char/") then
-				v = "char/" .. convertFromOldCharID(v:sub(6))
+			local new_k = k
+			if k:find("^char/") then
+				new_k = "char/" .. convertFromOldCharID(k:sub(6))
 			end
-			tmp[convertFromOldCharID(k)] = v
+			tmp[new_k] = v
 			db.raw.currentProfile[k] = nil
 		end
 		for k,v in pairs(tmp) do
@@ -850,6 +851,20 @@ function AceDB:InitializeDB(addonName)
 	end
 	if not db.raw.currentProfile[charID] then
 		db.raw.currentProfile[charID] = "Default"
+	end
+	if db.raw.profiles then
+		for k,v in pairs(db.raw.profiles) do
+			local new_k = k
+			if k:find("^char/") then
+				new_k = "char/" .. convertFromOldCharID(k:sub(6))
+			end
+			tmp[new_k] = v
+			db.raw.profiles[k] = nil
+		end
+		for k,v in pairs(tmp) do
+			db.raw.profiles[k] = v
+			tmp[k] = nil
+		end
 	end
 	if db.raw.disabledModules then -- AceModuleCore-2.0
 		for k,v in pairs(db.raw.disabledModules) do
