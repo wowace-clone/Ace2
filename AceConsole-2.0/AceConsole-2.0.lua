@@ -21,7 +21,7 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
-local MAP_ONOFF, USAGE, IS_CURRENTLY_SET_TO, IS_NOW_SET_TO, IS_NOT_A_VALID_OPTION_FOR, IS_NOT_A_VALID_VALUE_FOR, NO_OPTIONS_AVAILABLE, OPTION_HANDLER_NOT_FOUND, OPTION_HANDLER_NOT_VALID, OPTION_IS_DISABLED, KEYBINDING_USAGE
+local MAP_ONOFF, USAGE, IS_CURRENTLY_SET_TO, IS_NOW_SET_TO, IS_NOT_A_VALID_OPTION_FOR, IS_NOT_A_VALID_VALUE_FOR, NO_OPTIONS_AVAILABLE, OPTION_HANDLER_NOT_FOUND, OPTION_HANDLER_NOT_VALID, OPTION_IS_DISABLED, KEYBINDING_USAGE, DEFAULT_CONFIRM_MESSAGE
 if GetLocale() == "deDE" then
 	MAP_ONOFF = { [false] = "|cffff0000Aus|r", [true] = "|cff00ff00An|r" }
 	USAGE = "Benutzung"
@@ -34,6 +34,7 @@ if GetLocale() == "deDE" then
 	OPTION_HANDLER_NOT_VALID = "Optionen handler nicht g\195\188ltig."
 	OPTION_IS_DISABLED = "Option |cffffff7f%s|r deaktiviert."
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>" -- fix
+	DEFAULT_CONFIRM_MESSAGE = "Are you sure you want to perform `%s'?" -- fix
 elseif GetLocale() == "frFR" then
 	MAP_ONOFF = { [false] = "|cffff0000Inactif|r", [true] = "|cff00ff00Actif|r" }
 	USAGE = "Utilisation"
@@ -46,6 +47,7 @@ elseif GetLocale() == "frFR" then
 	OPTION_HANDLER_NOT_VALID = "Le gestionnaire d'option n'est pas valide."
 	OPTION_IS_DISABLED = "L'option |cffffff7f%s|r est d\195\169sactiv\195\169e."
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>" -- fix
+	DEFAULT_CONFIRM_MESSAGE = "Are you sure you want to perform `%s'?" -- fix
 elseif GetLocale() == "koKR" then
 	MAP_ONOFF = { [false] = "|cffff0000끔|r", [true] = "|cff00ff00켬|r" }
 	USAGE = "사용법"
@@ -58,6 +60,7 @@ elseif GetLocale() == "koKR" then
 	OPTION_HANDLER_NOT_VALID = "설정 조정값이 올바르지 않습니다."
 	OPTION_IS_DISABLED = "|cffffff7f%s|r 설정은 사용할 수 없습니다."
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>" -- fix
+	DEFAULT_CONFIRM_MESSAGE = "Are you sure you want to perform `%s'?" -- fix
 elseif GetLocale() == "zhCN" then
 	MAP_ONOFF = { [false] = "|cffff0000\229\133\179\233\151\173|r", [true] = "|cff00ff00\229\188\128\229\144\175|r" }
 	USAGE = "\231\148\168\230\179\149"
@@ -70,6 +73,7 @@ elseif GetLocale() == "zhCN" then
 	OPTION_HANDLER_NOT_VALID = "\233\128\137\233\161\185\229\164\132\231\144\134\231\168\139\229\186\143 \230\151\160\230\149\136."
 	OPTION_IS_DISABLED = "\233\128\137\233\161\185 |cffffff7f%s|r \228\184\141\229\174\140\230\149\180."
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>" -- fix
+	DEFAULT_CONFIRM_MESSAGE = "Are you sure you want to perform `%s'?" -- fix
 elseif GetLocale() == "zhTW" then
 	MAP_ONOFF = { [false] = "|cffff0000關閉|r", [true] = "|cff00ff00開啟|r" }
 	USAGE = "用法"
@@ -82,6 +86,7 @@ elseif GetLocale() == "zhTW" then
 	OPTION_HANDLER_NOT_VALID = "選項處理器不符合規定。"
 	OPTION_IS_DISABLED = "|cffffff7f%s|r 已被停用。"
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>" -- fix
+	DEFAULT_CONFIRM_MESSAGE = "Are you sure you want to perform `%s'?" -- fix
 elseif GetLocale() == "esES" then
 	MAP_ONOFF = { [false] = "|cffff0000Desactivado|r", [true] = "|cff00ff00Activado|r" }
 	USAGE = "Uso"
@@ -94,6 +99,7 @@ elseif GetLocale() == "esES" then
 	OPTION_HANDLER_NOT_VALID = "Gestor de opciones no v\195\161lido."
 	OPTION_IS_DISABLED = "La opci\195\179n |cffffff7f%s|r est\195\161 desactivada."
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>"
+	DEFAULT_CONFIRM_MESSAGE = "Are you sure you want to perform `%s'?" -- fix
 else -- enUS
 	MAP_ONOFF = { [false] = "|cffff0000Off|r", [true] = "|cff00ff00On|r" }
 	USAGE = "Usage"
@@ -106,6 +112,7 @@ else -- enUS
 	OPTION_HANDLER_NOT_VALID = "Option handler not valid."
 	OPTION_IS_DISABLED = "Option |cffffff7f%s|r is disabled."
 	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-KEY>"
+	DEFAULT_CONFIRM_MESSAGE = "Are you sure you want to perform `%s'?"
 end
 
 local NONE = NONE or "None"
@@ -892,6 +899,10 @@ local function validateOptions(options, position, baseOptions, fromPass)
 				return err, pos
 			end
 		end
+	elseif kind == "execute" then
+		if type(options.confirm) ~= "string" and type(options.confirm) ~= "boolean" and type(options.confirm) ~= "nil" then
+			return '"confirm" must be a string, boolean, or nil', position
+		end
 	end
 end
 
@@ -1330,6 +1341,30 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 	end
 end
 
+local function confirmPopup(message, func, ...)
+	if not StaticPopupDialogs["ACECONSOLE20_CONFIRM_DIALOG"] then
+		StaticPopupDialogs["ACECONSOLE20_CONFIRM_DIALOG"] = {}
+	end
+	local t = StaticPopupDialogs["ACECONSOLE20_CONFIRM_DIALOG"]
+	for k in pairs(t) do
+		t[k] = nil
+	end
+	t.text = message
+	t.button1 = ACCEPT or "Accept"
+	t.button2 = CANCEL or "Cancel"
+	t.OnAccept = function()
+		func(unpack(t))
+	end
+	for i = 1, select('#', ...) do
+		t[i] = select(i, ...)
+	end
+	t.timeout = 0
+	t.whileDead = 1
+	t.hideOnEscape = 1
+	
+	StaticPopup_Show("ACECONSOLE20_CONFIRM_DIALOG")
+end
+
 local function handlerFunc(self, chat, msg, options)
 	if not msg then
 		msg = ""
@@ -1534,25 +1569,45 @@ local function handlerFunc(self, chat, msg, options)
 			return
 		end
 	elseif kind == "execute" then
+		local confirm = options.confirm
+		if confirm == true then
+			confirm = DEFAULT_CONFIRM_MESSAGE:format(options.desc or options.name or UNKNOWN or "Unknown")
+		end
 		if passTable then
 			if type(passFunc) == "function" then
-				set(passValue)
+				if confirm then
+					confirmPopup(confirm, set, passValue)
+				else
+					set(passValue)
+				end
 			else
 				if type(handler[passFunc]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(passFunc))
 				end
-				handler[passFunc](handler, passValue)
+				if confirm then
+					confirmPopup(confirm, handler[passFunc], handler, passValue)
+				else
+					handler[passFunc](handler, passValue)
+				end
 			end
 		else
 			local ret, msg
 			if type(options.func) == "function" then
-				options.func()
+				if confirm then
+					confirmPopup(confirm, options.func)
+				else
+					options.func()
+				end
 			else
 				local handler = options.handler or self
 				if type(handler[options.func]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(options.func))
 				end
-				handler[options.func](handler)
+				if confirm then
+					confirmPopup(confirm, handler[options.func], handler)
+				else
+					handler[options.func](handler)
+				end
 			end
 		end
 	elseif kind == "toggle" then
