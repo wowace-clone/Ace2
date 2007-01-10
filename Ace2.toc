@@ -1,10 +1,10 @@
-## Interface: 20000
+## Interface: 20003
 ## LoadOnDemand: 1
 
 ## Title: Ace |cffff00002|r
 ## Notes: AddOn development framework
 ## Author: Ace Development Team
-## X-Website: http://www.wowace.com
+## X-Website: http://www.wowace.com
 ## X-Category: Library
 ## X-License: LGPL v2.1 + MIT for AceOO-2.0
 
