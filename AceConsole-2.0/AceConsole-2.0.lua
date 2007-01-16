@@ -234,9 +234,13 @@ local function specialSort(alpha, bravo)
 	end
 end
 
+local function escapeChar(c)
+    return ("\\%03d"):format(c:byte())
+end
+
 local function literal_tostring_prime(t, depth)
 	if type(t) == "string" then
-		return ("|cff00ff00%q|r"):format((t:gsub("|", "||")))
+		return ("|cff00ff00%q|r"):format((t:gsub("|", "||"))):gsub("[\128-\255]", escapeChar)
 	elseif type(t) == "table" then
 		if t == _G then
 			return "|cffffea00_G|r"
