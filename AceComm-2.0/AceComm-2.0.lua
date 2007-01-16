@@ -155,57 +155,112 @@ local function IsInChannel(chan)
 	return GetChannelName(chan) ~= 0
 end
 
+local function encodeLargeChar(c)
+    local num = c:byte()
+    num = num - 127
+    if num >= 9 then
+        num = num + 2
+    end
+    if num >= 29 then
+        num = num + 2
+    end
+    if num >= 128 then
+        return string_char(29, num - 127) -- 1, 2, 3, 4, 5
+    end
+    return string_char(31, num)
+end
+
+local function decodeLargeChar(c)
+    local num = c:byte()
+    if num >= 29 then
+        num = num - 2
+    end
+    if num >= 9 then
+        num = num - 2
+    end
+    num = num + 127
+    return string_char(num)
+end
+
 -- Package a message for transmission
 local function Encode(text, drunk)
-	text = text:gsub("°", "°±")
-	if drunk then
-		text = text:gsub("\020", "°\021")
-		text = text:gsub("\015", "°\016")
+    if drunk then
+    	text = text:gsub("\029", "\029\030")
+    	
+    	text = text:gsub("\031", "\029\032")
+	    text = text:gsub("[\128-\255]", encodeLargeChar)
+    	
+		text = text:gsub("\020", "\029\021")
+		text = text:gsub("\015", "\029\016")
 		text = text:gsub("S", "\020")
 		text = text:gsub("s", "\015")
 		-- change S and s to a different set of character bytes.
-	end
-	text = text:gsub("\255", "°\254") -- \255 (this is here because \000 is more common)
-	text = text:gsub("%z", "\255") -- \000
-	text = text:gsub("\010", "°\011") -- \n
-	text = text:gsub("\124", "°\125") -- |
-	text = text:gsub("%%", "°\038") -- %
-	-- encode assorted prohibited characters
+		
+    	text = text:gsub("\127", "\029\126") -- \127 (this is here because \000 is more common)
+    	text = text:gsub("%z", "\127") -- \000
+    	text = text:gsub("\010", "\029\011") -- \n
+    	text = text:gsub("\124", "\029\125") -- |
+    	text = text:gsub("%%", "\029\038") -- %
+    	-- encode assorted prohibited characters
+    else
+        text = text:gsub("°", "°±")
+        
+    	text = text:gsub("\255", "°\254") -- \255 (this is here because \000 is more common)
+    	text = text:gsub("%z", "\255") -- \000
+    	text = text:gsub("\010", "°\011") -- \n
+    	text = text:gsub("\124", "°\125") -- |
+    	text = text:gsub("%%", "°\038") -- %
+    	-- encode assorted prohibited characters
+    end
 	return text
 end
 
-local func
+local function func(text)
+	if text == "\016" then
+		return "\015"
+	elseif text == "\021" then
+		return "\020"
+	elseif text == "±" then
+		return "°"
+	elseif text == "\254" then
+		return "\255"
+	elseif text == "\011" then
+		return "\010"
+	elseif text == "\125" then
+		return "\124"
+	elseif text == "\038" then
+		return "\037"
+	end
+end
+
 -- Clean a received message
 local function Decode(text, drunk)
 	if drunk then
-		text = text:gsub("^(.*)°.-$", "%1")
+		text = text:gsub("^(.*)\029.-$", "%1")
 		-- get rid of " ...hic!"
+		
+    	text = text:gsub("\029\038", "%%")
+    	text = text:gsub("\029\125", "\124")
+    	text = text:gsub("\029\011", "\010")
+    	text = text:gsub("\127", "\000")
+    	text = text:gsub("\029\126", "\127")
+    	text = text:gsub("\015", "s")
+    	text = text:gsub("\020", "S")
+    	text = text:gsub("\029\016", "\015")
+    	text = text:gsub("\029\021", "\020")
+    	text = text:gsub("\029\001", "\251")
+    	text = text:gsub("\029\002", "\252")
+    	text = text:gsub("\029\003", "\253")
+    	text = text:gsub("\029\004", "\254")
+    	text = text:gsub("\029\005", "\255")
+    	text = text:gsub("\031(.)", decodeLargeChar)
+    	text = text:gsub("\029\032", "\031")
+    	text = text:gsub("\029\030", "\029")
+	else
+	    text = text:gsub("\255", "\000")
+	    
+    	text = text:gsub("°([±\254\011\125\038])", func)
 	end
-	if not func then
-		func = function(text)
-			if text == "\016" then
-				return "\015"
-			elseif text == "\021" then
-				return "\020"
-			elseif text == "±" then
-				return "°"
-			elseif text == "\254" then
-				return "\255"
-			elseif text == "\011" then
-				return "\010"
-			elseif text == "\125" then
-				return "\124"
-			elseif text == "\038" then
-				return "\037"
-			end
-		end
-	end
-	text = text:gsub("\255", "\000")
-	if drunk then
-		text = text:gsub("\020", "S")
-		text = text:gsub("\015", "s")
-	end
-	text = text:gsub(drunk and "°([\016\021±\254\011\125\038])" or "°([±\254\011\125\038])", func)
 	-- remove the hidden character and refix the prohibited characters.
 	return text
 end
@@ -1135,25 +1190,25 @@ local id = byte_Z
 
 local function encodedChar(x)
 	if x == 10 then
-		return "°\011"
+		return "\029\011"
 	elseif x == 0 then
-		return "\255"
-	elseif x == 255 then
-		return "°\254"
+		return "\127"
+	elseif x == 127 then
+		return "\029\126"
 	elseif x == 124 then
-		return "°\125"
+		return "\029\125"
 	elseif x == byte_s then
 		return "\015"
 	elseif x == byte_S then
 		return "\020"
 	elseif x == 15 then
-		return "°\016"
+		return "\029\016"
 	elseif x == 20 then
-		return "°\021"
-	elseif x == byte_deg then
-		return "°±"
+		return "\029\021"
+	elseif x == 29 then
+		return "\029\030"
 	elseif x == 37 then
-		return "°\038"
+		return "\029\038"
 	end
 	return string_char(x)
 end
@@ -1226,10 +1281,10 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				last = next
 			end
 			if distribution == "WHISPER" then
-				bit = "/" .. prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "°"
+				bit = "/" .. prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "\029"
 				ChatThrottleLib:SendChatMessage(priority, prefix, bit, "WHISPER", nil, person)
 			elseif distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
-				bit = prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "°"
+				bit = prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "\029"
 				local channel
 				if distribution == "GLOBAL" then
 					channel = "AceComm"
@@ -1252,11 +1307,11 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		return good
 	else
 		if distribution == "WHISPER" then
-			message = "/" .. prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "°"
+			message = "/" .. prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "\029"
 			ChatThrottleLib:SendChatMessage(priority, prefix, message, "WHISPER", nil, person)
 			return true
 		elseif distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
-			message = prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "°"
+			message = prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "\029"
 			local channel
 			if distribution == "GLOBAL" then
 				channel = "AceComm"
