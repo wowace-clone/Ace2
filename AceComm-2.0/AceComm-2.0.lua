@@ -2062,6 +2062,40 @@ function AceComm:CHAT_MSG_SYSTEM(text)
 	StaticPopup_Show("ACECOMM_TOO_MANY_CHANNELS")
 end
 
+function AceComm:QueryAddonVersion(addon, distribution, player)
+	AceComm:argCheck(addon, 2, "string")
+	AceComm:argCheck(distribution, 3, "string")
+	if distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" then
+		AceComm:error('Argument #3 to `QueryAddonVersion\' must be either "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", or "GROUP". %q is not appropriate', distribution)
+	end
+	if distribution == "WHISPER" then
+		AceComm:argCheck(player, 4, "string")
+	elseif distribution == "GROUP" then
+		distribution = GetCurrentGroupDistribution()
+	end
+	if not IsInDistribution(distribution) then
+		return
+	end
+	if distribution == "WHISPER" then
+		self.addonVersionPinger:SendCommMessage("WHISPER", player, "PING", addon)
+	else
+		self.addonVersionPinger:SendCommMessage(distribution, "PING", addon)
+	end
+end
+
+function AceComm:RegisterAddonVersionReceptor(obj, method)
+	self:argCheck(obj, 2, "function", "table")
+	if type(obj) == "function" then
+		method = true
+	else
+		self:argCheck(method, 3, "string")
+		if type(obj[method]) ~= "function" then
+			self:error("Handler provided to `RegisterAddonVersionReceptor', %q, not a function", method)
+		end
+	end
+	self.addonVersionPinger.receptors[obj] = method
+end
+
 local function activate(self, oldLib, oldDeactivate)
 	AceComm = self
 	
@@ -2129,7 +2163,7 @@ local function activate(self, oldLib, oldDeactivate)
 	self.recentWhispers = oldLib and oldLib.recentWhispers or {}
 	self.userRegistry = oldLib and oldLib.userRegistry or {}
 	self.commPrefixes = oldLib and oldLib.commPrefixes or {}
-	
+	self.addonVersionPinger = oldLib and oldLib.addonVersionPinger
 	AceComm_registry = self.registry
 	for k in pairs(self.classes) do
 		self.classes[k] = nil
@@ -2171,6 +2205,93 @@ local function external(self, major, instance)
 		self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 		self:RegisterEvent("CHAT_MSG_SYSTEM")
+		
+		if not self.addonVersionPinger then
+			self.addonVersionPinger = {}
+			self:embed(self.addonVersionPinger)
+			self.addonVersionPinger:SetCommPrefix("Version")
+			self.addonVersionPinger.receptors = {}
+		else
+			self.addonVersionPinger:UnregisterAllComms()
+		end
+		self.addonVersionPinger.OnCommReceive = {
+			PING = function(self, prefix, sender, distribution, addon)
+				local version = ""
+				if AceLibrary:HasInstance(addon) then
+					version, revision = AceLibrary(addon):GetLibraryVersion()
+					version = version .. "-" .. revision
+				else
+					local _G_addon = _G[addon]
+					if not _G_addon then
+						_G_addon = _G[addon:match("^[^_]+_(.*)$")]
+					end
+					if _G_addon then
+						if rawget(_G_addon, "version") then version = _G_addon.version
+						elseif rawget(_G_addon, "Version") then version = _G_addon.Version
+						elseif rawget(_G_addon, "VERSION") then version = _G_addon.VERSION
+						end
+						if type(version) == "function" then version = tostring(select(2, pcall(version()))) end
+						local revision = nil
+						if rawget(_G_addon, "revision") then revision = _G_addon.revision
+						elseif rawget(_G_addon, "Revision") then revision = _G_addon.Revision
+						elseif rawget(_G_addon, "REVISION") then revision = _G_addon.REVISION
+						elseif rawget(_G_addon, "rev") then revision = _G_addon.rev
+						elseif rawget(_G_addon, "Rev") then revision = _G_addon.Rev
+						elseif rawget(_G_addon, "REV") then revision = _G_addon.REV
+						end
+						if type(revision) == "function" then revision = tostring(select(2, pcall(revision()))) end
+
+						if version then version = tostring(version) end
+						if revision then revision = tostring(revision) end
+						if type(revision) == "string" and type(version) == "string" and version:len() > 0 and not version:find(revision) then
+							version = version .. "." .. revision
+						end
+
+						if not version and revision then version = revision end
+					end
+
+					if _G[addon:upper().."_VERSION"] then
+						version = _G[addon:upper() .. "_VERSION"]
+					end
+					if _G[addon:upper().."_REVISION"] or _G[addon:upper().."_REV"] then
+						local revision = _G[addon:upper() .. "_REVISION"] or _G[addon:upper().."_REV"]
+						if type(revision) == "string" and type(version) == "string" and version:len() > 0 and not version:find(revision) then
+							version = version .. "." .. revision
+						end
+						if (not version or version == "") and revision then version = revision end
+					end
+
+					if not version or version == "" then
+						version = GetAddOnMetadata(addon, "Version")
+					end
+					if not version or version == "" then
+						version = IsAddOnLoaded(addon) and true or false
+					end
+				end
+				self:SendCommMessage("WHISPER", sender, "PONG", addon, version)
+			end,
+			PONG = function(self, prefix, sender, distribution, addon, version)
+				for obj, method in pairs(self.receptors) do
+					if type(obj) == "function" then
+						local success, err = pcall(obj, sender, addon, version)
+						if not success then
+							geterrorhandler()(err)
+						end
+					else
+						local obj_method = obj[method]
+						local success, err = pcall(obj_method, obj, sender, addon, version)
+						if not success then
+							geterrorhandler()(err)
+						end
+					end
+				end
+			end
+		}
+		self.addonVersionPinger:RegisterComm("Version", "WHISPER")
+		self.addonVersionPinger:RegisterComm("Version", "GUILD")
+		self.addonVersionPinger:RegisterComm("Version", "RAID")
+		self.addonVersionPinger:RegisterComm("Version", "PARTY")
+		self.addonVersionPinger:RegisterComm("Version", "BATTLEGROUND")
 	else
 		if AceOO.inherits(instance, AceOO.Class) and not instance.class then
 			self.classes[TailoredNumericCheckSum(major)] = instance
