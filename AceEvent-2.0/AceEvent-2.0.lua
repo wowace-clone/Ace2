@@ -976,54 +976,61 @@ local function activate(self, oldLib, oldDeactivate)
 	end)
 	registeringFromAceEvent = nil
 
+	local function handleFullInit()
+		if not self.postInit then
+			local function func()
+				self.postInit = true
+				self:TriggerEvent("AceEvent_FullyInitialized")
+				if self.registry["CHAT_MSG_CHANNEL_NOTICE"] and self.registry["CHAT_MSG_CHANNEL_NOTICE"][self] then
+					self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+				end
+				if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
+					self:UnregisterEvent("MEETINGSTONE_CHANGED")
+				end
+				if self.registry["MINIMAP_ZONE_CHANGED"] and self.registry["MINIMAP_ZONE_CHANGED"][self] then
+					self:UnregisterEvent("MINIMAP_ZONE_CHANGED")
+				end
+				if self.registry["LANGUAGE_LIST_CHANGED"] and self.registry["LANGUAGE_LIST_CHANGED"][self] then
+					self:UnregisterEvent("LANGUAGE_LIST_CHANGED")
+				end
+				collectgarbage('collect')
+			end
+			registeringFromAceEvent = true
+			local f = function()
+				self.playerLogin = true
+				self:ScheduleEvent("AceEvent_FullyInitialized", func, 1)
+			end
+			self:RegisterEvent("MEETINGSTONE_CHANGED", f, true)
+			self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE", function()
+				self:ScheduleEvent("AceEvent_FullyInitialized", func, 0.15)
+			end)
+			self:RegisterEvent("LANGUAGE_LIST_CHANGED", function()
+				if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
+					registeringFromAceEvent = true
+					self:UnregisterEvent("MEETINGSTONE_CHANGED")
+					self:RegisterEvent("MINIMAP_ZONE_CHANGED", fd, true)
+					registeringFromAceEvent = nil
+				end
+			end)
+			self:ScheduleEvent("AceEvent_FullyInitialized", func, 10)
+			registeringFromAceEvent = nil
+		end
+	end
+	
 	if not self.playerLogin then
 		registeringFromAceEvent = true
 		self:RegisterEvent("PLAYER_LOGIN", function()
-			collectgarbage('collect')
 			self.playerLogin = true
+			handleFullInit()
+			handleFullInit = nil
+			collectgarbage('collect')
 		end, true)
 		registeringFromAceEvent = nil
+	else
+		handleFullInit()
+		handleFullInit = nil
 	end
 
-	if not self.postInit then
-		local isReload = true
-		local function func()
-			self.postInit = true
-			self:TriggerEvent("AceEvent_FullyInitialized")
-			if self.registry["CHAT_MSG_CHANNEL_NOTICE"] and self.registry["CHAT_MSG_CHANNEL_NOTICE"][self] then
-				self:UnregisterEvent("CHAT_MSG_CHANNEL_NOTICE")
-			end
-			if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
-				self:UnregisterEvent("MEETINGSTONE_CHANGED")
-			end
-			if self.registry["MINIMAP_ZONE_CHANGED"] and self.registry["MINIMAP_ZONE_CHANGED"][self] then
-				self:UnregisterEvent("MINIMAP_ZONE_CHANGED")
-			end
-			if self.registry["LANGUAGE_LIST_CHANGED"] and self.registry["LANGUAGE_LIST_CHANGED"][self] then
-				self:UnregisterEvent("LANGUAGE_LIST_CHANGED")
-			end
-			collectgarbage('collect')
-		end
-		registeringFromAceEvent = true
-		local f = function()
-			self.playerLogin = true
-			self:ScheduleEvent("AceEvent_FullyInitialized", func, 1)
-		end
-		self:RegisterEvent("MEETINGSTONE_CHANGED", f, true)
-		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE", function()
-			self:ScheduleEvent("AceEvent_FullyInitialized", func, 0.05)
-		end)
-		self:RegisterEvent("LANGUAGE_LIST_CHANGED", function()
-			if self.registry["MEETINGSTONE_CHANGED"] and self.registry["MEETINGSTONE_CHANGED"][self] then
-				registeringFromAceEvent = true
-				self:UnregisterEvent("MEETINGSTONE_CHANGED")
-				self:RegisterEvent("MINIMAP_ZONE_CHANGED", f, true)
-				registeringFromAceEvent = nil
-			end
-		end)
-		self:ScheduleEvent("AceEvent_FullyInitialized", func, 10)
-		registeringFromAceEvent = nil
-	end
 	
 	registeringFromAceEvent = true
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -1038,3 +1045,9 @@ local function activate(self, oldLib, oldDeactivate)
 end
 
 AceLibrary:Register(AceEvent, MAJOR_VERSION, MINOR_VERSION, activate)
+AceEvent:RegisterAllEvents(function(...)
+	local ev = AceEvent.currentEvent
+	if ev == event or ev == "AceEvent_FullyInitialized" then
+		AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, ", ", AceEvent.currentEvent, ...)
+	end
+end)
