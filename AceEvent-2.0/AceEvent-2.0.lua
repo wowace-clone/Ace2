@@ -1045,9 +1045,3 @@ local function activate(self, oldLib, oldDeactivate)
 end
 
 AceLibrary:Register(AceEvent, MAJOR_VERSION, MINOR_VERSION, activate)
-AceEvent:RegisterAllEvents(function(...)
-	local ev = AceEvent.currentEvent
-	if ev == event or ev == "AceEvent_FullyInitialized" then
-		AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, ", ", AceEvent.currentEvent, ...)
-	end
-end)
