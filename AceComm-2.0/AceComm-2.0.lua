@@ -1230,6 +1230,15 @@ local function soberEncodedChar(x)
 	return string_char(x)
 end
 
+local recentGuildMessage = 0
+
+function AceComm.hooks:SendChatMessage(oldFunc, text, chattype, language, destination)
+	if chattype == "GUILD" then
+		recentGuildMessage = 0
+	end
+	return oldFunc(text, chattype, language, destination)
+end
+
 local function SendMessage(prefix, priority, distribution, person, message, textToHash)
 	if distribution == "CUSTOM" then
 		person = "AceComm" .. person
@@ -1327,6 +1336,9 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 			end
 		else
 			message = id .. string_char(1) .. string_char(1) .. "\t" .. message
+			if distribution == "GUILD" then
+				recentGuildMessage = GetTime() + 15
+			end
 			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution)
 			return true
 		end
@@ -1964,6 +1976,10 @@ function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
 			else
 				recentNotSeen[player] = t + 10
 			end
+		elseif arg1 == ERR_GUILD_PERMISSIONS then
+			if recentGuildMessage > GetTime() then
+				return
+			end
 		end
 	end
 	return orig(event)
@@ -2099,7 +2115,7 @@ end
 local function activate(self, oldLib, oldDeactivate)
 	AceComm = self
 	
-	if not oldLib then
+	if not oldLib or not oldLib.hooks or not oldLib.hooks.ChatFrame_MessageEventHandler then
 		local old_ChatFrame_MessageEventHandler = ChatFrame_MessageEventHandler
 		function ChatFrame_MessageEventHandler(event)
 			if self.hooks.ChatFrame_MessageEventHandler then
@@ -2108,8 +2124,8 @@ local function activate(self, oldLib, oldDeactivate)
 				return old_ChatFrame_MessageEventHandler(event)
 			end
 		end
-		local id
-		local loggingOut = false
+	end
+	if not oldLib or not oldLib.hooks or not oldLib.hooks.Logout then
 		local old_Logout = Logout
 		function Logout()
 			if self.hooks.Logout then
@@ -2118,6 +2134,8 @@ local function activate(self, oldLib, oldDeactivate)
 				return old_Logout()
 			end
 		end
+	end
+	if not oldLib or not oldLib.hooks or not oldLib.hooks.CancelLogout then
 		local old_CancelLogout = CancelLogout
 		function CancelLogout()
 			if self.hooks.CancelLogout then
@@ -2126,6 +2144,8 @@ local function activate(self, oldLib, oldDeactivate)
 				return old_CancelLogout()
 			end
 		end
+	end
+	if not oldLib or not oldLib.hooks or not oldLib.hooks.Quit then
 		local old_Quit = Quit
 		function Quit()
 			if self.hooks.Quit then
@@ -2134,6 +2154,8 @@ local function activate(self, oldLib, oldDeactivate)
 				return old_Quit()
 			end
 		end
+	end
+	if not oldLib or not oldLib.hooks or not oldLib.hooks.FCFDropDown_LoadChannels then
 		local old_FCFDropDown_LoadChannels = FCFDropDown_LoadChannels
 		function FCFDropDown_LoadChannels(...)
 			if self.hooks.FCFDropDown_LoadChannels then
@@ -2142,12 +2164,24 @@ local function activate(self, oldLib, oldDeactivate)
 				return old_FCFDropDown_LoadChannels(...)
 			end
 		end
+	end
+	if not oldLib or not oldLib.hooks or not oldLib.hooks.JoinChannelByName then
 		local old_JoinChannelByName = JoinChannelByName
 		function JoinChannelByName(a,b,c,d,e,f,g,h,i,j)
 			if self.hooks.JoinChannelByName then
 				return self.hooks.JoinChannelByName(self, old_JoinChannelByName, a,b,c,d,e,f,g,h,i,j)
 			else
 				return old_JoinChannelByName(a,b,c,d,e,f,g,h,i,j)
+			end
+		end
+	end
+	if not oldLib or not oldLib.hooks or not oldLib.hooks.SendChatMessage then
+		local old_SendChatMessage = SendChatMessage
+		function SendChatMessage(text, chattype, language, destination)
+			if self.hooks.SendChatMessage then
+				return self.hooks.SendChatMessage(self, old_SendChatMessage, text, chattype, language, destination)
+			else
+				return old_SendChatMessage(text, chattype, language, destination)
 			end
 		end
 	end
