@@ -267,9 +267,9 @@ end
 
 local lastChannelJoined
 
-function AceComm.hooks:JoinChannelByName(orig, channel, a,b,c,d,e,f,g,h,i)
+function AceComm.hooks:JoinChannelByName(orig, channel, ...)
 	lastChannelJoined = channel
-	return orig(channel, a,b,c,d,e,f,g,h,i)
+	return orig(channel, ...)
 end
 
 local function JoinChannel(channel)
@@ -1232,11 +1232,11 @@ end
 
 local recentGuildMessage = 0
 
-function AceComm.hooks:SendChatMessage(oldFunc, text, chattype, language, destination)
-	if chattype == "GUILD" then
+function AceComm.hooks:SendChatMessage(oldFunc, ...)
+	if select(2, ...) == "GUILD" then
 		recentGuildMessage = 0
 	end
-	return oldFunc(text, chattype, language, destination)
+	return oldFunc(...)
 end
 
 local function SendMessage(prefix, priority, distribution, person, message, textToHash)
@@ -2169,9 +2169,9 @@ local function activate(self, oldLib, oldDeactivate)
 		local old_JoinChannelByName = JoinChannelByName
 		function JoinChannelByName(a,b,c,d,e,f,g,h,i,j)
 			if self.hooks.JoinChannelByName then
-				return self.hooks.JoinChannelByName(self, old_JoinChannelByName, a,b,c,d,e,f,g,h,i,j)
+				return self.hooks.JoinChannelByName(self, old_JoinChannelByName, ...)
 			else
-				return old_JoinChannelByName(a,b,c,d,e,f,g,h,i,j)
+				return old_JoinChannelByName(...)
 			end
 		end
 	end
@@ -2179,9 +2179,9 @@ local function activate(self, oldLib, oldDeactivate)
 		local old_SendChatMessage = SendChatMessage
 		function SendChatMessage(text, chattype, language, destination)
 			if self.hooks.SendChatMessage then
-				return self.hooks.SendChatMessage(self, old_SendChatMessage, text, chattype, language, destination)
+				return self.hooks.SendChatMessage(self, old_SendChatMessage, ...)
 			else
-				return old_SendChatMessage(text, chattype, language, destination)
+				return old_SendChatMessage(...)
 			end
 		end
 	end
