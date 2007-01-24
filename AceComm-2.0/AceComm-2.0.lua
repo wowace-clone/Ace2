@@ -2167,7 +2167,7 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.JoinChannelByName then
 		local old_JoinChannelByName = JoinChannelByName
-		function JoinChannelByName(a,b,c,d,e,f,g,h,i,j)
+		function JoinChannelByName(...)
 			if self.hooks.JoinChannelByName then
 				return self.hooks.JoinChannelByName(self, old_JoinChannelByName, ...)
 			else
