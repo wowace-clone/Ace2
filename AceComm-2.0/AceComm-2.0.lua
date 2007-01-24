@@ -2177,7 +2177,7 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.SendChatMessage then
 		local old_SendChatMessage = SendChatMessage
-		function SendChatMessage(text, chattype, language, destination)
+		function SendChatMessage(...)
 			if self.hooks.SendChatMessage then
 				return self.hooks.SendChatMessage(self, old_SendChatMessage, ...)
 			else
