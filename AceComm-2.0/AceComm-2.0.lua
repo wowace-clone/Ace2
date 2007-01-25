@@ -1344,10 +1344,11 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		else
 			message = id .. string_char(1) .. string_char(1) .. "\t" .. message
 			if distribution == "GUILD" and firstGuildMessage then
-				if GetCVar("EnableErrorSpeech") then
-					SetCVar("EnableErrorSpeech", nil)
+				firstGuildMessage = false
+				if GetCVar("EnableErrorSpeech") == "1" then
+					SetCVar("EnableErrorSpeech", "0")
 					AceLibrary("AceEvent-2.0"):ScheduleEvent(function()
-						SetCVar("EnableErrorSpeech", 1)
+						SetCVar("EnableErrorSpeech", "1")
 					end, 10)
 				end
 				recentGuildMessage = GetTime() + 10
