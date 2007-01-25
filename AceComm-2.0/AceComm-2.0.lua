@@ -1231,12 +1231,16 @@ local function soberEncodedChar(x)
 end
 
 local recentGuildMessage = 0
+local firstGuildMessage = true
+local stopGuildMessages = false
 
-function AceComm.hooks:SendChatMessage(oldFunc, ...)
-	if select(2, ...) == "GUILD" then
-		recentGuildMessage = 0
-	end
-	return oldFunc(...)
+
+function AceComm:PLAYER_GUILD_UPDATE(arg1)
+	if arg1 and arg1 ~= "player" then return end
+	
+	recentGuildMessage = 0
+	firstGuildMessage = true
+	stopGuildMessages = false
 end
 
 local function SendMessage(prefix, priority, distribution, person, message, textToHash)
@@ -1251,6 +1255,9 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		if not distribution then
 			return false
 		end
+	end	
+	if distribution == "GUILD" and stopGuildMessages then
+		return false
 	end
 	if id == byte_Z then
 		id = byte_a
@@ -1336,8 +1343,14 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 			end
 		else
 			message = id .. string_char(1) .. string_char(1) .. "\t" .. message
-			if distribution == "GUILD" then
-				recentGuildMessage = GetTime() + 15
+			if distribution == "GUILD" and firstGuildMessage then
+				if GetCVar("EnableErrorSpeech") then
+					SetCVar("EnableErrorSpeech", nil)
+					AceLibrary("AceEvent-2.0"):ScheduleEvent(function()
+						SetCVar("EnableErrorSpeech", 1)
+					end, 10)
+				end
+				recentGuildMessage = GetTime() + 10
 			end
 			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution)
 			return true
@@ -1978,6 +1991,7 @@ function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
 			end
 		elseif arg1 == ERR_GUILD_PERMISSIONS then
 			if recentGuildMessage > GetTime() then
+				stopGuildMessages = true
 				return
 			end
 		end
@@ -2175,16 +2189,6 @@ local function activate(self, oldLib, oldDeactivate)
 			end
 		end
 	end
-	if not oldLib or not oldLib.hooks or not oldLib.hooks.SendChatMessage then
-		local old_SendChatMessage = SendChatMessage
-		function SendChatMessage(...)
-			if self.hooks.SendChatMessage then
-				return self.hooks.SendChatMessage(self, old_SendChatMessage, ...)
-			else
-				return old_SendChatMessage(...)
-			end
-		end
-	end
 	
 	self.recvQueue = oldLib and oldLib.recvQueue or {}
 	self.registry = oldLib and oldLib.registry or {}
@@ -2239,6 +2243,7 @@ local function external(self, major, instance)
 		self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 		self:RegisterEvent("CHAT_MSG_SYSTEM")
+		self:RegisterEvent("PLAYER_GUILD_UPDATE")
 		
 		if not self.addonVersionPinger then
 			self.addonVersionPinger = {}
