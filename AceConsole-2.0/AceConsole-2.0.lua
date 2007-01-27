@@ -1278,6 +1278,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 								a1 = not a1
 							end
 						end
+						local s
 						if v.type == "color" then
 							if v.hasAlpha then
 								if not a1 or not a2 or not a3 or not a4 then
@@ -1331,7 +1332,6 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			end
 		else
 			if options.desc then
-				desc = options.desc
 				print(("|cffffff7f%s:|r %s"):format(USAGE, path), realOptions.cmdName or realOptions.name or self)
 				print(tostring(options.desc))
 			elseif options == realOptions and (self.description or self.notes) then
