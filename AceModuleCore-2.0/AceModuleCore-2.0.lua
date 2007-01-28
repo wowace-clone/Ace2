@@ -292,8 +292,12 @@ function AceModuleCore:ToggleModuleActive(module, state)
 	return not disable
 end
 
-function AceModuleCore:IsModuleActive(module)
+function AceModuleCore:IsModuleActive(module, notLoaded)
 	AceModuleCore:argCheck(module, 2, "table", "string")
+	AceModuleCore:argCheck(notLoaded, 3, "nil", "boolean")
+	if notLoaded then
+		AceModuleCore:argCheck(module, 2, "string")
+	end
 	
 	if AceModuleCore == self then
 		self:argCheck(module, 2, "table")
@@ -304,25 +308,29 @@ function AceModuleCore:IsModuleActive(module)
 		end
 		return core:IsModuleActive(module)
 	end
-	
+
 	if type(module) == "string" then
-		if not self:HasModule(module) then
+		if not notLoaded and not self:HasModule(module) then
 			AceModuleCore:error("Cannot find module %q", module)
 		end
-		module = self:GetModule(module)
+		if not notLoaded then
+			module = self:GetModule(module)
+		else
+			module = self:HasModule(module) and self:GetModule(module) or module
+		end
 	else
 		if not self:IsModule(module) then
 			AceModuleCore:error("%q is not a module", module)
 		end
 	end
 	
-	if type(module.IsActive) == "function" then
+	if type(module) == "table" and type(module.IsActive) == "function" then
 		return module:IsActive()
 	elseif AceOO.inherits(self, "AceDB-2.0") then
 		local _,profile = self:GetProfile()
-		return not self.db or not self.db.raw or not self.db.raw.disabledModules or not self.db.raw.disabledModules[profile] or not self.db.raw.disabledModules[profile][module.name]
+		return not self.db or not self.db.raw or not self.db.raw.disabledModules or not self.db.raw.disabledModules[profile] or not self.db.raw.disabledModules[profile][type(module) == "table" and module.name or module]
 	else
-		return not self.disabledModules or not self.disabledModules[module.name]
+		return not self.disabledModules or not self.disabledModules[type(module) == "table" and module.name or module]
 	end
 end
 
