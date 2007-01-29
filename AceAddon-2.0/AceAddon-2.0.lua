@@ -591,6 +591,7 @@ function AceAddon:InitializeAddon(addon, name)
 		end
 		current = current.super
 	end
+	local n = AceAddon.addonsToOnEnable and #AceAddon.addonsToOnEnable or 0
 	if type(addon.OnInitialize) == "function" then
 		safecall(addon.OnInitialize, addon, name)
 	end
@@ -598,6 +599,11 @@ function AceAddon:InitializeAddon(addon, name)
 		AceEvent:TriggerEvent("Ace2_AddonInitialized", addon)
 	end
 	RegisterOnEnable(addon)
+	local n2 = AceAddon.addonsToOnEnable and #AceAddon.addonsToOnEnable or 0
+	if n2 - n > 1 then
+		local mine = table.remove(AceAddon.addonsToOnEnable)
+		table.insert(AceAddon.addonsToOnEnable, n+1, mine)
+	end
 end
 
 local function isGoodVariable(var)
