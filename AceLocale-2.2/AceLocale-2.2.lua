@@ -385,6 +385,15 @@ function AceLocale.prototype:HasTranslation(text)
 	return rawget(x, text) and true
 end
 
+function AceLocale.prototype:HasBaseTranslation(text)
+	AceLocale.argCheck(self, text, 1, "string", "number")
+	local x = rawget(self, BASE_TRANSLATIONS)
+	if not x then
+		AceLocale.error(self, "No translations registered")
+	end
+	return rawget(x, text) and true
+end
+
 function AceLocale.prototype:HasReverseTranslation(text)
 	local x = rawget(self, REVERSE_TRANSLATIONS)
 	if not x then
