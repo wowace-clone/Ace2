@@ -947,11 +947,11 @@ local function IsInDistribution(dist, customChannel)
 	elseif dist == "BATTLEGROUND" then
 		return MiniMapBattlefieldFrame.status == "active"
 	elseif dist == "RAID" then
-		return UnitInRaid("player") == 1
+		return UnitInRaid("player") and true or false
 	elseif dist == "PARTY" then
-		return UnitInParty("player") == 1
+		return UnitInParty("player") and true or false
 	elseif dist == "GUILD" then
-		return IsInGuild() == 1
+		return IsInGuild() and true or nil
 	elseif dist == "GLOBAL" then
 		return IsInChannel("AceComm")
 	elseif dist == "ZONE" then
