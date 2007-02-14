@@ -1,5 +1,5 @@
 --[[
-Name: AceLibrary
+Name: AceLibrary 
 Revision: $Rev$
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Iriel (iriel@vigilance-committee.org)
