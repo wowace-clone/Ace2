@@ -2450,7 +2450,8 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	
-	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, ReloadUI, "RELOAD")
+	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, function() ReloadUI() end, "RELOAD")
+	self:RegisterChatCommand({ "/gm" }, function() ToggleHelpFrame() end, "GM")
 	local t = { "/print", "/echo" }
 	local _,_,_,enabled,loadable = GetAddOnInfo("DevTools")
 	if not enabled and not loadable then
