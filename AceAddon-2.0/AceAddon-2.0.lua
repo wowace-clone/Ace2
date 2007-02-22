@@ -979,56 +979,68 @@ local function external(self, major, instance)
 					},
 				},
 				enable = {
-					desc = "Enable addon",
+					desc = "Enable addon(s).",
 					name = "Enable",
 					type = "text",
-					usage = "<addon>",
+					usage = "<addon 1> <addon 2> ...",
 					get = false,
-					set = function(text)
-						local name,title,_,enabled,_,reason = GetAddOnInfo(text)
-						if reason == "MISSING" then
-							print(("|cffffff7fAce2:|r AddOn %q does not exist"):format(text))
-						elseif not enabled then
-							EnableAddOn(text)
-							print(("|cffffff7fAce2:|r %s is now enabled"):format(title or name))
-						else
-							print(("|cffffff7fAce2:|r %s is already enabled"):format(title or name))
+					input = true,
+					set = function(...)
+						for i = 1, select("#", ...) do
+							local addon = select(i, ...)
+							local name, title, _, enabled, _, reason = GetAddOnInfo(addon)
+							if reason == "MISSING" then
+								print(("|cffffff7fAce2:|r AddOn %q does not exist."):format(addon))
+							elseif not enabled then
+								EnableAddOn(addon)
+								print(("|cffffff7fAce2:|r %s is now enabled."):format(addon or name))
+							else
+								print(("|cffffff7fAce2:|r %s is already enabled."):format(addon or name))
+							end
 						end
 					end,
 				},
 				disable = {
-					desc = "Disable addon",
+					desc = "Disable addon(s).",
 					name = "Disable",
 					type = "text",
-					usage = "<addon>",
+					usage = "<addon 1> <addon 2> ...",
 					get = false,
-					set = function(text)
-						local name,title,_,enabled,_,reason = GetAddOnInfo(text)
-						if reason == "MISSING" then
-							print(("|cffffff7fAce2:|r AddOn %q does not exist"):format(text))
-						elseif enabled then
-							DisableAddOn(text)
-							print(("|cffffff7fAce2:|r %s is now disabled"):format(title or name))
-						else
-							print(("|cffffff7fAce2:|r %s is already disabled"):format(title or name))
+					input = true,
+					set = function(...)
+						for i = 1, select("#", ...) do
+							local addon = select(i, ...)
+							local name, title, _, enabled, _, reason = GetAddOnInfo(addon)
+							if reason == "MISSING" then
+							print(("|cffffff7fAce2:|r AddOn %q does not exist."):format(addon))
+							elseif enabled then
+								DisableAddOn(addon)
+								print(("|cffffff7fAce2:|r %s is now disabled."):format(addon or name))
+							else
+								print(("|cffffff7fAce2:|r %s is already disabled."):format(addon or name))
+							end
 						end
 					end,
 				},
 				load = {
-					desc = "Load addon",
+					desc = "Load addon(s).",
 					name = "Load",
 					type = "text",
-					usage = "<addon>",
+					usage = "<addon 1> <addon 2> ...",
 					get = false,
-					set = function(text)
-						local name,title,_,_,loadable,reason = GetAddOnInfo(text)
-						if reason == "MISSING" then
-							print(("|cffffff7fAce2:|r AddOn %q does not exist."):format(text))
-						elseif not loadable then
-							print(("|cffffff7fAce2:|r AddOn %q is not loadable. Reason: %s"):format(text, reason))
-						else
-							LoadAddOn(text)
-							print(("|cffffff7fAce2:|r %s is now loaded"):format(title or name))
+					input = true,
+					set = function(...)
+						for i = 1, select("#", ...) do
+							local addon = select(i, ...)
+							local name, title, _, _, loadable, reason = GetAddOnInfo(addon)
+							if reason == "MISSING" then
+								print(("|cffffff7fAce2:|r AddOn %q does not exist."):format(addon))
+							elseif not loadable then
+								print(("|cffffff7fAce2:|r AddOn %q is not loadable. Reason: %s."):format(addon, reason))
+							else
+								LoadAddOn(addon)
+								print(("|cffffff7fAce2:|r %s is now loaded."):format(addon or name))
+							end
 						end
 					end
 				},
@@ -1062,8 +1074,8 @@ local function external(self, major, instance)
 							if IsAddOnLoadOnDemand(i) then
 								lod = lod + 1
 							end
-							local _,_,_,IsActive,loadable = GetAddOnInfo(i)
-							if not IsActive or not loadable then
+							local isActive, loadable = select(4, GetAddOnInfo(i))
+							if not isActive or not loadable then
 								disabled = disabled + 1
 							else
 								enabled = enabled + 1
