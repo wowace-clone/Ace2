@@ -140,6 +140,7 @@ local function print(text, name, r, g, b, frame, delay)
 			last_color = t:match(".*|c[fF][fF](%x%x%x%x%x%x)[^|]-$")
 		end
 	end
+	return text
 end
 
 local real_tostring = tostring
@@ -448,16 +449,14 @@ function AceConsole:CustomPrint(r, g, b, frame, delay, connector, a1, ...)
 		else
 			s = (", "):join(literal_tostring_args(a1, ...))
 		end
-		print(s, self, r, g, b, frame or self.printFrame, delay)
-		return
+		return print(s, self, r, g, b, frame or self.printFrame, delay)
 	elseif tostring(a1):find("%%") and select('#', ...) >= 1 then
 		local success, text = pcall(string.format, tostring_args(a1, ...))
 		if success then
-			print(text, self, r, g, b, frame or self.printFrame, delay)
-			return
+			return print(text, self, r, g, b, frame or self.printFrame, delay)
 		end
 	end
-	print((connector or " "):join(tostring_args(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
+	return print((connector or " "):join(tostring_args(a1, ...)), self, r, g, b, frame or self.printFrame, delay)
 end
 
 function AceConsole:Print(...)
@@ -2223,7 +2222,11 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	if not _G.SlashCmdList then
 		_G.SlashCmdList = {}
 	end
-	
+
+	if not name and type(slashCommands) == "table" and type(slashCommands[1]) == "string" then
+		name = slashCommands[1]:gsub("%A", ""):upper()
+	end
+
 	if not name then
 		local A = ('A'):byte()
 		repeat
