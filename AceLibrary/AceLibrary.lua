@@ -388,7 +388,9 @@ end
 -- @return      Whether an instance exists.
 function AceLibrary:HasInstance(major, minor)
 	argCheck(self, major, 2, "string")
-	TryToLoadStandalone(major)
+	if minor ~= false then
+		TryToLoadStandalone(major)
+	end
 
 	if minor then
 		if type(minor) == "string" then
