@@ -2208,7 +2208,9 @@ local function activate(self, oldLib, oldDeactivate)
 		self.classes[k] = nil
 	end
 	
-	SetCVar("spamFilter", 0)
+	if tonumber(date("%Y%m%d")) < 20070315 then
+		SetCVar("spamFilter", 1)
+	end
 	
 	self:activate(oldLib, oldDeactivate)
 	
