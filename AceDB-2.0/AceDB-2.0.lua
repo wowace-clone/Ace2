@@ -846,7 +846,7 @@ function AceDB:InitializeDB(addonName)
 		end
 	end
 	if not db.raw.currentProfile[charID] then
-		db.raw.currentProfile[charID] = "Default"
+		db.raw.currentProfile[charID] = AceDB.registry[self] or "Default"
 	end
 	if db.raw.profiles then
 		for k,v in pairs(db.raw.profiles) do
@@ -919,9 +919,10 @@ function AceDB:OnEmbedInitialize(target, name)
 	self.InitializeDB(target, name)
 end
 
-function AceDB:RegisterDB(name, charName)
+function AceDB:RegisterDB(name, charName, defaultProfile)
 	AceDB:argCheck(name, 2, "string")
 	AceDB:argCheck(charName, 3, "string", "nil")
+	AceDB:argCheck(defaultProfile, 4, "string", "nil")
 	if self.db then
 		AceDB:error("Cannot call \"RegisterDB\" if self.db is set.")
 	end
@@ -936,7 +937,7 @@ function AceDB:RegisterDB(name, charName)
 	else
 		AceDB.addonsToBeInitialized[self] = addonName
 	end
-	AceDB.registry[self] = true
+	AceDB.registry[self] = defaultProfile or "Default"
 end
 
 function AceDB:RegisterDefaults(kind, defaults, a3)
@@ -1227,7 +1228,7 @@ function AceDB:ResetDB(kind, a2)
 			end
 		end
 	elseif kind == "profile" then	
-		local id = db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"
+		local id = db.raw.currentProfile and db.raw.currentProfile[charID] or AceDB.registry[self] or "Default"
 		if id == "char" then
 			id = "char/" .. charID
 		elseif id == "class" then
@@ -1312,7 +1313,7 @@ function AceDB:GetProfile()
 		self.db.raw.currentProfile = {}
 	end
 	if not self.db.raw.currentProfile[charID] then
-		self.db.raw.currentProfile[charID] = "Default"
+		self.db.raw.currentProfile[charID] = AceDB.registry[self] or "Default"
 	end
 	local profile = self.db.raw.currentProfile[charID]
 	if profile == "char" then
@@ -1697,7 +1698,7 @@ function AceDB:ADDON_LOADED(name)
 end
 
 function AceDB:PLAYER_LOGOUT()
-	for addon in pairs(AceDB.registry) do
+	for addon, defaultProfile in pairs(AceDB.registry) do
 		local db = addon.db
 		if db then
 			setmetatable(db, nil)
@@ -1757,7 +1758,7 @@ function AceDB:PLAYER_LOGOUT()
 			end
 			if db.profile and cleanDefaults(db.profile, db.defaults and db.defaults.profile) then
 				if db.raw.profiles then
-					db.raw.profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"] = nil
+					db.raw.profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or defaultProfile or "Default"] = nil
 					if not next(db.raw.profiles) then
 						db.raw.profiles = nil
 					end
@@ -1822,7 +1823,7 @@ function AceDB:PLAYER_LOGOUT()
 						end
 						if v.profile and cleanDefaults(v.profile, v.defaults and v.defaults.profile) then
 							if db.raw.namespaces[name].profiles then
-								db.raw.namespaces[name].profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or "Default"] = nil
+								db.raw.namespaces[name].profiles[db.raw.currentProfile and db.raw.currentProfile[charID] or defaultProfile or "Default"] = nil
 								if not next(db.raw.namespaces[name].profiles) then
 									db.raw.namespaces[name].profiles = nil
 								end
@@ -1842,7 +1843,7 @@ function AceDB:PLAYER_LOGOUT()
 			end
 			if db.raw.currentProfile then
 				for k,v in pairs(db.raw.currentProfile) do
-					if v:lower() == "default" then
+					if v:lower() == (defaultProfile or "Default"):lower() then
 						db.raw.currentProfile[k] = nil
 					end
 				end
@@ -1946,6 +1947,11 @@ local function activate(self, oldLib, oldDeactivate)
 	self.addonsToBeInitialized = oldLib and oldLib.addonsToBeInitialized or {}
 	self.addonsLoaded = oldLib and oldLib.addonsLoaded or {}
 	self.registry = oldLib and oldLib.registry or {}
+	for k, v in pairs(self.registry) do
+		if v == true then
+			self.registry[k] = "Default"
+		end
+	end
 	
 	self:activate(oldLib, oldDeactivate)
 	
