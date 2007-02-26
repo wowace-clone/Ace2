@@ -1256,14 +1256,14 @@ function AceDB:ResetDB(kind, a2)
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedProfileDisable) == "function" then
-						safecall(mixin.OnEmbedProfileDisable, mixin, self, realName)
+						safecall(mixin.OnEmbedProfileDisable, mixin, self, id)
 					end
 				end
 			end
 			current = current.super
 		end
 		if type(self.OnProfileDisable) == "function" then
-			safecall(self.OnProfileDisable, self, realName)
+			safecall(self.OnProfileDisable, self, id)
 		end
 		local active = self:IsActive()
 		
@@ -1304,14 +1304,14 @@ function AceDB:ResetDB(kind, a2)
 			if current.mixins then
 				for mixin in pairs(current.mixins) do
 					if type(mixin.OnEmbedProfileEnable) == "function" then
-						safecall(mixin.OnEmbedProfileEnable, mixin, self)
+						safecall(mixin.OnEmbedProfileEnable, mixin, self, id)
 					end
 				end
 			end
 			current = current.super
 		end
 		if type(self.OnProfileEnable) == "function" then
-			safecall(self.OnProfileEnable, self, oldName, oldProfileData)
+			safecall(self.OnProfileEnable, self, id)
 		end
 		local newactive = self:IsActive()
 		if active ~= newactive then
