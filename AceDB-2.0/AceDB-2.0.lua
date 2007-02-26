@@ -25,7 +25,7 @@ local function safecall(func,...)
 	if not success then geterrorhandler()(err) end
 end
 
-local ACTIVE, ENABLED, STATE, TOGGLE_ACTIVE, MAP_ACTIVESUSPENDED, SET_PROFILE, SET_PROFILE_USAGE, PROFILE, PLAYER_OF_REALM, CHOOSE_PROFILE_DESC, CHOOSE_PROFILE_GUI, COPY_PROFILE_DESC, COPY_PROFILE_GUI, OTHER_PROFILE_DESC, OTHER_PROFILE_GUI, OTHER_PROFILE_USAGE, CHARACTER_COLON, REALM_COLON, CLASS_COLON, DEFAULT, ALTERNATIVE
+local ACTIVE, ENABLED, STATE, TOGGLE_ACTIVE, MAP_ACTIVESUSPENDED, SET_PROFILE, SET_PROFILE_USAGE, PROFILE, PLAYER_OF_REALM, CHOOSE_PROFILE_DESC, CHOOSE_PROFILE_GUI, COPY_PROFILE_DESC, COPY_PROFILE_GUI, OTHER_PROFILE_DESC, OTHER_PROFILE_GUI, OTHER_PROFILE_USAGE, RESET_PROFILE, RESET_PROFILE_DESC, CHARACTER_COLON, REALM_COLON, CLASS_COLON, DEFAULT, ALTERNATIVE
 
 if GetLocale() == "deDE" then
 	ACTIVE = "Aktiv"
@@ -44,6 +44,8 @@ if GetLocale() == "deDE" then
 	OTHER_PROFILE_DESC = "W\195\164hle ein anderes Profil."
 	OTHER_PROFILE_GUI = "Anderes"
 	OTHER_PROFILE_USAGE = "<Profilname>"
+	RESET_PROFILE = "Reset profile" -- fix
+	RESET_PROFILE_DESC = "Clear all settings of the current profile." -- fix
 
 	CHARACTER_COLON = "Charakter: "
 	REALM_COLON = "Realm: "
@@ -68,6 +70,8 @@ elseif GetLocale() == "frFR" then
 	OTHER_PROFILE_DESC = "Choisissez un autre profil."
 	OTHER_PROFILE_GUI = "Autre"
 	OTHER_PROFILE_USAGE = "<nom de profil>"
+	RESET_PROFILE = "Reset profile" -- fix
+	RESET_PROFILE_DESC = "Clear all settings of the current profile." -- fix
 
 	CHARACTER_COLON = "Personnage: "
 	REALM_COLON = "Royaume: "
@@ -92,6 +96,8 @@ elseif GetLocale() == "koKR" then
 	OTHER_PROFILE_DESC = "다른 프로파일을 선택합니다."
 	OTHER_PROFILE_GUI = "기타"
 	OTHER_PROFILE_USAGE = "<프로파일명>"
+	RESET_PROFILE = "Reset profile" -- fix
+	RESET_PROFILE_DESC = "Clear all settings of the current profile." -- fix
 
 	CHARACTER_COLON = "캐릭터: "
 	REALM_COLON = "서버: "
@@ -116,6 +122,8 @@ elseif GetLocale() == "zhTW" then
 	OTHER_PROFILE_DESC = "選擇其他記錄檔。"
 	OTHER_PROFILE_GUI = "其他"
 	OTHER_PROFILE_USAGE = "<記錄檔名稱>"
+	RESET_PROFILE = "Reset profile" -- fix
+	RESET_PROFILE_DESC = "Clear all settings of the current profile." -- fix
 
 	CHARACTER_COLON = "角色："
 	REALM_COLON = "伺服器："
@@ -140,6 +148,8 @@ elseif GetLocale() == "zhCN" then
 	OTHER_PROFILE_DESC = "\233\128\137\230\139\169\229\143\166\228\184\128\228\184\170\233\133\141\231\189\174\230\150\135\228\187\182."
 	OTHER_PROFILE_GUI = "\229\133\182\228\187\150"
 	OTHER_PROFILE_USAGE = "<\233\133\141\231\189\174\230\150\135\228\187\182\229\144\141\229\173\151>"
+	RESET_PROFILE = "Reset profile" -- fix
+	RESET_PROFILE_DESC = "Clear all settings of the current profile." -- fix
 
 	CHARACTER_COLON = "\229\173\151\231\172\166: "
 	REALM_COLON = "\229\159\159: "
@@ -164,6 +174,8 @@ elseif GetLocale() == "esES" then
 	OTHER_PROFILE_DESC = "Elige otro perfil."
 	OTHER_PROFILE_GUI = "Otro"
 	OTHER_PROFILE_USAGE = "<nombre del perfil>"
+	RESET_PROFILE = "Reset profile" -- fix
+	RESET_PROFILE_DESC = "Clear all settings of the current profile." -- fix
 
 	CHARACTER_COLON = "Personaje: "
 	REALM_COLON = "Reino: "
@@ -188,6 +200,8 @@ else -- enUS
 	OTHER_PROFILE_DESC = "Choose another profile."
 	OTHER_PROFILE_GUI = "Other"
 	OTHER_PROFILE_USAGE = "<profile name>"
+	RESET_PROFILE = "Reset profile"
+	RESET_PROFILE_DESC = "Clear all settings of the current profile."
 
 	CHARACTER_COLON = "Character: "
 	REALM_COLON = "Realm: "
@@ -1236,6 +1250,23 @@ function AceDB:ResetDB(kind, a2)
 		elseif id == "realm" then
 			id = "realm/" .. realmID
 		end
+		
+		local current = self.class
+		while current and current ~= AceOO.Class do
+			if current.mixins then
+				for mixin in pairs(current.mixins) do
+					if type(mixin.OnEmbedProfileDisable) == "function" then
+						safecall(mixin.OnEmbedProfileDisable, mixin, self, realName)
+					end
+				end
+			end
+			current = current.super
+		end
+		if type(self.OnProfileDisable) == "function" then
+			safecall(self.OnProfileDisable, self, realName)
+		end
+		local active = self:IsActive()
+		
 		if not name then
 			if db.raw.profiles then
 				db.raw.profiles[id] = nil
@@ -1264,6 +1295,71 @@ function AceDB:ResetDB(kind, a2)
 				local v = db.namespaces[name]
 				if v then
 					rawset(v, 'profile', nil)
+				end
+			end
+		end
+		
+		local current = self.class
+		while current and current ~= AceOO.Class do
+			if current.mixins then
+				for mixin in pairs(current.mixins) do
+					if type(mixin.OnEmbedProfileEnable) == "function" then
+						safecall(mixin.OnEmbedProfileEnable, mixin, self)
+					end
+				end
+			end
+			current = current.super
+		end
+		if type(self.OnProfileEnable) == "function" then
+			safecall(self.OnProfileEnable, self, oldName, oldProfileData)
+		end
+		local newactive = self:IsActive()
+		if active ~= newactive then
+			local first = nil
+			if AceOO.inherits(self, "AceAddon-2.0") then
+				local AceAddon = AceLibrary("AceAddon-2.0")
+				if not AceAddon.addonsStarted[self] then
+					return
+				end
+				if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[self] then
+					first = true
+				end
+			end
+			if newactive then
+				local current = self.class
+				while current and current ~= AceOO.Class do
+					if current.mixins then
+						for mixin in pairs(current.mixins) do
+							if type(mixin.OnEmbedEnable) == "function" then
+								safecall(mixin.OnEmbedEnable, mixin, self, first)
+							end
+						end
+					end
+					current = current.super
+				end
+				if type(self.OnEnable) == "function" then
+					safecall(self.OnEnable, self, first)
+				end
+				if AceEvent then
+					AceEvent:TriggerEvent("Ace2_AddonEnabled", self, first)
+				end
+			else
+				local current = self.class
+				while current and current ~= AceOO.Class do
+					if current.mixins then
+						for mixin in pairs(current.mixins) do
+							if type(mixin.OnEmbedDisable) == "function" then
+								safecall(mixin.OnEmbedDisable, mixin, self)
+							end
+						end
+					end
+					current = current.super
+				end
+				if type(self.OnDisable) == "function" then
+					safecall(self.OnDisable, self)
+				end
+				if AceEvent then
+					AceEvent:TriggerEvent("Ace2_AddonDisabled", self)
 				end
 			end
 		end
@@ -1934,6 +2030,15 @@ function AceDB:GetAceOptionsDataTable(target)
 					type = 'text',
 					get = "GetProfile",
 					set = "SetProfile",
+				},
+				reset = {
+					name = RESET_PROFILE,
+					desc = RESET_PROFILE_DESC,
+					type = 'execute',
+					func = function()
+						target:ResetDB('profile')
+					end,
+					confirm = true,
 				}
 			}
 		},
