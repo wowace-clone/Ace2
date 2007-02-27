@@ -946,12 +946,12 @@ function AceDB:RegisterDB(name, charName, defaultProfile)
 		name = name,
 		charName = charName
 	}
+	AceDB.registry[self] = defaultProfile or "Default"
 	if AceDB.addonsLoaded[addonName] then
 		AceDB.InitializeDB(self, addonName)
 	else
 		AceDB.addonsToBeInitialized[self] = addonName
 	end
-	AceDB.registry[self] = defaultProfile or "Default"
 end
 
 function AceDB:RegisterDefaults(kind, defaults, a3)
