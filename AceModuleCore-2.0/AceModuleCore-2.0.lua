@@ -74,7 +74,7 @@ function AceModuleCore:NewModule(name, ...)
 				end
 			end
 			if not exists then
-				table.insert(tmp, mixin)
+				tmp[#tmp+1] = mixin
 			end
 		end
 	end
@@ -130,23 +130,38 @@ function AceModuleCore:IsModule(module)
 	end
 end
 
-function AceModuleCore:IterateModules()
-	local t = {}
-	for k in pairs(self.modules) do
-		table.insert(t, k)
-	end
-	table.sort(t)
-	local i = 0
-	return function()
+do
+	local list = setmetatable({}, {__mode='k'})
+	local function func(t)
+		local i = t.i
 		i = i + 1
-		local x = t[i]
-		if x then
-			return x, self.modules[x]
+		local k = t[i]
+		if k then
+			t[i] = nil
+			t.i = i
+			return k, t.m[k]
 		else
-			t = nil
+			t.m = nil
+			t.i = nil
+			list[t] = true
 			return nil
 		end
-	end, nil, nil
+	end
+	function AceModuleCore:IterateModules()
+		local t = next(list)
+		if t then
+			list[t] = nil
+		else
+			t = {}
+		end
+		for k in pairs(self.modules) do
+			t[#t+1] = k
+		end
+		table.sort(t)
+		t.m = self.modules
+		t.i = 0
+		return func, t, nil
+	end
 end
 
 function AceModuleCore:SetModuleMixins(...)
