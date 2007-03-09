@@ -29,6 +29,17 @@ local function safecall(func,...)
     if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("\n(.-: )in.-\n") or "") .. err) end
 end
 
+local WoW22 = false
+if type(GetBuildInfo) == "function" then
+	local success, buildinfo = pcall(GetBuildInfo)
+	if success and type(buildinfo) == "string" then
+		local num = tonumber(buildinfo:match("^(%d+%.%d+)"))
+		if num and num >= 2.2 then
+			WoW22 = true
+		end
+	end
+end
+
 -- @table AceLibrary
 -- @brief System to handle all versioning of libraries.
 local AceLibrary = {}
@@ -88,16 +99,19 @@ local function error(self, message, ...)
 	return _G.error(message, 2)
 end
 
-local function assert(self, condition, message, ...)
-	if not condition then
-		if not message then
-			local stack = debugstack()
-			local _,_,second = stack:find("\n(.-)\n")
-			message = "assertion failed! " .. second
+local assert
+if not WoW22 then
+	function assert(self, condition, message, ...)
+		if not condition then
+			if not message then
+				local stack = debugstack()
+				local _,_,second = stack:find("\n(.-)\n")
+				message = "assertion failed! " .. second
+			end
+			return error(self, message, ...)
 		end
-		return error(self, message, ...)
+		return condition
 	end
-	return condition
 end
 
 local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
@@ -515,7 +529,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		if not rawget(instance, 'error') then
 			rawset(instance, 'error', error)
 		end
-		if not rawget(instance, 'assert') then
+		if not WoW22 and not rawget(instance, 'assert') then
 			rawset(instance, 'assert', assert)
 		end
 		if not rawget(instance, 'argCheck') then
@@ -576,12 +590,16 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		AceLibrary = instance
 		
 		old_error = instance.error
-		old_assert = instance.assert
+		if not WoW22 then
+			old_assert = instance.assert
+		end
 		old_argCheck = instance.argCheck
 		old_pcall = instance.pcall
 		
 		self.error = error
-		self.assert = assert
+		if not WoW22 then
+			self.assert = assert
+		end
 		self.argCheck = argCheck
 		self.pcall = pcall
 	end
@@ -597,7 +615,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	if not rawget(instance, 'error') then
 		rawset(instance, 'error', error)
 	end
-	if not rawget(instance, 'assert') then
+	if not WoW22 and not rawget(instance, 'assert') then
 		rawset(instance, 'assert', assert)
 	end
 	if not rawget(instance, 'argCheck') then
@@ -613,7 +631,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 				if not rawget(i, 'error') or i.error == old_error then
 					rawset(i, 'error', error)
 				end
-				if not rawget(i, 'assert') or i.assert == old_assert then
+				if not WoW22 and (not rawget(i, 'assert') or i.assert == old_assert) then
 					rawset(i, 'assert', assert)
 				end
 				if not rawget(i, 'argCheck') or i.argCheck == old_argCheck then
