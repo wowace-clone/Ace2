@@ -181,7 +181,9 @@ end
 
 function AceModuleCore:SetModuleClass(class)
 	class = getlibrary(class)
-	AceModuleCore:assert(AceOO.inherits(class, AceOO.Class), "Bad argument #2 to `SetModuleClass' (Class expected)")
+	if not AceOO.inherits(class, AceOO.Class) then
+		AceModuleCore:error("Bad argument #2 to `SetModuleClass' (Class expected)")
+	end
 	if not self.modules then
 		AceModuleCore:error("Error initializing class.  Please report error.")
 	end
