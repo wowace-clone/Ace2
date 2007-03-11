@@ -241,7 +241,7 @@ end
 
 local function literal_tostring_prime(t, depth)
 	if type(t) == "string" then
-		return ("|cff00ff00%q|r"):format((t:gsub("|", "||"))):gsub("[\128-\255]", escapeChar)
+		return ("|cff00ff00%q|r"):format((t:gsub("|", "||"))):gsub("[\001-\012\014-\031\128-\255]", escapeChar)
 	elseif type(t) == "table" then
 		if t == _G then
 			return "|cffffea00_G|r"
@@ -2249,11 +2249,31 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 		
 		local i = 0
 		for _,command in ipairs(slashCommands) do
-			i = i + 1
-			_G["SLASH_"..name..i] = command
-			if command:lower() ~= command then
+			local good = true
+			for k in pairs(_G.SlashCmdList) do
+				local j = 0
+				while true do
+					j = j + 1
+					local cmd = _G["SLASH_" .. k .. j]
+					if not cmd then
+						break
+					end
+					if command:lower() == cmd:lower() then
+						good = false
+						break
+					end
+				end
+				if not good then
+					break
+				end
+			end
+			if good then
 				i = i + 1
-				_G["SLASH_"..name..i] = command:lower()
+				_G["SLASH_"..name..i] = command
+				if command:lower() ~= command then
+					i = i + 1
+					_G["SLASH_"..name..i] = command:lower()
+				end
 			end
 		end
 	end
@@ -2455,6 +2475,18 @@ local function activate(self, oldLib, oldDeactivate)
 	
 	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, function() ReloadUI() end, "RELOAD")
 	self:RegisterChatCommand({ "/gm" }, function() ToggleHelpFrame() end, "GM")
+	self:RegisterChatCommand({ "/group", "/gr" }, function(text)
+		if text:trim():len() > 0 then
+			local _,pvp = IsInInstance()
+			if pvp == "pvp" then
+				SendChatMessage(text, "BATTLEGROUND")
+			elseif GetNumRaidMembers() > 0 then
+				SendChatMessage(text, "RAID")
+			elseif GetNumPartyMembers() > 0 then
+				SendChatMessage(text, "PARTY")
+			end
+		end
+	end, "GROUPSAY")
 	local t = { "/print", "/echo" }
 	local _,_,_,enabled,loadable = GetAddOnInfo("DevTools")
 	if not enabled and not loadable then
