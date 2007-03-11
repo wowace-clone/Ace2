@@ -68,6 +68,7 @@ local byte_T = ("T"):byte()
 local byte_u = ("u"):byte()
 local byte_U = ("U"):byte()
 local byte_i = ("i"):byte()
+local byte_I = ("I"):byte()
 local byte_inf = ("@"):byte()
 local byte_ninf = ("$"):byte()
 local byte_nan = ("!"):byte()
@@ -83,6 +84,8 @@ local unpack = unpack
 local ipairs = ipairs
 local pairs = pairs
 local next = next
+
+local newItemLinks = (tonumber(date("%Y%m%d")) >= 20070321)
 
 local player = UnitName("player")
 
@@ -570,7 +573,7 @@ do
 			if hash then
 				return string_char(byte_m, math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
 			end
-			local _,_,A,B,C,D,E,F,G,H = v:find("^|cff%x%x%x%x%x%x|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[.+%]|h|r$")
+			local r,g,b,A,B,C,D,E,F,G,H,name = v:match("^|cff(%x%x)(%x%x)(%x%x)|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[(.+)%]|h|r$")
 			if A then
 				-- item link
 				
@@ -582,6 +585,9 @@ do
 				F = F+0
 				G = G+0
 				H = H+0
+				r = tonumber(r, 16)
+				g = tonumber(g, 16)
+				b = tonumber(b, 16)
 				
 				-- (1-35000):(1-3093):(1-3093):(1-3093):(1-3093):(?):(-57 to 2164):(0-4294967295)
 				
@@ -592,7 +598,11 @@ do
 				
 				H = H % 256^2 -- only lower 16 bits matter
 				
-				return string_char(byte_i, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256)
+				if not newItemLinks then
+					return string_char(byte_i, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256)
+				else
+					return string_char(byte_I, r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, name:len() % 256) .. name:sub(1, 255)
+				end
 			else
 				-- normal string
 				local len = v:len()
@@ -752,6 +762,44 @@ do
 			local s = ("item:%d:%d:%d:%d:%d:%d:%d:%d"):format(A, B, C, D, E, 0, G, H)
 			local _, link = GetItemInfo(s)
 			return link, position + 14
+		elseif x == byte_I then
+			-- long item link
+			local a1 = value:byte(position + 4)
+			local a2 = value:byte(position + 5)
+			local b1 = value:byte(position + 6)
+			local b2 = value:byte(position + 7)
+			local c1 = value:byte(position + 8)
+			local c2 = value:byte(position + 9)
+			local d1 = value:byte(position + 10)
+			local d2 = value:byte(position + 11)
+			local e1 = value:byte(position + 12)
+			local e2 = value:byte(position + 13)
+			local g1 = value:byte(position + 14)
+			local g2 = value:byte(position + 15)
+			local h1 = value:byte(position + 16)
+			local h2 = value:byte(position + 17)
+			local A = a1 * 256 + a2
+			local B = b1 * 256 + b2
+			local C = c1 * 256 + c2
+			local D = d1 * 256 + d2
+			local E = e1 * 256 + e2
+			local G = g1 * 256 + g2
+			local H = h1 * 256 + h2
+			if G >= 2^15 then
+				G = G - 256^2
+			end
+			local s = ("item:%d:%d:%d:%d:%d:%d:%d:%d"):format(A, B, C, D, E, 0, G, H)
+			local _, link = GetItemInfo(s)
+			local len = value:byte(position + 18)
+			if not link then
+				local r = value:byte(position + 1)
+				local g = value:byte(position + 2)
+				local b = value:byte(position + 3)
+				local name = value:sub(position + 19, position + 18 + len)
+				
+				local link = ("|cff%02x%02x%02x|Hitem:%d:%d:%d:%d:%d:%d:%d:%d|h[%s]|h|r"):format(r, g, b, A, B, C, D, E, 0, G, H, name)
+			end
+			return link, position + 18 + len
 		elseif x == byte_m then
 			local hash = value:byte(position + 1) * 256^2 + value:byte(position + 2) * 256 + value:byte(position + 3)
 			return hashToText[hash], position + 3
