@@ -1874,7 +1874,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 end
 
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
-	if sender == player then
+	if sender == player and not AceComm.enableLoopback then
 		return
 	end
 	prefix = self.prefixHashToText[prefix]
@@ -2317,7 +2317,7 @@ local function external(self, major, instance)
 					if not _G_addon then
 						_G_addon = _G[addon:match("^[^_]+_(.*)$")]
 					end
-					if _G_addon then
+					if type(_G_addon) == "table" then
 						if rawget(_G_addon, "version") then version = _G_addon.version
 						elseif rawget(_G_addon, "Version") then version = _G_addon.Version
 						elseif rawget(_G_addon, "VERSION") then version = _G_addon.VERSION
