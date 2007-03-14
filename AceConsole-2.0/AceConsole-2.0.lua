@@ -1577,20 +1577,20 @@ local function handlerFunc(self, chat, msg, options)
 			confirm = DEFAULT_CONFIRM_MESSAGE:format(options.desc or options.name or UNKNOWN or "Unknown")
 		end
 		if passTable then
-			if type(passFunc) == "function" then
+			if type(passTable.func) == "function" then
 				if confirm then
 					confirmPopup(confirm, set, passValue)
 				else
-					set(passValue)
+					passTable.func(passValue)
 				end
 			else
-				if type(handler[passFunc]) ~= "function" then
-					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passFunc)))
+				if type(handler[passTable.func]) ~= "function" then
+					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passTable.func)))
 				end
 				if confirm then
-					confirmPopup(confirm, handler[passFunc], handler, passValue)
+					confirmPopup(confirm, handler[passTable.func], handler, passValue)
 				else
-					handler[passFunc](handler, passValue)
+					handler[passTable.func](handler, passValue)
 				end
 			end
 		else
