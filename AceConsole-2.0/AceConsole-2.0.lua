@@ -980,33 +980,6 @@ local order
 local mysort_args
 local mysort
 
-local t = {}
-local function getMultiToggleValues(multi, ...)
-	if not multi then
-		return ...
-	end
-	for k in pairs(t) do
-		t[k] = nil
-	end
-	if type((...)) ~= "table" then
-		for i = 1, select('#', ...) do
-			t[select(i, ...)] = true
-		end
-	else
-		local q = ...
-		if #q == 0 then
-			for k,v in pairs(q) do
-				t[k] = v or nil
-			end
-		else
-			for i,v in ipairs(q) do
-				t[v] = true
-			end
-		end
-	end
-	return t
-end
-
 local function icaseSort(alpha, bravo)
 	if type(alpha) == "number" and type(bravo) == "number" then
 		return alpha < bravo
@@ -1014,6 +987,7 @@ local function icaseSort(alpha, bravo)
 	return tostring(alpha):lower() < tostring(bravo):lower()
 end
 
+local tmp = {}
 local function printUsage(self, handler, realOptions, options, path, args, quiet, filter)
 	if filter then
 		filter = "^" .. filter:gsub("([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
@@ -1063,29 +1037,65 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 	elseif kind == "text" then
 		local var
 		local multiToggle
+		for k in pairs(tmp) do
+			tmp[k] = nil
+		end
 		if passTable then
 			multiToggle = passTable.multiToggle
 			if not passTable.get then
 			elseif type(passTable.get) == "function" then
-				var = getMultiToggleValues(multiToggle, passTable.get(passValue))
+				if not multiToggle then
+					var = passTable.get(passValue)
+				else
+					var = tmp
+					for k,v in pairs(options.validate) do
+						local val = type(k) ~= "number" and k or v
+						var[val] = passTable.get(passValue, val) or nil
+					end
+				end
 			else
 				local handler = passTable.handler or handler
 				if type(handler[passTable.get]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passTable.get)))
 				end
-				var = getMultiToggleValues(multiToggle, handler[passTable.get](handler, passValue))
+				var = handler[passTable.get](handler, passValue)
+				if not multiToggle then
+					var = handler[passTable.get](handler, passValue)
+				else
+					var = tmp
+					for k,v in pairs(options.validate) do
+						local val = type(k) ~= "number" and k or v
+						var[val] = handler[passTable.get](handler, passValue, val) or nil
+					end
+				end
 			end
 		else
 			multiToggle = options.multiToggle
 			if not options.get then
 			elseif type(options.get) == "function" then
-				var = getMultiToggleValues(multiToggle, options.get())
+				if not multiToggle then
+					var = options.get()
+				else
+					var = tmp
+					for k,v in pairs(options.validate) do
+						local val = type(k) ~= "number" and k or v
+						var[val] = options.get(val) or nil
+					end
+				end
 			else
 				local handler = options.handler or handler
 				if type(handler[options.get]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 				end
-				var = getMultiToggleValues(multiToggle, handler[options.get](handler))
+				if not multiToggle then
+					var = handler[options.get](handler)
+				else
+					var = tmp
+					for k,v in pairs(options.validate) do
+						local val = type(k) ~= "number" and k or v
+						var[val] = handler[options.get](handler, val) or nil
+					end
+				end
 			end
 		end
 		
@@ -1330,8 +1340,23 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					if v_p.get then
 						local a1,a2,a3,a4
 						local multiToggle = v_p.type == "text" and v_p.multiToggle
+						for k in pairs(tmp) do
+							tmp[k] = nil
+						end
 						if type(v_p.get) == "function" then
-							a1,a2,a3,a4 = getMultiToggleValues(multiToggle, v_p.get(passValue))
+							if multiToggle then
+								a1 = tmp
+								for k,v in pairs(v.validate) do
+									local val = type(k) ~= "number" and k or v
+									if passValue == nil then
+										a1[val] = v_p.get(val) or nil
+									else
+										a1[val] = v_p.get(passValue, val) or nil
+									end
+								end
+							else
+								a1,a2,a3,a4 = v_p.get(passValue)
+							end
 						else
 							local handler = v_p.handler or handler
 							local f = v_p.get
@@ -1345,7 +1370,19 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							if type(handler[f]) ~= "function" then
 								AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 							end
-							a1,a2,a3,a4 = getMultiToggleValues(multiToggle, handler[f](handler, passValue))
+							if multiToggle then
+								a1 = tmp
+								for k,v in pairs(v.validate) do
+									local val = type(k) ~= "number" and k or v
+									if passValue == nil then
+										a1[val] = handler[f](handler, val) or nil
+									else
+										a1[val] = handler[f](handler, passValue, val) or nil
+									end
+								end
+							else
+								a1,a2,a3,a4 = handler[f](handler, passValue)
+							end
 							if neg then
 								a1 = not a1
 							end
@@ -1384,19 +1421,19 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 								else
 									s = ''
 									for k in pairs(a1) do
-										if options.validate[k] then
+										if v.validate[k] then
 											if s == '' then
-												s = order.validate[k]
+												s = v.validate[k]
 											else
-												s = s .. ', ' .. order.validate[k]
+												s = s .. ', ' .. v.validate[k]
 											end
 										else
-											for _,v in pairs(options.validate) do
-												if v == k or (type(v) == "string" and type(k) == "string" and v:lower() == k:lower()) then
+											for _,u in pairs(v.validate) do
+												if u == k or (type(v) == "string" and type(k) == "string" and v:lower() == k:lower()) then
 													if s == '' then
-														s = v
+														s = u
 													else
-														s = s .. ', ' .. v
+														s = s .. ', ' .. u
 													end
 													break
 												end
@@ -1592,27 +1629,62 @@ local function handlerFunc(self, chat, msg, options)
 			
 			local var
 			local multiToggle
+			for k in pairs(tmp) do
+				tmp[k] = nil
+			end
 			if passTable then
 				multiToggle = passTable.multiToggle
 				if not passTable.get then
 				elseif type(passTable.get) == "function" then
-					var = getMultiToggleValues(multiToggle, passTable.get(passValue))
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = passTable.get(passValue, val)
+						end
+					else
+						var = passTable.get(passValue)
+					end
 				else
 					if type(handler[passTable.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passTable.get)))
 					end
-					var = getMultiToggleValues(multiToggle, handler[passTable.get](handler, passValue))
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = handler[passTable.get](handler, passValue, val)
+						end
+					else
+						var = handler[passTable.get](handler, passValue)
+					end
 				end
 			else
 				multiToggle = options.multiToggle
 				if not options.get then
 				elseif type(options.get) == "function" then
-					var = getMultiToggleValues(multiToggle, options.get())
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = options.get(val)
+						end
+					else
+						var = options.get()
+					end
 				else
 					if type(handler[options.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 					end
-					var = getMultiToggleValues(multiToggle, handler[options.get](handler))
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = handler[options.get](handler, val)
+						end
+					else
+						var = handler[options.get](handler)
+					end
 				end
 			end
 			
@@ -1654,27 +1726,62 @@ local function handlerFunc(self, chat, msg, options)
 		if #args > 0 then
 			local var
 			local multiToggle
+			for k in pairs(tmp) do
+				tmp[k] = nil
+			end
 			if passTable then
 				multiToggle = passTable.multiToggle
 				if not passTable.get then
 				elseif type(passTable.get) == "function" then
-					var = getMultiToggleValues(multiToggle, passTable.get(passValue))
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = passTable.get(passValue, val)
+						end
+					else
+						var = passTable.get(passValue)
+					end
 				else
 					if type(handler[passTable.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passTable.get)))
 					end
-					var = getMultiToggleValues(multiToggle, handler[passTable.get](handler, passValue))
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = handler[passTable.get](handler, passValue, val)
+						end
+					else
+						var = handler[passTable.get](handler, passValue)
+					end
 				end
 			else
 				multiToggle = options.multiToggle
 				if not options.get then
 				elseif type(options.get) == "function" then
-					var = getMultiToggleValues(multiToggle, options.get())
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = options.get(val)
+						end
+					else
+						var = options.get()
+					end
 				else
 					if type(handler[options.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 					end
-					var = getMultiToggleValues(multiToggle, handler[options.get](handler))
+					if multiToggle then
+						var = tmp
+						for k,v in pairs(options.validate) do
+							local val = type(k) ~= "number" and k or v
+							var[val] = handler[options.get](handler, val)
+						end
+					else
+						var = handler[options.get](handler)
+					end
 				end
 			end
 			if multiToggle then
