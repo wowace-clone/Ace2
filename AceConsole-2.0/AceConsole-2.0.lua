@@ -826,6 +826,9 @@ local function validateOptions(options, position, baseOptions, fromPass)
 					return '"validate" values must all be strings', position
 				end
 			end
+			if options.multiToggle and options.multiToggle ~= true then
+				return '"multiToggle" must be a boolean or nil if "validate" is a table', position
+			end
 		elseif options.validate == "keybinding" then
 			
 		else
@@ -834,6 +837,9 @@ local function validateOptions(options, position, baseOptions, fromPass)
 			elseif options.validate and type(options.validate) ~= "string" and type(options.validate) ~= "function" then
 				return '"validate" must be a string, function, or table', position
 			end
+		end
+		if options.multiToggle and type(options.validate) ~= "table" then
+			return '"validate" must be a table if "multiToggle" is true', position
 		end
 	elseif kind == "range" then
 		if options.min or options.max then
@@ -974,6 +980,40 @@ local order
 local mysort_args
 local mysort
 
+local t = {}
+local function getMultiToggleValues(multi, ...)
+	if not multi then
+		return ...
+	end
+	for k in pairs(t) do
+		t[k] = nil
+	end
+	if type((...)) ~= "table" then
+		for i = 1, select('#', ...) do
+			t[select(i, ...)] = true
+		end
+	else
+		local q = ...
+		if #q == 0 then
+			for k,v in pairs(q) do
+				t[k] = v or nil
+			end
+		else
+			for i,v in ipairs(q) do
+				t[v] = true
+			end
+		end
+	end
+	return t
+end
+
+local function icaseSort(alpha, bravo)
+	if type(alpha) == "number" and type(bravo) == "number" then
+		return alpha < bravo
+	end
+	return tostring(alpha):lower() < tostring(bravo):lower()
+end
+
 local function printUsage(self, handler, realOptions, options, path, args, quiet, filter)
 	if filter then
 		filter = "^" .. filter:gsub("([%(%)%.%*%+%-%[%]%?%^%$%%])", "%%%1")
@@ -1022,27 +1062,30 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 		print(OPTION_IS_DISABLED:format(path), realOptions.cmdName or realOptions.name or self)
 	elseif kind == "text" then
 		local var
+		local multiToggle
 		if passTable then
+			multiToggle = passTable.multiToggle
 			if not passTable.get then
 			elseif type(passTable.get) == "function" then
-				var = passTable.get(passValue)
+				var = getMultiToggleValues(multiToggle, passTable.get(passValue))
 			else
 				local handler = passTable.handler or handler
 				if type(handler[passTable.get]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passTable.get)))
 				end
-				var = handler[passTable.get](handler, passValue)
+				var = getMultiToggleValues(multiToggle, handler[passTable.get](handler, passValue))
 			end
 		else
+			multiToggle = options.multiToggle
 			if not options.get then
 			elseif type(options.get) == "function" then
-				var = options.get()
+				var = getMultiToggleValues(multiToggle, options.get())
 			else
 				local handler = options.handler or handler
 				if type(handler[options.get]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 				end
-				var = handler[options.get](handler)
+				var = getMultiToggleValues(multiToggle, handler[options.get](handler))
 			end
 		end
 		
@@ -1057,6 +1100,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 						table.insert(order, v)
 					end
 				end
+				table.sort(order, icaseSort)
 				usage = "{" .. table.concat(order, " || ") .. "}"
 				for k in pairs(order) do
 					order[k] = nil
@@ -1068,12 +1112,40 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 				for k,v in pairs(options.validate) do
 					table.insert(order, v)
 				end
+				table.sort(order, icaseSort)
 				usage = "{" .. table.concat(order, " || ") .. "}"
 				for k in pairs(order) do
 					order[k] = nil
 				end
 			end
-			var = options.validate[var] or var
+			if multiToggle then
+				if not next(var) then
+					var = NONE
+				else
+					if not order then
+						order = {}
+					end
+					for k in pairs(var) do
+						if options.validate[k] then
+							order[#order+1] = options.validate[k]
+						else
+							for _,v in pairs(options.validate) do
+								if v == k or (type(v) == "string" and type(k) == "string" and v:lower() == k:lower()) then
+									order[#order+1] = v
+									break
+								end
+							end
+						end
+					end
+					table.sort(order, icaseSort)
+					var = table.concat(order, ", ")
+					for k in pairs(order) do
+						order[k] = nil
+					end
+				end
+			else
+				var = options.validate[var] or var
+			end
 		elseif options.validate == "keybinding" then
 			usage = KEYBINDING_USAGE
 		else
@@ -1257,8 +1329,9 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					end
 					if v_p.get then
 						local a1,a2,a3,a4
+						local multiToggle = v_p.type == "text" and v_p.multiToggle
 						if type(v_p.get) == "function" then
-							a1,a2,a3,a4 = v_p.get(passValue)
+							a1,a2,a3,a4 = getMultiToggleValues(multiToggle, v_p.get(passValue))
 						else
 							local handler = v_p.handler or handler
 							local f = v_p.get
@@ -1272,7 +1345,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							if type(handler[f]) ~= "function" then
 								AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 							end
-							a1,a2,a3,a4 = handler[f](handler, passValue)
+							a1,a2,a3,a4 = getMultiToggleValues(multiToggle, handler[f](handler, passValue))
 							if neg then
 								a1 = not a1
 							end
@@ -1305,7 +1378,35 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 								s = tostring(a1)
 							end
 						elseif v.type == "text" and type(v.validate) == "table" then
-							s = tostring(v.validate[a1] or a1 or NONE)
+							if multiToggle then
+								if not next(a1) then
+									s = NONE
+								else
+									s = ''
+									for k in pairs(a1) do
+										if options.validate[k] then
+											if s == '' then
+												s = order.validate[k]
+											else
+												s = s .. ', ' .. order.validate[k]
+											end
+										else
+											for _,v in pairs(options.validate) do
+												if v == k or (type(v) == "string" and type(k) == "string" and v:lower() == k:lower()) then
+													if s == '' then
+														s = v
+													else
+														s = s .. ', ' .. v
+													end
+													break
+												end
+											end
+										end
+									end
+								end
+							else
+								s = tostring(v.validate[a1] or a1 or NONE)
+							end
 						else
 							s = tostring(a1 or NONE)
 						end
@@ -1490,29 +1591,44 @@ local function handlerFunc(self, chat, msg, options)
 			end
 			
 			local var
+			local multiToggle
 			if passTable then
+				multiToggle = passTable.multiToggle
 				if not passTable.get then
 				elseif type(passTable.get) == "function" then
-					var = passTable.get(passValue)
+					var = getMultiToggleValues(multiToggle, passTable.get(passValue))
 				else
 					if type(handler[passTable.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passTable.get)))
 					end
-					var = handler[passTable.get](handler, passValue)
+					var = getMultiToggleValues(multiToggle, handler[passTable.get](handler, passValue))
 				end
 			else
+				multiToggle = options.multiToggle
 				if not options.get then
 				elseif type(options.get) == "function" then
-					var = options.get()
+					var = getMultiToggleValues(multiToggle, options.get())
 				else
 					if type(handler[options.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 					end
-					var = handler[options.get](handler)
+					var = getMultiToggleValues(multiToggle, handler[options.get](handler))
 				end
 			end
 			
-			if var ~= args[1] then
+			if multiToggle or var ~= args[1] then
+				if multiToggle then
+					local current = var[args[1]]
+					if current == nil and type(args[1]) == "string" then
+						for k in pairs(var) do
+							if type(k) == "string" and k:lower() == args[1]:lower() then
+								current = true
+								break
+							end
+						end
+					end
+					args[2] = not current
+				end
 				if passTable then
 					if type(passTable.set) == "function" then
 						passTable.set(passValue, unpack(args))
@@ -1537,28 +1653,56 @@ local function handlerFunc(self, chat, msg, options)
 		
 		if #args > 0 then
 			local var
+			local multiToggle
 			if passTable then
+				multiToggle = passTable.multiToggle
 				if not passTable.get then
 				elseif type(passTable.get) == "function" then
-					var = passTable.get(passValue)
+					var = getMultiToggleValues(multiToggle, passTable.get(passValue))
 				else
 					if type(handler[passTable.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(passTable.get)))
 					end
-					var = handler[passTable.get](handler, passValue)
+					var = getMultiToggleValues(multiToggle, handler[passTable.get](handler, passValue))
 				end
 			else
+				multiToggle = options.multiToggle
 				if not options.get then
 				elseif type(options.get) == "function" then
-					var = options.get()
+					var = getMultiToggleValues(multiToggle, options.get())
 				else
 					if type(handler[options.get]) ~= "function" then
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 					end
-					var = handler[options.get](handler)
+					var = getMultiToggleValues(multiToggle, handler[options.get](handler))
 				end
 			end
-			if type(options.validate) == "table" then
+			if multiToggle then
+				if not next(var) then
+					var = NONE
+				else
+					if not order then
+						order = {}
+					end
+					for k in pairs(var) do
+						if options.validate[k] then
+							order[#order+1] = options.validate[k]
+						else
+							for _,v in pairs(options.validate) do
+								if v == k or (type(v) == "string" and type(k) == "string" and v:lower() == k:lower()) then
+									order[#order+1] = v
+									break
+								end
+							end
+						end
+					end
+					table.sort(order, icaseSort)
+					var = table.concat(order, ", ")
+					for k in pairs(order) do
+						order[k] = nil
+					end
+				end
+			elseif type(options.validate) == "table" then
 				var = options.validate[var] or var
 			end
 			if (passTable and passTable.get) or options.get then
@@ -2475,18 +2619,6 @@ local function activate(self, oldLib, oldDeactivate)
 	
 	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, function() ReloadUI() end, "RELOAD")
 	self:RegisterChatCommand({ "/gm" }, function() ToggleHelpFrame() end, "GM")
-	self:RegisterChatCommand({ "/group", "/gr" }, function(text)
-		if text:trim():len() > 0 then
-			local _,pvp = IsInInstance()
-			if pvp == "pvp" then
-				SendChatMessage(text, "BATTLEGROUND")
-			elseif GetNumRaidMembers() > 0 then
-				SendChatMessage(text, "RAID")
-			elseif GetNumPartyMembers() > 0 then
-				SendChatMessage(text, "PARTY")
-			end
-		end
-	end, "GROUPSAY")
 	local t = { "/print", "/echo" }
 	local _,_,_,enabled,loadable = GetAddOnInfo("DevTools")
 	if not enabled and not loadable then
