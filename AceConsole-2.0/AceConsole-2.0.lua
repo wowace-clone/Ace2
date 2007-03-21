@@ -357,9 +357,10 @@ end
 local function literal_tostring_frame(t)
 	local s = ("|cffffea00<%s:%s|r\n"):format(t:GetObjectType(), t:GetName() or "(anon)")
 	local __index = getmetatable(t).__index
-	local tmp, tmp2 = new(), new()
+	local tmp, tmp2, tmp3 = new(), new(), new()
 	for k in pairs(t) do
 		if k ~= 0 then
+			tmp3[k] = true
 			tmp2[k] = true
 		end
 	end
@@ -394,7 +395,7 @@ local function literal_tostring_frame(t)
 				end
 				s = s .. "    " .. getkeystring(k, 1) .. "() => " .. q
 			end
-		elseif type(v) ~= "function" then
+		elseif type(v) ~= "function" or (type(v) == "function" and type(k) == "string" and tmp3[k]) then
 			if not first then
 				s = s .. ",\n"
 			else
@@ -405,7 +406,7 @@ local function literal_tostring_frame(t)
 			good = false
 		end
 	end
-	tmp, tmp2 = del(tmp), del(tmp2)
+	tmp, tmp2, tmp3 = del(tmp), del(tmp2), del(tmp3)
 	s = s .. "\n|cffffea00>|r"
 	return s
 end
