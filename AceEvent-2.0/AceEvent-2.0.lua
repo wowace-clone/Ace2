@@ -828,12 +828,12 @@ function AceEvent:CancelAllCombatSchedules()
 end
 
 local inCombat = false
-local tmp = {}
 
 function AceEvent:PLAYER_REGEN_DISABLED()
 	inCombat = true
 end
 
+local tmp = {}
 function AceEvent:PLAYER_REGEN_ENABLED()
 	inCombat = false
 	for i, v in ipairs(combatSchedules) do
@@ -846,7 +846,7 @@ function AceEvent:PLAYER_REGEN_ENABLED()
 			local success, err = pcall(func, unpack(v, 1, v.n))
 			if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
 		else
-			local obj = v.self
+			local obj = v.obj or v.self
 			local method = v.method
 			local obj_method = obj[method]
 			if obj_method then
@@ -859,13 +859,28 @@ function AceEvent:PLAYER_REGEN_ENABLED()
 end
 
 function AceEvent:ScheduleLeaveCombatAction(method, ...)
+	local style = type(method)
 	if self == AceEvent then
-		AceEvent:argCheck(method, 2, "function")
-		self = func
+		if style == "table" then
+			local func = (...)
+			AceEvent:argCheck(func, 3, "string")
+			if type(method[func]) ~= "function" then
+				AceEvent:error("Cannot schedule a combat action to method %q, it does not exist", func)
+			end
+		else
+			AceEvent:argCheck(method, 2, "function", --[[so message is right]] "table")
+		end
+		self = method
 	else
-		AceEvent:argCheck(method, 2, "function", "string")
-		if type(method) == "string" and type(self[method]) ~= "function" then
+		AceEvent:argCheck(method, 2, "function", "string", "table")
+		if style == "string" and type(self[method]) ~= "function" then
 			AceEvent:error("Cannot schedule a combat action to method %q, it does not exist", method)
+		elseif style == "table" then
+			local func = (...)
+			AceEvent:argCheck(func, 3, "string")
+			if type(method[func]) ~= "function" then
+				AceEvent:error("Cannot schedule a combat action to method %q, it does not exist", func)
+			end
 		end
 	end
 	
@@ -873,18 +888,30 @@ function AceEvent:ScheduleLeaveCombatAction(method, ...)
 		local success, err
 		if type(method) == "function" then
 			success, err = pcall(method, ...)
+		elseif type(method) == "table" then
+			local func = (...)
+			success, err = pcall(method[func], method, select(2, ...))
 		else
 			success, err = pcall(self[method], self, ...)
 		end
 		if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
 		return
 	end
-	local t = new(...)
-	t.n = select('#', ...)
-	if type(method) == "function" then
-		t.func = method
+	local t
+	local n = select('#', ...)
+	if style == "table" then
+		t = new(select(2, ...))
+		t.obj = method
+		t.method = (...)
+		t.n = n-1
 	else
-		t.method = method
+		t = new(...)
+		t.n = n
+		if style == "function" then
+			t.func = method
+		else
+			t.method = method
+		end
 	end
 	t.self = self
 	table.insert(combatSchedules, t)
