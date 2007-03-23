@@ -687,7 +687,7 @@ function AceEvent:IsEventRegistered(event)
 end
 
 local bucketfunc
-function AceEvent:RegisterBucketEvent(event, delay, method)
+function AceEvent:RegisterBucketEvent(event, delay, method, ...)
 	AceEvent:argCheck(event, 2, "string", "table")
 	if type(event) == "table" then
 		for k,v in pairs(event) do
@@ -732,6 +732,14 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 	end
 	local bucket = AceEvent.buckets[event][self]
 	bucket.method = method
+	
+	local n = select('#', ...)
+	if n > 0 then
+		for i = 1, n do
+			bucket[i] = select(i, ...)
+		end
+	end
+	bucket.n = n
 
 	local func = function(arg1)
 		bucket.run = true
@@ -754,9 +762,9 @@ function AceEvent:RegisterBucketEvent(event, delay, method)
 			local self = bucket.self
 			if bucket.run then
 				if type(method) == "string" then
-					self[method](self, current)
+					self[method](self, current, unpack(bucket, 1, bucket.n))
 				elseif method then -- function
-					method(current)
+					method(current, unpack(bucket, 1, bucket.n))
 				end
 				for k in pairs(current) do
 					current[k] = nil
