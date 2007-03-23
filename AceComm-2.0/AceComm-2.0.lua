@@ -791,7 +791,7 @@ do
 				local b = value:byte(position + 3)
 				local name = value:sub(position + 19, position + 18 + len)
 				
-				local link = ("|cff%02x%02x%02x|Hitem:%d:%d:%d:%d:%d:%d:%d:%d|h[%s]|h|r"):format(r, g, b, A, B, C, D, E, 0, G, H, name)
+				link = ("|cff%02x%02x%02x|Hitem:%d:%d:%d:%d:%d:%d:%d:%d|h[%s]|h|r"):format(r, g, b, A, B, C, D, E, 0, G, H, name)
 			end
 			return link, position + 18 + len
 		elseif x == byte_m then
