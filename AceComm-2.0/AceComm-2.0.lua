@@ -85,8 +85,6 @@ local ipairs = ipairs
 local pairs = pairs
 local next = next
 
-local newItemLinks = (tonumber(date("%Y%m%d")) >= 20070321)
-
 local player = UnitName("player")
 
 local NumericCheckSum, HexCheckSum, BinaryCheckSum
@@ -598,11 +596,7 @@ do
 				
 				H = H % 256^2 -- only lower 16 bits matter
 				
-				if not newItemLinks then
-					return string_char(byte_i, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256)
-				else
-					return string_char(byte_I, r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, name:len() % 256) .. name:sub(1, 255)
-				end
+				return string_char(byte_I, r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, name:len() % 256) .. name:sub(1, 255)
 			else
 				-- normal string
 				local len = v:len()
