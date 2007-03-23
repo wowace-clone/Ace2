@@ -54,7 +54,6 @@ do
 		i = i + 1
 		local k = t[i]
 		if k then
-			t[i] = nil
 			t.i = i
 			return k, t.m[k]
 		else
@@ -119,6 +118,9 @@ function AceModuleCore:NewModule(name, ...)
 
 	AceModuleCore.totalModules[module] = self
 	
+	if type(self.OnModuleCreated) == "function" then
+		safecall(self.OnModuleCreated, self, name, module)
+	end
 	if AceEvent then
 		AceEvent:TriggerEvent("Ace2_ModuleCreated", module)
 	end
