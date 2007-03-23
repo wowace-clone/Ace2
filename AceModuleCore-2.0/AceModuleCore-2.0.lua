@@ -47,6 +47,37 @@ local function getlibrary(lib)
 	end
 end
 
+local iterList = setmetatable({}, {__mode='v'})
+do
+	local function func(t)
+		local i = t.i
+		i = i + 1
+		local k = t[i]
+		if k then
+			t[i] = nil
+			t.i = i
+			return k, t.m[k]
+		else
+			t.i = nil
+			return nil
+		end
+	end
+	function AceModuleCore:IterateModules()
+		local t = iterList[self]
+		if not t then
+			t = {}
+			for k in pairs(self.modules) do
+				t[#t+1] = k
+			end
+			table.sort(t)
+			t.m = self.modules
+			iterList[self] = t
+		end
+		t.i = 0
+		return func, t, nil
+	end
+end
+
 local tmp = {}
 function AceModuleCore:NewModule(name, ...)
 	if not self.modules then
@@ -59,6 +90,8 @@ function AceModuleCore:NewModule(name, ...)
 	if self.modules[name] then
 		AceModuleCore:error("The module %q has already been registered", name)
 	end
+	
+	iterList[self] = nil
 	
 	for i = 1, select('#', ...) do
 		tmp[i] = getlibrary((select(i, ...)))
@@ -127,40 +160,6 @@ function AceModuleCore:IsModule(module)
 			end
 		end
 		return false
-	end
-end
-
-do
-	local list = setmetatable({}, {__mode='k'})
-	local function func(t)
-		local i = t.i
-		i = i + 1
-		local k = t[i]
-		if k then
-			t[i] = nil
-			t.i = i
-			return k, t.m[k]
-		else
-			t.m = nil
-			t.i = nil
-			list[t] = true
-			return nil
-		end
-	end
-	function AceModuleCore:IterateModules()
-		local t = next(list)
-		if t then
-			list[t] = nil
-		else
-			t = {}
-		end
-		for k in pairs(self.modules) do
-			t[#t+1] = k
-		end
-		table.sort(t)
-		t.m = self.modules
-		t.i = 0
-		return func, t, nil
 	end
 end
 
