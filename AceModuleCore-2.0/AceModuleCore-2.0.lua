@@ -51,6 +51,9 @@ local iterList = setmetatable({}, {__mode='v'})
 do
 	local function func(t)
 		local i = t.i
+		if not i then
+			return nil
+		end
 		i = i + 1
 		local k = t[i]
 		if k then
