@@ -2386,7 +2386,31 @@ local function handlerFunc(self, chat, msg, options)
 end
 
 local external
-function AceConsole:RegisterChatCommand(slashCommands, options, name)
+local tmp
+function AceConsole:RegisterChatCommand(...) -- slashCommands, options, name
+	local slashCommands, options, name
+	if type((...)) == "string" then
+		if not tmp then
+			tmp = {}
+		else
+			for i in ipairs(tmp) do
+				tmp[i] = nil
+			end
+		end
+		for i = 1, select('#', ...)+1 do
+			local v = select(i, ...)
+			if type(v) == "string" then
+				tmp[#tmp+1] = v
+			else
+				slashCommands = tmp
+				options = v
+				name = select(i+1, ...)
+				break
+			end
+		end
+	else
+		slashCommands, options, name = ...
+	end
 	if type(slashCommands) ~= "table" and slashCommands ~= false then
 		AceConsole:error("Bad argument #2 to `RegisterChatCommand' (expected table, got %s)", type(slashCommands))
 	end
@@ -2550,6 +2574,12 @@ function AceConsole:RegisterChatCommand(slashCommands, options, name)
 	end
 	
 	AceConsole.registry[name] = options
+	
+	if slashCommands == tmp then
+		for i in ipairs(tmp) do
+			tmp[i] = nil
+		end
+	end
 end
 
 function AceConsole:InjectAceOptionsTable(handler, options)
