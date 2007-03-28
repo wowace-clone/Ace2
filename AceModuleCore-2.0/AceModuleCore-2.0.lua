@@ -357,6 +357,7 @@ end
 
 function AceModuleCore:OnInstanceInit(target)
 	if target.modules then
+		do return end
 		AceModuleCore:error("OnInstanceInit cannot be called twice")
 	end
 	target.modules = {}
