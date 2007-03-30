@@ -584,7 +584,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 	for i = index, #work do
 		table.insert(argwork, work[i])
 	end
-	return options, path, argwork, options.handler or self, passTable, passTable and work[index - 1]
+	return options, path, argwork, options.handler or self, passTable, options.passValue or passTable and work[index - 1]
 end
 
 local function validateOptionsMethods(self, options, position)
@@ -1306,11 +1306,14 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			end
 			local passTable = options.pass and options or nil
 			for _,k in ipairs(order) do
-				local passValue = passTable and k
+				local passValue = passTable and k or nil
 				local real_k = k
 				local v = options.args[k]
 				if v then
 					local v_p = passTable or v
+					if v.passValue then
+						passValue = v.passValue
+					end
 					local k = k:gsub("%s", "-")
 					local disabled = v.disabled
 					if disabled then
