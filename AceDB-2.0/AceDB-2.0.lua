@@ -245,7 +245,7 @@ local function inheritDefaults(t, defaults)
 		return t
 	end
 	for k,v in pairs(defaults) do
-		if k == "*" then
+		if k == "*" or k == "**" then
 			local v = v
 			if type(v) == "table" then
 				setmetatable(t, {
@@ -270,17 +270,20 @@ local function inheritDefaults(t, defaults)
 				} )
 			end
 			for key in pairs(t) do
-				if (defaults[key] == nil or key == "*") and type(t[key]) == "table" then
+				if (defaults[key] == nil or key == k) and type(t[key]) == "table" then
 					inheritDefaults(t[key], v)
 				end
 			end
 		else
 			if type(v) == "table" then
-				if type(t[k]) ~= "table" then
+				if type(rawget(t, k)) ~= "table" then
 					t[k] = {}
 				end
 				inheritDefaults(t[k], v)
-			elseif t[k] == nil then
+				if defaults["**"] then
+					inheritDefaults(t[k], defaults["**"])
+				end
+			elseif rawget(t, k) == nil then
 				t[k] = v
 			end
 		end
@@ -1366,39 +1369,35 @@ function AceDB:ResetDB(kind, a2)
 	end
 end
 
-local function cleanDefaults(t, defaults)
+local function cleanDefaults(t, defaults, blocker)
 	if defaults then
-		for k,v in pairs(defaults) do
-			if k == "*" then
-				if type(v) == "table" then
-					for k in pairs(t) do
-						if (defaults[k] == nil or k == "*") and type(t[k]) == "table" then
-							if cleanDefaults(t[k], v) then
+		for k,v in pairs(t) do
+			if (not blocker or (blocker[k] == nil and blocker['*'] == nil and blocker['**'] == nil)) and (defaults[k] ~= nil or defaults['*'] ~= nil or defaults['**'] ~= nil) then
+				local u = defaults[k]
+				if u == nil then
+					u = defaults['*']
+					if u == nil then
+						u = defaults['**']
+					end
+				end
+				if v == u then
+					t[k] = nil
+				elseif type(v) == "table" and type(u) == "table" then
+					if cleanDefaults(v, u) then
+						t[k] = nil
+					else
+						local w = defaults['**']
+						if w ~= u then
+							if cleanDefaults(v, w, u) then
 								t[k] = nil
 							end
 						end
 					end
-				else
-					for k in pairs(t) do
-						if (defaults[k] == nil or k == "*") and t[k] == v then
-							t[k] = nil
-						end
-					end
-				end
-			else
-				if type(v) == "table" then
-					if type(t[k]) == "table" then
-						if cleanDefaults(t[k], v) then
-							t[k] = nil
-						end
-					end
-				elseif t[k] == v then
-					t[k] = nil
 				end
 			end
 		end
 	end
-	return t and not next(t)
+	return t and next(t) == nil
 end
 
 function AceDB:GetProfile()
