@@ -516,7 +516,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 		local disabled, hidden = options.disabled, options.cmdHidden or options.hidden
 		if hidden then
 			if type(hidden) == "function" then
-				hidden = hidden()
+				hidden = hidden(options.passValue)
 			elseif type(hidden) == "string" then
 				local handler = options.handler or self
 				local f = hidden
@@ -527,7 +527,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 				if type(handler[f]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 				end
-				hidden = handler[f](handler)
+				hidden = handler[f](handler, options.passValue)
 				if neg then
 					hidden = not hidden
 				end
@@ -537,7 +537,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 			disabled = true
 		elseif disabled then
 			if type(disabled) == "function" then
-				disabled = disabled()
+				disabled = disabled(options.passValue)
 			elseif type(disabled) == "string" then
 				local handler = options.handler or self
 				local f = disabled
@@ -548,7 +548,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 				if type(handler[f]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 				end
-				disabled = handler[f](handler)
+				disabled = handler[f](handler, options.passValue)
 				if neg then
 					disabled = not disabled
 				end
@@ -996,7 +996,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 	local hidden, disabled = options.cmdHidden or options.hidden, options.disabled
 	if hidden then
 		if type(hidden) == "function" then
-			hidden = hidden()
+			hidden = hidden(options.passValue)
 		elseif type(hidden) == "string" then
 			local f = hidden
 			local neg = f:match("^~(.-)$")
@@ -1006,7 +1006,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			if type(handler[f]) ~= "function" then
 				AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 			end
-			hidden = handler[f](handler)
+			hidden = handler[f](handler, options.passValue)
 			if neg then
 				hidden = not hidden
 			end
@@ -1016,7 +1016,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 		disabled = true
 	elseif disabled then
 		if type(disabled) == "function" then
-			disabled = disabled()
+			disabled = disabled(options.passValue)
 		elseif type(disabled) == "string" then
 			local f = disabled
 			local neg = f:match("^~(.-)$")
@@ -1026,7 +1026,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 			if type(handler[f]) ~= "function" then
 				AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 			end
-			disabled = handler[f](handler)
+			disabled = handler[f](handler, options.passValue)
 			if neg then
 				disabled = not disabled
 			end
@@ -1318,7 +1318,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 					local disabled = v.disabled
 					if disabled then
 						if type(disabled) == "function" then
-							disabled = disabled()
+							disabled = disabled(passValue)
 						elseif type(disabled) == "string" then
 							local f = disabled
 							local neg = f:match("^~(.-)$")
@@ -1328,7 +1328,7 @@ local function printUsage(self, handler, realOptions, options, path, args, quiet
 							if type(handler[f]) ~= "function" then
 								AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 							end
-							disabled = handler[f](handler)
+							disabled = handler[f](handler, passValue)
 							if neg then
 								disabled = not disabled
 							end
@@ -1524,7 +1524,7 @@ local function handlerFunc(self, chat, msg, options)
 	local hidden, disabled = options.cmdHidden or options.hidden, options.disabled
 	if hidden then
 		if type(hidden) == "function" then
-			hidden = hidden()
+			hidden = hidden(options.passValue)
 		elseif type(hidden) == "string" then
 			local f = hidden
 			local neg = f:match("^~(.-)$")
@@ -1534,7 +1534,7 @@ local function handlerFunc(self, chat, msg, options)
 			if type(handler[f]) ~= "function" then
 				AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 			end
-			hidden = handler[f](handler)
+			hidden = handler[f](handler, options.passValue)
 			if neg then
 				hidden = not hidden
 			end
@@ -1544,7 +1544,7 @@ local function handlerFunc(self, chat, msg, options)
 		disabled = true
 	elseif disabled then
 		if type(disabled) == "function" then
-			disabled = disabled()
+			disabled = disabled(options.passValue)
 		elseif type(disabled) == "string" then
 			local f = disabled
 			local neg = f:match("^~(.-)$")
@@ -1554,7 +1554,7 @@ local function handlerFunc(self, chat, msg, options)
 			if type(handler[f]) ~= "function" then
 				AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 			end
-			disabled = handler[f](handler)
+			disabled = handler[f](handler, options.passValue)
 			if neg then
 				disabled = not disabled
 			end
@@ -2689,7 +2689,7 @@ function external(self, major, instance)
 						local handler = v.handler or handler
 						if hidden then
 							if type(hidden) == "function" then
-								hidden = hidden()
+								hidden = hidden(v.passValue)
 							elseif type(hidden) == "string" then
 								local f = hidden
 								local neg = f:match("^~(.-)$")
@@ -2699,7 +2699,7 @@ function external(self, major, instance)
 								if type(handler[f]) ~= "function" then
 									self:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 								end
-								hidden = handler[f](handler)
+								hidden = handler[f](handler, v.passValue)
 								if neg then
 									hidden = not hidden
 								end
@@ -2708,7 +2708,7 @@ function external(self, major, instance)
 						local disabled = hidden or v.disabled
 						if disabled then
 							if type(disabled) == "function" then
-								disabled = disabled()
+								disabled = disabled(v.passValue)
 							elseif type(disabled) == "string" then
 								local f = disabled
 								local neg = f:match("^~(.-)$")
@@ -2718,7 +2718,7 @@ function external(self, major, instance)
 								if type(handler[f]) ~= "function" then
 									self:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(f)))
 								end
-								disabled = handler[f](handler)
+								disabled = handler[f](handler, v.passValue)
 								if neg then
 									disabled = not disabled
 								end
