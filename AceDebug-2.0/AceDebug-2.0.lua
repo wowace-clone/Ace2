@@ -35,7 +35,7 @@ elseif GetLocale() == "koKR" then
 	TOGGLE_DEBUGGING = "디버깅 기능 사용함/사용안함"
 elseif GetLocale() == "zhTW" then
 	DEBUGGING = "除錯"
-	TOGGLE_DEBUGGING = "啟用/停用除錯功能"
+	TOGGLE_DEBUGGING = "啟用/停用除錯功能。"
 elseif GetLocale() == "zhCN" then
 	DEBUGGING = "\232\176\131\232\175\149"
 	TOGGLE_DEBUGGING = "\229\144\175\231\148\168/\231\166\129\231\148\168 \232\176\131\232\175\149."

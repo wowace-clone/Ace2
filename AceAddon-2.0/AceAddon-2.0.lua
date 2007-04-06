@@ -194,18 +194,18 @@ elseif GetLocale() == "zhTW" then
 	AUTHOR = "作者"
 	DATE = "日期"
 	CATEGORY = "類別"
-	EMAIL = "E-mail"
+	EMAIL = "電子郵件"
 	WEBSITE = "網站"
-	CREDITS = "Credits" -- fix
-	LICENSE = "License" -- fix
+	CREDITS = "特別感謝"
+	LICENSE = "版權"
 	
 	ABOUT = "關於"
-	PRINT_ADDON_INFO = "顯示插件資訊"
+	PRINT_ADDON_INFO = "顯示插件資訊。"
 	
 	CATEGORIES = {
-		["Action Bars"] = "動作列",
+		["Action Bars"] = "動作條",
 		["Auction"] = "拍賣",
-		["Audio"] = "音樂",
+		["Audio"] = "音效",
 		["Battlegrounds/PvP"] = "戰場/PvP",
 		["Buffs"] = "增益",
 		["Chat/Communication"] = "聊天/通訊",
@@ -229,13 +229,13 @@ elseif GetLocale() == "zhTW" then
 		["Frame Modification"] = "框架修改",
 		["Interface Enhancements"] = "介面增強",
 		["Inventory"] = "背包",
-		["Library"] = "資料庫",
+		["Library"] = "程式庫",
 		["Map"] = "地圖",
 		["Mail"] = "郵件",
-		["Miscellaneous"] = "綜合",
+		["Miscellaneous"] = "雜項",
 		["Quest"] = "任務",
 		["Raid"] = "團隊",
-		["Tradeskill"] = "商業技能",
+		["Tradeskill"] = "交易技能",
 		["UnitFrame"] = "單位框架",
 	}
 elseif GetLocale() == "zhCN" then
