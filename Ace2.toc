@@ -1,6 +1,6 @@
 ## Interface: 20003
 
-## Title: Lib: |cff00ff00Ace|cffffffff2|r
+## Title: Lib: Ace2
 ## Notes: AddOn development framework
 ## Author: Ace Development Team
 ## X-Website: http://www.wowace.com
