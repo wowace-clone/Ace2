@@ -1,7 +1,6 @@
 ## Interface: 20003
-## LoadOnDemand: 1
 
-## Title: Ace |cffff00002|r
+## Title: Lib: |cff00ff00Ace|cffffffff2|r
 ## Notes: AddOn development framework
 ## Author: Ace Development Team
 ## X-Website: http://www.wowace.com
