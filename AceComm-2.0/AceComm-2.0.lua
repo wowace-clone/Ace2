@@ -40,6 +40,8 @@ AceComm.hooks = {}
 
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
 
+local WoW21 = GameTooltip_ShowCompareItem and true
+
 local byte_a = ("a"):byte()
 local byte_z = ("z"):byte()
 local byte_A = ("A"):byte()
@@ -390,11 +392,17 @@ local function RefixAceCommChannelsAndEvents()
 			end
 		end
 	end
-	if AceComm_registry.WHISPER then
-		whisper = true
-	end
-	if AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
-		addon = true
+	if WoW21 then
+		if AceComm_registry.WHISPER or AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
+			addon = true
+		end
+	else
+		if AceComm_registry.WHISPER then
+			whisper = true
+		end
+		if AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
+			addon = true
+		end
 	end
 	
 	if channel then
@@ -425,13 +433,15 @@ local function RefixAceCommChannelsAndEvents()
 		end
 	end
 	
-	if whisper then
-		if not AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
-			AceComm:RegisterEvent("CHAT_MSG_WHISPER")
-		end
-	else
-		if AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
-			AceComm:UnregisterEvent("CHAT_MSG_WHISPER")
+	if not WoW21 then
+		if whisper then
+			if not AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
+				AceComm:RegisterEvent("CHAT_MSG_WHISPER")
+			end
+		else
+			if AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
+				AceComm:UnregisterEvent("CHAT_MSG_WHISPER")
+			end
 		end
 	end
 	
@@ -1312,14 +1322,21 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		id = id + 1
 	end
 	local id = string_char(id)
-	local drunk = distribution == "GLOBAL" or distribution == "WHISPER" or distribution == "ZONE" or distribution == "CUSTOM"
+	local drunk
+	if WoW21 then
+		drunk = distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM"
+	else
+		drunk = distribution == "GLOBAL" or distribution == "WHISPER" or distribution == "ZONE" or distribution == "CUSTOM"
+	end
 	prefix = Encode(prefix, drunk)
 	message = Serialize(message, textToHash)
 	message = Encode(message, drunk)
 	local headerLen = prefix:len() + 6
 	local messageLen = message:len()
-	if distribution == "WHISPER" then
-		AceComm.recentWhispers[string.lower(person)] = GetTime()
+	if not WoW21 then
+		if distribution == "WHISPER" then
+			AceComm.recentWhispers[string.lower(person)] = GetTime()
+		end
 	end
 	local max = math_floor(messageLen / (250 - headerLen) + 1)
 	if max > 1 then
@@ -1338,7 +1355,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				bit = message:sub(last + 1, next)
 				last = next
 			end
-			if distribution == "WHISPER" then
+			if not WoW21 and distribution == "WHISPER" then
 				bit = "/" .. prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "\029"
 				ChatThrottleLib:SendChatMessage(priority, prefix, bit, "WHISPER", nil, person)
 			elseif distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
@@ -1359,12 +1376,12 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				end
 			else
 				bit = id .. soberEncodedChar(i) .. soberEncodedChar(max) .. "\t" .. bit
-				ChatThrottleLib:SendAddonMessage(priority, prefix, bit, distribution)
+				ChatThrottleLib:SendAddonMessage(priority, prefix, bit, distribution, person)
 			end
 		end
 		return good
 	else
-		if distribution == "WHISPER" then
+		if not WoW21 and distribution == "WHISPER" then
 			message = "/" .. prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "\029"
 			ChatThrottleLib:SendChatMessage(priority, prefix, message, "WHISPER", nil, person)
 			return true
@@ -1395,7 +1412,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				end
 				recentGuildMessage = GetTime() + 10
 			end
-			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution)
+			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution, person)
 			return true
 		end
 	end
@@ -1599,7 +1616,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 	local _, id, current, max
 	if not message then
-		if distribution == "WHISPER" then
+		if not WoW21 and distribution == "WHISPER" then
 			_,_, prefix, id, current, max, message = prefix:find("^/(...)\t(.)(.)(.)\t(.*)$")
 		else
 			_,_, prefix, id, current, max, message = prefix:find("^(...)\t(.)(.)(.)\t(.*)$")
@@ -1868,7 +1885,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 end
 
 function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
-	if sender == player and not AceComm.enableLoopback then
+	if sender == player and not AceComm.enableLoopback and distribution ~= "WHISPER" then
 		return
 	end
 	prefix = self.prefixHashToText[prefix]
@@ -1887,12 +1904,14 @@ function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	return HandleMessage(prefix, message, distribution, sender)
 end
 
-function AceComm:CHAT_MSG_WHISPER(text, sender)
-	if not text:find("^/") then
-		return
+if not WoW21 then
+	function AceComm:CHAT_MSG_WHISPER(text, sender)
+		if not text:find("^/") then
+			return
+		end
+		text = Decode(text, true)
+		return HandleMessage(text, nil, "WHISPER", sender)
 	end
-	text = Decode(text, true)
-	return HandleMessage(text, nil, "WHISPER", sender)
 end
 
 function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
@@ -2006,11 +2025,11 @@ local recentNotSeen = {}
 local notSeenString = '^' .. ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 local ambiguousString = '^' .. ERR_CHAT_PLAYER_AMBIGUOUS_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
-	if event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM" then
+	if not WoW21 and (event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM") then
 		if arg1:find("^/") then
 			return
 		end
-	elseif event == "CHAT_MSG_AFK" or event == "CHAT_MSG_DND" then
+	elseif not WoW21 and (event == "CHAT_MSG_AFK" or event == "CHAT_MSG_DND") then
 		local t = self.recentWhispers[string.lower(arg2)]
 		if t and GetTime() - t <= 15 then
 			return
@@ -2241,17 +2260,15 @@ local function activate(self, oldLib, oldDeactivate)
 	self.prefixMemoizations = oldLib and oldLib.prefixMemoizations or {}
 	self.prefixHashToText = oldLib and oldLib.prefixHashToText or {}
 	self.prefixTextToHash = oldLib and oldLib.prefixTextToHash or {}
-	self.recentWhispers = oldLib and oldLib.recentWhispers or {}
+	if not WoW21 then
+		self.recentWhispers = oldLib and oldLib.recentWhispers or {}
+	end
 	self.userRegistry = oldLib and oldLib.userRegistry or {}
 	self.commPrefixes = oldLib and oldLib.commPrefixes or {}
 	self.addonVersionPinger = oldLib and oldLib.addonVersionPinger
 	AceComm_registry = self.registry
 	for k in pairs(self.classes) do
 		self.classes[k] = nil
-	end
-	
-	if tonumber(date("%Y%m%d")) < 20070315 then
-		SetCVar("spamFilter", 1)
 	end
 	
 	self:activate(oldLib, oldDeactivate)
