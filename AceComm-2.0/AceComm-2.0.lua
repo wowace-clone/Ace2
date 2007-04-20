@@ -472,7 +472,7 @@ do
 			end
 			for k in pairs(switches) do
 				if k.former == channel then
-					self:ScheduleEvent("AceComm-Join-" .. k, myFunc, 0, k)
+					self:ScheduleEvent("AceComm-Join-" .. k.latter, myFunc, 0, k)
 				end
 			end
 			if channel == GetCurrentZoneChannel() then
