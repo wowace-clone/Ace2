@@ -53,7 +53,7 @@ local function error(self, message, ...)
 	
 	local stack = debugstack()
 	if not message then
-		local _,_,second = stack:find("\n(.-)\n")
+		local second = stack:match("\n(.-)\n")
 		message = "error raised! " .. second
 	else
 		local arg = { ... } -- not worried about table creation, as errors don't happen often
@@ -105,7 +105,7 @@ if not WoW22 then
 		if not condition then
 			if not message then
 				local stack = debugstack()
-				local _,_,second = stack:find("\n(.-)\n")
+				local second = stack:match("\n(.-)\n")
 				message = "assertion failed! " .. second
 			end
 			return error(self, message, ...)
@@ -120,13 +120,12 @@ local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
 	elseif type(kind) ~= "string" then
 		return error(self, "Bad argument #4 to `argCheck' (string expected, got %s)", type(kind))
 	end
-	local errored = false
 	arg = type(arg)
 	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 and arg ~= kind5 then
 		local stack = debugstack()
-		local _,_,func = stack:find("`argCheck'.-([`<].-['>])")
+		local func = stack:match("`argCheck'.-([`<].-['>])")
 		if not func then
-			_,_,func = stack:find("([`<].-['>])")
+			func = stack:match("([`<].-['>])")
 		end
 		if kind5 then
 			return error(self, "Bad argument #%s to %s (%s, %s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, kind5, arg)
@@ -180,16 +179,17 @@ local function addToPositions(t, major)
 end
 
 local function svnRevisionToNumber(text)
-	if type(text) == "string" then
+	local kind = type(text)
+	if kind == "number" or tonumber(text) then
+		return tonumber(text)
+	elseif kind == "string" then
 		if text:find("^%$Revision: (%d+) %$$") then
-			return tonumber((text:gsub("^%$Revision: (%d+) %$$", "%1")))
+			return tonumber((text:match("^%$Revision: (%d+) %$$")))
 		elseif text:find("^%$Rev: (%d+) %$$") then
-			return tonumber((text:gsub("^%$Rev: (%d+) %$$", "%1")))
+			return tonumber((text:match("^%$Rev: (%d+) %$$")))
 		elseif text:find("^%$LastChangedRevision: (%d+) %$$") then
-			return tonumber((text:gsub("^%$LastChangedRevision: (%d+) %$$", "%1")))
+			return tonumber((text:match("^%$LastChangedRevision: (%d+) %$$")))
 		end
-	elseif type(text) == "number" then
-		return text
 	end
 	return nil
 end
@@ -352,14 +352,15 @@ local function TryToLoadStandalone(major)
 
 	AceLibrary.scannedlibs[major] = true
 
-	local name, _, _, enabled, loadable = GetAddOnInfo(major)
+	local name, _, _, _, loadable = GetAddOnInfo(major)
 	if loadable then
 		return LoadAddOn(name)
 	end
-
-	for i=1,GetNumAddOns() do
-		if GetAddOnMetadata(i, "X-AceLibrary-"..major) then
-			local name, _, _, enabled, loadable = GetAddOnInfo(i)
+	
+	local field = "X-AceLibrary-" .. major 
+	for i = 1, GetNumAddOns() do
+		if GetAddOnMetadata(i, field) then
+			name, _, _, _, loadable = GetAddOnInfo(i)
 			if loadable then
 				return LoadAddOn(name)
 			end
@@ -429,9 +430,12 @@ end
 -- @param major A string representing the major version.
 -- @param minor (optional) An integer or an svn revision string representing the minor version.
 -- @return      The library with the given major/minor version.
+local count = 0
 function AceLibrary:GetInstance(major, minor)
 	argCheck(self, major, 2, "string")
-	TryToLoadStandalone(major)
+	if minor ~= false then
+		TryToLoadStandalone(major)
+	end
 
 	local data = self.libs[major]
 	if not data then
@@ -573,12 +577,12 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		
 		return instance
 	end
-	local instance = data.instance
 	if minor <= data.minor then
 		-- This one is already obsolete, raise an error.
 		_G.error(("Obsolete library registered. %s is already registered at version %d. You are trying to register version %d. Hint: if not AceLibrary:IsNewVersion(%q, %d) then return end"):format(major, data.minor, minor, major, minor), 2)
 		return
 	end
+	local instance = data.instance
 	-- This is an update
 	local oldInstance = {}
 	
@@ -609,7 +613,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 	data.minor = minor
 	data.deactivateFunc = deactivateFunc
 	data.externalFunc = externalFunc
-	rawset(instance, 'GetLibraryVersion', function(self)
+	rawset(instance, 'GetLibraryVersion', function()
 		return major, minor
 	end)
 	if not rawget(instance, 'error') then
