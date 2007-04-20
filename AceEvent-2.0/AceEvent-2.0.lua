@@ -457,7 +457,7 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 end
 
 function AceEvent:ScheduleEvent(event, delay, ...)
-	DEFAULT_CHAT_FRAME:AddMessage(debugstack() .. "\n--------\n")
+--	DEFAULT_CHAT_FRAME:AddMessage(debugstack() .. "\n--------\n")
 	if type(event) == "string" or type(event) == "table" then
 		if type(event) == "table" then
 			if not delayRegistry[event] then
