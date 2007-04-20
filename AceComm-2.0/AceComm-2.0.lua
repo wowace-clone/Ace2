@@ -2074,7 +2074,7 @@ end
 
 function AceComm.hooks:CancelLogout(orig)
 	shutdown = false
-	self:CancelScheduledEvent(id)
+	self:CancelScheduledEvent("AceComm-LeaveAceCommChannels")
 	RefixAceCommChannelsAndEvents()
 	loggingOut = false
 	return orig()
