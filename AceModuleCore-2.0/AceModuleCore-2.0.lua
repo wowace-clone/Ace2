@@ -158,7 +158,10 @@ end
 function AceModuleCore:IsModule(module)
 	if self == AceModuleCore then
 		return AceModuleCore.totalModules[module]
-	else
+	elseif type(module) == "table" then
+		if module.name and self.modules[module.name] and self.modules[module.name].name == module.name then
+			return true
+		end
 		for k,v in pairs(self.modules) do
 			if v == module then
 				return true
