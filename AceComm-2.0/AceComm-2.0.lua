@@ -278,7 +278,7 @@ end
 local function JoinChannel(channel)
 	if not IsInChannel(channel) then
 		LeaveChannelByName(channel)
-		AceComm:ScheduleEvent(JoinChannelByName, 0, channel)
+		AceComm:ScheduleEvent("AceComm-JoinChannelByName-" .. channel, JoinChannelByName, 0, channel)
 	end
 end
 
@@ -367,7 +367,7 @@ end
 local lastRefix = 0
 local function RefixAceCommChannelsAndEvents()
 	if GetTime() - lastRefix <= 5 then
-		AceComm:ScheduleEvent(RefixAceCommChannelsAndEvents, 1)
+		AceComm:ScheduleEvent("AceComm-RefixAceCommChannelsAndEvents", RefixAceCommChannelsAndEvents, GetTime() - lastRefix)
 		return
 	end
 	lastRefix = GetTime()
@@ -472,7 +472,7 @@ do
 			end
 			for k in pairs(switches) do
 				if k.former == channel then
-					self:ScheduleEvent(myFunc, 0, k)
+					self:ScheduleEvent("AceComm-Join-" .. k, myFunc, 0, k)
 				end
 			end
 			if channel == GetCurrentZoneChannel() then
@@ -483,7 +483,7 @@ do
 				self:TriggerEvent("AceComm_LeftChannel", "CUSTOM", channel:sub(8))
 			end
 			if channel:find("^AceComm") and SupposedToBeInChannel(channel) then
-				self:ScheduleEvent(JoinChannel, 0, channel)
+				self:ScheduleEvent("AceComm-JoinChannel-" .. channel, JoinChannel, 0, channel)
 			end
 			if AceComm.userRegistry[channel] then
 				AceComm.userRegistry[channel] = nil
@@ -493,7 +493,7 @@ do
 				return
 			end
 			if num == 0 then
-				self:ScheduleEvent(LeaveChannelByName, 0, deadName)
+				self:ScheduleEvent("AceComm-LeaveChannelByName-" .. deadName, LeaveChannelByName, 0, deadName)
 				switches[{
 					former = deadName,
 					latter = deadName,
@@ -1406,7 +1406,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				firstGuildMessage = false
 				if GetCVar("EnableErrorSpeech") == "1" then
 					SetCVar("EnableErrorSpeech", "0")
-					AceLibrary("AceEvent-2.0"):ScheduleEvent(function()
+					AceLibrary("AceEvent-2.0"):ScheduleEvent("AceComm-EnableErrorSpeech", function()
 						SetCVar("EnableErrorSpeech", "1")
 					end, 10)
 				end
