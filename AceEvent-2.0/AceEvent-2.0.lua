@@ -213,9 +213,6 @@ local memdiff, timediff
 
 function AceEvent:TriggerEvent(event, ...)
 	local tmp = new()
-	if type(event) ~= "string" then
-		DEFAULT_CHAT_FRAME:AddMessage(debugstack())
-	end
 	AceEvent:argCheck(event, 2, "string")
 	if not registry[event] and not registry[ALL_EVENTS] then
 		return
