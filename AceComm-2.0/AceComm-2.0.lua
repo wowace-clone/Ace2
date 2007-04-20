@@ -2061,12 +2061,12 @@ function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
 	return orig(event)
 end
 
-local id, loggingOut
+local loggingOut
 function AceComm.hooks:Logout(orig)
 	if IsResting() then
 		LeaveAceCommChannels(true)
 	else
-		id = self:ScheduleEvent(LeaveAceCommChannels, 15, true)
+		self:ScheduleEvent("AceComm-LeaveAceCommChannels", LeaveAceCommChannels, 15, true)
 	end
 	loggingOut = true
 	return orig()
@@ -2074,10 +2074,7 @@ end
 
 function AceComm.hooks:CancelLogout(orig)
 	shutdown = false
-	if id then
-		self:CancelScheduledEvent(id)
-		id = nil
-	end
+	self:CancelScheduledEvent(id)
 	RefixAceCommChannelsAndEvents()
 	loggingOut = false
 	return orig()
@@ -2087,7 +2084,7 @@ function AceComm.hooks:Quit(orig)
 	if IsResting() then
 		LeaveAceCommChannels(true)
 	else
-		id = self:ScheduleEvent(LeaveAceCommChannels, 15, true)
+		self:ScheduleEvent("AceComm-LeaveAceCommChannels", LeaveAceCommChannels, 15, true)
 	end
 	loggingOut = true
 	return orig()
