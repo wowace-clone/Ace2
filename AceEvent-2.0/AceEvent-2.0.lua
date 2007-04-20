@@ -95,6 +95,8 @@ do
 	end
 end
 
+local makeFrameForAddon
+
 local registeringFromAceEvent
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
@@ -135,7 +137,7 @@ function AceEvent:RegisterEvent(event, method, once)
 		else
 			if not addonFrames[self] then
 				-- HACK
-				addonFrames[self] = CreateFrame("Frame")
+				makeFrameForAddon(self)
 			end
 			addonFrames[self]:RegisterEvent(event)
 		end
@@ -208,7 +210,7 @@ function AceEvent:RegisterAllEvents(method)
 	else
 		if not addonFrames[self] then
 			-- HACK
-			addonFrames[self] = CreateFrame("Frame")
+			makeFrameForAddon(self)
 		end
 		addonFrames[self]:RegisterAllEvents()
 	end
@@ -460,7 +462,7 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 		delayParents[self] = new()
 		if not addonFrames[self] then
 			-- HACK
-			addonFrames[self] = CreateFrame("Frame")
+			makeFrameForAddon(self)
 		end
 		addonFrames[self]:Show()
 	end
@@ -597,7 +599,7 @@ function AceEvent:UnregisterEvent(event)
 			if not has then
 				if not addonFrames[self] then
 					-- HACK
-					addonFrames[self] = CreateFrame("Frame")
+					makeFrameForAddon(self)
 				end
 				addonFrames[self]:UnregisterEvent(event)
 			end
@@ -619,7 +621,7 @@ function AceEvent:UnregisterAllEvents()
 	else
 		if not addonFrames[self] then
 			-- HACK
-			addonFrames[self] = CreateFrame("Frame")
+			makeFrameForAddon(self)
 		end
 		addonFrame = addonFrames[self]
 	end
@@ -920,7 +922,7 @@ function AceEvent:ScheduleLeaveCombatAction(method, ...)
 	combatSchedules_self[#combatSchedules_self+1] = t
 	if not addonFrames[self] then
 		-- HACK
-		addonFrames[self] = CreateFrame("Frame")
+		makeFrameForAddon(self)
 	end
 	addonFrames[self]:RegisterEvent("PLAYER_REGEN_ENABLED")
 end
@@ -976,7 +978,7 @@ local function runEvent(obj, event, ...)
 	local registry_ALL_EVENTS_obj = registry[ALL_EVENTS] and registry[ALL_EVENTS][obj]
 	
 	if not registry_event_obj and not registry_ALL_EVENTS_obj then
-		return
+		return true
 	end
 	
 	local lastEvent = AceEvent.currentEvent
@@ -1204,7 +1206,9 @@ local function frame_OnEvent(this, event, ...)
 		end
 		return
 	else
-		return runEvent(obj, event, ...)
+		if runEvent(obj, event, ...) then
+			this:UnregisterEvent(event)
+		end
 	end
 end
 
@@ -1267,6 +1271,15 @@ local function frame_OnUpdate(this, elapsed)
 		delayParents[obj] = del(list)
 		this:Hide()
 	end
+end
+
+function makeFrameForAddon(self)
+	local frame = CreateFrame("Frame")
+	addonFrames[self] = frame
+	frame.obj = obj
+	frame:SetScript("OnEvent", frame_OnEvent)
+	frame:SetScript("OnUpdate", frame_OnUpdate)
+	frame:RegisterAllEvents()
 end
 
 function AceEvent:OnInstanceInit(obj)
