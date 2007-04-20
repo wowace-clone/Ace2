@@ -133,6 +133,10 @@ function AceEvent:RegisterEvent(event, method, once)
 		if self == method then
 			addonFrames[AceEvent]:RegisterEvent(event)
 		else
+			if not addonFrames[self] then
+				-- HACK
+				addonFrames[self] = CreateFrame("Frame")
+			end
 			addonFrames[self]:RegisterEvent(event)
 		end
 	end
@@ -202,6 +206,10 @@ function AceEvent:RegisterAllEvents(method)
 	if self == method then
 		addonFrames[AceEvent]:RegisterAllEvents()
 	else
+		if not addonFrames[self] then
+			-- HACK
+			addonFrames[self] = CreateFrame("Frame")
+		end
 		addonFrames[self]:RegisterAllEvents()
 	end
 
@@ -450,6 +458,10 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 	delayRegistry[t.id] = t
 	if not delayParents[self] then
 		delayParents[self] = new()
+		if not addonFrames[self] then
+			-- HACK
+			addonFrames[self] = CreateFrame("Frame")
+		end
 		addonFrames[self]:Show()
 	end
 	delayParents[self][t.id] = t
@@ -583,6 +595,10 @@ function AceEvent:UnregisterEvent(event)
 				has = true
 			end
 			if not has then
+				if not addonFrames[self] then
+					-- HACK
+					addonFrames[self] = CreateFrame("Frame")
+				end
 				addonFrames[self]:UnregisterEvent(event)
 			end
 		end
@@ -601,6 +617,10 @@ function AceEvent:UnregisterAllEvents()
 	if type(self) == "function" then
 		addonFrame = addonFrames[AceEvent]
 	else
+		if not addonFrames[self] then
+			-- HACK
+			addonFrames[self] = CreateFrame("Frame")
+		end
 		addonFrame = addonFrames[self]
 	end
 	if registry[ALL_EVENTS] and registry[ALL_EVENTS][self] then
@@ -898,6 +918,10 @@ function AceEvent:ScheduleLeaveCombatAction(method, ...)
 		combatSchedules[self] = combatSchedules_self
 	end
 	combatSchedules_self[#combatSchedules_self+1] = t
+	if not addonFrames[self] then
+		-- HACK
+		addonFrames[self] = CreateFrame("Frame")
+	end
 	addonFrames[self]:RegisterEvent("PLAYER_REGEN_ENABLED")
 end
 
