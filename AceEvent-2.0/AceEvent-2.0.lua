@@ -1298,6 +1298,7 @@ local function activate(self, oldLib, oldDeactivate)
 			if not addonFrames[obj] then
 				self:OnManualEmbed(obj)
 			end
+			assert(addonFrames[obj])
 		end
 	end
 	for obj, frame in pairs(addonFrames) do
