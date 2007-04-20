@@ -114,6 +114,7 @@ if not WoW22 then
 	end
 end
 
+local type = type
 local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
 	if type(num) ~= "number" then
 		return error(self, "Bad argument #3 to `argCheck' (number expected, got %s)", type(num))
