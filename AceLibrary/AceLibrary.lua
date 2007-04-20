@@ -114,33 +114,36 @@ if not WoW22 then
 	end
 end
 
-local type = type
-local function argCheck(self, arg, num, kind, kind2, kind3, kind4, kind5)
-	if type(num) ~= "number" then
-		return error(self, "Bad argument #3 to `argCheck' (number expected, got %s)", type(num))
-	elseif type(kind) ~= "string" then
-		return error(self, "Bad argument #4 to `argCheck' (string expected, got %s)", type(kind))
-	end
-	arg = type(arg)
-	if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 and arg ~= kind5 then
-		local stack = debugstack()
-		local func = stack:match("`argCheck'.-([`<].-['>])")
-		if not func then
-			func = stack:match("([`<].-['>])")
+local function makeArgCheck()
+	local type = type
+	return function(self, arg, num, kind, kind2, kind3, kind4, kind5)
+		if type(num) ~= "number" then
+			return error(self, "Bad argument #3 to `argCheck' (number expected, got %s)", type(num))
+		elseif type(kind) ~= "string" then
+			return error(self, "Bad argument #4 to `argCheck' (string expected, got %s)", type(kind))
 		end
-		if kind5 then
-			return error(self, "Bad argument #%s to %s (%s, %s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, kind5, arg)
-		elseif kind4 then
-			return error(self, "Bad argument #%s to %s (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, arg)
-		elseif kind3 then
-			return error(self, "Bad argument #%s to %s (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, arg)
-		elseif kind2 then
-			return error(self, "Bad argument #%s to %s (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, arg)
-		else
-			return error(self, "Bad argument #%s to %s (%s expected, got %s)", tonumber(num) or 0/0, func, kind, arg)
+		arg = type(arg)
+		if arg ~= kind and arg ~= kind2 and arg ~= kind3 and arg ~= kind4 and arg ~= kind5 then
+			local stack = debugstack()
+			local func = stack:match("`argCheck'.-([`<].-['>])")
+			if not func then
+				func = stack:match("([`<].-['>])")
+			end
+			if kind5 then
+				return error(self, "Bad argument #%s to %s (%s, %s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, kind5, arg)
+			elseif kind4 then
+				return error(self, "Bad argument #%s to %s (%s, %s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, kind4, arg)
+			elseif kind3 then
+				return error(self, "Bad argument #%s to %s (%s, %s, or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, kind3, arg)
+			elseif kind2 then
+				return error(self, "Bad argument #%s to %s (%s or %s expected, got %s)", tonumber(num) or 0/0, func, kind, kind2, arg)
+			else
+				return error(self, "Bad argument #%s to %s (%s expected, got %s)", tonumber(num) or 0/0, func, kind, arg)
+			end
 		end
 	end
 end
+local argCheck = makeArgCheck()
 
 local pcall
 do
@@ -538,7 +541,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 			rawset(instance, 'assert', assert)
 		end
 		if not rawget(instance, 'argCheck') then
-			rawset(instance, 'argCheck', argCheck)
+			rawset(instance, 'argCheck', makeArgCheck())
 		end
 		if not rawget(instance, 'pcall') then
 			rawset(instance, 'pcall', pcall)
@@ -605,7 +608,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		if not WoW22 then
 			self.assert = assert
 		end
-		self.argCheck = argCheck
+		self.argCheck = makeArgCheck()
 		self.pcall = pcall
 	end
 	deepTransfer(instance, newInstance, oldInstance, major)
@@ -624,7 +627,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 		rawset(instance, 'assert', assert)
 	end
 	if not rawget(instance, 'argCheck') then
-		rawset(instance, 'argCheck', argCheck)
+		rawset(instance, 'argCheck', makeArgCheck())
 	end
 	if not rawget(instance, 'pcall') then
 		rawset(instance, 'pcall', pcall)
@@ -640,7 +643,7 @@ function AceLibrary:Register(newInstance, major, minor, activateFunc, deactivate
 					rawset(i, 'assert', assert)
 				end
 				if not rawget(i, 'argCheck') or i.argCheck == old_argCheck then
-					rawset(i, 'argCheck', argCheck)
+					rawset(i, 'argCheck', makeArgCheck())
 				end
 				if not rawget(i, 'pcall') or i.pcall == old_pcall then
 					rawset(i, 'pcall', pcall)
