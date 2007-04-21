@@ -1334,8 +1334,21 @@ local function activate(self, oldLib, oldDeactivate)
 		for obj in pairs(oldLib.embedList) do
 			if not addonFrames[obj] then
 				self:OnManualEmbed(obj)
+				assert(addonFrames[obj])
 			end
-			assert(addonFrames[obj])
+		end
+	end
+	for event, data in pairs(registry) do
+		for obj, method in pairs(data) do
+			if type(obj) == "table" then
+				if not addonFrames[obj] then
+					self:OnManualEmbed(obj)
+					assert(addonFrames[obj])
+				end
+				if event == event:upper() then
+					addonFrames[obj]:RegisterEvent(event)
+				end
+			end
 		end
 	end
 	for obj, frame in pairs(addonFrames) do
