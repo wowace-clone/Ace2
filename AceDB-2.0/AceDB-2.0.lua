@@ -846,10 +846,12 @@ function AceDB:InitializeDB(addonName)
 	else
 		CrawlForDeserialization(_G[db.name])
 	end
-	if type(_G[db.charName]) ~= "table" then
-		_G[db.charName] = {}
-	else
-		CrawlForDeserialization(_G[db.charName])
+	if db.charName then
+		if type(_G[db.charName]) ~= "table" then
+			_G[db.charName] = {}
+		else
+			CrawlForDeserialization(_G[db.charName])
+		end
 	end
 	rawset(db, 'raw', _G[db.name])
 	if not db.raw.currentProfile then
