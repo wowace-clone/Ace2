@@ -13,7 +13,7 @@ License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceEvent-2.0"
-local MINOR_VERSION = "$Revision$"
+local MINOR_VERSION = tostring(("$Revision$"):match("(%d+)"))
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
@@ -1294,6 +1294,11 @@ AceEvent.OnManualEmbed = AceEvent.OnInstanceInit
 
 local function activate(self, oldLib, oldDeactivate)
 	AceEvent = self
+	
+	if oldLib and not oldLib.addonFrames then
+		error(("Error with AceEvent-2.0 upgrade path. Please upgrade all your AceEvent-2.0 instances to revision %d or install the Ace2 standalone from http://files.wowace.com/"):format(MINOR_VERSION))
+		return
+	end
 	
 	self.onceRegistry = oldLib and oldLib.onceRegistry or {}
 	onceRegistry = self.onceRegistry
