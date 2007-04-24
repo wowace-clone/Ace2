@@ -2719,8 +2719,8 @@ AceEvent.OnManualEmbed = AceEvent.OnInstanceInit
 local function activate(self, oldLib, oldDeactivate)
 	AceEvent = self
 	
-	if oldLib and not oldLib.addonFrames then
-		error(("Error with AceEvent-2.0 upgrade path. Please upgrade all your AceEvent-2.0 instances to revision %d or install the Ace2 standalone from http://files.wowace.com/"):format(MINOR_VERSION))
+	if oldLib and select(2,oldLib:GetLibraryVersion()) < 33494 then
+		message(("Error with AceEvent-2.0 upgrade path. Please upgrade all your AceEvent-2.0 instances to revision %d or install the Ace2 standalone from http://files.wowace.com/"):format(MINOR_VERSION))
 		return
 	end
 	
