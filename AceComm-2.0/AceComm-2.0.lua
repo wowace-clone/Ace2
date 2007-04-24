@@ -1499,6 +1499,7 @@ function AceComm:SendCommMessage(distribution, person, ...)
 		AceComm:error("`SetCommPrefix' must be called before sending a message.")
 	end
 	
+	local message
 	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
 		message = person
 	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
@@ -2843,7 +2844,7 @@ function ChatThrottleLib:SendAddonMessage(prio, prefix, text, chattype, target)
 	end
 	
 	-- Message needs to be queued
-	msg = self.MsgBin:Get()
+	local msg = self.MsgBin:Get()
 	msg.f = self.ORIG_SendAddonMessage
 	msg[1] = prefix
 	msg[2] = text
