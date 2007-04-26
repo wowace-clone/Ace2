@@ -701,6 +701,7 @@ function AceEvent:IsEventRegistered(event)
 	return false, nil
 end
 
+local UnitExists = UnitExists
 local bucketfunc
 function AceEvent:RegisterBucketEvent(event, delay, method, ...)
 	AceEvent:argCheck(event, 2, "string", "table")
@@ -760,19 +761,34 @@ function AceEvent:RegisterBucketEvent(event, delay, method, ...)
 		end
 	end
 	buckets[event][self].func = func
+	local isUnitBucket = true
 	if type(event) == "string" then
 		AceEvent.RegisterEvent(self, event, func)
+		if not event:find("^UNIT_") then
+			isUnitBucket = false
+		end
 	else
 		for _,v in ipairs(event) do
 			AceEvent.RegisterEvent(self, v, func)
+			if isUnitBucket and not v:find("^UNIT_") then
+				isUnitBucket = false
+			end
 		end
 	end
+	bucket.unit = isUnitBucket
 	if not bucketfunc then
 		bucketfunc = function(bucket)
 			local current = bucket.current
 			local method = bucket.method
 			local self = bucket.self
 			if bucket.run then
+				if bucket.unit then
+					for unit in pairs(current) do
+						if not UnitExists(unit) then
+							current[unit] = nil
+						end
+					end
+				end
 				if type(method) == "string" then
 					self[method](self, current, unpack(bucket, 1, bucket.n))
 				elseif method then -- function
@@ -2142,7 +2158,7 @@ function AceEvent:IsEventRegistered(event)
 	end
 	return false, nil
 end
-
+local UnitExists = UnitExists
 local bucketfunc
 function AceEvent:RegisterBucketEvent(event, delay, method, ...)
 	AceEvent:argCheck(event, 2, "string", "table")
@@ -2202,19 +2218,34 @@ function AceEvent:RegisterBucketEvent(event, delay, method, ...)
 		end
 	end
 	buckets[event][self].func = func
+	local isUnitBucket = true
 	if type(event) == "string" then
 		AceEvent.RegisterEvent(self, event, func)
+		if not event:find("^UNIT_") then
+			isUnitBucket = false
+		end
 	else
 		for _,v in ipairs(event) do
 			AceEvent.RegisterEvent(self, v, func)
+			if isUnitBucket and not v:find("^UNIT_") then
+				isUnitBucket = false
+			end
 		end
 	end
+	bucket.unit = isUnitBucket
 	if not bucketfunc then
 		bucketfunc = function(bucket)
 			local current = bucket.current
 			local method = bucket.method
 			local self = bucket.self
 			if bucket.run then
+				if bucket.unit then
+					for unit in pairs(current) do
+						if not UnitExists(unit) then
+							current[unit] = nil
+						end
+					end
+				end
 				if type(method) == "string" then
 					self[method](self, current, unpack(bucket, 1, bucket.n))
 				elseif method then -- function
