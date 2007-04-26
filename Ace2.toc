@@ -16,7 +16,6 @@ AceEvent-2.0\AceEvent-2.0.lua
 AceHook-2.1\AceHook-2.1.lua
 AceDB-2.0\AceDB-2.0.lua
 AceDebug-2.0\AceDebug-2.0.lua
-AceDebug-2.1\AceDebug-2.1.lua
 # AceLocale-2.0\AceLocale-2.0.lua
 # AceLocale-2.1\AceLocale-2.1.lua
 AceLocale-2.2\AceLocale-2.2.lua
