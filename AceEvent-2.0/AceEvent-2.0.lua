@@ -2416,12 +2416,14 @@ function makeFrameForAddon(self)
 end
 
 function AceEvent:OnInstanceInit(obj)
-	local frame = CreateFrame("Frame")
-	addonFrames[obj] = frame
-	frame.obj = obj
-	frame:SetScript("OnEvent", frame_OnEvent)
-	frame:SetScript("OnUpdate", frame_OnUpdate)
-	frame:Hide()
+	if not addonFrames[obj] then
+		local frame = CreateFrame("Frame")
+		addonFrames[obj] = frame
+		frame.obj = obj
+		frame:SetScript("OnEvent", frame_OnEvent)
+		frame:SetScript("OnUpdate", frame_OnUpdate)
+		frame:Hide()
+	end
 end
 AceEvent.OnManualEmbed = AceEvent.OnInstanceInit
 
@@ -2444,6 +2446,8 @@ local function activate(self, oldLib, oldDeactivate)
 	self.registry = oldLib and oldLib.registry or {}
 	registry = self.registry
 	self.frame = oldLib and oldLib.frame or CreateFrame("Frame", "AceEvent20Frame")
+	self.frame:SetScript("OnEvent", nil)
+	self.frame:SetScript("OnUpdate", nil)
 	self.debugTable = oldLib and oldLib.debugTable
 	if WoW21 then
 		self.playerLogin = IsLoggedIn() and true
