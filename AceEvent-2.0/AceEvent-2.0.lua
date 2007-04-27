@@ -1093,13 +1093,17 @@ local function activate(self, oldLib, oldDeactivate)
 		handleFullInit()
 		handleFullInit = nil
 	end
-
+	
 	
 	registeringFromAceEvent = true
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
 	inCombat = InCombatLockdown()
 	registeringFromAceEvent = nil
+	
+	for event in pairs(self.registry) do
+		self.frame:RegisterEvent(event)
+	end
 
 	self:activate(oldLib, oldDeactivate)
 	if oldLib then
