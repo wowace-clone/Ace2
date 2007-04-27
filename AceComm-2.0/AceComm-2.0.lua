@@ -86,8 +86,33 @@ local unpack = unpack
 local ipairs = ipairs
 local pairs = pairs
 local next = next
+local select = select
 
 local player = UnitName("player")
+
+local new, del
+do
+	local list = setmetatable({},{__mode='k'})
+	function new(...)
+		local t = next(list)
+		if t then
+			list[t] = nil
+			for i = 1, select('#', ...) do
+				t[i] = select(i, ...)
+			end
+			return t
+		else
+			return {...}
+		end
+	end
+	function del(t)
+		for k in pairs(t) do
+			t[k] = nil
+		end
+		list[t] = true
+		return nil
+	end
+end
 
 local NumericCheckSum, HexCheckSum, BinaryCheckSum
 local TailoredNumericCheckSum, TailoredHexCheckSum, TailoredBinaryCheckSum
@@ -293,10 +318,10 @@ local switches = {}
 local function SwitchChannel(former, latter)
 	if IsInChannel(former) then
 		LeaveChannelByName(former)
-		switches[{
-			former = former,
-			latter = latter
-		}] = true
+		local t = new()
+		t.former = former
+		t.latter = latter
+		switches[t] = true
 		return
 	end
 	if not IsInChannel(latter) then
@@ -336,12 +361,12 @@ local function SupposedToBeInChannel(chan)
 	end
 end
 
-local tmp = {}
 local function LeaveAceCommChannels(all)
 	if all then
 		shutdown = true
 	end
 	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
+	local tmp = new()
 	tmp[1] = a
 	tmp[2] = b
 	tmp[3] = c
@@ -359,9 +384,7 @@ local function LeaveAceCommChannels(all)
 			end
 		end
 	end
-	for i = 1, 10 do
-		tmp[i] = nil
-	end
+	tmp = del(tmp)
 end
 
 local lastRefix = 0
@@ -462,7 +485,7 @@ do
 		if not IsInChannel(k.latter) then
 			JoinChannelByName(k.latter)
 		end
-		switches[k] = nil
+		switches[k] = del(k)
 	end
 	
 	function AceComm:CHAT_MSG_CHANNEL_NOTICE(kind, _, _, deadName, _, _, _, num, channel)
@@ -486,7 +509,7 @@ do
 				self:ScheduleEvent("AceComm-JoinChannel-" .. channel, JoinChannel, 0, channel)
 			end
 			if AceComm.userRegistry[channel] then
-				AceComm.userRegistry[channel] = nil
+				AceComm.userRegistry[channel] = del(AceComm.userRegistry[channel])
 			end
 		elseif kind == "YOU_JOINED" then
 			if not (num == 0 and deadName or channel):find("^AceComm") then
@@ -494,10 +517,10 @@ do
 			end
 			if num == 0 then
 				self:ScheduleEvent("AceComm-LeaveChannelByName-" .. deadName, LeaveChannelByName, 0, deadName)
-				switches[{
-					former = deadName,
-					latter = deadName,
-				}] = true
+				local t = new()
+				t.former = deadName
+				t.latter = deadName
+				switches[t] = true
 			elseif channel == GetCurrentZoneChannel() then
 				self:TriggerEvent("AceComm_JoinedChannel", "ZONE")
 			elseif channel == "AceComm" then
@@ -638,7 +661,7 @@ do
 					AceComm:error("Cannot serialize an AceOO object if the class is not registered with AceLibrary.")
 				end
 				local classHash = TailoredBinaryCheckSum(v.class:GetLibraryVersion())
-				local t = { classHash, v:Serialize() }
+				local t = new(classHash, v:Serialize())
 				for i = 2, #t do
 					t[i] = _Serialize(t[i], textToHash)
 				end
@@ -648,7 +671,7 @@ do
 					end
 				end
 				local s = table.concat(t)
-				t = nil
+				t = del(t)
 				local len = s:len()
 				if len <= 255 then
 					return string_char(byte_o, len) .. s
@@ -656,7 +679,7 @@ do
 					return string_char(byte_O, math_floor(len / 256), len % 256) .. s
 				end
 			end
-			local t = {}
+			local t = new()
 			local islist = false
 			local n = #v
 			if n >= 1 then
@@ -690,7 +713,7 @@ do
 				end
 			end
 			local s = table.concat(t)
-			t = nil
+			t = del(t)
 			local len = s:len()
 			if islist then
 				if len <= 255 then
@@ -710,7 +733,7 @@ do
 	
 	function Serialize(value, textToHash)
 		if not recurse then
-			recurse = {}
+			recurse = new()
 		end
 		local chunk = _Serialize(value, textToHash)
 		for k in pairs(recurse) do
@@ -722,7 +745,6 @@ end
 
 local Deserialize
 do
-	local tmp = {}
 	local function _Deserialize(value, position, hashToText)
 		if not position then
 			position = 1
@@ -896,7 +918,7 @@ do
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local t = {}
+			local t = new()
 			local n = 0
 			local curr = start - 1
 			while curr < finish do
@@ -929,6 +951,7 @@ do
 				return nil, finish
 			end
 			local n = 0
+			local tmp = new()
 			while curr < finish do
 				local v
 				v, curr = _Deserialize(value, curr + 1, hashToText)
@@ -936,9 +959,7 @@ do
 				tmp[n] = v
 			end
 			local object = class:Deserialize(unpack(tmp, 1, n))
-			for i = 1, n do
-				tmp[i] = nil
-			end
+			tmp = del(tmp)
 			return object, finish
 		elseif x == byte_t or x == byte_T then
 			-- table
@@ -953,7 +974,7 @@ do
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local t = {}
+			local t = new()
 			local curr = start - 1
 			while curr < finish do
 				local key, l = _Deserialize(value, curr + 1, hashToText)
@@ -1047,20 +1068,20 @@ function AceComm:RegisterComm(prefix, distribution, method, a4)
 	
 	local registry = AceComm_registry
 	if not registry[distribution] then
-		registry[distribution] = {}
+		registry[distribution] = new()
 	end
 	if customChannel then
 		customChannel = "AceComm" .. customChannel
 		if not registry[distribution][customChannel] then
-			registry[distribution][customChannel] = {}
+			registry[distribution][customChannel] = new()
 		end
 		if not registry[distribution][customChannel][prefix] then
-			registry[distribution][customChannel][prefix] = {}
+			registry[distribution][customChannel][prefix] = new()
 		end
 		registry[distribution][customChannel][prefix][self] = method
 	else
 		if not registry[distribution][prefix] then
-			registry[distribution][prefix] = {}
+			registry[distribution][prefix] = new()
 		end
 		registry[distribution][prefix][self] = method
 	end
@@ -1118,11 +1139,11 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 		registry[distribution][customChannel][prefix][self] = nil
 		
 		if not next(registry[distribution][customChannel][prefix]) then
-			registry[distribution][customChannel][prefix] = nil
+			registry[distribution][customChannel][prefix] = del(registry[distribution][customChannel][prefix])
 		end
 		
 		if not next(registry[distribution][customChannel]) then
-			registry[distribution][customChannel] = nil
+			registry[distribution][customChannel] = del(registry[distribution][customChannel])
 		end
 	else
 		if not registry[distribution] or not registry[distribution][prefix] or not registry[distribution][prefix][self] then
@@ -1131,12 +1152,12 @@ function AceComm:UnregisterComm(prefix, distribution, customChannel)
 		registry[distribution][prefix][self] = nil
 		
 		if not next(registry[distribution][prefix]) then
-			registry[distribution][prefix] = nil
+			registry[distribution][prefix] = del(registry[distribution][prefix])
 		end
 	end
 	
 	if not next(registry[distribution]) then
-		registry[distribution] = nil
+		registry[distribution] = del(registry[distribution])
 	end
 	
 	RefixAceCommChannelsAndEvents()
@@ -1419,7 +1440,6 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	return false
 end
 
-local tmp = {}
 function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	AceComm:argCheck(priority, 2, "string")
 	if priority ~= "NORMAL" and priority ~= "BULK" and priority ~= "ALERT" then
@@ -1448,11 +1468,13 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	
 	local message
 	
+	local tmp
 	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
 		message = person
 	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
 		message = ...
 	else
+		tmp = new()
 		message = tmp
 		local n = 1
 		if includePerson then
@@ -1467,11 +1489,8 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
-	if message == tmp then
-		local n = #tmp
-		for i = 1, n do
-			tmp[i] = nil
-		end
+	if tmp then
+		tmp = del(tmp)
 	end
 	
 	return ret
@@ -1500,11 +1519,13 @@ function AceComm:SendCommMessage(distribution, person, ...)
 	end
 	
 	local message
+	local tmp
 	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
 		message = person
 	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
 		message = ...
 	else
+		tmp = new()
 		message = tmp
 		local n = 1
 		if includePerson then
@@ -1521,11 +1542,8 @@ function AceComm:SendCommMessage(distribution, person, ...)
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
-	if message == tmp then
-		local n = #tmp
-		for i = 1, n do
-			tmp[i] = nil
-		end
+	if tmp then
+		tmp = del(tmp)
 	end
 	
 	return ret
@@ -1583,8 +1601,8 @@ function AceComm:RegisterMemoizations(values)
 	elseif AceComm.prefixMemoizations[AceComm.commPrefixes[self]] then
 		AceComm:error("Another addon with prefix %q has already registered memoizations.", AceComm.commPrefixes[self])
 	end
-	local hashToText = {}
-	local textToHash = {}
+	local hashToText = new()
+	local textToHash = new()
 	for _,text in ipairs(values) do
 		local hash = TailoredNumericCheckSum(text)
 		if hashToText[hash] then
@@ -1608,7 +1626,6 @@ local function CheckRefix()
 	end
 end
 
-local stack = setmetatable({}, {__mode='k'})
 local function HandleMessage(prefix, message, distribution, sender, customChannel)
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	local isCustom = distribution == "CUSTOM"
@@ -1656,9 +1673,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			if current ~= 1 then
 				return
 			end
-			local t = next(stack) or {}
-			stack[t] = nil
-			queue[x] = t
+			queue[x] = new()
 		end
 		local chunk = queue[x]
 		chunk.time = GetTime()
@@ -1669,12 +1684,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			if not success then
 				return
 			end
-			local t = queue[x]
-			queue[x] = nil
-			for k in pairs(t) do
-				t[k] = nil
-			end
-			stack[t] = true
+			queue[x] = del(queue[x])
 		else
 			return
 		end
@@ -1960,7 +1970,7 @@ function AceComm:CHAT_MSG_CHANNEL_LIST(text, _, _, _, _, _, _, _, channel)
 	end
 	
 	if not AceComm.userRegistry[channel] then
-		AceComm.userRegistry[channel] = {}
+		AceComm.userRegistry[channel] = new()
 	end
 	local t = AceComm.userRegistry[channel]
 	for k in text:gmatch("[^, @%*#]+") do
@@ -1974,7 +1984,7 @@ function AceComm:CHAT_MSG_CHANNEL_JOIN(_, user, _, _, _, _, _, _, channel)
 	end
 	
 	if not AceComm.userRegistry[channel] then
-		AceComm.userRegistry[channel] = {}
+		AceComm.userRegistry[channel] = new()
 	end
 	local t = AceComm.userRegistry[channel]
 	t[user] = true
@@ -1986,7 +1996,7 @@ function AceComm:CHAT_MSG_CHANNEL_LEAVE(_, user, _, _, _, _, _, _, channel)
 	end
 	
 	if not AceComm.userRegistry[channel] then
-		AceComm.userRegistry[channel] = {}
+		AceComm.userRegistry[channel] = new()
 	end
 	local t = AceComm.userRegistry[channel]
 	if t[user] then
