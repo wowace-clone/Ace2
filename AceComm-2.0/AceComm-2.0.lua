@@ -48,7 +48,7 @@ local byte_A = ("A"):byte()
 local byte_Z = ("Z"):byte()
 local byte_fake_s = ("\015"):byte()
 local byte_fake_S = ("\020"):byte()
-local byte_deg = ("°"):byte()
+local byte_deg = ("\176"):byte()
 local byte_percent = ("%"):byte() -- 37
 
 local byte_b = ("b"):byte()
@@ -144,7 +144,7 @@ do
 		local a = math_floor(hash / 256^2)
 		local b = math_floor(hash / 256) % 256
 		local c = hash % 256
-		-- \000, \n, |, °, s, S, \015, \020
+		-- \000, \n, |, \176, s, S, \015, \020
 		if a == 0 or a == 10 or a == 124 or a == 176 or a == 115 or a == 83 or a == 15 or a == 20 or a == 37 then
 			a = a + 1
 		-- \t, \255
@@ -231,13 +231,13 @@ local function Encode(text, drunk)
     	text = text:gsub("%%", "\029\038") -- %
     	-- encode assorted prohibited characters
     else
-        text = text:gsub("°", "°±")
+        text = text:gsub("\176", "\176\177")
         
-    	text = text:gsub("\255", "°\254") -- \255 (this is here because \000 is more common)
+    	text = text:gsub("\255", "\176\254") -- \255 (this is here because \000 is more common)
     	text = text:gsub("%z", "\255") -- \000
-    	text = text:gsub("\010", "°\011") -- \n
-    	text = text:gsub("\124", "°\125") -- |
-    	text = text:gsub("%%", "°\038") -- %
+    	text = text:gsub("\010", "\176\011") -- \n
+    	text = text:gsub("\124", "\176\125") -- |
+    	text = text:gsub("%%", "\176\038") -- %
     	-- encode assorted prohibited characters
     end
 	return text
@@ -248,8 +248,8 @@ local function func(text)
 		return "\015"
 	elseif text == "\021" then
 		return "\020"
-	elseif text == "±" then
-		return "°"
+	elseif text == "\177" then
+		return "\176"
 	elseif text == "\254" then
 		return "\255"
 	elseif text == "\011" then
@@ -287,7 +287,7 @@ local function Decode(text, drunk)
 	else
 	    text = text:gsub("\255", "\000")
 	    
-    	text = text:gsub("°([±\254\011\125\038])", func)
+    	text = text:gsub("\176([\177\254\011\125\038])", func)
 	end
 	-- remove the hidden character and refix the prohibited characters.
 	return text
@@ -1288,17 +1288,17 @@ end
 
 local function soberEncodedChar(x)
 	if x == 10 then
-		return "°\011"
+		return "\176\011"
 	elseif x == 0 then
 		return "\255"
 	elseif x == 255 then
-		return "°\254"
+		return "\176\254"
 	elseif x == 124 then
-		return "°\125"
+		return "\176\125"
 	elseif x == byte_deg then
-		return "°±"
+		return "\176\177"
 	elseif x == 37 then
-		return "°\038"
+		return "\176\038"
 	end
 	return string_char(x)
 end
