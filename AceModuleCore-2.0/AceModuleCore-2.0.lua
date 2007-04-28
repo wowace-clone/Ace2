@@ -47,31 +47,54 @@ local function getlibrary(lib)
 	end
 end
 
+local new, del
+do
+	local list = setmetatable({}, {__mode='k'})
+	function new()
+		local t = next(list)
+		if t then
+			list[t] = nil
+			return t
+		else
+			return {}
+		end
+	end
+	function del(t)
+		for k in pairs(t) do
+			t[k] = nil
+		end
+		list[t] = true
+		return nil
+	end
+end
+
 local iterList = setmetatable({}, {__mode='v'})
 do
 	local function func(t)
 		local i = t.i + 1
-		local k = t[i]
+		local l = t.l
+		local k = l[i]
 		if k then
 			t.i = i
-			return k, t.m[k]
+			return k, l.m[k]
 		else
-			t.i = nil
+			t = del(t)
 		end
 	end
 	function AceModuleCore:IterateModules()
-		local t = iterList[self]
-		if not t then
-			t = {}
+		local list = iterList[self]
+		if not list then
+			list = new()
 			for k in pairs(self.modules) do
-				t[#t+1] = k
+				list[#list+1] = k
 			end
-			table.sort(t)
-			t.m = self.modules
-			iterList[self] = t
+			table.sort(list)
+			list.m = self.modules
+			iterList[self] = list
 		end
-		if t.i then error("You can't nest calls to :IterateModules().") end
+		local t = new()
 		t.i = 0
+		t.l = list
 		return func, t, nil
 	end
 end
@@ -88,8 +111,10 @@ function AceModuleCore:NewModule(name, ...)
 	if self.modules[name] then
 		AceModuleCore:error("The module %q has already been registered", name)
 	end
-
-	iterList[self] = nil
+	
+	if iterList[self] then
+		iterList[self] = del(iterList[self])
+	end
 
 	for i = 1, select('#', ...) do
 		tmp[i] = getlibrary((select(i, ...)))
