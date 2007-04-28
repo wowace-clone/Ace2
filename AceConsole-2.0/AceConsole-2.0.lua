@@ -1047,7 +1047,11 @@ local function printUsage(self, handler, realOptions, options, path, args, passV
 					var = tmp
 					for k,v in pairs(options.validate) do
 						local val = type(k) ~= "number" and k or v
-						var[val] = passTable.get(passValue, val) or nil
+						if passValue == nil then
+							var[val] = passTable.get(val) or nil
+						else
+							var[val] = passTable.get(passValue, val) or nil
+						end
 					end
 				end
 			else
@@ -1062,7 +1066,11 @@ local function printUsage(self, handler, realOptions, options, path, args, passV
 					var = tmp
 					for k,v in pairs(options.validate) do
 						local val = type(k) ~= "number" and k or v
-						var[val] = handler[passTable.get](handler, passValue, val) or nil
+						if passValue == nil then
+							var[val] = handler[passTable.get](handler, val) or nil
+						else
+							var[val] = handler[passTable.get](handler, passValue, val) or nil
+						end
 					end
 				end
 			end
@@ -1071,12 +1079,16 @@ local function printUsage(self, handler, realOptions, options, path, args, passV
 			if not options.get then
 			elseif type(options.get) == "function" then
 				if not multiToggle then
-					var = options.get()
+					var = options.get(passValue)
 				else
 					var = tmp
 					for k,v in pairs(options.validate) do
 						local val = type(k) ~= "number" and k or v
-						var[val] = options.get(val) or nil
+						if passValue == nil then
+							var[val] = options.get(val) or nil
+						else
+							var[val] = options.get(passValue, val) or nil
+						end
 					end
 				end
 			else
@@ -1085,12 +1097,16 @@ local function printUsage(self, handler, realOptions, options, path, args, passV
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 				end
 				if not multiToggle then
-					var = handler[options.get](handler)
+					var = handler[options.get](handler, passValue)
 				else
 					var = tmp
 					for k,v in pairs(options.validate) do
 						local val = type(k) ~= "number" and k or v
-						var[val] = handler[options.get](handler, val) or nil
+						if passValue == nil then
+							var[val] = handler[options.get](handler, val) or nil
+						else
+							var[val] = handler[options.get](handler, passValue, val) or nil
+						end
 					end
 				end
 			end
@@ -1178,13 +1194,13 @@ local function printUsage(self, handler, realOptions, options, path, args, passV
 			end
 		else
 			if type(options.get) == "function" then
-				var = options.get()
+				var = options.get(passValue)
 			else
 				local handler = options.handler or handler
 				if type(handler[options.get]) ~= "function" then
 					AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options.get)))
 				end
-				var = handler[options.get](handler)
+				var = handler[options.get](handler, passValue)
 			end
 		end
 		
