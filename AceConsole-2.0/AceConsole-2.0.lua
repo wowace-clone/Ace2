@@ -1928,9 +1928,9 @@ local function handlerFunc(self, chat, msg, options)
 						AceConsole:error("%s: %s", handler, OPTION_HANDLER_NOT_FOUND:format(tostring(options_p.set)))
 					end
 					if passValue then
-						handler[passTable.set](handler, passValue, arg)
+						handler[options_p.set](handler, passValue, arg)
 					else
-						handler[passTable.set](handler, arg)
+						handler[options_p.set](handler, arg)
 					end
 				end
 			end
