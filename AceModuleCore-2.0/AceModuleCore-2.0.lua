@@ -50,18 +50,13 @@ end
 local iterList = setmetatable({}, {__mode='v'})
 do
 	local function func(t)
-		local i = t.i
-		if not i then
-			return nil
-		end
-		i = i + 1
+		local i = t.i + 1
 		local k = t[i]
 		if k then
 			t.i = i
 			return k, t.m[k]
 		else
 			t.i = nil
-			return nil
 		end
 	end
 	function AceModuleCore:IterateModules()
@@ -75,6 +70,7 @@ do
 			t.m = self.modules
 			iterList[self] = t
 		end
+		if t.i then error("You can't nest calls to :IterateModules().") end
 		t.i = 0
 		return func, t, nil
 	end
@@ -92,9 +88,9 @@ function AceModuleCore:NewModule(name, ...)
 	if self.modules[name] then
 		AceModuleCore:error("The module %q has already been registered", name)
 	end
-	
+
 	iterList[self] = nil
-	
+
 	for i = 1, select('#', ...) do
 		tmp[i] = getlibrary((select(i, ...)))
 	end
@@ -211,10 +207,8 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			AceModuleCore:error("Cannot find module %q", module)
 		end
 		module = self:GetModule(module)
-	else
-		if not self:IsModule(module) then
-			AceModuleCore:error("%q is not a module", module)
-		end
+	elseif not self:IsModule(module) then
+		AceModuleCore:error("%q is not a module", module)
 	end
 
 	local disable
@@ -258,8 +252,7 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		self.disabledModules[module.name] = disable or nil
 	end
 	if AceOO.inherits(module, "AceAddon-2.0") then
-		local AceAddon = AceLibrary("AceAddon-2.0")
-		if not AceAddon.addonsStarted[module] then
+		if not AceLibrary("AceAddon-2.0").addonsStarted[module] then
 			return
 		end
 	end
