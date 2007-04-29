@@ -414,6 +414,26 @@ function AceModuleCore.OnEmbedProfileDisable(AceModuleCore, self, newProfile)
 	end
 end
 
+function AceModuleCore:Ace2_AddonEnabled(module, first)
+	local addon = self.totalModules[module]
+	if not addon then
+		return
+	end
+	if type(addon.OnModuleEnable) == "function" then
+		safecall(addon.OnModuleEnable, addon, module, first)
+	end
+end
+
+function AceModuleCore:Ace2_AddonDisabled(module)
+	local addon = self.totalModules[module]
+	if not addon then
+		return
+	end
+	if type(addon.OnModuleDisable) == "function" then
+		safecall(addon.OnModuleDisable, addon, module)
+	end
+end
+
 local function activate(self, oldLib, oldDeactivate)
 	AceModuleCore = self
 
@@ -426,11 +446,16 @@ local function activate(self, oldLib, oldDeactivate)
 	end
 end
 
-local function external(self, major, instance)  
-	if major == "AceEvent-2.0" then  
-		AceEvent = instance  
-	end  
-end 
+local function external(self, major, instance)
+	if major == "AceEvent-2.0" then
+		AceEvent = instance
+		AceEvent:embed(self)
+		
+		self:UnregisterAllEvents()
+		self:RegisterEvent("Ace2_AddonEnabled")
+		self:RegisterEvent("Ace2_AddonDisabled")
+	end
+end
 
 AceLibrary:Register(AceModuleCore, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 AceModuleCore = AceLibrary(MAJOR_VERSION)
