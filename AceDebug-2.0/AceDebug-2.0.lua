@@ -49,7 +49,17 @@ else -- enUS
 end
 
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
-local AceDebug = AceOO.Mixin {"Debug", "CustomDebug", "IsDebugging", "SetDebugging", "SetDebugLevel", "LevelDebug", "CustomLevelDebug", "GetDebugLevel"}
+local AceDebug = AceOO.Mixin {
+	"Debug",
+	"CustomDebug",
+	"IsDebugging",
+	"SetDebugging",
+	"SetDebugLevel",
+	"LevelDebug",
+	"CustomLevelDebug",
+	"GetDebugLevel",
+	"GetDebugPrefix",
+}
 
 local function print(text, r, g, b, frame, delay)
 	(frame or DEFAULT_CHAT_FRAME):AddMessage(text, r, g, b, 1, delay or 5)
@@ -62,7 +72,7 @@ function AceDebug:CustomDebug(r, g, b, frame, delay, a1, ...)
 		return
 	end
 
-	local output = ("|cff7fff7f(DEBUG) %s:[%s.%3d]|r"):format(tostring(self), date("%H:%M:%S"), (GetTime() % 1) * 1000)
+	local output = self:GetDebugPrefix()
 	
 	a1 = tostring(a1)
 	if a1:find("%%") and select('#', ...) >= 1 then
@@ -130,6 +140,10 @@ function AceDebug:SetDebugLevel(level)
 	self.debuglevel = level
 end
 
+function AceDebug:GetDebugPrefix()
+	return ("|cff7fff7f(DEBUG) %s:[%s.%3d]|r"):format( tostring(self), date("%H:%M:%S"), (GetTime() % 1) * 1000)
+end
+
 function AceDebug:GetDebugLevel()
 	return self.debuglevel
 end
@@ -142,7 +156,7 @@ function AceDebug:CustomLevelDebug(level, r, g, b, frame, delay, a1, ...)
 	end
 	if level > self.debuglevel then return end
 
-	local output = ("|cff7fff7f(DEBUG) %s:[%s.%3d]|r"):format( tostring(self), date("%H:%M:%S"), (GetTime() % 1) * 1000)
+	local output = self:GetDebugPrefix()
 
 	a1 = tostring(a1)
 	if a1:find("%%") and select('#', ...) >= 1 then
