@@ -342,6 +342,20 @@ do
 	end
 end
 
+local function TryToEnable(addon)
+	local isondemand = IsAddOnLoadOnDemand(addon)
+	if isondemand then
+		local _, _, _, enabled = GetAddOnInfo(addon)
+		EnableAddOn(addon)
+		local _, _, _, _, loadable = GetAddOnInfo(addon)
+		if not loadable and not enabled then
+			DisableAddOn(addon)
+		end
+
+		return loadable
+	end
+end
+
 -- @method      TryToLoadStandalone
 -- @brief       Attempt to find and load a standalone version of the requested library
 -- @param major A string representing the major version
@@ -353,7 +367,9 @@ local function TryToLoadStandalone(major)
 
 	AceLibrary.scannedlibs[major] = true
 
-	local name, _, _, _, loadable = GetAddOnInfo(major)
+	local name, _, _, enabled, loadable = GetAddOnInfo(major)
+	
+	loadable = (enabled and loadable) or TryToEnable(addon)
 	if loadable then
 		return LoadAddOn(name)
 	end
