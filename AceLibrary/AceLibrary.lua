@@ -369,7 +369,7 @@ local function TryToLoadStandalone(major)
 
 	local name, _, _, enabled, loadable = GetAddOnInfo(major)
 	
-	loadable = (enabled and loadable) or TryToEnable(addon)
+	loadable = (enabled and loadable) or TryToEnable(name)
 	if loadable then
 		return LoadAddOn(name)
 	end
