@@ -462,6 +462,7 @@ function AceHook:Unhook(obj, method)
 end
 
 function AceHook:UnhookAll()
+	if type(registry[self]) ~= "table" then return end
 	for key, value in pairs(registry[self]) do
 		if type(key) == "table" then
 			for method in pairs(value) do
