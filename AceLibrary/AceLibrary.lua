@@ -24,6 +24,10 @@ local _G = getfenv(0)
 local previous = _G[ACELIBRARY_MAJOR]
 if previous and not previous:IsNewVersion(ACELIBRARY_MAJOR, ACELIBRARY_MINOR) then return end
 
+-- If you don't want AceLibrary to enable libraries that are LoadOnDemand but
+-- disabled in the addon screen, set this to true.
+local DONT_ENABLE_LIBRARIES = nil
+
 local function safecall(func,...)
     local success, err = pcall(func,...)
     if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("\n(.-: )in.-\n") or "") .. err) end
@@ -343,6 +347,7 @@ do
 end
 
 local function TryToEnable(addon)
+	if DONT_ENABLE_LIBRARIES then return end
 	local isondemand = IsAddOnLoadOnDemand(addon)
 	if isondemand then
 		local _, _, _, enabled = GetAddOnInfo(addon)
@@ -449,7 +454,6 @@ end
 -- @param major A string representing the major version.
 -- @param minor (optional) An integer or an svn revision string representing the minor version.
 -- @return      The library with the given major/minor version.
-local count = 0
 function AceLibrary:GetInstance(major, minor)
 	argCheck(self, major, 2, "string")
 	if minor ~= false then
