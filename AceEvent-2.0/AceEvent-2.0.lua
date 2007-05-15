@@ -2575,7 +2575,8 @@ local function activate(self, oldLib, oldDeactivate)
 				if registry["LANGUAGE_LIST_CHANGED"] and registry["LANGUAGE_LIST_CHANGED"][self] then
 					self:UnregisterEvent("LANGUAGE_LIST_CHANGED")
 				end
-				if not StaticPopupDialogs["AceProfilingAlert"] and GetCVar("scriptProfile") then
+				local profiling = tonumber(GetCVar("scriptProfile"))
+				if not StaticPopupDialogs["AceProfilingAlert"] and type(profiling) == "number" and profiling == 1 then
 					local stack = debugstack()
 					if type(stack) == "string" and not stack:find("Interface\\AddOns\\Ace") then
 						-- Thanks a lot, Blizzard, for disabling message() when
