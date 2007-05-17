@@ -36,7 +36,8 @@ local AceModuleCore = AceOO.Mixin {
 									"SetModuleMixins", 
 									"SetModuleClass",
 									"IsModuleActive",
-									"ToggleModuleActive"
+									"ToggleModuleActive",
+									"SetModuleDefaultState",
 								  }
 
 local function getlibrary(lib)
@@ -223,6 +224,53 @@ function AceModuleCore:SetModuleClass(class)
 	self.modulePrototype = class.prototype
 end
 
+local mt = {__index=function(self, key)
+	self[key] = false
+	return false
+end}
+local defaultState = setmetatable({}, {__index=function(self, key)
+	local t = setmetatable({}, mt)
+	self[key] = t
+	return t
+end})
+
+local function isDisabled(core, module)
+	local moduleName
+	if type(module) == "table" then
+		moduleName = module.name
+	else
+		moduleName = module
+	end
+	local disabled
+	if type(module) == "table" and type(module.IsActive) == "function" then
+		return not module:IsActive()
+	elseif AceOO.inherits(core, "AceDB-2.0") then
+		local _,profile = core:GetProfile()
+		disabled = core.db and core.db.raw and core.db.raw.disabledModules and core.db.raw.disabledModules[profile] and core.db.raw.disabledModules[profile][moduleName]
+	else
+		disabled = core.disabledModules and core.disabledModules[moduleName]
+	end
+	if disabled == nil then
+		return defaultState[core][moduleName]
+	else
+		return disabled
+	end
+end
+
+function AceModuleCore:SetModuleDefaultState(module, state)
+	AceModuleCore:argCheck(module, 2, "table", "string")
+	AceModuleCore:argCheck(state, 3, "boolean")
+	
+	if type(module) == "table" then
+		if not self:IsModule(module) then
+			AceModuleCore:error("%q is not a module", module)
+		end
+		module = module.name
+	end
+	
+	defaultState[self][module] = not state
+end
+
 function AceModuleCore:ToggleModuleActive(module, state)
 	AceModuleCore:argCheck(module, 2, "table", "string")
 	AceModuleCore:argCheck(state, 3, "nil", "boolean")
@@ -260,7 +308,11 @@ function AceModuleCore:ToggleModuleActive(module, state)
 			self.db.raw.disabledModules[profile] = {}
 		end
 		if type(self.db.raw.disabledModules[profile][module.name]) ~= "table" then
-			self.db.raw.disabledModules[profile][module.name] = disable or nil
+			local value = nil
+			if disable ~= defaultState[self][module.name] then
+				value = disable
+			end
+			self.db.raw.disabledModules[profile][module.name] = value
 		end
 		if not disable then
 			if not next(self.db.raw.disabledModules[profile]) then
@@ -274,7 +326,11 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		if type(self.disabledModules) ~= "table" then
 			self.disabledModules = {}
 		end
-		self.disabledModules[module.name] = disable or nil
+		local value = nil
+		if disable ~= defaultState[self][module.name] then
+			value = disable
+		end
+		self.disabledModules[module.name] = value
 	end
 	if AceOO.inherits(module, "AceAddon-2.0") then
 		if not AceLibrary("AceAddon-2.0").addonsStarted[module] then
@@ -366,14 +422,7 @@ function AceModuleCore:IsModuleActive(module, notLoaded)
 		end
 	end
 	
-	if type(module) == "table" and type(module.IsActive) == "function" then
-		return module:IsActive()
-	elseif AceOO.inherits(self, "AceDB-2.0") then
-		local _,profile = self:GetProfile()
-		return not self.db or not self.db.raw or not self.db.raw.disabledModules or not self.db.raw.disabledModules[profile] or not self.db.raw.disabledModules[profile][type(module) == "table" and module.name or module]
-	else
-		return not self.disabledModules or not self.disabledModules[type(module) == "table" and module.name or module]
-	end
+	return not isDisabled(self, module)
 end
 
 function AceModuleCore:OnInstanceInit(target)
