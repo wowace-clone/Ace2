@@ -1137,8 +1137,6 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
-local SCRIPT_PROFILING_ENABLED_ALERT = "You are running with CPU profiling enabled.\n\nNote that when you run with libraries embedded in your addons, their CPU and memory usage will be reported as belonging to that addon, which is not entirely true if you use other addons that make use of the same libraries."
-
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local Mixin = AceOO.Mixin
 local AceEvent = Mixin {
@@ -2574,23 +2572,6 @@ local function activate(self, oldLib, oldDeactivate)
 				end
 				if registry["LANGUAGE_LIST_CHANGED"] and registry["LANGUAGE_LIST_CHANGED"][self] then
 					self:UnregisterEvent("LANGUAGE_LIST_CHANGED")
-				end
-				local profiling = tonumber(GetCVar("scriptProfile"))
-				if not StaticPopupDialogs["AceProfilingAlert"] and type(profiling) == "number" and profiling == 1 then
-					local stack = debugstack()
-					if type(stack) == "string" and not stack:find("Interface\\AddOns\\Ace") then
-						-- Thanks a lot, Blizzard, for disabling message() when
-						-- scriptError is disabled.
-						StaticPopupDialogs["AceProfilingAlert"] = {
-							text = SCRIPT_PROFILING_ENABLED_ALERT,
-							button1 = TEXT(CLOSE) or "Close",
-							showAlert = 1,
-							timeout = 0,
-							hideOnEscape = 1,
-							whileDead = 1,
-						}
-						StaticPopup_Show("AceProfilingAlert")
-					end
 				end
 				collectgarbage('collect')
 			end
