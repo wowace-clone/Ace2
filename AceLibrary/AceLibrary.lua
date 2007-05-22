@@ -364,7 +364,7 @@ end
 -- @method      TryToLoadStandalone
 -- @brief       Attempt to find and load a standalone version of the requested library
 -- @param major A string representing the major version
--- @return      If library is found, return values from the call to LoadAddOn are returned
+-- @return      If library is found and loaded, true is return. If not loadable, false is returned.
 --              If the library has been requested previously, nil is returned.
 local function TryToLoadStandalone(major)
 	if not AceLibrary.scannedlibs then AceLibrary.scannedlibs = {} end
@@ -375,8 +375,11 @@ local function TryToLoadStandalone(major)
 	local name, _, _, enabled, loadable = GetAddOnInfo(major)
 	
 	loadable = (enabled and loadable) or TryToEnable(name)
+	
+	local loaded = false
 	if loadable then
-		return LoadAddOn(name)
+		loaded = true
+		LoadAddOn(name)
 	end
 	
 	local field = "X-AceLibrary-" .. major 
@@ -386,10 +389,12 @@ local function TryToLoadStandalone(major)
 			
 			loadable = (enabled and loadable) or TryToEnable(name)
 			if loadable then
-				return LoadAddOn(name)
+				loaded = true
+				LoadAddOn(name)
 			end
 		end
 	end
+	return loaded
 end
 
 -- @method      IsNewVersion
