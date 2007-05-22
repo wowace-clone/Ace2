@@ -592,6 +592,7 @@ function AceAddon:InitializeAddon(addon, name)
 		current = current.super
 	end
 	local n = AceAddon.addonsToOnEnable and #AceAddon.addonsToOnEnable or 0
+	
 	if type(addon.OnInitialize) == "function" then
 		safecall(addon.OnInitialize, addon, name)
 	end
