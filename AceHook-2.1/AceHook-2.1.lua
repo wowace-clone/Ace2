@@ -399,6 +399,9 @@ function AceHook:Hook(object, method, handler, hookSecure)
 		AceHook:argCheck(method, 3, "string")
 		AceHook:argCheck(handler, 4, "function", "string", "nil")
 		AceHook:argCheck(hookSecure, 5, "boolean", "nil")
+		if not object[method] then
+			AceHook:error("Attempt to hook method %q failed, it does not exist in the given object %q.", method, object)
+		end
 		if not hookSecure and issecurevariable(object, method) then
 			AceHook:error("Attempt to hook secure method %q. Use `SecureHook' or add `true' to the argument list to override.", method)
 		end
@@ -416,6 +419,9 @@ function AceHook:SecureHook(object, method, handler)
 		AceHook:argCheck(object, 2, "table")
 		AceHook:argCheck(method, 3, "string")
 		AceHook:argCheck(handler, 4, "function", "string", "nil")
+		if not object[method] then
+			AceHook:error("Attempt to hook method %q failed, it does not exist in the given object %q.", method, object)
+		end
 		hookMethod(self, object, method, handler, false, true)
 	end
 end
