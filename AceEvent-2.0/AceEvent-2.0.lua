@@ -44,8 +44,6 @@ local AceEvent = Mixin {
 
 local weakKey = {__mode="k"}
 
-local WoW21 = IsLoggedIn and true
-
 local FAKE_NIL
 local RATE
 
@@ -971,14 +969,8 @@ function AceEvent:IsFullyInitialized()
 	return self.postInit or false
 end
 
-if WoW21 then
-	function AceEvent:IsPostPlayerLogin()
-		return IsLoggedIn() and true or false
-	end
-else
-	function AceEvent:IsPostPlayerLogin()
-		return self.playerLogin or false
-	end
+function AceEvent:IsPostPlayerLogin()
+	return IsLoggedIn() and true or false
 end
 
 local function activate(self, oldLib, oldDeactivate)
@@ -991,11 +983,7 @@ local function activate(self, oldLib, oldDeactivate)
 	self.registry = oldLib and oldLib.registry or {}
 	self.frame = oldLib and oldLib.frame or CreateFrame("Frame", "AceEvent20Frame")
 	self.debugTable = oldLib and oldLib.debugTable
-	if WoW21 then
-		self.playerLogin = IsLoggedIn() and true
-	else
-		self.playerLogin = oldLib and oldLib.pew or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage and true
-	end
+	self.playerLogin = IsLoggedIn() and true
 	self.postInit = oldLib and oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
 	self.ALL_EVENTS = oldLib and oldLib.ALL_EVENTS or {}
 	self.FAKE_NIL = oldLib and oldLib.FAKE_NIL or {}

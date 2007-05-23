@@ -40,8 +40,6 @@ AceComm.hooks = {}
 
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
 
-local WoW21 = GameTooltip_ShowCompareItem and true
-
 local byte_a = ("a"):byte()
 local byte_z = ("z"):byte()
 local byte_A = ("A"):byte()
@@ -415,17 +413,8 @@ local function RefixAceCommChannelsAndEvents()
 			end
 		end
 	end
-	if WoW21 then
-		if AceComm_registry.WHISPER or AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
-			addon = true
-		end
-	else
-		if AceComm_registry.WHISPER then
-			whisper = true
-		end
-		if AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
-			addon = true
-		end
+	if AceComm_registry.WHISPER or AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
+		addon = true
 	end
 	
 	if channel then
@@ -453,18 +442,6 @@ local function RefixAceCommChannelsAndEvents()
 		end
 		if AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_LEAVE") then
 			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL_LEAVE")
-		end
-	end
-	
-	if not WoW21 then
-		if whisper then
-			if not AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
-				AceComm:RegisterEvent("CHAT_MSG_WHISPER")
-			end
-		else
-			if AceComm:IsEventRegistered("CHAT_MSG_WHISPER") then
-				AceComm:UnregisterEvent("CHAT_MSG_WHISPER")
-			end
 		end
 	end
 	
@@ -1343,22 +1320,12 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		id = id + 1
 	end
 	local id = string_char(id)
-	local drunk
-	if WoW21 then
-		drunk = distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM"
-	else
-		drunk = distribution == "GLOBAL" or distribution == "WHISPER" or distribution == "ZONE" or distribution == "CUSTOM"
-	end
+	local drunk = distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM"
 	prefix = Encode(prefix, drunk)
 	message = Serialize(message, textToHash)
 	message = Encode(message, drunk)
 	local headerLen = prefix:len() + 6
 	local messageLen = message:len()
-	if not WoW21 then
-		if distribution == "WHISPER" then
-			AceComm.recentWhispers[string.lower(person)] = GetTime()
-		end
-	end
 	local max = math_floor(messageLen / (250 - headerLen) + 1)
 	if max > 1 then
 		local segment = math_floor(messageLen / max + 0.5)
@@ -1376,10 +1343,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				bit = message:sub(last + 1, next)
 				last = next
 			end
-			if not WoW21 and distribution == "WHISPER" then
-				bit = "/" .. prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "\029"
-				ChatThrottleLib:SendChatMessage(priority, prefix, bit, "WHISPER", nil, person)
-			elseif distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
+			if distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
 				bit = prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "\029"
 				local channel
 				if distribution == "GLOBAL" then
@@ -1402,11 +1366,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		end
 		return good
 	else
-		if not WoW21 and distribution == "WHISPER" then
-			message = "/" .. prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "\029"
-			ChatThrottleLib:SendChatMessage(priority, prefix, message, "WHISPER", nil, person)
-			return true
-		elseif distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
+		if distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
 			message = prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "\029"
 			local channel
 			if distribution == "GLOBAL" then
@@ -1634,11 +1594,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 	local _, id, current, max
 	if not message then
-		if not WoW21 and distribution == "WHISPER" then
-			_,_, prefix, id, current, max, message = prefix:find("^/(...)\t(.)(.)(.)\t(.*)$")
-		else
-			_,_, prefix, id, current, max, message = prefix:find("^(...)\t(.)(.)(.)\t(.*)$")
-		end
+		_,_, prefix, id, current, max, message = prefix:find("^(...)\t(.)(.)(.)\t(.*)$")
 		prefix = AceComm.prefixHashToText[prefix]
 		if not prefix then
 			return CheckRefix()
@@ -1915,16 +1871,6 @@ function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	return HandleMessage(prefix, message, distribution, sender)
 end
 
-if not WoW21 then
-	function AceComm:CHAT_MSG_WHISPER(text, sender)
-		if not text:find("^/") then
-			return
-		end
-		text = Decode(text, true)
-		return HandleMessage(text, nil, "WHISPER", sender)
-	end
-end
-
 function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
 	if sender == player or not channel:find("^AceComm") then
 		return
@@ -2036,16 +1982,7 @@ local recentNotSeen = {}
 local notSeenString = '^' .. ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 local ambiguousString = '^' .. ERR_CHAT_PLAYER_AMBIGUOUS_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
-	if not WoW21 and (event == "CHAT_MSG_WHISPER" or event == "CHAT_MSG_WHISPER_INFORM") then
-		if arg1:find("^/") then
-			return
-		end
-	elseif not WoW21 and (event == "CHAT_MSG_AFK" or event == "CHAT_MSG_DND") then
-		local t = self.recentWhispers[string.lower(arg2)]
-		if t and GetTime() - t <= 15 then
-			return
-		end
-	elseif event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST" then
+	if event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST" then
 		if arg9:find("^AceComm") then
 			return
 		end
@@ -2268,9 +2205,6 @@ local function activate(self, oldLib, oldDeactivate)
 	self.prefixMemoizations = oldLib and oldLib.prefixMemoizations or {}
 	self.prefixHashToText = oldLib and oldLib.prefixHashToText or {}
 	self.prefixTextToHash = oldLib and oldLib.prefixTextToHash or {}
-	if not WoW21 then
-		self.recentWhispers = oldLib and oldLib.recentWhispers or {}
-	end
 	self.userRegistry = oldLib and oldLib.userRegistry or {}
 	self.commPrefixes = oldLib and oldLib.commPrefixes or {}
 	self.addonVersionPinger = oldLib and oldLib.addonVersionPinger
