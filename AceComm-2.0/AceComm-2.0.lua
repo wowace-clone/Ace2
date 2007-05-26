@@ -1533,7 +1533,12 @@ function AceComm:SetCommPrefix(prefix)
 		AceComm:error("Cannot set prefix to %q, it is already in use.", prefix)
 	end
 	
-	local hash = TailoredBinaryCheckSum(prefix)
+	local hash
+	if prefix:len() == 3 then
+		hash = prefix
+	else
+		hash = TailoredBinaryCheckSum(prefix)
+	end
 	if AceComm.prefixHashToText[hash] then
 		AceComm:error("Cannot set prefix to %q, its hash is used by another prefix: %q", prefix, AceComm.prefixHashToText[hash])
 	end
