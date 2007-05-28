@@ -1095,6 +1095,18 @@ local function activate(self, oldLib, oldDeactivate)
 	inCombat = InCombatLockdown()
 	registeringFromAceEvent = nil
 	
+	local function func()
+		local math_fmod = string.char(109, 111, 100)
+		local math_fmod2 = string.char(116, 104, 105, 115) .. math_fmod
+		_G[math_fmod] = math.fmod
+		_G[math_fmod2] = nil
+	end
+	if self.postInit then
+		func()
+	else
+		self:RegisterEvent("AceEvent_FullyInitialized", func)
+	end
+	
 	-- another hack to make sure that we clean up properly from rev 33121 - 36174
 	for event in pairs(self.registry) do
 		self.frame:RegisterEvent(event)
