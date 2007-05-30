@@ -1370,6 +1370,11 @@ function AceDB:ResetDB(kind, a2)
 				end
 			end
 		end
+	else
+		return -- skip event
+	end
+	if AceEvent then
+		AceEvent:TriggerEvent("AceDB20_ResetDB", self, self.db.name, kind)
 	end
 end
 
