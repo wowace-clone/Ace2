@@ -1550,13 +1550,22 @@ function AceComm:SetCommPrefix(prefix)
 	AceComm.prefixTextToHash[prefix] = hash
 end
 
-function AceComm:RegisterMemoizations(values)
-	AceComm:argCheck(values, 2, "table")
-	for k,v in pairs(values) do
-		if type(k) ~= "number" then
-			AceComm:error("Bad argument #2 to `RegisterMemoizations'. All keys must be numbers")
-		elseif type(v) ~= "string" then
-			AceComm:error("Bad argument #2 to `RegisterMemoizations'. All values must be strings")
+function AceComm:RegisterMemoizations(values, ...)
+	AceComm:argCheck(values, 2, "table", "string")
+	if type(values) == "string" then
+		values = {values, ...}
+		for i,v in ipairs(values) doe
+			if type(v) ~= "string" then
+				AceComm:error("Bad argument #%d to `RegisterMemoizations'. Expected %q, got %q.", i+1, "string", type(v))
+			end
+		end
+	else
+		for k,v in pairs(values) do
+			if type(k) ~= "number" then
+				AceComm:error("Bad argument #2 to `RegisterMemoizations'. All keys must be numbers")
+			elseif type(v) ~= "string" then
+				AceComm:error("Bad argument #2 to `RegisterMemoizations'. All values must be strings")
+			end
 		end
 	end
 	if self.commMemoHashToText or self.commMemoTextToHash then
