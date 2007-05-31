@@ -1554,7 +1554,7 @@ function AceComm:RegisterMemoizations(values, ...)
 	AceComm:argCheck(values, 2, "table", "string")
 	if type(values) == "string" then
 		values = {values, ...}
-		for i,v in ipairs(values) doe
+		for i,v in ipairs(values) do
 			if type(v) ~= "string" then
 				AceComm:error("Bad argument #%d to `RegisterMemoizations'. Expected %q, got %q.", i+1, "string", type(v))
 			end
