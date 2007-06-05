@@ -463,27 +463,7 @@ local function RegisterOnEnable(self)
 	if AceAddon.playerLoginFired then
 		AceAddon.addonsStarted[self] = true
 		if (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
-			AceAddon.addonsEnabled[self] = true
-			local current = self.class
-			while true do
-				if current == AceOO.Class or not current then
-					break
-				end
-				if current.mixins then
-					for mixin in pairs(current.mixins) do
-						if type(mixin.OnEmbedEnable) == "function" then
-							safecall(mixin.OnEmbedEnable,mixin,self,true)
-						end
-					end
-				end
-				current = current.super
-			end
-			if type(self.OnEnable) == "function" then
-				safecall(self.OnEnable,self,true)
-			end
-			if AceEvent then
-				AceEvent:TriggerEvent("Ace2_AddonEnabled", self, true)
-			end
+			AceAddon:ManualEnable(self)
 		end
 	else
 		if not AceAddon.addonsToOnEnable then
@@ -680,27 +660,7 @@ function AceAddon:PLAYER_LOGIN()
 			local addon = table.remove(self.addonsToOnEnable, 1)
 			self.addonsStarted[addon] = true
 			if (type(addon.IsActive) ~= "function" or addon:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(addon) or AceModuleCore:IsModuleActive(addon)) then
-				self.addonsEnabled[addon] = true
-				local current = addon.class
-				while true do
-					if current == AceOO.Class or not current then
-						break
-					end
-					if current.mixins then
-						for mixin in pairs(current.mixins) do
-							if type(mixin.OnEmbedEnable) == "function" then
-								safecall(mixin.OnEmbedEnable, mixin, addon, true)
-							end
-						end
-					end
-					current = current.super
-				end
-				if type(addon.OnEnable) == "function" then
-					safecall(addon.OnEnable, addon, true)
-				end
-				if AceEvent then
-					AceEvent:TriggerEvent("Ace2_AddonEnabled", addon, true)
-				end
+				AceAddon:ManualEnable(addon)
 			end
 		end
 		self.addonsToOnEnable = nil
@@ -749,6 +709,62 @@ end
 AceAddon.new = function(self, ...)
 	local class = AceAddon:pcall(AceOO.Classpool, self, ...)
 	return class:new()
+end
+
+function AceAddon:ManualEnable(addon)
+	AceAddon:argCheck(addon, 2, "table")
+	local first = nil
+	if AceOO.inherits(addon, "AceAddon-2.0") then
+		local AceAddon = AceLibrary("AceAddon-2.0")
+		if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[addon] then
+			first = true
+			AceAddon.addonsEnabled[addon] = true
+		end
+	end
+	local current = addon.class
+	while true do
+		if current == AceOO.Class then
+			break
+		end
+		if current.mixins then
+			for mixin in pairs(current.mixins) do
+				if type(mixin.OnEmbedEnable) == "function" then
+					safecall(mixin.OnEmbedEnable, mixin, addon, first)
+				end
+			end
+		end
+		current = current.super
+	end
+	if type(addon.OnEnable) == "function" then
+		safecall(addon.OnEnable, addon, first)
+	end
+	if AceEvent then
+		AceEvent:TriggerEvent("Ace2_AddonEnabled", addon, first)
+	end
+end
+
+function AceAddon:ManualDisable(addon)
+	AceAddon:argCheck(addon, 2, "table")
+	local current = addon.class
+	while true do
+		if current == AceOO.Class then
+			break
+		end
+		if current.mixins then
+			for mixin in pairs(current.mixins) do
+				if type(mixin.OnEmbedDisable) == "function" then
+					safecall(mixin.OnEmbedDisable, mixin, addon)
+				end
+			end
+		end
+		current = current.super
+	end
+	if type(module.OnDisable) == "function" then
+		safecall(module.OnDisable, addon)
+	end
+	if AceEvent then
+		AceEvent:TriggerEvent("Ace2_AddonDisabled", addon)
+	end
 end
 
 local function external(self, major, instance)

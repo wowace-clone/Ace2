@@ -39,6 +39,7 @@ local AceModuleCore = AceOO.Mixin {
 									"ToggleModuleActive",
 									"SetModuleDefaultState",
 								  }
+local AceAddon
 
 local function getlibrary(lib)
 	if type(lib) == "string" then
@@ -333,15 +334,15 @@ function AceModuleCore:ToggleModuleActive(module, state)
 		self.disabledModules[module.name] = value
 	end
 	if AceOO.inherits(module, "AceAddon-2.0") then
-		if not AceLibrary("AceAddon-2.0").addonsStarted[module] then
+		if not AceAddon.addonsStarted[module] then
 			return
 		end
 	end
 	if not disable then
 		local first = nil
 		if AceOO.inherits(module, "AceAddon-2.0") then
-			local AceAddon = AceLibrary("AceAddon-2.0")
-			if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[self] then
+			if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[module] then
+				AceAddon.addonsEnabled[module] = true
 				first = true
 			end
 		end
@@ -430,6 +431,10 @@ function AceModuleCore:OnInstanceInit(target)
 		do return end
 		AceModuleCore:error("OnInstanceInit cannot be called twice")
 	end
+	
+	if not AceAddon then
+		self:error(MAJOR_VERSION .. " requires AceAddon-2.0")
+	end
 	target.modules = {}
 
 	target.moduleClass = AceOO.Class("AceAddon-2.0")
@@ -503,6 +508,8 @@ local function external(self, major, instance)
 		self:UnregisterAllEvents()
 		self:RegisterEvent("Ace2_AddonEnabled")
 		self:RegisterEvent("Ace2_AddonDisabled")
+	elseif major == "AceAddon-2.0" then
+		AceAddon = instance
 	end
 end
 

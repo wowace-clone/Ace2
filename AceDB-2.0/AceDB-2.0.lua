@@ -1322,17 +1322,18 @@ function AceDB:ResetDB(kind, a2)
 		end
 		local newactive = self:IsActive()
 		if active ~= newactive then
-			local first = nil
-			if AceOO.inherits(self, "AceAddon-2.0") then
-				local AceAddon = AceLibrary("AceAddon-2.0")
-				if not AceAddon.addonsStarted[self] then
-					return
-				end
-				if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[self] then
-					first = true
-				end
-			end
 			if newactive then
+				local first = nil
+				if AceOO.inherits(self, "AceAddon-2.0") then
+					local AceAddon = AceLibrary("AceAddon-2.0")
+					if not AceAddon.addonsStarted[self] then
+						return
+					end
+					if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[self] then
+						AceAddon.addonsEnabled[self] = true
+						first = true
+					end
+				end
 				local current = self.class
 				while current and current ~= AceOO.Class do
 					if current.mixins then
