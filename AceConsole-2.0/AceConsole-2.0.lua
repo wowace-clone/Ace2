@@ -2400,31 +2400,11 @@ function AceConsole:RegisterChatCommand(...) -- slashCommands, options, name
 		
 		local i = 0
 		for _,command in ipairs(slashCommands) do
-			local good = true
-			for k in pairs(_G.SlashCmdList) do
-				local j = 0
-				while true do
-					j = j + 1
-					local cmd = _G["SLASH_" .. k .. j]
-					if not cmd then
-						break
-					end
-					if command:lower() == cmd:lower() then
-						good = false
-						break
-					end
-				end
-				if not good then
-					break
-				end
-			end
-			if good then
+			i = i + 1
+			_G["SLASH_"..name..i] = command
+			if command:lower() ~= command then
 				i = i + 1
-				_G["SLASH_"..name..i] = command
-				if command:lower() ~= command then
-					i = i + 1
-					_G["SLASH_"..name..i] = command:lower()
-				end
+				_G["SLASH_"..name..i] = command:lower()
 			end
 		end
 	end
