@@ -27,20 +27,14 @@ local AceOO = {
 -- @brief		Obtain a unique string identifier for the object in question.
 -- @param t		The object to obtain the uid for.
 -- @return		The uid string.
-local function pad(cap)
-	return ("0"):rep(8 - cap:len()) .. cap
-end
 local function getuid(t)
 	local mt = getmetatable(t)
 	setmetatable(t, nil)
 	local str = tostring(t)
 	setmetatable(t, mt)
-	local cap = str:match("[^:]*: 0x(.*)$")
-	if not cap then
-		cap = str:match("[^:]*: (.*)$")
-	end
+	local cap = str:match("[^:]*: 0x(.*)$") or str:match("[^:]*: (.*)$")
 	if cap then
-		return pad(cap)
+		return ("0"):rep(8 - #cap) .. cap
 	end
 end
 
