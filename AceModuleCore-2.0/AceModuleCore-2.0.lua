@@ -433,7 +433,11 @@ function AceModuleCore:OnInstanceInit(target)
 	end
 	
 	if not AceAddon then
-		self:error(MAJOR_VERSION .. " requires AceAddon-2.0")
+		if AceLibrary:HasInstance("AceAddon-2.0") then
+			AceAddon = AceLibrary("AceAddon-2.0")
+		else
+			self:error(MAJOR_VERSION .. " requires AceAddon-2.0")
+		end
 	end
 	target.modules = {}
 
