@@ -1087,8 +1087,34 @@ local function activate(self, oldLib, oldDeactivate)
 		handleFullInit()
 		handleFullInit = nil
 	end
-
 	
+	if not AceEvent20EditBox then
+	    CreateFrame("Editbox", "AceEvent20EditBox")
+	end
+	local editbox = AceEvent20EditBox
+	function editbox:Execute(line)
+		local defaulteditbox = DEFAULT_CHAT_FRAME.editBox
+		self:SetAttribute("chatType", defaulteditbox:GetAttribute("chatType"))
+		self:SetAttribute("tellTarget", defaulteditbox:GetAttribute("tellTarget"))
+		self:SetAttribute("channelTarget", defaulteditbox:GetAttribute("channelTarget"))
+		self:SetText(line)
+		ChatEdit_SendText(self)
+	end
+	editbox:Hide()
+	_G["SLASH_IN1"] = "/in"
+	SlashCmdList["IN"] = function(msg)
+		local seconds, command, rest = msg:match("^([^%s]+)%s+(/[^%s]+)(.*)$")
+		seconds = tonumber(seconds)
+		if not seconds then
+			DEFAULT_CHAT_FRAME:AddMessage("Error, bad arguments to /in. Must be in the form of `/in 5 /say hi'")
+			return
+		end
+		if IsSecureCmd(command) then
+			DEFAULT_CHAT_FRAME:AddMessage(("Error, /in cannot call secure command: %s"):format(command))
+			return
+		end
+		self:ScheduleEvent("AceEventSlashIn-" .. math.random(1, 1000000000), editbox.Execute, seconds, editbox, command .. rest)
+	end
 	registeringFromAceEvent = true
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
