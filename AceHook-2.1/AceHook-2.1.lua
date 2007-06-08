@@ -318,13 +318,19 @@ local function hookMethod(self, obj, method, handler, script, secure)
 	scripts[uid] = script and true or nil
 	
 	if script then
-		obj:SetScript(method, uid)
-		self.hooks[obj][method] = orig
-	elseif not secure then
-		obj[method] = uid
-		self.hooks[obj][method] = orig
+		if not secure then
+			obj:SetScript(method, uid)
+			self.hooks[obj][method] = orig
+		else
+			obj:HookScript(method, uid)
+		end
 	else
-		hooksecurefunc(obj, method, uid)
+		if not secure then
+			obj[method] = uid
+			self.hooks[obj][method] = orig
+		else
+			hooksecurefunc(obj, method, uid)
+		end
 	end
 end
 
@@ -437,6 +443,16 @@ function AceHook:HookScript(frame, script, handler)
 		AceHook:error("Cannot hook secure script %q.", script)
 	end
 	hookMethod(self, frame, script, handler, true, false)
+end
+
+function AceHook:SecureHookScript(frame, script, handler)
+	AceHook:argCheck(frame, 2, "table")
+	if not frame[0] or type(frame.IsProtected) ~= "function" then
+		AceHook:error("Bad argument #2 to `HookScript'. Expected frame.")
+	end
+	AceHook:argCheck(script, 3, "string")
+	AceHook:argCheck(handler, 4, "function", "string", "nil")
+	hookMethod(self, frame, script, handler, true, true)
 end
 
 -- ("function") or (object, "method")
