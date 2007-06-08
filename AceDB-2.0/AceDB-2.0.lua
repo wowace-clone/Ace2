@@ -109,12 +109,12 @@ elseif GetLocale() == "zhTW" then
 	ACTIVE = "啟動"
 	ENABLED = "啟用"
 	STATE = "狀態"
-	TOGGLE_ACTIVE = "暫停/重啟這個插件。"
+	TOGGLE_ACTIVE = "暫停/繼續使用這個插件。"
 	MAP_ACTIVESUSPENDED = { [true] = "|cff00ff00啟動|r", [false] = "|cffff0000已暫停|r" }
 	SET_PROFILE = "設定這插件的記錄檔。"
 	SET_PROFILE_USAGE = "{角色 || 職業 || 伺服器 || <記錄檔名稱>}"
 	PROFILE = "記錄檔"
-	PLAYER_OF_REALM = "%s 於 %s"
+	PLAYER_OF_REALM = "%s - %s"
 	CHOOSE_PROFILE_DESC = "選擇一個記錄檔。"
 	CHOOSE_PROFILE_GUI = "選擇"
 	COPY_PROFILE_DESC = "由其他記錄檔複製設定。"
@@ -125,9 +125,9 @@ elseif GetLocale() == "zhTW" then
 	RESET_PROFILE = "重設記錄檔"
 	RESET_PROFILE_DESC = "清除目前的記錄檔上的所有設定。"
 
-	CHARACTER_COLON = "角色："
-	REALM_COLON = "伺服器："
-	CLASS_COLON = "職業："
+	CHARACTER_COLON = "角色: "
+	REALM_COLON = "伺服器: "
+	CLASS_COLON = "職業: "
 	
 	DEFAULT = "預設"
 	ALTERNATIVE = "替代"

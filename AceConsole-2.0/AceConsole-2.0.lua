@@ -77,16 +77,16 @@ elseif GetLocale() == "zhCN" then
 elseif GetLocale() == "zhTW" then
 	MAP_ONOFF = { [false] = "|cffff0000關閉|r", [true] = "|cff00ff00開啟|r" }
 	USAGE = "用法"
-	IS_CURRENTLY_SET_TO = "|cffffff7f%s|r 目前的設定為 |cffffff7f[|r%s|cffffff7f]|r"
-	IS_NOW_SET_TO = "|cffffff7f%s|r 現在被設定為 |cffffff7f[|r%s|cffffff7f]|r"
-	IS_NOT_A_VALID_OPTION_FOR = "[|cffffff7f%s|r] 是一個不符合規定的選項，對於 |cffffff7f%s|r"
-	IS_NOT_A_VALID_VALUE_FOR = "[|cffffff7f%s|r] 是一個不符合規定的數值，對於 |cffffff7f%s|r"
+	IS_CURRENTLY_SET_TO = "|cffffff7f%s|r目前的設定為|cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOW_SET_TO = "|cffffff7f%s|r現在被設定為|cffffff7f[|r%s|cffffff7f]|r"
+	IS_NOT_A_VALID_OPTION_FOR = "對於|cffffff7f%2$s|r，[|cffffff7f%1$s|r]是一個不符合規定的選項"
+	IS_NOT_A_VALID_VALUE_FOR = "對於|cffffff7f%2$s|r，[|cffffff7f%1$s|r]是一個不符合規定的數值"
 	NO_OPTIONS_AVAILABLE = "沒有可用的選項"
-	OPTION_HANDLER_NOT_FOUND = "找不到 |cffffff7f%q|r 選項處理器。"
+	OPTION_HANDLER_NOT_FOUND = "找不到|cffffff7f%q|r選項處理器。"
 	OPTION_HANDLER_NOT_VALID = "選項處理器不符合規定。"
-	OPTION_IS_DISABLED = "|cffffff7f%s|r 已被停用。"
-	KEYBINDING_USAGE = "<ALT-CTRL-SHIFT-鍵>"
-	DEFAULT_CONFIRM_MESSAGE = "是否執行 '%s'？"
+	OPTION_IS_DISABLED = "|cffffff7f%s|r已被停用。"
+	KEYBINDING_USAGE = "<Alt-Ctrl-Shift-鍵>"
+	DEFAULT_CONFIRM_MESSAGE = "是否執行「%s」?"
 elseif GetLocale() == "esES" then
 	MAP_ONOFF = { [false] = "|cffff0000Desactivado|r", [true] = "|cff00ff00Activado|r" }
 	USAGE = "Uso"
