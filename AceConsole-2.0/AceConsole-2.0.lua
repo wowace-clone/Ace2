@@ -249,6 +249,12 @@ local function literal_tostring_prime(t, depth)
 		if type(rawget(t, 0)) == "userdata" and type(t.GetObjectType) == "function" then
 			return ("|cffffea00<%s:%s>|r"):format(t:GetObjectType(), t:GetName() or "(anon)")
 		end
+		if next(t) == nil then
+			local mt = getmetatable(t)
+			if type(mt) == "table" and type(mt.__raw) == "table" then
+				t = mt.__raw
+			end
+		end
 		if recurse[t] then
 			local g = findGlobal[t]
 			if g then
