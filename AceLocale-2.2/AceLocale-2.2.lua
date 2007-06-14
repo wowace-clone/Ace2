@@ -78,6 +78,12 @@ local instance_mt = {
 	__tostring = __tostring
 }
 
+local translations_mt = {
+	__index = function(_, key)
+		return lastSelf[BASE_TRANSLATIONS][key]
+	end,
+}
+
 local baseTranslations_mt = {
 	__index = AceLocale.prototype,
 }
@@ -102,9 +108,7 @@ local function refixInstance(instance)
 		else
 			setmetatable(instance, instance_mt)
 			
-			setmetatable(translations, {
-				__index = baseTranslations
-			})
+			setmetatable(translations, translations_mt)
 			
 			setmetatable(baseTranslations, baseTranslations_mt)
 		end
