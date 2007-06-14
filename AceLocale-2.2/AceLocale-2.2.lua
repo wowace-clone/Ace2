@@ -20,7 +20,6 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 local AceLocale = {}
 
-local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
 
 local BASE_TRANSLATIONS, DEBUGGING, TRANSLATIONS, BASE_LOCALE, TRANSLATION_TABLES, REVERSE_TRANSLATIONS, STRICTNESS, DYNAMIC_LOCALES, CURRENT_LOCALE, NAME
@@ -310,7 +309,9 @@ end
 
 local function initReverse(self)
 	rawset(self, REVERSE_TRANSLATIONS, setmetatable({}, { __index = function(_, key)
-		AceLocale.error(self, "Reverse translation for %q does not exist", key)
+		local _, ret = pcall(error, ("%s: Reverse translation for %q does not exist"):format(tostring(self), key))
+		geterrorhandler()(ret)
+		return key
 	end }))
 	local alpha = self[TRANSLATIONS]
 	local bravo = self[REVERSE_TRANSLATIONS]
@@ -351,7 +352,9 @@ function AceLocale.prototype:GetReverseTranslation(text)
 	end
 	local translation = x[text]
 	if not translation then
-		AceLocale.error(self, "Reverse translation for %q does not exist", text)
+		local _, ret = pcall(error, ("%s: Reverse translation for %q does not exist"):format(tostring(self), text))
+		geterrorhandler()(ret)
+		return text
 	end
 	return translation
 end
@@ -472,7 +475,9 @@ end
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
 		if type(k) ~= "table" and k ~= 0 and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
-			AceLocale.error(lastSelf or self, "Translation %q does not exist.", k)
+			local _, ret = pcall(error, ("%s: Translation %q does not exist."):format(tostring(lastSelf or self), k))
+			geterrorhandler()(ret)
+			return k
 		end
 		return nil
 	end
