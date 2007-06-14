@@ -19,8 +19,8 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 local AceLocale = {}
-AceLocale.prototype = { class = AceLocale }
 
+local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
 
 local BASE_TRANSLATIONS, DEBUGGING, TRANSLATIONS, BASE_LOCALE, TRANSLATION_TABLES, REVERSE_TRANSLATIONS, STRICTNESS, DYNAMIC_LOCALES, CURRENT_LOCALE, NAME
@@ -33,21 +33,21 @@ local newRegistries = {}
 local scheduleClear
 
 local lastSelf
-local function __index(self, key)
+local __index = function(self, key)
 	lastSelf = self
 	local value = (rawget(self, TRANSLATIONS) or AceLocale.prototype)[key]
 	rawset(self, key, value)
 	return value
 end
 
-local function __newindex(self, k, v)
+local __newindex = function(self, k, v)
 	if type(v) ~= "function" and type(k) ~= "table" then
 		AceLocale.error(self, "Cannot change the values of an AceLocale instance.")
 	end
 	rawset(self, k, v)
 end
 
-local function __tostring(self)
+local __tostring = function(self)
 	if type(rawget(self, 'GetLibraryVersion')) == "function" then
 		return self:GetLibraryVersion()
 	else
@@ -72,22 +72,6 @@ local function clearCache(self)
 	self.tmp = nil
 end
 
-local instance_mt = {
-	__index = __index,
-	__newindex = __newindex,
-	__tostring = __tostring
-}
-
-local translations_mt = {
-	__index = function(_, key)
-		return lastSelf[BASE_TRANSLATIONS][key]
-	end,
-}
-
-local baseTranslations_mt = {
-	__index = AceLocale.prototype,
-}
-
 local function refixInstance(instance)
 	if getmetatable(instance) then
 		setmetatable(instance, nil)
@@ -102,18 +86,36 @@ local function refixInstance(instance)
 			setmetatable(baseTranslations, nil)
 		end
 		if translations == baseTranslations or instance[STRICTNESS] then
-			setmetatable(instance, instance_mt)
+			setmetatable(instance, {
+				__index = __index,
+				__newindex = __newindex,
+				__tostring = __tostring
+			})
 			
-			setmetatable(translations, baseTranslations_mt)
+			setmetatable(translations, {
+				__index = AceLocale.prototype
+			})
 		else
-			setmetatable(instance, instance_mt)
+			setmetatable(instance, {
+				__index = __index,
+				__newindex = __newindex,
+				__tostring = __tostring
+			})
 			
-			setmetatable(translations, translations_mt)
+			setmetatable(translations, {
+				__index = baseTranslations,
+			})
 			
-			setmetatable(baseTranslations, baseTranslations_mt)
+			setmetatable(baseTranslations, {
+				__index = AceLocale.prototype,
+			})
 		end
 	else
-		setmetatable(instance, instance_mt)
+		setmetatable(instance, {
+			__index = __index,
+			__newindex = __newindex,
+			__tostring = __tostring,
+		})
 	end
 	clearCache(instance)
 	newRegistries[instance] = true
@@ -135,6 +137,8 @@ function AceLocale:new(name)
 	newRegistries[AceLocale.registry[name]] = true
 	return AceLocale.registry[name]
 end
+
+AceLocale.prototype = { class = AceLocale }
 
 function AceLocale.prototype:EnableDebugging()
 	if rawget(self, BASE_TRANSLATIONS) then
@@ -159,17 +163,6 @@ function AceLocale.prototype:EnableDynamicLocales(override)
 		end
 	end
 end
-
-local function reverse__index(self_prime, key)
-	local self = AceLocale.reverseToBase[self_prime]
-	if not rawget(self, REVERSE_TRANSLATIONS) then
-		self:GetReverseTranslation(key)
-	end
-	self.reverse = self[REVERSE_TRANSLATIONS]
-	return self.reverse[key]
-end
-
-local reverse_mt = { __index = reverse__index }
 
 function AceLocale.prototype:RegisterTranslations(locale, func)
 	AceLocale.argCheck(self, locale, 2, "string")
@@ -225,7 +218,14 @@ function AceLocale.prototype:RegisterTranslations(locale, func)
 	end
 	rawset(self, CURRENT_LOCALE, locale)
 	if not rawget(self, 'reverse') then
-		rawset(self, 'reverse', setmetatable({}, reverse_mt))
+		rawset(self, 'reverse', setmetatable({}, { __index = function(self2, key)
+			local self = AceLocale.reverseToBase[self2]
+			if not rawget(self, REVERSE_TRANSLATIONS) then
+				self:GetReverseTranslation(key)
+			end
+			self.reverse = self[REVERSE_TRANSLATIONS]
+			return self.reverse[key]
+		end }))
 		AceLocale.reverseToBase[self.reverse] = self
 	end
 	refixInstance(self)
@@ -308,17 +308,10 @@ function AceLocale.prototype:SetStrictness(strict)
 	refixInstance(self)
 end
 
-local function initReverse__index(self_prime, key)
-	local self = self_prime[initReverse__index]
-	local _, ret = pcall(AceLocale.error, self, "Reverse translation for %q does not exist", key)
-	geterrorhandler()(ret)
-	return key
-end
-
-local initReverse_mt = { __index = initReverse__index }
-
 local function initReverse(self)
-	rawset(self, REVERSE_TRANSLATIONS, setmetatable({[initReverse__index] = self}, initReverse_mt))
+	rawset(self, REVERSE_TRANSLATIONS, setmetatable({}, { __index = function(_, key)
+		AceLocale.error(self, "Reverse translation for %q does not exist", key)
+	end }))
 	local alpha = self[TRANSLATIONS]
 	local bravo = self[REVERSE_TRANSLATIONS]
 	for base, localized in pairs(alpha) do
@@ -358,9 +351,7 @@ function AceLocale.prototype:GetReverseTranslation(text)
 	end
 	local translation = x[text]
 	if not translation then
-		local _, ret = pcall(AceLocale.error, self, "Reverse translation for %q does not exist", text)
-		geterrorhandler()(ret)
-		return text
+		AceLocale.error(self, "Reverse translation for %q does not exist", text)
 	end
 	return translation
 end
@@ -481,9 +472,7 @@ end
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
 		if type(k) ~= "table" and k ~= 0 and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
-			local _, ret = pcall(AceLocale.error, lastSelf or self, "Translation %q does not exist.", k)
-			geterrorhandler()(ret)
-			return k
+			AceLocale.error(lastSelf or self, "Translation %q does not exist.", k)
 		end
 		return nil
 	end
@@ -520,7 +509,7 @@ local function activate(self, oldLib, oldDeactivate)
 	
 	local GetTime = GetTime
 	local timeUntilClear = GetTime() + 5
-	function scheduleClear()
+	scheduleClear = function()
 		if next(newRegistries) then
 			self.frame:Show()
 			timeUntilClear = GetTime() + 5
