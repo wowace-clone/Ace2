@@ -306,7 +306,7 @@ end
 
 local function initReverse__index(self_prime, key)
 	local self = self_prime[initReverse__index]
-	local _, ret = pcall(error, ("%s: Reverse translation for %q does not exist"):format(tostring(self), key))
+	local _, ret = pcall(AceLocale.error, self, "Reverse translation for %q does not exist", key)
 	geterrorhandler()(ret)
 	return key
 end
@@ -354,7 +354,7 @@ function AceLocale.prototype:GetReverseTranslation(text)
 	end
 	local translation = x[text]
 	if not translation then
-		local _, ret = pcall(error, ("%s: Reverse translation for %q does not exist"):format(tostring(self), text))
+		local _, ret = pcall(AceLocale.error, self, "Reverse translation for %q does not exist", text)
 		geterrorhandler()(ret)
 		return text
 	end
@@ -477,7 +477,7 @@ end
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
 		if type(k) ~= "table" and k ~= 0 and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
-			local _, ret = pcall(error, ("%s: Translation %q does not exist."):format(tostring(lastSelf or self), k))
+			local _, ret = pcall(AceLocale.error, lastSelf or self, "Translation %q does not exist.", k)
 			geterrorhandler()(ret)
 			return k
 		end
