@@ -2322,6 +2322,9 @@ local function external(self, major, instance)
 
 					if not version or version == "" then
 						version = GetAddOnMetadata(addon, "Version")
+						if not IsAddOnLoaded(addon) then
+							version = version .. " (Off)"
+						end
 					end
 					if not version or version == "" then
 						version = IsAddOnLoaded(addon) and true or false
