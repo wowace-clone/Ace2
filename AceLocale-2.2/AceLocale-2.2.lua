@@ -335,7 +335,9 @@ function AceLocale.prototype:GetStrictTranslation(text)
 	end
 	local value = rawget(x, text)
 	if value == nil then
-		AceLocale.error(self, "Translation %q does not exist for locale %s", text, self[CURRENT_LOCALE])
+		local _, ret = pcall(AceLocale.error, self, "Translation %q does not exist for locale %s", text, self[CURRENT_LOCALE])
+		geterrorhandler()(ret)
+		return text
 	end
 	return value
 end
@@ -351,7 +353,9 @@ function AceLocale.prototype:GetReverseTranslation(text)
 	end
 	local translation = x[text]
 	if not translation then
-		AceLocale.error(self, "Reverse translation for %q does not exist", text)
+		local _, ret = pcall(AceLocale.error, self, "Reverse translation for %q does not exist", text)
+		geterrorhandler()(ret)
+		return text
 	end
 	return translation
 end
@@ -472,7 +476,9 @@ end
 setmetatable(AceLocale.prototype, {
 	__index = function(self, k)
 		if type(k) ~= "table" and k ~= 0 and k ~= "GetLibraryVersion"  and k ~= "error" and k ~= "assert" and k ~= "argCheck" and k ~= "pcall" then -- HACK: remove "GetLibraryVersion" and such later.
-			AceLocale.error(lastSelf or self, "Translation %q does not exist.", k)
+			local _, ret = pcall(AceLocale.error, lastSelf or self, "Translation %q does not exist.", k)
+			geterrorhandler()(ret)
+			return k
 		end
 		return nil
 	end
