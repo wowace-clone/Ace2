@@ -1447,6 +1447,10 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 		end
 	end
 	
+	if includePerson then
+		person = nil
+	end
+	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
 	if tmp then
@@ -1499,6 +1503,10 @@ function AceComm:SendCommMessage(distribution, person, ...)
 	end
 	
 	local priority = self.commPriority or "NORMAL"
+	
+	if includePerson then
+		person = nil
+	end
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
