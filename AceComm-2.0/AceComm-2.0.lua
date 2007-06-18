@@ -25,17 +25,18 @@ local _G = getfenv(0)
 local AceOO = AceLibrary("AceOO-2.0")
 local Mixin = AceOO.Mixin
 local AceComm = Mixin {
-						"SendCommMessage",
-						"SendPrioritizedCommMessage",
-						"RegisterComm",
-						"UnregisterComm",
-						"UnregisterAllComms",
-						"IsCommRegistered",
-						"SetDefaultCommPriority",
-						"SetCommPrefix",
-						"RegisterMemoizations",
-						"IsUserInChannel",
-					  }
+	"SendCommMessage",
+	"SendPrioritizedCommMessage",
+	"RegisterComm",
+	"UnregisterComm",
+	"UnregisterAllComms",
+	"IsCommRegistered",
+	"SetDefaultCommPriority",
+	"SetCommPrefix",
+	"RegisterMemoizations",
+	"IsUserInChannel",
+}
+
 AceComm.hooks = {}
 
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
@@ -182,62 +183,62 @@ local function IsInChannel(chan)
 end
 
 local function encodeLargeChar(c)
-    local num = c:byte()
-    num = num - 127
-    if num >= 9 then
-        num = num + 2
-    end
-    if num >= 29 then
-        num = num + 2
-    end
-    if num >= 128 then
-        return string_char(29, num - 127) -- 1, 2, 3, 4, 5
-    end
-    return string_char(31, num)
+	local num = c:byte()
+	num = num - 127
+	if num >= 9 then
+		num = num + 2
+	end
+	if num >= 29 then
+		num = num + 2
+	end
+	if num >= 128 then
+		return string_char(29, num - 127) -- 1, 2, 3, 4, 5
+	end
+	return string_char(31, num)
 end
 
 local function decodeLargeChar(c)
-    local num = c:byte()
-    if num >= 29 then
-        num = num - 2
-    end
-    if num >= 9 then
-        num = num - 2
-    end
-    num = num + 127
-    return string_char(num)
+	local num = c:byte()
+	if num >= 29 then
+		num = num - 2
+	end
+	if num >= 9 then
+		num = num - 2
+	end
+	num = num + 127
+	return string_char(num)
 end
 
 -- Package a message for transmission
 local function Encode(text, drunk)
-    if drunk then
-    	text = text:gsub("\029", "\029\030")
-    	
-    	text = text:gsub("\031", "\029\032")
-	    text = text:gsub("[\128-\255]", encodeLargeChar)
-    	
+	if drunk then
+		text = text:gsub("\029", "\029\030")
+		
+		text = text:gsub("\031", "\029\032")
+		text = text:gsub("[\128-\255]", encodeLargeChar)
+		
 		text = text:gsub("\020", "\029\021")
 		text = text:gsub("\015", "\029\016")
 		text = text:gsub("S", "\020")
 		text = text:gsub("s", "\015")
 		-- change S and s to a different set of character bytes.
 		
-    	text = text:gsub("\127", "\029\126") -- \127 (this is here because \000 is more common)
-    	text = text:gsub("%z", "\127") -- \000
-    	text = text:gsub("\010", "\029\011") -- \n
-    	text = text:gsub("\124", "\029\125") -- |
-    	text = text:gsub("%%", "\029\038") -- %
-    	-- encode assorted prohibited characters
-    else
-        text = text:gsub("\176", "\176\177")
-        
-    	text = text:gsub("\255", "\176\254") -- \255 (this is here because \000 is more common)
-    	text = text:gsub("%z", "\255") -- \000
-    	text = text:gsub("\010", "\176\011") -- \n
-    	text = text:gsub("\124", "\176\125") -- |
-    	text = text:gsub("%%", "\176\038") -- %
-    	-- encode assorted prohibited characters
-    end
+		text = text:gsub("\127", "\029\126") -- \127 (this is here because \000 is more common)
+		text = text:gsub("%z", "\127") -- \000
+		text = text:gsub("\010", "\029\011") -- \n
+		text = text:gsub("\124", "\029\125") -- |
+		text = text:gsub("%%", "\029\038") -- %
+		-- encode assorted prohibited characters
+	else
+		text = text:gsub("\176", "\176\177")
+		
+		text = text:gsub("\255", "\176\254") -- \255 (this is here because \000 is more common)
+		text = text:gsub("%z", "\255") -- \000
+		text = text:gsub("\010", "\176\011") -- \n
+		text = text:gsub("\124", "\176\125") -- |
+		text = text:gsub("%%", "\176\038") -- %
+		-- encode assorted prohibited characters
+	end
 	return text
 end
 
@@ -265,27 +266,27 @@ local function Decode(text, drunk)
 		text = text:gsub("^(.*)\029.-$", "%1")
 		-- get rid of " ...hic!"
 		
-    	text = text:gsub("\029\038", "%%")
-    	text = text:gsub("\029\125", "\124")
-    	text = text:gsub("\029\011", "\010")
-    	text = text:gsub("\127", "\000")
-    	text = text:gsub("\029\126", "\127")
-    	text = text:gsub("\015", "s")
-    	text = text:gsub("\020", "S")
-    	text = text:gsub("\029\016", "\015")
-    	text = text:gsub("\029\021", "\020")
-    	text = text:gsub("\029\001", "\251")
-    	text = text:gsub("\029\002", "\252")
-    	text = text:gsub("\029\003", "\253")
-    	text = text:gsub("\029\004", "\254")
-    	text = text:gsub("\029\005", "\255")
-    	text = text:gsub("\031(.)", decodeLargeChar)
-    	text = text:gsub("\029\032", "\031")
-    	text = text:gsub("\029\030", "\029")
+		text = text:gsub("\029\038", "%%")
+		text = text:gsub("\029\125", "\124")
+		text = text:gsub("\029\011", "\010")
+		text = text:gsub("\127", "\000")
+		text = text:gsub("\029\126", "\127")
+		text = text:gsub("\015", "s")
+		text = text:gsub("\020", "S")
+		text = text:gsub("\029\016", "\015")
+		text = text:gsub("\029\021", "\020")
+		text = text:gsub("\029\001", "\251")
+		text = text:gsub("\029\002", "\252")
+		text = text:gsub("\029\003", "\253")
+		text = text:gsub("\029\004", "\254")
+		text = text:gsub("\029\005", "\255")
+		text = text:gsub("\031(.)", decodeLargeChar)
+		text = text:gsub("\029\032", "\031")
+		text = text:gsub("\029\030", "\029")
 	else
-	    text = text:gsub("\255", "\000")
-	    
-    	text = text:gsub("\176([\177\254\011\125\038])", func)
+		text = text:gsub("\255", "\000")
+		
+		text = text:gsub("\176([\177\254\011\125\038])", func)
 	end
 	-- remove the hidden character and refix the prohibited characters.
 	return text
@@ -475,10 +476,10 @@ do
 					self:ScheduleEvent("AceComm-Join-" .. k.latter, myFunc, 0, k)
 				end
 			end
-			if channel == GetCurrentZoneChannel() then
-				self:TriggerEvent("AceComm_LeftChannel", "ZONE")
-			elseif channel == "AceComm" then
+			if channel == "AceComm" then
 				self:TriggerEvent("AceComm_LeftChannel", "GLOBAL")
+			elseif channel == GetCurrentZoneChannel() then
+				self:TriggerEvent("AceComm_LeftChannel", "ZONE")
 			else
 				self:TriggerEvent("AceComm_LeftChannel", "CUSTOM", channel:sub(8))
 			end
@@ -498,10 +499,10 @@ do
 				t.former = deadName
 				t.latter = deadName
 				switches[t] = true
-			elseif channel == GetCurrentZoneChannel() then
-				self:TriggerEvent("AceComm_JoinedChannel", "ZONE")
 			elseif channel == "AceComm" then
 				self:TriggerEvent("AceComm_JoinedChannel", "GLOBAL")
+			elseif channel == GetCurrentZoneChannel() then
+				self:TriggerEvent("AceComm_JoinedChannel", "ZONE")
 			else
 				self:TriggerEvent("AceComm_JoinedChannel", "CUSTOM", channel:sub(8))
 			end
@@ -1870,6 +1871,9 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 				end
 			end
 		end
+	end
+	if isTable then
+		message = del(message)
 	end
 end
 
