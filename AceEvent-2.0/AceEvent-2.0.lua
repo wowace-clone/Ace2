@@ -62,6 +62,8 @@ local gcinfo = gcinfo
 local unpack = unpack
 local geterrorhandler = geterrorhandler
 
+local useTablesAsIDs = date("%Y%m%d") < "20070718"
+
 local new, del
 do
 	local cache = setmetatable({}, {__mode='k'})
@@ -331,7 +333,7 @@ do
 					if not v_repeatDelay then
 						local x = delayRegistry[k]
 						if x and x.time == v_time then -- check if it was manually reset
-							if type(k) == "string" then
+							if not useTablesAsIDs or type(k) == "string" then
 								del(delayRegistry[k])
 							end
 							delayRegistry[k] = nil
@@ -351,8 +353,8 @@ end
 
 local function ScheduleEvent(self, repeating, event, delay, ...)
 	local id
-	if type(event) == "string" or type(event) == "table" then
-		if type(event) == "table" then
+	if type(event) == "string" or (useTablesAsIDs and type(event) == "table") then
+		if useTablesAsIDs and type(event) == "table" then
 			if not delayRegistry or not delayRegistry[event] then
 				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
 			end
@@ -374,7 +376,7 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 		AceEvent.frame:SetScript("OnUpdate", OnUpdate)
 	end
 	local t
-	if type(id) == "table" then
+	if useTablesAsIDs and type(id) == "table" then
 		for k in pairs(id) do
 			id[k] = nil
 		end
@@ -397,12 +399,16 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 	t.repeatDelay = repeating and delay
 	delayRegistry[t.id] = t
 	AceEvent.frame:Show()
-	return t.id
+	if useTablesAsIDs then
+		return t.id
+	else
+		return
+	end
 end
 
 function AceEvent:ScheduleEvent(event, delay, ...)
-	if type(event) == "string" or type(event) == "table" then
-		if type(event) == "table" then
+	if type(event) == "string" or (useTablesAsIDs and type(event) == "table") then
+		if useTablesAsIDs and type(event) == "table" then
 			if not delayRegistry or not delayRegistry[event] then
 				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
 			end
@@ -420,8 +426,8 @@ function AceEvent:ScheduleEvent(event, delay, ...)
 end
 
 function AceEvent:ScheduleRepeatingEvent(event, delay, ...)
-	if type(event) == "string" or type(event) == "table" then
-		if type(event) == "table" then
+	if type(event) == "string" or (useTablesAsIDs and type(event) == "table") then
+		if useTablesAsIDs and type(event) == "table" then
 			if not delayRegistry or not delayRegistry[event] then
 				AceEvent:error("Bad argument #2 to `ScheduleEvent'. Improper id table fed in.")
 			end
@@ -439,11 +445,15 @@ function AceEvent:ScheduleRepeatingEvent(event, delay, ...)
 end
 
 function AceEvent:CancelScheduledEvent(t)
-	AceEvent:argCheck(t, 2, "string", "table")
+	if useTablesAsIDs then
+		AceEvent:argCheck(t, 2, "string", "table")
+	else
+		AceEvent:argCheck(t, 2, "string")
+	end
 	if delayRegistry then
 		local v = delayRegistry[t]
 		if v then
-			if type(t) == "string" then
+			if not useTablesAsIDs or type(t) == "string" then
 				del(delayRegistry[t])
 			end
 			delayRegistry[t] = nil
@@ -457,7 +467,11 @@ function AceEvent:CancelScheduledEvent(t)
 end
 
 function AceEvent:IsEventScheduled(t)
-	AceEvent:argCheck(t, 2, "string", "table")
+	if useTablesAsIDs then
+		AceEvent:argCheck(t, 2, "string", "table")
+	else
+		AceEvent:argCheck(t, 2, "string")
+	end
 	if delayRegistry then
 		local v = delayRegistry[t]
 		if v then
@@ -552,7 +566,7 @@ function AceEvent:CancelAllScheduledEvents()
 	if delayRegistry then
 		for k,v in pairs(delayRegistry) do
 			if v.self == self then
-				if type(k) == "string" then
+				if not useTablesAsIDs or type(k) == "string" then
 					del(delayRegistry[k])
 				end
 				delayRegistry[k] = nil
