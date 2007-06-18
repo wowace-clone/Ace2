@@ -23,24 +23,24 @@ if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " require
 local AceOO = AceLibrary:GetInstance("AceOO-2.0")
 local Mixin = AceOO.Mixin
 local AceEvent = Mixin {
-						"RegisterEvent",
-						"RegisterAllEvents",
-						"UnregisterEvent",
-						"UnregisterAllEvents",
-						"TriggerEvent",
-						"ScheduleEvent",
-						"ScheduleRepeatingEvent",
-						"CancelScheduledEvent",
-						"CancelAllScheduledEvents",
-						"IsEventRegistered",
-						"IsEventScheduled",
-						"RegisterBucketEvent",
-						"UnregisterBucketEvent",
-						"UnregisterAllBucketEvents",
-						"IsBucketEventRegistered",
-						"ScheduleLeaveCombatAction",
-						"CancelAllCombatSchedules",
-					   }
+	"RegisterEvent",
+	"RegisterAllEvents",
+	"UnregisterEvent",
+	"UnregisterAllEvents",
+	"TriggerEvent",
+	"ScheduleEvent",
+	"ScheduleRepeatingEvent",
+	"CancelScheduledEvent",
+	"CancelAllScheduledEvents",
+	"IsEventRegistered",
+	"IsEventScheduled",
+	"RegisterBucketEvent",
+	"UnregisterBucketEvent",
+	"UnregisterAllBucketEvents",
+	"IsBucketEventRegistered",
+	"ScheduleLeaveCombatAction",
+	"CancelAllCombatSchedules",
+}
 
 local weakKey = {__mode="k"}
 
@@ -200,11 +200,7 @@ function AceEvent:RegisterAllEvents(method)
 	AceEvent_registry[ALL_EVENTS][self] = method
 end
 
-local memstack, timestack = {}, {}
-local memdiff, timediff
-
 function AceEvent:TriggerEvent(event, ...)
-	local tmp = new()
 	if type(event) ~= "string" then
 		DEFAULT_CHAT_FRAME:AddMessage(debugstack())
 	end
@@ -216,33 +212,15 @@ function AceEvent:TriggerEvent(event, ...)
 	local lastEvent = AceEvent.currentEvent
 	AceEvent.currentEvent = event
 
+	local tmp = new()
+
 	local AceEvent_onceRegistry = AceEvent.onceRegistry
-	local AceEvent_debugTable = AceEvent.debugTable
 	if AceEvent_onceRegistry and AceEvent_onceRegistry[event] then
 		for obj, method in pairs(AceEvent_onceRegistry[event]) do
 			tmp[obj] = AceEvent_registry[event] and AceEvent_registry[event][obj] or nil
 		end
 		local obj = next(tmp)
 		while obj do
-			local mem, time
-			if AceEvent_debugTable then
-				if not AceEvent_debugTable[event] then
-					AceEvent_debugTable[event] = {}
-				end
-				if not AceEvent_debugTable[event][obj] then
-					AceEvent_debugTable[event][obj] = {
-						mem = 0,
-						time = 0,
-						count = 0,
-					}
-				end
-				if memdiff then
-					table.insert(memstack, memdiff)
-					table.insert(timestack, timediff)
-				end
-				memdiff, timediff = 0, 0
-				mem, time = gcinfo(), GetTime()
-			end
 			local method = tmp[obj]
 			AceEvent.UnregisterEvent(obj, event)
 			if type(method) == "string" then
@@ -254,19 +232,6 @@ function AceEvent:TriggerEvent(event, ...)
 			elseif method then -- function
 				local success, err = pcall(method, ...)
 				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
-			end
-			if AceEvent_debugTable then
-				local dmem, dtime = memdiff, timediff
-				mem, time = gcinfo() - mem - memdiff, GetTime() - time - timediff
-				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
-				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
-				AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
-
-				memdiff, timediff = table.remove(memstack), table.remove(timestack)
-				if memdiff then
-					memdiff = memdiff + mem + dmem
-					timediff = timediff + time + dtime
-				end
 			end
 			tmp[obj] = nil
 			obj = next(tmp)
@@ -295,25 +260,6 @@ function AceEvent:TriggerEvent(event, ...)
 				end
 			end
 			if not continue then
-				local mem, time
-				if AceEvent_debugTable then
-					if not AceEvent_debugTable[event] then
-						AceEvent_debugTable[event] = {}
-					end
-					if not AceEvent_debugTable[event][obj] then
-						AceEvent_debugTable[event][obj] = {
-							mem = 0,
-							time = 0,
-							count = 0,
-						}
-					end
-					if memdiff then
-						table.insert(memstack, memdiff)
-						table.insert(timestack, timediff)
-					end
-					memdiff, timediff = 0, 0
-					mem, time = gcinfo(), GetTime()
-				end
 				if type(method) == "string" then
 					local obj_method = obj[method]
 					if obj_method then
@@ -323,19 +269,6 @@ function AceEvent:TriggerEvent(event, ...)
 				elseif method then -- function
 					local success, err = pcall(method, ...)
 					if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
-				end
-				if AceEvent_debugTable then
-					local dmem, dtime = memdiff, timediff
-					mem, time = gcinfo() - mem - memdiff, GetTime() - time - timediff
-					AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
-					AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
-					AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
-
-					memdiff, timediff = table.remove(memstack), table.remove(timestack)
-					if memdiff then
-						memdiff = memdiff + mem + dmem
-						timediff = timediff + time + dtime
-					end
 				end
 			end
 			tmp[obj] = nil
@@ -349,24 +282,6 @@ function AceEvent:TriggerEvent(event, ...)
 		local obj = next(tmp)
 		while obj do
 			local method = tmp[obj]
-			local mem, time
-			if AceEvent_debugTable then
-				if not AceEvent_debugTable[event] then
-					AceEvent_debugTable[event] = {}
-				end
-				if not AceEvent_debugTable[event][obj] then
-					AceEvent_debugTable[event][obj] = {}
-					AceEvent_debugTable[event][obj].mem = 0
-					AceEvent_debugTable[event][obj].time = 0
-					AceEvent_debugTable[event][obj].count = 0
-				end
-				if memdiff then
-					table.insert(memstack, memdiff)
-					table.insert(timestack, timediff)
-				end
-				memdiff, timediff = 0, 0
-				mem, time = gcinfo(), GetTime()
-			end
 			if type(method) == "string" then
 				local obj_method = obj[method]
 				if obj_method then
@@ -377,19 +292,6 @@ function AceEvent:TriggerEvent(event, ...)
 				local success, err = pcall(method, ...)
 				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
 			end
-			if AceEvent_debugTable then
-				local dmem, dtime = memdiff, timediff
-				mem, time = gcinfo() - mem - memdiff, GetTime() - time - timediff
-				AceEvent_debugTable[event][obj].mem = AceEvent_debugTable[event][obj].mem + mem
-				AceEvent_debugTable[event][obj].time = AceEvent_debugTable[event][obj].time + time
-				AceEvent_debugTable[event][obj].count = AceEvent_debugTable[event][obj].count + 1
-
-				memdiff, timediff = table.remove(memstack), table.remove(timestack)
-				if memdiff then
-					memdiff = memdiff + mem + dmem
-					timediff = timediff + time + dtime
-				end
-			end
 			tmp[obj] = nil
 			obj = next(tmp)
 		end
@@ -399,59 +301,51 @@ function AceEvent:TriggerEvent(event, ...)
 end
 
 local delayRegistry
-local tmp = {}
-local function OnUpdate()
-	local t = GetTime()
-	for k,v in pairs(delayRegistry) do
-		tmp[k] = true
-	end
-	local AceEvent_debugTable = AceEvent.debugTable
-	for k in pairs(tmp) do
-		local v = delayRegistry[k]
-		if v then
-			local v_time = v.time
-			if not v_time then
-				delayRegistry[k] = nil
-			elseif v_time <= t then
-				local v_repeatDelay = v.repeatDelay
-				if v_repeatDelay then
-					-- use the event time, not the current time, else timing inaccuracies add up over time
-					v.time = v_time + v_repeatDelay
-				end
-				local event = v.event
-				local mem, time
-				if AceEvent_debugTable then
-					mem, time = gcinfo(), GetTime()
-				end
-				if type(event) == "function" then
-					local success, err = pcall(event, unpack(v, 1, v.n))
-					if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
-				else
-					AceEvent:TriggerEvent(event, unpack(v, 1, v.n))
-				end
-				if AceEvent_debugTable then
-					mem, time = gcinfo() - mem, GetTime() - time
-					v.mem = v.mem + mem
-					v.timeSpent = v.timeSpent + time
-					v.count = v.count + 1
-				end
-				if not v_repeatDelay then
-					local x = delayRegistry[k]
-					if x and x.time == v_time then -- check if it was manually reset
-						if type(k) == "string" then
-							del(delayRegistry[k])
+local OnUpdate
+do
+	local tmp = {}
+	OnUpdate = function()
+		local t = GetTime()
+		for k,v in pairs(delayRegistry) do
+			tmp[k] = true
+		end
+		for k in pairs(tmp) do
+			local v = delayRegistry[k]
+			if v then
+				local v_time = v.time
+				if not v_time then
+					delayRegistry[k] = nil
+				elseif v_time <= t then
+					local v_repeatDelay = v.repeatDelay
+					if v_repeatDelay then
+						-- use the event time, not the current time, else timing inaccuracies add up over time
+						v.time = v_time + v_repeatDelay
+					end
+					local event = v.event
+					if type(event) == "function" then
+						local success, err = pcall(event, unpack(v, 1, v.n))
+						if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+					else
+						AceEvent:TriggerEvent(event, unpack(v, 1, v.n))
+					end
+					if not v_repeatDelay then
+						local x = delayRegistry[k]
+						if x and x.time == v_time then -- check if it was manually reset
+							if type(k) == "string" then
+								del(delayRegistry[k])
+							end
+							delayRegistry[k] = nil
 						end
-						delayRegistry[k] = nil
 					end
 				end
 			end
 		end
-	end
-	for k in pairs(tmp) do
-		tmp[k] = nil
-	end
-	if not next(delayRegistry) then
-		AceEvent.frame:Hide()
+		for k in pairs(tmp) do
+			tmp[k] = nil
+		end
+		if not next(delayRegistry) then
+			AceEvent.frame:Hide()
+		end
 	end
 end
 
@@ -493,18 +387,14 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 		t = new(select(2, ...))
 		t.n = select('#', ...) - 1
 	else
-		t = { n = select('#', ...), ... }
+		t = new(...)
+		t.n = select('#', ...)
 	end
 	t.event = event
 	t.time = GetTime() + delay
 	t.self = self
 	t.id = id or t
 	t.repeatDelay = repeating and delay
-	if AceEvent.debugTable then
-		t.mem = 0
-		t.count = 0
-		t.timeSpent = 0
-	end
 	delayRegistry[t.id] = t
 	AceEvent.frame:Show()
 	return t.id
@@ -855,28 +745,30 @@ function AceEvent:PLAYER_REGEN_DISABLED()
 	inCombat = true
 end
 
-local tmp = {}
-function AceEvent:PLAYER_REGEN_ENABLED()
-	inCombat = false
-	for i, v in ipairs(combatSchedules) do
-		tmp[i] = v
-		combatSchedules[i] = nil
-	end
-	for i, v in ipairs(tmp) do
-		local func = v.func
-		if func then
-			local success, err = pcall(func, unpack(v, 1, v.n))
-			if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
-		else
-			local obj = v.obj or v.self
-			local method = v.method
-			local obj_method = obj[method]
-			if obj_method then
-				local success, err = pcall(obj_method, obj, unpack(v, 1, v.n))
-				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
-			end
+do
+	local tmp = {}
+	function AceEvent:PLAYER_REGEN_ENABLED()
+		inCombat = false
+		for i, v in ipairs(combatSchedules) do
+			tmp[i] = v
+			combatSchedules[i] = nil
 		end
-		tmp[i] = del(v)
+		for i, v in ipairs(tmp) do
+			local func = v.func
+			if func then
+				local success, err = pcall(func, unpack(v, 1, v.n))
+				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+			else
+				local obj = v.obj or v.self
+				local method = v.method
+				local obj_method = obj[method]
+				if obj_method then
+					local success, err = pcall(obj_method, obj, unpack(v, 1, v.n))
+					if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+				end
+			end
+			tmp[i] = del(v)
+		end
 	end
 end
 
@@ -949,22 +841,6 @@ function AceEvent:OnEmbedDisable(target)
 	self.CancelAllCombatSchedules(target)
 end
 
-function AceEvent:EnableDebugging()
-	if not self.debugTable then
-		self.debugTable = {}
-
-		if delayRegistry then
-			for k,v in pairs(self.delayRegistry) do
-				if not v.mem then
-					v.mem = 0
-					v.count = 0
-					v.timeSpent = 0
-				end
-			end
-		end
-	end
-end
-
 function AceEvent:IsFullyInitialized()
 	return self.postInit or false
 end
@@ -982,7 +858,6 @@ local function activate(self, oldLib, oldDeactivate)
 	self.buckets = oldLib and oldLib.buckets or {}
 	self.registry = oldLib and oldLib.registry or {}
 	self.frame = oldLib and oldLib.frame or CreateFrame("Frame", "AceEvent20Frame")
-	self.debugTable = oldLib and oldLib.debugTable
 	self.playerLogin = IsLoggedIn() and true
 	self.postInit = oldLib and oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
 	self.ALL_EVENTS = oldLib and oldLib.ALL_EVENTS or {}
