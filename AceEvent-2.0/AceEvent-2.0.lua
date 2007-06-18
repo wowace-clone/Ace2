@@ -678,7 +678,8 @@ function AceEvent:RegisterBucketEvent(event, delay, method, ...)
 			end
 		end
 	end
-	bucket.id = AceEvent.ScheduleRepeatingEvent(self, bucketfunc, delay, bucket)
+	bucket.id = "AceEvent-Bucket-" .. tostring(bucketfunc)
+	AceEvent.ScheduleRepeatingEvent(self, bucket.id, bucketfunc, delay, bucket)
 end
 
 function AceEvent:IsBucketEventRegistered(event)
