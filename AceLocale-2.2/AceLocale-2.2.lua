@@ -21,13 +21,21 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 local AceLocale = {}
 AceLocale.prototype = { class = AceLocale }
 
-local _G = getfenv(0)
-
 local BASE_TRANSLATIONS, DEBUGGING, TRANSLATIONS, BASE_LOCALE, TRANSLATION_TABLES, REVERSE_TRANSLATIONS, STRICTNESS, DYNAMIC_LOCALES, CURRENT_LOCALE, NAME
 
+local _G = _G
 local rawget = rawget
 local rawset = rawset
 local type = type
+local pairs = pairs
+local next = next
+local getmetatable = getmetatable
+local setmetatable = setmetatable
+local GetTime = GetTime
+local geterrorhandler = geterrorhandler
+local pcall = pcall
+local ipairs = ipairs
+local GetLocale = GetLocale
 
 local newRegistries = {}
 local scheduleClear
