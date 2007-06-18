@@ -19,8 +19,8 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 local AceLocale = {}
+AceLocale.prototype = { class = AceLocale }
 
-local DEFAULT_LOCALE = "enUS"
 local _G = getfenv(0)
 
 local BASE_TRANSLATIONS, DEBUGGING, TRANSLATIONS, BASE_LOCALE, TRANSLATION_TABLES, REVERSE_TRANSLATIONS, STRICTNESS, DYNAMIC_LOCALES, CURRENT_LOCALE, NAME
@@ -137,8 +137,6 @@ function AceLocale:new(name)
 	newRegistries[AceLocale.registry[name]] = true
 	return AceLocale.registry[name]
 end
-
-AceLocale.prototype = { class = AceLocale }
 
 function AceLocale.prototype:EnableDebugging()
 	if rawget(self, BASE_TRANSLATIONS) then
