@@ -715,17 +715,13 @@ function AceAddon:ManualEnable(addon)
 	AceAddon:argCheck(addon, 2, "table")
 	local first = nil
 	if AceOO.inherits(addon, "AceAddon-2.0") then
-		local AceAddon = AceLibrary("AceAddon-2.0")
 		if AceAddon.addonsEnabled and not AceAddon.addonsEnabled[addon] then
 			first = true
 			AceAddon.addonsEnabled[addon] = true
 		end
 	end
 	local current = addon.class
-	while true do
-		if current == AceOO.Class then
-			break
-		end
+	while current and current ~= AceOO.Class do
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedEnable) == "function" then
@@ -746,10 +742,7 @@ end
 function AceAddon:ManualDisable(addon)
 	AceAddon:argCheck(addon, 2, "table")
 	local current = addon.class
-	while true do
-		if current == AceOO.Class then
-			break
-		end
+	while current and current ~= AceOO.Class do
 		if current.mixins then
 			for mixin in pairs(current.mixins) do
 				if type(mixin.OnEmbedDisable) == "function" then
