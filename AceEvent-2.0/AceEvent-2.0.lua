@@ -63,7 +63,7 @@ local unpack = unpack
 local geterrorhandler = geterrorhandler
 
 local build = GetBuildInfo()
-local useTablesAsIDs = date("%Y%m%d") < "20070818" and (build:find("^2%.0%.") or build:find("^2%.1%.") or build:find("^0%.1%."))
+local useTablesAsIDs = build:find("^2%.0%.") or build:find("^2%.1%.") or build:find("^0%.1%.")
 
 local new, del
 do
