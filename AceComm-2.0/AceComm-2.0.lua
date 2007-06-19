@@ -1428,22 +1428,19 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	end
 	
 	local message
-	
-	local tmp
 	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
 		message = person
 	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
 		message = ...
 	else
-		tmp = new()
-		message = tmp
+		message = new()
 		local n = 1
 		if includePerson then
-			tmp[1] = person
+			message[1] = person
 			n = 2
 		end
 		for i = 1, select('#', ...) do
-			tmp[n] = select(i, ...)
+			message[n] = select(i, ...)
 			n = n + 1
 		end
 	end
@@ -1454,8 +1451,8 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
-	if tmp then
-		tmp = del(tmp)
+	if type(message) == "table" then
+		message = del(message)
 	end
 	
 	return ret
@@ -1484,21 +1481,19 @@ function AceComm:SendCommMessage(distribution, person, ...)
 	end
 	
 	local message
-	local tmp
 	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
 		message = person
 	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
 		message = ...
 	else
-		tmp = new()
-		message = tmp
+		message = new()
 		local n = 1
 		if includePerson then
-			tmp[1] = person
+			message[1] = person
 			n = 2
 		end
 		for i = 1, select('#', ...) do
-			tmp[n] = select(i, ...)
+			message[n] = select(i, ...)
 			n = n + 1
 		end
 	end
@@ -1511,8 +1506,8 @@ function AceComm:SendCommMessage(distribution, person, ...)
 	
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
 	
-	if tmp then
-		tmp = del(tmp)
+	if type(message) == "table" then
+		message = del(message)
 	end
 	
 	return ret
