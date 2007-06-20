@@ -711,6 +711,10 @@ local function createAboutFrame()
 end
 local donateFrame
 
+local function unobfuscateEmail(email)
+	return email:gsub(" AT ", "@"):gsub(" DOT ", ".")
+end
+
 local function isGoodVariable(var)
 	return type(var) == "string" or type(var) == "number"
 end
@@ -756,7 +760,7 @@ function AceAddon.prototype:PrintAddonInfo()
 		end
 	end
 	if isGoodVariable(self.email) then
-		aboutFrame:AddLine(EMAIL, tostring(self.email))
+		aboutFrame:AddLine(EMAIL, unobfuscateEmail(tostring(self.email)))
 	end
 	if isGoodVariable(self.website) then
 		aboutFrame:AddLine(WEBSITE, tostring(self.website))
@@ -858,7 +862,7 @@ function AceAddon.prototype:OpenDonationFrame()
 	if style == "website" then
 		donateFrame.editBox.text = data
 	else -- PayPal
-		local text = "https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=" .. urlencode(data)
+		local text = "https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=" .. urlencode(unobfuscateEmail(data))
 		local name
 		if type(self.title) == "string" then
 			name = self.title
