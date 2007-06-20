@@ -587,54 +587,151 @@ function AceAddon:InitializeAddon(addon, name)
 	end
 end
 
+local aboutFrame
+local function createAboutFrame()
+	aboutFrame = CreateFrame("Frame", "AceAddon20AboutFrame", UIParent, "DialogBoxFrame")
+
+	aboutFrame:SetWidth(500)
+	aboutFrame:SetHeight(400)
+	aboutFrame:SetPoint("CENTER")
+	aboutFrame:SetBackdrop({
+		bgFile = [[Interface\DialogFrame\UI-DialogBox-Background]], 
+	    edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], 
+	    tile = true, tileSize = 16, edgeSize = 16, 
+	    insets = { left = 5, right = 5, top = 5, bottom = 5 }
+	})
+	aboutFrame:SetBackdropColor(0,0,0,1)
+
+	local text = aboutFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+	aboutFrame.title = text
+	text:SetPoint("TOP", 0, -5)
+	text:SetPoint("LEFT")
+	--[[
+	local closeButton = CreateFrame("Button", "AceAddon20AboutFrameCloseButton", aboutFrame, "UIPanelCloseButton")
+	closeButton:SetPoint("TOPRIGHT", 5, 5)
+	closeButton:SetScript("OnClick", function()
+		aboutFrame:Hide()
+	end)
+	text:SetPoint("RIGHT", closeButton)
+	]]
+	aboutFrame:Hide()
+	
+	aboutFrame.lefts = {}
+	aboutFrame.rights = {}
+	aboutFrame.textLefts = {}
+	aboutFrame.textRights = {}
+	function aboutFrame:Clear()
+		self.title:SetText("")
+		for i = 1, #self.lefts do
+			self.lefts[i] = nil
+			self.rights[i] = nil
+		end
+	end
+	
+	function aboutFrame:AddLine(left, right)
+		aboutFrame.lefts[#aboutFrame.lefts+1] = left
+		aboutFrame.rights[#aboutFrame.rights+1] = right
+	end
+	
+	local aboutFrame_Show = aboutFrame.Show
+	function aboutFrame:Show(...)
+		local maxLeftWidth = 0
+		local maxRightWidth = 0
+		local textHeight = 0
+		for i = 1, #self.lefts do
+			if not self.textLefts[i] then
+				local left = aboutFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+				self.textLefts[i] = left
+				local right = aboutFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+				self.textRights[i] = right
+				if i == 1 then
+					left:SetPoint("TOPRIGHT", aboutFrame, "TOPLEFT", 75, -35)
+				else
+					left:SetPoint("TOPRIGHT", self.textLefts[i-1], "BOTTOMRIGHT", 0, -5)
+				end
+				right:SetPoint("LEFT", left, "RIGHT", 5, 0)
+			end
+			self.textLefts[i]:SetText(self.lefts[i] .. ":")
+			self.textRights[i]:SetText(self.rights[i])
+			local leftWidth = self.textLefts[i]:GetWidth()
+			local rightWidth = self.textRights[i]:GetWidth()
+			textHeight = self.textLefts[i]:GetHeight()
+			if maxLeftWidth < leftWidth then
+				maxLeftWidth = leftWidth
+			end
+			if maxRightWidth < rightWidth then
+				maxRightWidth = rightWidth
+			end
+		end
+		for i = #self.lefts+1, #self.textLefts do
+			self.textLefts[i]:SetText('')
+			self.textRights[i]:SetText('')
+		end
+		aboutFrame:SetWidth(75 + maxRightWidth + 20)
+		aboutFrame:SetHeight(#self.lefts * (textHeight + 5) + 100)
+		
+		aboutFrame_Show(self, ...)
+	end
+	aboutFrame:Hide()
+	
+	createAboutFrame = nil
+end
+
 local function isGoodVariable(var)
 	return type(var) == "string" or type(var) == "number"
 end
 function AceAddon.prototype:PrintAddonInfo()
+	if createAboutFrame then
+		createAboutFrame()
+	end
+	aboutFrame:Clear()
 	local x
 	if isGoodVariable(self.title) then
-		x = "|cffffff7f" .. tostring(self.title) .. "|r"
+		x = tostring(self.title)
 	elseif isGoodVariable(self.name) then
-		x = "|cffffff7f" .. tostring(self.name) .. "|r"
+		x = tostring(self.name)
 	else
-		x = "|cffffff7f<" .. tostring(self.class) .. " instance>|r"
+		x = "<" .. tostring(self.class) .. " instance>"
 	end
 	if type(self.IsActive) == "function" then
 		if not self:IsActive() then
 			x = x .. " " .. STANDBY
 		end
 	end
+	aboutFrame.title:SetText(x)
+	
 	if isGoodVariable(self.version) then
-		x = x .. " - |cffffff7f" .. tostring(self.version) .. "|r"
+		aboutFrame:AddLine(VERSION, tostring(self.version))
 	end
 	if isGoodVariable(self.notes) then
-		x = x .. " - " .. tostring(self.notes)
+		aboutFrame:AddLine(NOTES, tostring(self.notes))
 	end
-	print(x)
 	if isGoodVariable(self.author) then
-		print(" - |cffffff7f" .. AUTHOR .. ":|r " .. tostring(self.author))
+		aboutFrame:AddLine(AUTHOR, tostring(self.author))
 	end
 	if isGoodVariable(self.credits) then
-		print(" - |cffffff7f" .. CREDITS .. ":|r " .. tostring(self.credits))
+		aboutFrame:AddLine(CREDITS, tostring(self.credits))
 	end
 	if isGoodVariable(self.date) then
-		print(" - |cffffff7f" .. DATE .. ":|r " .. tostring(self.date))
+		aboutFrame:AddLine(DATE, tostring(self.date))
 	end
 	if self.category then
 		local category = CATEGORIES[self.category]
 		if category then
-			print(" - |cffffff7f" .. CATEGORY .. ":|r " .. category)
+			aboutFrame:AddLine(CATEGORY, tostring(self.category))
 		end
 	end
 	if isGoodVariable(self.email) then
-		print(" - |cffffff7f" .. EMAIL .. ":|r " .. tostring(self.email))
+		aboutFrame:AddLine(EMAIL, tostring(self.email))
 	end
 	if isGoodVariable(self.website) then
-		print(" - |cffffff7f" .. WEBSITE .. ":|r " .. tostring(self.website))
+		aboutFrame:AddLine(WEBSITE, tostring(self.website))
 	end
 	if isGoodVariable(self.license) then
-		print(" - |cffffff7f" .. LICENSE .. ":|r " .. tostring(self.license))
+		aboutFrame:AddLine(LICENSE, tostring(self.license))
 	end
+	
+	aboutFrame:Show()
 end
 
 local options
