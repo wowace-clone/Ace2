@@ -29,6 +29,7 @@ local AceHook = AceOO.Mixin {
 								"Hook",
 								"HookScript",
 								"SecureHook",
+								"SecureHookScript",
 								"Unhook",
 								"UnhookAll",
 								"HookReport",
