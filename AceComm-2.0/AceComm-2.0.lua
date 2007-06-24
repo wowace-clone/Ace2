@@ -85,7 +85,6 @@ local math_floor = _G.math.floor
 local string_char = _G.string.char
 local math_min = _G.math.min
 local table_concat = _G.table.concat
-local table_insert = _G.table.insert
 local type = _G.type
 local unpack = _G.unpack
 local ipairs = _G.ipairs
@@ -872,6 +871,8 @@ do
 			recurse = new()
 		end
 		local sb = new()
+		sb[1] = ""
+		sb[2] = ""
 		local len = _Serialize(value, textToHash, sb, drunk)
 		for k in pairs(recurse) do
 			recurse[k] = nil
@@ -1482,8 +1483,8 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 			end
 			local index = GetChannelName(channel)
 			if index and index > 0 then
-				table_insert(sb, 1, prefix)
-				table_insert(sb, 2, string_char(9 --[[\t]], id, 1, 1, 9 --[[\t]]))
+				sb[1] = prefix
+				sb[2] = string_char(9 --[[\t]], id, 1, 1, 9 --[[\t]])
 				sb[#sb+1] = "\029"
 				local message = table_concat(sb)
 				sb = del(sb)
@@ -1502,7 +1503,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				end
 				recentGuildMessage = GetTime() + 10
 			end
-			table_insert(sb, 1, string_char(id, 1, 1, 9 --[[\t]]))
+			sb[1] = string_char(id, 1, 1, 9 --[[\t]])
 			local message = table_concat(sb)
 			sb = del(sb)
 			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution, person)
