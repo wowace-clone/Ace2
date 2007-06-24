@@ -235,7 +235,7 @@ end
 
 local Encode, EncodeByte
 do
-	local drunkHelper_t = setmetatable({
+	local drunkHelper_t = {
 		[29] = "\029\030",
 		[31] = "\029\032",
 		[20] = "\029\021",
@@ -247,7 +247,8 @@ do
 		[10] = "\029\011", -- \n
 		[124] = "\029\125", -- |
 		[("%"):byte()] = "\029\038", -- %
-	}, { __index = function(self, c)
+	}
+	for c = 128, 255 do
 		local num = c
 		num = num - 127
 		if num >= 9 then
@@ -257,12 +258,11 @@ do
 			num = num + 2
 		end
 		if num >= 128 then
-			self[c] = string_char(29, num - 127) -- 1, 2, 3, 4, 5
+			drunkHelper_t[c] = string_char(29, num - 127) -- 1, 2, 3, 4, 5
 		else
-			self[c] = string_char(31, num)
+			drunkHelper_t[c] = string_char(31, num)
 		end
-		return self[c]
-	end})
+	end
 	local function drunkHelper(char)
 		return drunkHelper_t[char:byte()]
 	end
