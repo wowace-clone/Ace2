@@ -1427,7 +1427,6 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	if id == byte_s or id == byte_S then
 		id = id + 1
 	end
-	local id = string_char(id)
 	local drunk = distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM"
 	prefix = Encode(prefix, drunk)
 	message = SerializeAndEncode(message, textToHash, drunk)
@@ -1437,7 +1436,6 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	if max > 1 then
 		local segment = math_floor(messageLen / max + 0.5)
 		local last = 0
-		local good = true
 		for i = 1, max do
 			local bit
 			if i == max then
@@ -1451,7 +1449,6 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				last = next
 			end
 			if distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
-				bit = prefix .. "\t" .. id .. encodedChar[i] .. encodedChar[max] .. "\t" .. bit .. "\029"
 				local channel
 				if distribution == "GLOBAL" then
 					channel = "AceComm"
@@ -1462,19 +1459,19 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				end
 				local index = GetChannelName(channel)
 				if index and index > 0 then
+					bit = prefix .. string_char(9 --[[\t]], id) .. encodedChar[i] .. encodedChar[max] .. "\t" .. bit .. "\029"
 					ChatThrottleLib:SendChatMessage(priority, prefix, bit, "CHANNEL", nil, index)
 				else
-					good = false
+					return false
 				end
 			else
-				bit = id .. soberEncodedChar[i] .. soberEncodedChar[max] .. "\t" .. bit
+				bit = string_char(id) .. soberEncodedChar[i] .. soberEncodedChar[max] .. "\t" .. bit
 				ChatThrottleLib:SendAddonMessage(priority, prefix, bit, distribution, person)
 			end
 		end
-		return good
+		return true
 	else
 		if distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
-			message = prefix .. "\t" .. id .. string_char(1) .. string_char(1) .. "\t" .. message .. "\029"
 			local channel
 			if distribution == "GLOBAL" then
 				channel = "AceComm"
@@ -1485,11 +1482,11 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 			end
 			local index = GetChannelName(channel)
 			if index and index > 0 then
+				message = prefix .. string_char(9 --[[\t]], id, 1, 1, 9 --[[\t]]) .. message .. "\029"
 				ChatThrottleLib:SendChatMessage(priority, prefix, message, "CHANNEL", nil, index)
 				return true
 			end
 		else
-			message = id .. string_char(1) .. string_char(1) .. "\t" .. message
 			if distribution == "GUILD" and firstGuildMessage then
 				firstGuildMessage = false
 				if GetCVar("EnableErrorSpeech") == "1" then
@@ -1500,6 +1497,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				end
 				recentGuildMessage = GetTime() + 10
 			end
+			message = string_char(id, 1, 1, 9 --[[\t]]) .. message
 			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution, person)
 			return true
 		end
