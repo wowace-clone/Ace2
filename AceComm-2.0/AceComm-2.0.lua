@@ -233,22 +233,22 @@ local function IsInChannel(chan)
 	return GetChannelName(chan) ~= 0
 end
 
-local Encode
+local Encode, EncodeByte
 do
-	local t = setmetatable({
-		["\029"] = "\029\030",
-		["\031"] = "\029\032",
-		["\020"] = "\029\021",
-		["\015"] = "\029\016",
-		["S"] = "\020", -- change S and s to a different set of character bytes.
-		["s"] = "\015",
-		["\127"] = "\029\126", -- \127 (this is here because \000 is more common)
-		["\000"] = "\127", -- \000
-		["\010"] = "\029\011", -- \n
-		["\124"] = "\029\125", -- |
-		["%"] = "\029\038", -- %
+	local drunkHelper_t = setmetatable({
+		[29] = "\029\030",
+		[31] = "\029\032",
+		[20] = "\029\021",
+		[15] = "\029\016",
+		[("S"):byte()] = "\020", -- change S and s to a different set of character bytes.
+		[("s"):byte()] = "\015",
+		[127] = "\029\126", -- \127 (this is here because \000 is more common)
+		[0] = "\127", -- \000
+		[10] = "\029\011", -- \n
+		[124] = "\029\125", -- |
+		[("%"):byte()] = "\029\038", -- %
 	}, { __index = function(self, c)
-		local num = c:byte()
+		local num = c
 		num = num - 127
 		if num >= 9 then
 			num = num + 2
@@ -264,18 +264,18 @@ do
 		return self[c]
 	end})
 	local function drunkHelper(char)
-		return t[char]
+		return drunkHelper_t[char:byte()]
 	end
-	local t = {
-		["\176"] = "\176\177",
-		["\255"] = "\176\254", -- \255 (this is here because \000 is more common)
-		["\000"] = "\255", -- \000
-		["\010"] = "\176\011", -- \n
-		["\124"] = "\176\125", -- |
-		["%"] = "\176\038", -- %
+	local soberHelper_t = {
+		[176] = "\176\177",
+		[255] = "\176\254", -- \255 (this is here because \000 is more common)
+		[0] = "\255", -- \000
+		[10] = "\176\011", -- \n
+		[124] = "\176\125", -- |
+		[("%"):byte()] = "\176\038", -- %
 	}
 	local function soberHelper(char)
-		return t[char]
+		return soberHelper_t[char:byte()]
 	end
 	-- Package a message for transmission
 	function Encode(text, drunk)
@@ -284,6 +284,51 @@ do
 		else
 			return text:gsub("([\176\255%z\010\124%%])", soberHelper)
 		end
+	end
+	
+	function EncodeByte(num, drunk)
+		local t
+		if drunk then
+			t = drunkHelper_t
+		else
+			t = soberHelper_t
+		end
+		
+		local value = t[num]
+		if value then
+			return value
+		else
+			return string_char(num)
+		end
+	end
+	
+	local function EncodeBytes_helper(drunk, ...)
+		local n = select('#', ...)
+		if n == 0 then
+			return
+		end
+		local t
+		if drunk then
+			t = drunkHelper_t
+		else
+			t = soberHelper_t
+		end
+		local num = (...)
+		local value = t[num]
+		if not value then
+			return num, EncodeBytes_helper(drunk, select(2, ...))
+		else
+			local len = #value
+			if len == 1 then
+				return value:byte(1), EncodeBytes_helper(drunk, select(2, ...))
+			else -- 2
+				local a, b = value:byte(1, 2)
+				return a, b, EncodeBytes_helper(drunk, select(2, ...))
+			end
+		end
+	end
+	function EncodeBytes(drunk, ...)
+		return string_char(EncodeBytes_helper(drunk, ...))
 	end
 end
 
@@ -588,10 +633,10 @@ do
 	end
 end
 
-local Serialize
+local SerializeAndEncode
 do
 	local recurse
-	local function _Serialize(v, textToHash, sb)
+	local function _Serialize(v, textToHash, sb, drunk)
 		local kind = type(v)
 		if kind == "boolean" then
 			if v then
@@ -611,28 +656,28 @@ do
 						v = v + 256
 					end
 					sb[#sb+1] = "d"
-					sb[#sb+1] = string_char(v)
+					sb[#sb+1] = EncodeByte(v, drunk)
 					return 2
 				elseif v <= 2^15-1 and v >= -2^15 then
 					if v < 0 then
 						v = v + 256^2
 					end
 					sb[#sb+1] = "D"
-					sb[#sb+1] = string_char(math_floor(v / 256), v % 256)
+					sb[#sb+1] = EncodeBytes(drunk, math_floor(v / 256), v % 256)
 					return 3
 				elseif v <= 2^31-1 and v >= -2^31 then
 					if v < 0 then
 						v = v + 256^4
 					end
 					sb[#sb+1] = "e"
-					sb[#sb+1] = string_char(math_floor(v / 256^3), math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					sb[#sb+1] = EncodeBytes(drunk, math_floor(v / 256^3), math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
 					return 5
 				elseif v <= 2^63-1 and v >= -2^63 then
 					if v < 0 then
 						v = v + 256^8
 					end
 					sb[#sb+1] = "E"
-					sb[#sb+1] = string_char(math_floor(v / 256^7), math_floor(v / 256^6) % 256, math_floor(v / 256^5) % 256, math_floor(v / 256^4) % 256, math_floor(v / 256^3) % 256, math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					sb[#sb+1] = EncodeBytes(drunk, math_floor(v / 256^7), math_floor(v / 256^6) % 256, math_floor(v / 256^5) % 256, math_floor(v / 256^4) % 256, math_floor(v / 256^3) % 256, math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
 					return 9
 				end
 			elseif v == inf then
@@ -662,13 +707,13 @@ do
 			m = math_floor(m / 256^2)
 			m = m + x * 2^37
 			sb[#sb+1] = sign and "-" or "+"
-			sb[#sb+1] = string_char(math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
+			sb[#sb+1] = EncodeBytes(drunk, math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
 			return 9
 		elseif kind == "string" then
 			local hash = textToHash and textToHash[v]
 			if hash then
 				sb[#sb+1] = "m"
-				sb[#sb+1] = string_char(math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
+				sb[#sb+1] = EncodeBytes(drunk, math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
 				return 4
 			end
 			local r,g,b,A,B,C,D,E,F,G,H,name = v:match("^|cff(%x%x)(%x%x)(%x%x)|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[(.+)%]|h|r$")
@@ -697,21 +742,21 @@ do
 				H = H % 256^2 -- only lower 16 bits matter
 				
 				sb[#sb+1] = "I"
-				sb[#sb+1] = string_char(r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, math_min(name:len(), 255))
-				sb[#sb+1] = name:sub(1, 255)
+				sb[#sb+1] = EncodeBytes(drunk, r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, math_min(name:len(), 255))
+				sb[#sb+1] = Encode(name:sub(1, 255), drunk)
 				return 19 + math_min(name:len(), 255)
 			else
 				-- normal string
 				local len = v:len()
 				if len <= 255 then
 					sb[#sb+1] = "s"
-					sb[#sb+1] = string_char(len)
-					sb[#sb+1] = v
+					sb[#sb+1] = EncodeByte(len, drunk)
+					sb[#sb+1] = Encode(v, drunk)
 					return 2 + len
 				else
 					sb[#sb+1] = "S"
-					sb[#sb+1] = string_char(math_floor(len / 256), len % 256)
-					sb[#sb+1] = v
+					sb[#sb+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[#sb+1] = Encode(v, drunk)
 					return 3 + len
 				end
 			end
@@ -743,7 +788,7 @@ do
 				sb[#sb+1] = "" -- dummy
 				local len = 0
 				for i = 2, #t do
-					len = len + _Serialize(t[i], textToHash, sb)
+					len = len + _Serialize(t[i], textToHash, sb, drunk)
 				end
 				t = del(t)
 --				if not notFirst then
@@ -753,11 +798,11 @@ do
 --				end
 				if len <= 255 then
 					sb[sb_id] = "o"
-					sb[sb_id+1] = string_char(len)
+					sb[sb_id+1] = EncodeByte(len, drunk)
 					return 2 + len
 				else
 					sb[sb_id] = "O"
-					sb[sb_id+1] = string_char(math_floor(len / 256), len % 256)
+					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
 					return 3 + len
 				end
 			end
@@ -783,12 +828,12 @@ do
 					n = n - 1
 				end
 				for i = 1, n do
-					len = len + _Serialize(v[i], textToHash, sb)
+					len = len + _Serialize(v[i], textToHash, sb, drunk)
 				end
 			else
 				for k,u in pairs(v) do
-					len = len + _Serialize(k, textToHash, sb)
-					len = len + _Serialize(u, textToHash, sb)
+					len = len + _Serialize(k, textToHash, sb, drunk)
+					len = len + _Serialize(u, textToHash, sb, drunk)
 				end
 			end
 			t = del(t)
@@ -800,33 +845,33 @@ do
 			if islist then
 				if len <= 255 then
 					sb[sb_id] = "u"
-					sb[sb_id+1] = string_char(len)
+					sb[sb_id+1] = EncodeByte(len, drunk)
 					return 2 + len
 				else
 					sb[sb_id] = "U"
-					sb[sb_id+1] = string_char(math_floor(len / 256), len % 256)
+					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
 					return 3 + len
 				end
 			else
 				if len <= 255 then
 					sb[sb_id] = "t"
-					sb[sb_id+1] = string_char(len)
+					sb[sb_id+1] = EncodeByte(len, drunk)
 					return 2 + len
 				else
 					sb[sb_id] = "T"
-					sb[sb_id+1] = string_char(math_floor(len / 256), len % 256)
+					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
 					return 3 + len
 				end
 			end	
 		end
 	end
 	
-	function Serialize(value, textToHash)
+	function SerializeAndEncode(value, textToHash, drunk)
 		if not recurse then
 			recurse = new()
 		end
 		local sb = new()
-		_Serialize(value, textToHash, sb)
+		_Serialize(value, textToHash, sb, drunk)
 		local chunk = table_concat(sb)
 		sb = del(sb)
 		for k in pairs(recurse) do
@@ -1385,8 +1430,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	local id = string_char(id)
 	local drunk = distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM"
 	prefix = Encode(prefix, drunk)
-	message = Serialize(message, textToHash)
-	message = Encode(message, drunk)
+	message = SerializeAndEncode(message, textToHash, drunk)
 	local headerLen = prefix:len() + 6
 	local messageLen = message:len()
 	local max = math_floor(messageLen / (250 - headerLen) + 1)
