@@ -77,19 +77,56 @@ local byte_nan = ("!"):byte()
 local inf = 1/0
 local nan = 0/0
 
-local math_floor = math.floor
-local string_char = string.char
+local _G = _G
 
-local type = type
-local unpack = unpack
-local ipairs = ipairs
-local pairs = pairs
-local next = next
-local select = select
+local ChatThrottleLib = _G.ChatThrottleLib
+
+local math_floor = _G.math.floor
+local string_char = _G.string.char
+local math_min = _G.math.min
+local table_concat = _G.table.concat
+local type = _G.type
+local unpack = _G.unpack
+local ipairs = _G.ipairs
+local pairs = _G.pairs
+local next = _G.next
+local select = _G.select
+local UnitName = _G.UnitName
+local setmetatable = _G.setmetatable
+local GetTime = _G.GetTime
+local AceLibrary = _G.AceLibrary
+local GetNetStats = _G.GetNetStats
+local GetChannelName = _G.GetChannelName
+local LeaveChannelByName = _G.LeaveChannelByName
+local JoinChannelByName = _G.JoinChannelByName
+local GetRealZoneText = _G.GetRealZoneText
+local GetChannelList = _G.GetChannelList
+local tostring = _G.tostring
+local ListChannelByName = _G.ListChannelByName
+local tonumber = _G.tonumber
+local math_frexp = _G.math.frexp
+local math_ldexp = _G.math.ldexp
+local GetItemInfo = _G.GetItemInfo
+local error = _G.error
+local pcall = _G.pcall
+local MiniMapBattlefieldFrame = _G.MiniMapBattlefieldFrame
+local GetNumRaidMembers = _G.GetNumRaidMembers
+local GetNumPartyMembers = _G.GetNumPartyMembers
+local IsInGuild = _G.IsInGuild
+local GetCVar = _G.GetCVar
+local SetCVar = _G.SetCVar
+local IsResting = _G.IsResting
+local rawget = _G.rawget
+local GetAddOnMetadata = _G.GetAddOnMetadata
+local IsAddOnLoaded = _G.IsAddOnLoaded
+local CreateFrame = _G.CreateFrame
+local geterrorhandler = _G.geterrorhandler
+local hooksecurefunc = _G.hooksecurefunc
+local GetFramerate = _G.GetFramerate
 
 local player = UnitName("player")
 
-local new, del
+local new, del, deepDel
 do
 	local list = setmetatable({},{__mode='k'})
 	function new(...)
@@ -108,6 +145,20 @@ do
 		for k in pairs(t) do
 			t[k] = nil
 		end
+		t[''] = true
+		t[''] = nil
+		list[t] = true
+		return nil
+	end
+	function deepDel(t)
+		for k,v in pairs(t) do
+			if type(v) == "table" then
+				deepDel(v)
+			end
+			t[k] = nil
+		end
+		t[''] = true
+		t[''] = nil
 		list[t] = true
 		return nil
 	end
@@ -182,114 +233,134 @@ local function IsInChannel(chan)
 	return GetChannelName(chan) ~= 0
 end
 
-local function encodeLargeChar(c)
-	local num = c:byte()
-	num = num - 127
-	if num >= 9 then
-		num = num + 2
+local Encode
+do
+	local t = setmetatable({
+		["\029"] = "\029\030",
+		["\031"] = "\029\032",
+		["\020"] = "\029\021",
+		["\015"] = "\029\016",
+		["S"] = "\020", -- change S and s to a different set of character bytes.
+		["s"] = "\015",
+		["\127"] = "\029\126", -- \127 (this is here because \000 is more common)
+		["\000"] = "\127", -- \000
+		["\010"] = "\029\011", -- \n
+		["\124"] = "\029\125", -- |
+		["%"] = "\029\038", -- %
+	}, { __index = function(self, c)
+		local num = c:byte()
+		num = num - 127
+		if num >= 9 then
+			num = num + 2
+		end
+		if num >= 29 then
+			num = num + 2
+		end
+		if num >= 128 then
+			self[c] = string_char(29, num - 127) -- 1, 2, 3, 4, 5
+		else
+			self[c] = string_char(31, num)
+		end
+		return self[c]
+	end})
+	local function drunkHelper(char)
+		return t[char]
 	end
-	if num >= 29 then
-		num = num + 2
+	local t = {
+		["\176"] = "\176\177",
+		["\255"] = "\176\254", -- \255 (this is here because \000 is more common)
+		["\000"] = "\255", -- \000
+		["\010"] = "\176\011", -- \n
+		["\124"] = "\176\125", -- |
+		["%"] = "\176\038", -- %
+	}
+	local function soberHelper(char)
+		return t[char]
 	end
-	if num >= 128 then
-		return string_char(29, num - 127) -- 1, 2, 3, 4, 5
-	end
-	return string_char(31, num)
-end
-
-local function decodeLargeChar(c)
-	local num = c:byte()
-	if num >= 29 then
-		num = num - 2
-	end
-	if num >= 9 then
-		num = num - 2
-	end
-	num = num + 127
-	return string_char(num)
-end
-
--- Package a message for transmission
-local function Encode(text, drunk)
-	if drunk then
-		text = text:gsub("\029", "\029\030")
-		
-		text = text:gsub("\031", "\029\032")
-		text = text:gsub("[\128-\255]", encodeLargeChar)
-		
-		text = text:gsub("\020", "\029\021")
-		text = text:gsub("\015", "\029\016")
-		text = text:gsub("S", "\020")
-		text = text:gsub("s", "\015")
-		-- change S and s to a different set of character bytes.
-		
-		text = text:gsub("\127", "\029\126") -- \127 (this is here because \000 is more common)
-		text = text:gsub("%z", "\127") -- \000
-		text = text:gsub("\010", "\029\011") -- \n
-		text = text:gsub("\124", "\029\125") -- |
-		text = text:gsub("%%", "\029\038") -- %
-		-- encode assorted prohibited characters
-	else
-		text = text:gsub("\176", "\176\177")
-		
-		text = text:gsub("\255", "\176\254") -- \255 (this is here because \000 is more common)
-		text = text:gsub("%z", "\255") -- \000
-		text = text:gsub("\010", "\176\011") -- \n
-		text = text:gsub("\124", "\176\125") -- |
-		text = text:gsub("%%", "\176\038") -- %
-		-- encode assorted prohibited characters
-	end
-	return text
-end
-
-local function func(text)
-	if text == "\016" then
-		return "\015"
-	elseif text == "\021" then
-		return "\020"
-	elseif text == "\177" then
-		return "\176"
-	elseif text == "\254" then
-		return "\255"
-	elseif text == "\011" then
-		return "\010"
-	elseif text == "\125" then
-		return "\124"
-	elseif text == "\038" then
-		return "\037"
+	-- Package a message for transmission
+	function Encode(text, drunk)
+		if drunk then
+			return text:gsub("([\010\015\020\029%%\031Ss\124\127-\255])", drunkHelper)
+		else
+			return text:gsub("([\176\255%z\010\124%%])", soberHelper)
+		end
 	end
 end
 
--- Clean a received message
-local function Decode(text, drunk)
-	if drunk then
-		text = text:gsub("^(.*)\029.-$", "%1")
-		-- get rid of " ...hic!"
-		
-		text = text:gsub("\029\038", "%%")
-		text = text:gsub("\029\125", "\124")
-		text = text:gsub("\029\011", "\010")
-		text = text:gsub("\127", "\000")
-		text = text:gsub("\029\126", "\127")
-		text = text:gsub("\015", "s")
-		text = text:gsub("\020", "S")
-		text = text:gsub("\029\016", "\015")
-		text = text:gsub("\029\021", "\020")
-		text = text:gsub("\029\001", "\251")
-		text = text:gsub("\029\002", "\252")
-		text = text:gsub("\029\003", "\253")
-		text = text:gsub("\029\004", "\254")
-		text = text:gsub("\029\005", "\255")
-		text = text:gsub("\031(.)", decodeLargeChar)
-		text = text:gsub("\029\032", "\031")
-		text = text:gsub("\029\030", "\029")
-	else
-		text = text:gsub("\255", "\000")
-		
-		text = text:gsub("\176([\177\254\011\125\038])", func)
+local Decode
+do
+	local t = {
+		["\177"] = "\176",
+		["\254"] = "\255",
+		["\011"] = "\010",
+		["\125"] = "\124",
+		["\038"] = "\037",
+	}
+	local function soberHelper(text)
+		return t[text]
 	end
-	-- remove the hidden character and refix the prohibited characters.
-	return text
+	
+	local t = {
+		["\127"] = "\000",
+		["\015"] = "s",
+		["\020"] = "S",
+	}
+	local function drunkHelper1(text)
+		return t[text]
+	end
+	
+	local t = setmetatable({}, {__index=function(self, c)
+		local num = c:byte()
+		if num >= 29 then
+			num = num - 2
+		end
+		if num >= 9 then
+			num = num - 2
+		end
+		num = num + 127
+		self[c] = string_char(num)
+		return self[c]
+	end})
+	local function drunkHelper2(text)
+		return t[text]
+	end
+
+	local t = {
+		["\038"] = "%",
+		["\125"] = "\124",
+		["\011"] = "\010",
+		["\126"] = "\127",
+		["\016"] = "\015",
+		["\021"] = "\020",
+		["\001"] = "\251",
+		["\002"] = "\252",
+		["\003"] = "\253",
+		["\004"] = "\254",
+		["\005"] = "\255",
+		["\032"] = "\031",
+		["\030"] = "\029",
+	}
+	local function drunkHelper3(text)
+		return t[text]
+	end
+	
+	-- Clean a received message
+	function Decode(text, drunk)
+		if drunk then
+			text = text:gsub("^(.*)\029.-$", "%1")
+			-- get rid of " ...hic!"
+			
+			text = text:gsub("([\127\015\020])", drunkHelper1)
+			text = text:gsub("\031(.)", drunkHelper2)
+			text = text:gsub("\029([\038\125\011\126\016\021\001\002\003\004\005\032\030])", drunkHelper3)
+		else
+			text = text:gsub("\255", "\000")
+		
+			text = text:gsub("\176([\177\254\011\125\038])", soberHelper)
+		end
+		-- remove the hidden character and refix the prohibited characters.
+		return text
+	end
 end
 
 local lastChannelJoined
@@ -520,45 +591,59 @@ end
 local Serialize
 do
 	local recurse
-	local function _Serialize(v, textToHash)
+	local function _Serialize(v, textToHash, sb)
 		local kind = type(v)
 		if kind == "boolean" then
 			if v then
-				return "B" -- true
+				sb[#sb+1] = "B" -- true
+				return 1
 			else
-				return "b" -- false
+				sb[#sb+1] = "b" -- false
+				return 1
 			end
 		elseif not v then
-			return "/"
+			sb[#sb+1] = "/" -- nil
+			return 1
 		elseif kind == "number" then
 			if v == math_floor(v) then
 				if v <= 2^7-1 and v >= -2^7 then
 					if v < 0 then
 						v = v + 256
 					end
-					return string_char(byte_d, v)
+					sb[#sb+1] = "d"
+					sb[#sb+1] = string_char(v)
+					return 2
 				elseif v <= 2^15-1 and v >= -2^15 then
 					if v < 0 then
 						v = v + 256^2
 					end
-					return string_char(byte_D, math_floor(v / 256), v % 256)
+					sb[#sb+1] = "D"
+					sb[#sb+1] = string_char(math_floor(v / 256), v % 256)
+					return 3
 				elseif v <= 2^31-1 and v >= -2^31 then
 					if v < 0 then
 						v = v + 256^4
 					end
-					return string_char(byte_e, math_floor(v / 256^3), math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					sb[#sb+1] = "e"
+					sb[#sb+1] = string_char(math_floor(v / 256^3), math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					return 5
 				elseif v <= 2^63-1 and v >= -2^63 then
 					if v < 0 then
 						v = v + 256^8
 					end
-					return string_char(byte_E, math_floor(v / 256^7), math_floor(v / 256^6) % 256, math_floor(v / 256^5) % 256, math_floor(v / 256^4) % 256, math_floor(v / 256^3) % 256, math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					sb[#sb+1] = "E"
+					sb[#sb+1] = string_char(math_floor(v / 256^7), math_floor(v / 256^6) % 256, math_floor(v / 256^5) % 256, math_floor(v / 256^4) % 256, math_floor(v / 256^3) % 256, math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					return 9
 				end
 			elseif v == inf then
-				return string_char(64 --[[byte_inf]])
+				sb[#sb+1] = "@"
+				return 1
 			elseif v == -inf then
-				return string_char(36 --[[byte_ninf]])
-			elseif v ~= v then
-				return string_char(33 --[[byte_nan]])
+				sb[#sb+1] = "$"
+				return 1
+			elseif v ~= v then -- not a number
+				sb[#sb+1] = "!"
+				return 1
 			end
 --			do
 --				local s = tostring(v)
@@ -569,18 +654,22 @@ do
 			if sign then
 				v = -v
 			end
-			local m, exp = math.frexp(v)
+			local m, exp = math_frexp(v)
 			m = m * 2^53
 			local x = exp + 1023
 			local b = m % 256
 			local c = math_floor(m / 256) % 256
 			m = math_floor(m / 256^2)
 			m = m + x * 2^37
-			return string_char(sign and byte_minus or byte_plus, math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
+			sb[#sb+1] = sign and "-" or "+"
+			sb[#sb+1] = string_char(math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
+			return 9
 		elseif kind == "string" then
 			local hash = textToHash and textToHash[v]
 			if hash then
-				return string_char(byte_m, math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
+				sb[#sb+1] = "m"
+				sb[#sb+1] = string_char(math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
+				return 4
 			end
 			local r,g,b,A,B,C,D,E,F,G,H,name = v:match("^|cff(%x%x)(%x%x)(%x%x)|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[(.+)%]|h|r$")
 			if A then
@@ -607,14 +696,23 @@ do
 				
 				H = H % 256^2 -- only lower 16 bits matter
 				
-				return string_char(byte_I, r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, name:len() % 256) .. name:sub(1, 255)
+				sb[#sb+1] = "I"
+				sb[#sb+1] = string_char(r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, math_min(name:len(), 255))
+				sb[#sb+1] = name:sub(1, 255)
+				return 19 + math_min(name:len(), 255)
 			else
 				-- normal string
 				local len = v:len()
 				if len <= 255 then
-					return string_char(byte_s, len) .. v
+					sb[#sb+1] = "s"
+					sb[#sb+1] = string_char(len)
+					sb[#sb+1] = v
+					return 2 + len
 				else
-					return string_char(byte_S, math_floor(len / 256), len % 256) .. v
+					sb[#sb+1] = "S"
+					sb[#sb+1] = string_char(math_floor(len / 256), len % 256)
+					sb[#sb+1] = v
+					return 3 + len
 				end
 			end
 		elseif kind == "function" then
@@ -625,7 +723,7 @@ do
 					recurse[k] = nil
 				end
 				AceComm:error("Cannot serialize a recursive table")
-				return
+				return 0
 			end
 			recurse[v] = true
 			if AceOO.inherits(v, AceOO.Class) then
@@ -640,21 +738,27 @@ do
 				end
 				local classHash = TailoredBinaryCheckSum(v.class:GetLibraryVersion())
 				local t = new(classHash, v:Serialize())
+				local sb_id = #sb+1
+				sb[#sb+1] = "" -- dummy
+				sb[#sb+1] = "" -- dummy
+				local len = 0
 				for i = 2, #t do
-					t[i] = _Serialize(t[i], textToHash)
+					len = len + _Serialize(t[i], textToHash, sb)
 				end
-				if not notFirst then
+				t = del(t)
+--				if not notFirst then
 					for k in pairs(recurse) do
 						recurse[k] = nil
 					end
-				end
-				local s = table.concat(t)
-				t = del(t)
-				local len = s:len()
+--				end
 				if len <= 255 then
-					return string_char(byte_o, len) .. s
+					sb[sb_id] = "o"
+					sb[sb_id+1] = string_char(len)
+					return 2 + len
 				else
-					return string_char(byte_O, math_floor(len / 256), len % 256) .. s
+					sb[sb_id] = "O"
+					sb[sb_id+1] = string_char(math_floor(len / 256), len % 256)
+					return 3 + len
 				end
 			end
 			local t = new()
@@ -669,43 +773,51 @@ do
 					end
 				end
 			end
+			local sb_id = #sb+1
+			sb[#sb+1] = "" -- dummy
+			sb[#sb+1] = "" -- dummy
+			local len = 0
 			if islist then
 				n = n * 4
 				while v[n] == nil do
 					n = n - 1
 				end
 				for i = 1, n do
-					t[i] = _Serialize(v[i], textToHash)
+					len = len + _Serialize(v[i], textToHash, sb)
 				end
 			else
-				local i = 1
 				for k,u in pairs(v) do
-					t[i] = _Serialize(k, textToHash)
-					t[i+1] = _Serialize(u, textToHash)
-					i = i + 2
+					len = len + _Serialize(k, textToHash, sb)
+					len = len + _Serialize(u, textToHash, sb)
 				end
 			end
-			if not notFirst then
+			t = del(t)
+--			if not notFirst then
 				for k in pairs(recurse) do
 					recurse[k] = nil
 				end
-			end
-			local s = table.concat(t)
-			t = del(t)
-			local len = s:len()
+--			end
 			if islist then
 				if len <= 255 then
-					return string_char(byte_u, len) .. s
+					sb[sb_id] = "u"
+					sb[sb_id+1] = string_char(len)
+					return 2 + len
 				else
-					return "U" .. string_char(math_floor(len / 256), len % 256) .. s
+					sb[sb_id] = "U"
+					sb[sb_id+1] = string_char(math_floor(len / 256), len % 256)
+					return 3 + len
 				end
 			else
 				if len <= 255 then
-					return "t" .. string_char(len) .. s
+					sb[sb_id] = "t"
+					sb[sb_id+1] = string_char(len)
+					return 2 + len
 				else
-					return "T" .. string_char(math_floor(len / 256), len % 256) .. s
+					sb[sb_id] = "T"
+					sb[sb_id+1] = string_char(math_floor(len / 256), len % 256)
+					return 3 + len
 				end
-			end
+			end	
 		end
 	end
 	
@@ -713,7 +825,10 @@ do
 		if not recurse then
 			recurse = new()
 		end
-		local chunk = _Serialize(value, textToHash)
+		local sb = new()
+		_Serialize(value, textToHash, sb)
+		local chunk = table_concat(sb)
+		sb = del(sb)
 		for k in pairs(recurse) do
 			recurse[k] = nil
 		end
@@ -739,20 +854,7 @@ do
 			return nil, position
 		elseif x == byte_i then
 			-- 14-byte item link
-			local a1 = value:byte(position + 1)
-			local a2 = value:byte(position + 2)
-			local b1 = value:byte(position + 3)
-			local b2 = value:byte(position + 4)
-			local c1 = value:byte(position + 5)
-			local c2 = value:byte(position + 6)
-			local d1 = value:byte(position + 7)
-			local d2 = value:byte(position + 8)
-			local e1 = value:byte(position + 9)
-			local e2 = value:byte(position + 10)
-			local g1 = value:byte(position + 11)
-			local g2 = value:byte(position + 12)
-			local h1 = value:byte(position + 13)
-			local h2 = value:byte(position + 14)
+			local a1, a2, b1, b2, c1, c2, d1, d2, e1, e2, g1, g2, h1, h2 = value:byte(position + 1, position + 14)
 			local A = a1 * 256 + a2
 			local B = b1 * 256 + b2
 			local C = c1 * 256 + c2
@@ -768,20 +870,7 @@ do
 			return link, position + 14
 		elseif x == byte_I then
 			-- long item link
-			local a1 = value:byte(position + 4)
-			local a2 = value:byte(position + 5)
-			local b1 = value:byte(position + 6)
-			local b2 = value:byte(position + 7)
-			local c1 = value:byte(position + 8)
-			local c2 = value:byte(position + 9)
-			local d1 = value:byte(position + 10)
-			local d2 = value:byte(position + 11)
-			local e1 = value:byte(position + 12)
-			local e2 = value:byte(position + 13)
-			local g1 = value:byte(position + 14)
-			local g2 = value:byte(position + 15)
-			local h1 = value:byte(position + 16)
-			local h2 = value:byte(position + 17)
+			local r, g, b, a1, a2, b1, b2, c1, c2, d1, d2, e1, e2, g1, g2, h1, h2, len = value:byte(position + 1, position + 18)
 			local A = a1 * 256 + a2
 			local B = b1 * 256 + b2
 			local C = c1 * 256 + c2
@@ -794,18 +883,15 @@ do
 			end
 			local s = ("item:%d:%d:%d:%d:%d:%d:%d:%d"):format(A, B, C, D, E, 0, G, H)
 			local _, link = GetItemInfo(s)
-			local len = value:byte(position + 18)
 			if not link then
-				local r = value:byte(position + 1)
-				local g = value:byte(position + 2)
-				local b = value:byte(position + 3)
 				local name = value:sub(position + 19, position + 18 + len)
 				
 				link = ("|cff%02x%02x%02x|Hitem:%d:%d:%d:%d:%d:%d:%d:%d|h[%s]|h|r"):format(r, g, b, A, B, C, D, E, 0, G, H, name)
 			end
 			return link, position + 18 + len
 		elseif x == byte_m then
-			local hash = value:byte(position + 1) * 256^2 + value:byte(position + 2) * 256 + value:byte(position + 3)
+			local a, b, c = value:byte(position + 1, position + 3)
+			local hash = a * 256^2 + b * 256 + c
 			return hashToText[hash], position + 3
 		elseif x == byte_s then
 			-- 0-255-byte string
@@ -813,7 +899,8 @@ do
 			return value:sub(position + 2, position + 1 + len), position + 1 + len
 		elseif x == byte_S then
 			-- 256-65535-byte string
-			local len = value:byte(position + 1) * 256 + value:byte(position + 2)
+			local a, b = value:byte(position + 1, position + 2)
+			local len = a * 256 + b
 			return value:sub(position + 3, position + 2 + len), position + 2 + len
 		elseif x == 64 --[[byte_inf]] then
 			return inf, position
@@ -830,8 +917,7 @@ do
 			return a, position + 1
 		elseif x == byte_D then
 			-- 2-byte integer
-			local a = value:byte(position + 1)
-			local b = value:byte(position + 2)
+			local a, b = value:byte(position + 1, position + 2)
 			local N = a * 256 + b
 			if N >= 2^15 then
 				N = N - 256^2
@@ -839,10 +925,7 @@ do
 			return N, position + 2
 		elseif x == byte_e then
 			-- 4-byte integer
-			local a = value:byte(position + 1)
-			local b = value:byte(position + 2)
-			local c = value:byte(position + 3)
-			local d = value:byte(position + 4)
+			local a, b, c, d = value:byte(position + 1, position + 4)
 			local N = a * 256^3 + b * 256^2 + c * 256 + d
 			if N >= 2^31 then
 				N = N - 256^4
@@ -850,35 +933,21 @@ do
 			return N, position + 4
 		elseif x == byte_E then
 			-- 8-byte integer
-			local a = value:byte(position + 1)
-			local b = value:byte(position + 2)
-			local c = value:byte(position + 3)
-			local d = value:byte(position + 4)
-			local e = value:byte(position + 5)
-			local f = value:byte(position + 6)
-			local g = value:byte(position + 7)
-			local h = value:byte(position + 8)
+			local a, b, c, d, e, f, g, h = value:byte(position + 1, position + 8)
 			local N = a * 256^7 + b * 256^6 + c * 256^5 + d * 256^4 + e * 256^3 + f * 256^2 + g * 256 + h
 			if N >= 2^63 then
 				N = N - 2^64
 			end
 			return N, position + 8
-		elseif x == byte_plus or x == byte_minus then
-			local a = value:byte(position + 1)
-			local b = value:byte(position + 2)
-			local c = value:byte(position + 3)
-			local d = value:byte(position + 4)
-			local e = value:byte(position + 5)
-			local f = value:byte(position + 6)
-			local g = value:byte(position + 7)
-			local h = value:byte(position + 8)
+		elseif x == byte_plus or x == byte_minus then	
+			local a, b, c, d, e, f, g, h = value:byte(position + 1, position + 8)
 			local N = a * 256^5 + b * 256^4 + c * 256^3 + d * 256^2 + e * 256 + f
 			local sign = x
-			local x = math.floor(N / 2^37)
+			local x = math_floor(N / 2^37)
 			local m = (N % 2^37) * 256^2 + g * 256 + h
 			local mantissa = m / 2^53
 			local exp = x - 1023
-			local val = math.ldexp(mantissa, exp)
+			local val = math_ldexp(mantissa, exp)
 			if sign == byte_minus then
 				return -val, position + 8
 			end
@@ -892,7 +961,8 @@ do
 				finish = position + 1 + len
 				start = position + 2
 			else
-				local len = value:byte(position + 1) * 256 + value:byte(position + 2)
+				local a, b = value:byte(position + 1, position + 2)
+				local len = a * 256 + b
 				finish = position + 2 + len
 				start = position + 3
 			end
@@ -915,11 +985,13 @@ do
 				finish = position + 1 + len
 				start = position + 2
 			else
-				local len = value:byte(position + 1) * 256 + value:byte(position + 2)
+				local a, b = value:byte(position + 1, position + 2)
+				local len = a * 256 + b
 				finish = position + 2 + len
 				start = position + 3
 			end
-			local hash = value:byte(start) * 256^2 + value:byte(start + 1) * 256 + value:byte(start + 2)
+			local a, b, c = value:byte(start, start + 3)
+			local hash = a * 256^2 + b * 256 + c
 			local curr = start + 2
 			if not AceComm.classes[hash] then
 				return nil, finish
@@ -948,7 +1020,8 @@ do
 				finish = position + 1 + len
 				start = position + 2
 			else
-				local len = value:byte(position + 1) * 256 + value:byte(position + 2)
+				local a, b = value:byte(position + 1, position + 2)
+				local len = a * 256 + b
 				finish = position + 2 + len
 				start = position + 3
 			end
@@ -983,9 +1056,9 @@ end
 local function GetCurrentGroupDistribution()
 	if MiniMapBattlefieldFrame.status == "active" then
 		return "BATTLEGROUND"
-	elseif UnitInRaid("player") then
+	elseif GetNumRaidMembers() > 0 then
 		return "RAID"
-	elseif UnitInParty("player") then
+	elseif GetNumPartyMembers() > 0 then
 		return "PARTY"
 	else
 		return nil
@@ -994,15 +1067,15 @@ end
 
 local function IsInDistribution(dist, customChannel)
 	if dist == "GROUP" then
-		return GetCurrentGroupDistribution() and true or false
+		return not not GetCurrentGroupDistribution()
 	elseif dist == "BATTLEGROUND" then
 		return MiniMapBattlefieldFrame.status == "active"
 	elseif dist == "RAID" then
-		return UnitInRaid("player") and true or false
+		return GetNumRaidMembers() > 0
 	elseif dist == "PARTY" then
-		return UnitInParty("player") and true or false
+		return GetNumPartyMembers() > 0
 	elseif dist == "GUILD" then
-		return IsInGuild() and true or nil
+		return not not IsInGuild()
 	elseif dist == "GLOBAL" then
 		return IsInChannel("AceComm")
 	elseif dist == "ZONE" then
@@ -1239,46 +1312,35 @@ end
 
 local id = byte_Z
 
-local function encodedChar(x)
-	if x == 10 then
-		return "\029\011"
-	elseif x == 0 then
-		return "\127"
-	elseif x == 127 then
-		return "\029\126"
-	elseif x == 124 then
-		return "\029\125"
-	elseif x == byte_s then
-		return "\015"
-	elseif x == byte_S then
-		return "\020"
-	elseif x == 15 then
-		return "\029\016"
-	elseif x == 20 then
-		return "\029\021"
-	elseif x == 29 then
-		return "\029\030"
-	elseif x == 37 then
-		return "\029\038"
-	end
-	return string_char(x)
-end
+local encodedChar = {
+	[10] = "\029\011",
+	[0] = "\127",
+	[127] = "\029\126",
+	[124] = "\029\125",
+	[byte_s] = "\015",
+	[byte_S] = "\020",
+	[15] = "\029\016",
+	[20] = "\029\021",
+	[29] = "\029\030",
+	[37] = "\029\038",
+}
 
-local function soberEncodedChar(x)
-	if x == 10 then
-		return "\176\011"
-	elseif x == 0 then
-		return "\255"
-	elseif x == 255 then
-		return "\176\254"
-	elseif x == 124 then
-		return "\176\125"
-	elseif x == byte_deg then
-		return "\176\177"
-	elseif x == 37 then
-		return "\176\038"
+local soberEncodedChar = {
+	[10] = "\176\011",
+	[0] = "\255",
+	[255] = "\176\254",
+	[124] = "\176\125",
+	[byte_deg] = "\176\177",
+	[37] = "\176\038",
+}
+
+for i = 0, 255 do
+	if not encodedChar[i] then
+		encodedChar[i] = string_char(i)
 	end
-	return string_char(x)
+	if not soberEncodedChar[i] then
+		soberEncodedChar[i] = string_char(i)
+	end
 end
 
 local recentGuildMessage = 0
@@ -1345,7 +1407,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				last = next
 			end
 			if distribution == "GLOBAL" or distribution == "ZONE" or distribution == "CUSTOM" then
-				bit = prefix .. "\t" .. id .. encodedChar(i) .. encodedChar(max) .. "\t" .. bit .. "\029"
+				bit = prefix .. "\t" .. id .. encodedChar[i] .. encodedChar[max] .. "\t" .. bit .. "\029"
 				local channel
 				if distribution == "GLOBAL" then
 					channel = "AceComm"
@@ -1361,7 +1423,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 					good = false
 				end
 			else
-				bit = id .. soberEncodedChar(i) .. soberEncodedChar(max) .. "\t" .. bit
+				bit = id .. soberEncodedChar[i] .. soberEncodedChar[max] .. "\t" .. bit
 				ChatThrottleLib:SendAddonMessage(priority, prefix, bit, distribution, person)
 			end
 		end
@@ -1610,9 +1672,9 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	if (not AceComm_registry[distribution] and (not isGroup or not AceComm_registry.GROUP)) or (isCustom and not AceComm_registry.CUSTOM[customChannel]) then
 		return CheckRefix()
 	end
-	local _, id, current, max
+	local id, current, max
 	if not message then
-		_,_, prefix, id, current, max, message = prefix:find("^(...)\t(.)(.)(.)\t(.*)$")
+		prefix, id, current, max, message = prefix:match("^(...)\t(.)(.)(.)\t(.*)$")
 		prefix = AceComm.prefixHashToText[prefix]
 		if not prefix then
 			return CheckRefix()
@@ -1627,7 +1689,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			end
 		end
 	else
-		_,_, id, current, max, message = message:find("^(.)(.)(.)\t(.*)$")
+		id, current, max, message = message:match("^(.)(.)(.)\t(.*)$")
 	end
 	if not message then
 		return
@@ -1654,7 +1716,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 		chunk[current] = message
 		if chunk[max] then
 			local success
-			success, message = pcall(table.concat, chunk)
+			success, message = pcall(table_concat, chunk)
 			if not success then
 				return
 			end
@@ -2000,18 +2062,17 @@ function AceComm:embed(target)
 end
 
 local recentNotSeen = {}
-local notSeenString = '^' .. ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
-local ambiguousString = '^' .. ERR_CHAT_PLAYER_AMBIGUOUS_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
+local notSeenString = '^' .. _G.ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
+local ambiguousString = '^' .. _G.ERR_CHAT_PLAYER_AMBIGUOUS_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
+local ERR_GUILD_PERMISSIONS = _G.ERR_GUILD_PERMISSIONS
 function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
 	if event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST" then
-		if arg9:find("^AceComm") then
+		if _G.arg9:find("^AceComm") then
 			return
 		end
 	elseif event == "CHAT_MSG_SYSTEM" then
-		local _,_,player = arg1:find(notSeenString)
-		if not player then
-			_,_,player = arg1:find(ambiguousString)
-		end
+		local arg1 = _G.arg1
+		local player = arg1:match(notSeenString) or arg1:match(ambiguousString)
 		if player then
 			local t = GetTime()
 			if recentNotSeen[player] and recentNotSeen[player] > t then
@@ -2074,7 +2135,7 @@ function AceComm.hooks:FCFDropDown_LoadChannels(orig, ...)
 end
 
 function AceComm:CHAT_MSG_SYSTEM(text)
-	if text ~= ERR_TOO_MANY_CHAT_CHANNELS then
+	if text ~= _G.ERR_TOO_MANY_CHAT_CHANNELS then
 		return
 	end
 	
@@ -2110,14 +2171,14 @@ function AceComm:CHAT_MSG_SYSTEM(text)
 		text = ("%s has tried to join the AceComm custom channel %s, but there are not enough channels available. %s may not work because of this"):format(addon, chan, addon)
 	end
 	
-	StaticPopupDialogs["ACECOMM_TOO_MANY_CHANNELS"] = {
+	_G.StaticPopupDialogs["ACECOMM_TOO_MANY_CHANNELS"] = {
 		text = text,
-		button1 = CLOSE,
+		button1 = _G.CLOSE,
 		timeout = 0,
 		whileDead = 1,
 		hideOnEscape = 1,
 	}
-	StaticPopup_Show("ACECOMM_TOO_MANY_CHANNELS")
+	_G.StaticPopup_Show("ACECOMM_TOO_MANY_CHANNELS")
 end
 
 function AceComm:QueryAddonVersion(addon, distribution, player)
@@ -2158,8 +2219,8 @@ local function activate(self, oldLib, oldDeactivate)
 	AceComm = self
 	
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.ChatFrame_MessageEventHandler then
-		local old_ChatFrame_MessageEventHandler = ChatFrame_MessageEventHandler
-		function ChatFrame_MessageEventHandler(event)
+		local old_ChatFrame_MessageEventHandler = _G.ChatFrame_MessageEventHandler
+		function _G.ChatFrame_MessageEventHandler(event)
 			if self.hooks.ChatFrame_MessageEventHandler then
 				return self.hooks.ChatFrame_MessageEventHandler(self, old_ChatFrame_MessageEventHandler, event)
 			else
@@ -2168,8 +2229,8 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.Logout then
-		local old_Logout = Logout
-		function Logout()
+		local old_Logout = _G.Logout
+		function _G.Logout()
 			if self.hooks.Logout then
 				return self.hooks.Logout(self, old_Logout)
 			else
@@ -2178,8 +2239,8 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.CancelLogout then
-		local old_CancelLogout = CancelLogout
-		function CancelLogout()
+		local old_CancelLogout = _G.CancelLogout
+		function _G.CancelLogout()
 			if self.hooks.CancelLogout then
 				return self.hooks.CancelLogout(self, old_CancelLogout)
 			else
@@ -2188,8 +2249,8 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.Quit then
-		local old_Quit = Quit
-		function Quit()
+		local old_Quit = _G.Quit
+		function _G.Quit()
 			if self.hooks.Quit then
 				return self.hooks.Quit(self, old_Quit)
 			else
@@ -2198,8 +2259,8 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.FCFDropDown_LoadChannels then
-		local old_FCFDropDown_LoadChannels = FCFDropDown_LoadChannels
-		function FCFDropDown_LoadChannels(...)
+		local old_FCFDropDown_LoadChannels = _G.FCFDropDown_LoadChannels
+		function _G.FCFDropDown_LoadChannels(...)
 			if self.hooks.FCFDropDown_LoadChannels then
 				return self.hooks.FCFDropDown_LoadChannels(self, old_FCFDropDown_LoadChannels, ...)
 			else
@@ -2208,8 +2269,8 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.JoinChannelByName then
-		local old_JoinChannelByName = JoinChannelByName
-		function JoinChannelByName(...)
+		local old_JoinChannelByName = _G.JoinChannelByName
+		function _G.JoinChannelByName(...)
 			if self.hooks.JoinChannelByName then
 				return self.hooks.JoinChannelByName(self, old_JoinChannelByName, ...)
 			else
@@ -2406,6 +2467,7 @@ end
 
 if not ChatThrottleLib then
 	ChatThrottleLib = {}
+	_G.ChatThrottleLib = ChatThrottleLib
 end
 
 ChatThrottleLib.MAX_CPS = 800			  -- 2000 seems to be safe if NOTHING ELSE is happening. let's call it 800.
@@ -2416,13 +2478,12 @@ ChatThrottleLib.BURST = 4000				-- WoW's server buffer seems to be about 32KB. 8
 ChatThrottleLib.MIN_FPS = 20				-- Reduce output CPS to half (and don't burst) if FPS drops below this value
 
 
-local ChatThrottleLib = ChatThrottleLib
-local setmetatable = setmetatable
-local table_remove = table.remove
-local tostring = tostring
-local GetTime = GetTime
-local math_min = math.min
-local math_max = math.max
+local setmetatable = _G.setmetatable
+local table_remove = _G.table.remove
+local tostring = _G.tostring
+local GetTime = _G.GetTime
+local math_min = _G.math.min
+local math_max = _G.math.max
 
 ChatThrottleLib.version = CTL_VERSION
 
@@ -2589,11 +2650,11 @@ function ChatThrottleLib:Init()
 		-- use secure hooks instead of insecure hooks (v16)
 		self.securelyHooked = true
 		--SendChatMessage
-		self.ORIG_SendChatMessage = SendChatMessage
+		self.ORIG_SendChatMessage = _G.SendChatMessage
 		hooksecurefunc("SendChatMessage", function(...)
 			return ChatThrottleLib.Hook_SendChatMessage(...)
 		end)
-		self.ORIG_SendAddonMessage = SendAddonMessage
+		self.ORIG_SendAddonMessage = _G.SendAddonMessage
 		--SendAddonMessage
 		hooksecurefunc("SendAddonMessage", function(...)
 			return ChatThrottleLib.Hook_SendAddonMessage(...)
@@ -2680,7 +2741,7 @@ end
 function ChatThrottleLib.OnEvent()
 	-- v11: We know that the rate limiter is touchy after login. Assume that it's touch after zoning, too.
 	local self = ChatThrottleLib
-	if event == "PLAYER_ENTERING_WORLD" then
+	if _G.event == "PLAYER_ENTERING_WORLD" then
 		self.HardThrottlingBeginTime = GetTime()	-- Throttle hard for a few seconds after zoning
 		self.avail = 0
 	end
@@ -2690,7 +2751,7 @@ end
 function ChatThrottleLib.OnUpdate()
 	local self = ChatThrottleLib
 	
-	self.OnUpdateDelay = self.OnUpdateDelay + arg1
+	self.OnUpdateDelay = self.OnUpdateDelay + _G.arg1
 	if self.OnUpdateDelay < 0.08 then
 		return
 	end
@@ -2770,7 +2831,7 @@ function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, languag
 		error('Usage: ChatThrottleLib:SendChatMessage("{BULK||NORMAL||ALERT}", "prefix" or nil, "text"[, "chattype"[, "language"[, "destination"]]]', 2)
 	end
 	
-	prefix = prefix or tostring(this)		-- each frame gets its own queue if prefix is not given
+	prefix = prefix or tostring(_G.this)		-- each frame gets its own queue if prefix is not given
 	
 	local nSize = text:len() + self.MSG_OVERHEAD
 	
