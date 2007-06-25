@@ -1134,7 +1134,7 @@ local function IsInDistribution(dist, customChannel)
 	elseif dist == "CUSTOM" then
 		return IsInChannel(customChannel)
 	end
-	error("unknown distribution: " .. dist, 2)
+	error("unknown distribution: " .. tostring(dist), 2)
 end
 
 function AceComm:RegisterComm(prefix, distribution, method, a4)
