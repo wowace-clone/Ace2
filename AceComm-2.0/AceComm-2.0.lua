@@ -713,14 +713,14 @@ do
 			sb[#sb+1] = sign and "-" or "+"
 			local q = EncodeBytes(drunk, math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
 			sb[#sb+1] = q
-			return 1 + q
+			return 1 + #q
 		elseif kind == "string" then
 			local hash = textToHash and textToHash[v]
 			if hash then
 				sb[#sb+1] = "m"
 				local q = EncodeBytes(drunk, math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
 				sb[#sb+1] = q
-				return 1 + q
+				return 1 + #q
 			end
 			local r,g,b,A,B,C,D,E,F,G,H,name = v:match("^|cff(%x%x)(%x%x)(%x%x)|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[(.+)%]|h|r$")
 			if A then
