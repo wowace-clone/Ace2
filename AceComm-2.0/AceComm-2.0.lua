@@ -656,29 +656,33 @@ do
 						v = v + 256
 					end
 					sb[#sb+1] = "d"
-					sb[#sb+1] = EncodeByte(v, drunk)
-					return 2
+					local q = EncodeByte(v, drunk)
+					sb[#sb+1] = q
+					return 1 + #q
 				elseif v <= 2^15-1 and v >= -2^15 then
 					if v < 0 then
 						v = v + 256^2
 					end
 					sb[#sb+1] = "D"
-					sb[#sb+1] = EncodeBytes(drunk, math_floor(v / 256), v % 256)
-					return 3
+					local q = EncodeBytes(drunk, math_floor(v / 256), v % 256)
+					sb[#sb+1] = q
+					return 1 + #q
 				elseif v <= 2^31-1 and v >= -2^31 then
 					if v < 0 then
 						v = v + 256^4
 					end
 					sb[#sb+1] = "e"
-					sb[#sb+1] = EncodeBytes(drunk, math_floor(v / 256^3), math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
-					return 5
+					local q = EncodeBytes(drunk, math_floor(v / 256^3), math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					sb[#sb+1] = q
+					return 1 + #q
 				elseif v <= 2^63-1 and v >= -2^63 then
 					if v < 0 then
 						v = v + 256^8
 					end
 					sb[#sb+1] = "E"
-					sb[#sb+1] = EncodeBytes(drunk, math_floor(v / 256^7), math_floor(v / 256^6) % 256, math_floor(v / 256^5) % 256, math_floor(v / 256^4) % 256, math_floor(v / 256^3) % 256, math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
-					return 9
+					local q = EncodeBytes(drunk, math_floor(v / 256^7), math_floor(v / 256^6) % 256, math_floor(v / 256^5) % 256, math_floor(v / 256^4) % 256, math_floor(v / 256^3) % 256, math_floor(v / 256^2) % 256, math_floor(v / 256) % 256, v % 256)
+					sb[#sb+1] = q
+					return 1 + #q
 				end
 			elseif v == inf then
 				sb[#sb+1] = "@"
@@ -707,14 +711,16 @@ do
 			m = math_floor(m / 256^2)
 			m = m + x * 2^37
 			sb[#sb+1] = sign and "-" or "+"
-			sb[#sb+1] = EncodeBytes(drunk, math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
-			return 9
+			local q = EncodeBytes(drunk, math_floor(m / 256^5) % 256, math_floor(m / 256^4) % 256, math_floor(m / 256^3) % 256, math_floor(m / 256^2) % 256, math_floor(m / 256) % 256, m % 256, c, b)
+			sb[#sb+1] = q
+			return 1 + q
 		elseif kind == "string" then
 			local hash = textToHash and textToHash[v]
 			if hash then
 				sb[#sb+1] = "m"
-				sb[#sb+1] = EncodeBytes(drunk, math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
-				return 4
+				local q = EncodeBytes(drunk, math_floor(hash / 256^2), math_floor(hash / 256) % 256, hash % 256)
+				sb[#sb+1] = q
+				return 1 + q
 			end
 			local r,g,b,A,B,C,D,E,F,G,H,name = v:match("^|cff(%x%x)(%x%x)(%x%x)|Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%-?%d+):(%d+)|h%[(.+)%]|h|r$")
 			if A then
@@ -742,22 +748,28 @@ do
 				H = H % 256^2 -- only lower 16 bits matter
 				
 				sb[#sb+1] = "I"
-				sb[#sb+1] = EncodeBytes(drunk, r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, math_min(name:len(), 255))
-				sb[#sb+1] = Encode(name:sub(1, 255), drunk)
-				return 19 + math_min(name:len(), 255)
+				local q = EncodeBytes(drunk, r, g, b, math_floor(A / 256) % 256, A % 256, math_floor(B / 256) % 256, B % 256, math_floor(C / 256) % 256, C % 256, math_floor(D / 256) % 256, D % 256, math_floor(E / 256) % 256, E % 256, math_floor(G / 256) % 256, G % 256, math_floor(H / 256) % 256, H % 256, math_min(name:len(), 255))
+				sb[#sb+1] = q
+				local u = Encode(name:sub(1, 255), drunk)
+				sb[#sb+1] = u
+				return 1 + #q + #u
 			else
 				-- normal string
 				local len = v:len()
 				if len <= 255 then
 					sb[#sb+1] = "s"
-					sb[#sb+1] = EncodeByte(len, drunk)
-					sb[#sb+1] = Encode(v, drunk)
-					return 2 + len
+					local q = EncodeByte(len, drunk)
+					sb[#sb+1] = q
+					local u = Encode(v, drunk)
+					sb[#sb+1] = u
+					return 1 + #q + #u
 				else
 					sb[#sb+1] = "S"
-					sb[#sb+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
-					sb[#sb+1] = Encode(v, drunk)
-					return 3 + len
+					local q = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[#sb+1] = q
+					local u = Encode(v, drunk)
+					sb[#sb+1] = u
+					return 1 + #q + #u
 				end
 			end
 		elseif kind == "function" then
@@ -798,12 +810,14 @@ do
 --				end
 				if len <= 255 then
 					sb[sb_id] = "o"
-					sb[sb_id+1] = EncodeByte(len, drunk)
-					return 2 + len
+					local q = EncodeByte(len, drunk)
+					sb[sb_id+1] = q
+					return 1 + #q + len
 				else
 					sb[sb_id] = "O"
-					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
-					return 3 + len
+					local q = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[sb_id+1] = q
+					return 1 + #q + len
 				end
 			end
 			local t = new()
@@ -845,22 +859,26 @@ do
 			if islist then
 				if len <= 255 then
 					sb[sb_id] = "u"
-					sb[sb_id+1] = EncodeByte(len, drunk)
-					return 2 + len
+					local q = EncodeByte(len, drunk)
+					sb[sb_id+1] = q
+					return 1 + #q + len
 				else
 					sb[sb_id] = "U"
-					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
-					return 3 + len
+					local q = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[sb_id+1] = q
+					return 1 + #q + len
 				end
 			else
 				if len <= 255 then
 					sb[sb_id] = "t"
-					sb[sb_id+1] = EncodeByte(len, drunk)
-					return 2 + len
+					local q = EncodeByte(len, drunk)
+					sb[sb_id+1] = q
+					return 1 + #q + len
 				else
 					sb[sb_id] = "T"
-					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
-					return 3 + len
+					local q = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[sb_id+1] = q
+					return 1 + #q + len
 				end
 			end	
 		end
