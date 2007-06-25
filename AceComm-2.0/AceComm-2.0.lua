@@ -873,7 +873,11 @@ do
 		local sb = new()
 		sb[1] = ""
 		sb[2] = ""
-		local len = _Serialize(value, textToHash, sb, drunk)
+		_Serialize(value, textToHash, sb, drunk)
+		local len = 0
+		for i = 1, #sb do
+			len = len + #sb[i]
+		end
 		for k in pairs(recurse) do
 			recurse[k] = nil
 		end
