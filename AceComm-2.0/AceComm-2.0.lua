@@ -112,6 +112,7 @@ local pcall = _G.pcall
 local MiniMapBattlefieldFrame = _G.MiniMapBattlefieldFrame
 local GetNumRaidMembers = _G.GetNumRaidMembers
 local GetNumPartyMembers = _G.GetNumPartyMembers
+local UnitInRaid = UnitInRaid
 local IsInGuild = _G.IsInGuild
 local GetCVar = _G.GetCVar
 local SetCVar = _G.SetCVar
@@ -1105,12 +1106,10 @@ end
 local function GetCurrentGroupDistribution()
 	if MiniMapBattlefieldFrame.status == "active" then
 		return "BATTLEGROUND"
-	elseif GetNumRaidMembers() > 0 then
+	elseif UnitInRaid("player") then
 		return "RAID"
-	elseif GetNumPartyMembers() > 0 then
-		return "PARTY"
 	else
-		return nil
+		return "PARTY"
 	end
 end
 
