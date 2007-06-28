@@ -1991,6 +1991,9 @@ function AceComm:CHAT_MSG_ADDON(prefix, message, distribution, sender)
 	if sender == player and not AceComm.enableLoopback and distribution ~= "WHISPER" then
 		return
 	end
+	if message == "" then
+		return
+	end
 	prefix = self.prefixHashToText[prefix]
 	if not prefix then
 		return CheckRefix()
@@ -2009,6 +2012,9 @@ end
 
 function AceComm:CHAT_MSG_CHANNEL(text, sender, _, _, _, _, _, _, channel)
 	if sender == player or not channel:find("^AceComm") then
+		return
+	end
+	if text == "" then
 		return
 	end
 	text = Decode(text, true)
