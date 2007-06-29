@@ -851,15 +851,16 @@ function AceAddon.prototype:OpenDonationFrame()
 	end
 	local donate = self.donate
 	if type(donate) ~= "string" then
-		donate = "Website:http://www.wowace.com/wiki/Donations"
+		donate = "Wowace"
 	end
 	local style, data = (":"):split(donate, 2)
 	style = style:lower()
 	if style ~= "website" and style ~= "paypal" then
-		style = "website"
-		data = "http://www.wowace.com/wiki/Donations"
+		style = "wowace"
 	end
-	if style == "website" then
+	if style == "wowace" then
+		donateFrame.editBox.text = "http://www.wowace.com/wiki/Donations"
+	elseif style == "website" then
 		donateFrame.editBox.text = data
 	else -- PayPal
 		local text = "https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=" .. urlencode(unobfuscateEmail(data))
@@ -888,25 +889,25 @@ end
 
 local options
 function AceAddon:GetAceOptionsDataTable(target)
-	if not options then
-		options = {
-			about = {
-				name = ABOUT,
-				desc = PRINT_ADDON_INFO,
-				type = "execute",
-				func = "PrintAddonInfo",
-				order = -1,
-			},
-			donate = {
-				name = DONATE,
-				desc = DONATE_DESC,
-				type = "execute",
-				func = "OpenDonationFrame",
-				order = -1,
-			}
+	return {
+		about = {
+			name = ABOUT,
+			desc = PRINT_ADDON_INFO,
+			type = "execute",
+			func = "PrintAddonInfo",
+			order = -1,
+		},
+		donate = {
+			name = DONATE,
+			desc = DONATE_DESC,
+			type = "execute",
+			func = "OpenDonationFrame",
+			order = -1,
+			hidden = function()
+				return not target.donate
+			end
 		}
-	end
-	return options
+	}
 end
 
 function AceAddon:PLAYER_LOGIN()
