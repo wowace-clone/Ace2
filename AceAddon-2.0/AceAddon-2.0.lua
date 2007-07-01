@@ -636,6 +636,7 @@ local function createAboutFrame()
 	aboutFrame:SetBackdropColor(0,0,0,1)
 	
 	local donateButton = CreateFrame("Button", "AceAddon20AboutFrameDonateButton", aboutFrame, "UIPanelButtonTemplate2")
+	aboutFrame.donateButton = donateButton
 	donateButton:SetPoint("BOTTOMRIGHT", -20, 20)
 	_G.AceAddon20AboutFrameDonateButtonText:SetText(DONATE)
 	donateButton:SetWidth(_G.AceAddon20AboutFrameDonateButtonText:GetWidth()+20)
@@ -776,6 +777,12 @@ function AceAddon.prototype:PrintAddonInfo()
 	aboutFrame.currentAddon = self
 	
 	aboutFrame:Show()
+	
+	if self.donate then
+		aboutFrame.donateButton:Show()
+	else
+		aboutFrame.donateButton:Hide()
+	end
 end
 
 local function createDonateFrame()
