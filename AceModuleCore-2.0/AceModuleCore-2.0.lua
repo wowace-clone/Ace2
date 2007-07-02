@@ -113,7 +113,7 @@ do
 		if not list then
 			list = new()
 			for k, v in pairs(self.modules) do
-				if type(v[method]) == "function" then
+				if self:IsModuleActive(k) and type(v[method]) == "function" then
 					list[#list+1] = k
 				end
 			end
