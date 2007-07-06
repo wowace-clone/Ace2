@@ -1676,9 +1676,9 @@ local function handlerFunc(self, chat, msg, options)
 					for k,v in pairs(options.validate) do
 						local val = type(k) ~= "number" and k or v
 						if passValue then
-							var[val] = options_p.get(passValue, val)
+							var[val] = options_p.get(passValue, val) or nil
 						else
-							var[val] = options_p.get(val)
+							var[val] = options_p.get(val) or nil
 						end
 					end
 				else
@@ -1693,9 +1693,9 @@ local function handlerFunc(self, chat, msg, options)
 					for k,v in pairs(options.validate) do
 						local val = type(k) ~= "number" and k or v
 						if passValue then
-							var[val] = handler[options_p.get](handler, passValue, val)
+							var[val] = handler[options_p.get](handler, passValue, val) or nil
 						else
-							var[val] = handler[options_p.get](handler, val)
+							var[val] = handler[options_p.get](handler, val) or nil
 						end
 					end
 				else
@@ -1749,9 +1749,9 @@ local function handlerFunc(self, chat, msg, options)
 					for k,v in pairs(options_p.validate) do
 						local val = type(k) ~= "number" and k or v
 						if passValue then
-							var[val] = options_p.get(passValue, val)
+							var[val] = options_p.get(passValue, val) or nil
 						else
-							var[val] = options_p.get(val)
+							var[val] = options_p.get(val) or nil
 						end
 					end
 				else
@@ -1766,9 +1766,9 @@ local function handlerFunc(self, chat, msg, options)
 					for k,v in pairs(options.validate) do
 						local val = type(k) ~= "number" and k or v
 						if passValue then
-							var[val] = handler[options_p.get](handler, passValue, val)
+							var[val] = handler[options_p.get](handler, passValue, val) or nil
 						else
-							var[val] = handler[options_p.get](handler, val)
+							var[val] = handler[options_p.get](handler, val) or nil
 						end
 					end
 				else
@@ -2644,3 +2644,9 @@ local function activate(self, oldLib, oldDeactivate)
 end
 
 AceLibrary:Register(AceConsole, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
+
+local f = CreateFrame("Frame")
+f:RegisterAllEvents()
+f:SetScript("OnEvent", function(f, event, ...)
+	AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, ", ", event, ...)
+end)
