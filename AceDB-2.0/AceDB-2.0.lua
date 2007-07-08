@@ -1866,6 +1866,9 @@ function AceDB:PLAYER_LOGOUT()
 	for addon, defaultProfile in pairs(AceDB.registry) do
 		local db = addon.db
 		if db then
+			if type(addon.OnDatabaseCleanup) == "function" then
+				safecall(addon.OnDatabaseCleanup, addon)
+			end
 			setmetatable(db, nil)
 			CrawlForSerialization(db.raw)
 			if type(_G[db.charName]) == "table" then
