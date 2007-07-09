@@ -127,6 +127,16 @@ do
 		return func, t, nil
 	end
 	
+--[[----------------------------------------------------------------------------------
+Notes:
+	Safely calls the given method on all active modules if it exists on said modules. This will automatically subvert any errors that occur in the modules.
+Arguments:
+	string - the name of the method.
+	tuple - the list of arguments to call the method with.
+Example:
+	core:CallMethodOnAllModules("OnSomething")
+	core:CallMethodOnAllModules("OnSomethingElse", 1, 2, 3, 4)
+------------------------------------------------------------------------------------]]
 	function AceModuleCore:CallMethodOnAllModules(method, ...)
 		for name, module in self:IterateModulesWithMethod(method) do
 			local success, ret = pcall(module[method], module, ...)
@@ -137,6 +147,16 @@ do
 	end
 end
 
+--[[----------------------------------------------------------------------------
+Notes: 
+	Create a new module, parented to self.
+	The module created does, in fact, inherit from AceAddon-2.0.
+Arguments: 
+	string - name/title of the Module.
+	list of mixins the module is to inherit from.
+Example:
+	MyModule = core:NewModule('MyModule', "AceEvent-2.0", "AceHook-2.1")
+------------------------------------------------------------------------------]]
 local tmp = {}
 function AceModuleCore:NewModule(name, ...)
 	if not self.modules then
@@ -199,7 +219,18 @@ function AceModuleCore:NewModule(name, ...)
 	end
 	return module
 end
-
+--[[----------------------------------------------------------------------------------
+Notes:
+	Return whether the module names given are all available in the core.
+Arguments:
+	list of strings that are the names of the modules. (typically you'd only check for one)
+Returns:
+	* boolean - Whether all the modules are available in the core.
+Example:
+	if core:HasModule('Bank') then
+		-- do banking
+	end
+------------------------------------------------------------------------------------]]
 function AceModuleCore:HasModule(...)
 	for i = 1, select('#', ...) do
 		if not self.modules[select(i, ...)] then
@@ -210,6 +241,17 @@ function AceModuleCore:HasModule(...)
 	return true
 end
 
+--[[------------------------------------------------------------------------------------
+Notes:
+	Return the module "name" if it exists.
+	If the module doesnot exist, an error is thrown.
+Arguments:
+	string - the name of the module.
+Returns:
+	The module requested, if it exists.
+Example:
+	local bank = core:GetModule('Bank')
+------------------------------------------------------------------------------------]]
 function AceModuleCore:GetModule(name)
 	if not self.modules then
 		AceModuleCore:error("Error initializing class.  Please report error.")
@@ -220,6 +262,22 @@ function AceModuleCore:GetModule(name)
 	return self.modules[name]
 end
 
+--[[----------------------------------------------------------------------------------
+Notes:
+	Return whether the given module is actually a module.
+Arguments:
+	reference to the module
+Returns:
+	* boolean - whether the given module is actually a module.
+Example:
+	if core:IsModule(module) then
+		-- do something
+	end
+	-- alternatively
+	if AceModuleCore:IsModule(module) then
+		-- checks all modules, no matter the parent
+	end
+------------------------------------------------------------------------------------]]
 function AceModuleCore:IsModule(module)
 	if self == AceModuleCore then
 		return AceModuleCore.totalModules[module]
@@ -236,6 +294,16 @@ function AceModuleCore:IsModule(module)
 	end
 end
 
+--[[----------------------------------------------------------------------------------
+Notes:
+ * Sets the default mixins for a given module.
+ * This cannot be called after :NewModule() has been called.
+ * This should really only be called if you use the mixins in your prototype.
+Arguments:
+	list of mixins (up to 20)
+Example:
+	core:SetModuleMixins("AceEvent-2.0", "AceHook-2.0")
+------------------------------------------------------------------------------------]]
 function AceModuleCore:SetModuleMixins(...)
 	if self.moduleMixins then
 		AceModuleCore:error('Cannot call "SetModuleMixins" twice')
@@ -251,6 +319,7 @@ function AceModuleCore:SetModuleMixins(...)
 	end
 end
 
+-- #NODOC
 function AceModuleCore:SetModuleClass(class)
 	class = getlibrary(class)
 	if not AceOO.inherits(class, AceOO.Class) then
@@ -300,6 +369,16 @@ local function isDisabled(core, module)
 	end
 end
 
+--[[----------------------------------------------------------------------------------
+Notes:
+	Sets the default active state of a module. This should be called before the ADDON_LOADED of the module.
+Arguments:
+	string - name of the module.
+	table - reference to the module.
+	boolean - new state. false means disabled by default, true means enabled by default (true is the default).
+Example:
+	self:SetModuleDefaultState('bank', false)
+------------------------------------------------------------------------------------]]
 function AceModuleCore:SetModuleDefaultState(module, state)
 	AceModuleCore:argCheck(module, 2, "table", "string")
 	AceModuleCore:argCheck(state, 3, "boolean")
@@ -314,6 +393,26 @@ function AceModuleCore:SetModuleDefaultState(module, state)
 	defaultState[self][module] = not state
 end
 
+--[[----------------------------------------------------------------------------------
+Notes: 
+Toggles the active state of a module.
+
+This calls module:ToggleActive([state]) if available.
+
+If suspending, This will call :OnDisable() on the module if it is available. Also, it will iterate through the addon's mixins and call :OnEmbedDisable(module) if available. - this in turn will, through AceEvent and others, unregister events/hooks/etc. depending on the mixin. Also, it will call :OnModuleDisable(module) on the core if it is available.
+
+If resuming, This will call :OnEnable(first) on the module if it is available. Also, it will iterate through the addon's mixins and call :OnEmbedEnable(module) if available. - this in turn will, through AceEvent and others, unregister events/hooks/etc. depending on the mixin. Also, it will call :OnModuleEnable(module) on the core if it is available.
+
+If you call :ToggleModuleActive("name or module, true) and it is already active, it silently returns, same if you pass false and it is inactive.
+
+Arguments:
+	string/table - name of the module or a reference to the module
+	[optional] boolean - new state. (default not :IsModuleActive("name" or module))
+Returns:
+	* boolean - Whether the module is now in an active (enabled) state.
+Example:
+	self:ToggleModuleActive('bank')
+------------------------------------------------------------------------------------]]
 function AceModuleCore:ToggleModuleActive(module, state)
 	AceModuleCore:argCheck(module, 2, "table", "string")
 	AceModuleCore:argCheck(state, 3, "nil", "boolean")
@@ -433,6 +532,17 @@ function AceModuleCore:ToggleModuleActive(module, state)
 	return not disable
 end
 
+--[[-----------------------------------------------------------------------
+Notes:
+	Returns whether the module is in an active (enabled) state. This calls module:IsActive() if available. if notLoaded is set, then "name" must be a string.
+Arguments:
+	string/table - name of the module or a reference to the module
+	[optional] - boolean - if set, this will check modules that are not loaded as well. (default: false)
+Returns:
+	* boolean - Whether the module is in an active (enabled) state.
+Example:
+	assert(self:IsModuleActive('bank'))
+------------------------------------------------------------------------]]
 function AceModuleCore:IsModuleActive(module, notLoaded)
 	AceModuleCore:argCheck(module, 2, "table", "string")
 	AceModuleCore:argCheck(notLoaded, 3, "nil", "boolean")
@@ -468,6 +578,7 @@ function AceModuleCore:IsModuleActive(module, notLoaded)
 	return not isDisabled(self, module)
 end
 
+-- #NODOC
 function AceModuleCore:OnInstanceInit(target)
 	if target.modules then
 		do return end
@@ -514,6 +625,7 @@ function AceModuleCore.OnEmbedProfileDisable(AceModuleCore, self, newProfile)
 	end
 end
 
+-- #NODOC
 function AceModuleCore:Ace2_AddonEnabled(module, first)
 	local addon = self.totalModules[module]
 	if not addon then
@@ -530,6 +642,7 @@ function AceModuleCore:Ace2_AddonEnabled(module, first)
 	end
 end
 
+-- #NODOC
 function AceModuleCore:Ace2_AddonDisabled(module)
 	local addon = self.totalModules[module]
 	if not addon then
