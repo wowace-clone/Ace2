@@ -111,6 +111,10 @@ elseif GetLocale() == "koKR" then
 	DEFAULT = "Default" -- fix
 	ALTERNATIVE = "Alternative" -- fix
 elseif GetLocale() == "zhTW" then
+	DELETE_PROFILE = "刪除"
+	DELETE_PROFILE_DESC = "刪除記錄檔。注意，有可能別的角色也使用這個記錄檔。"
+	DELETE_PROFILE_USAGE = "<記錄檔名稱>"
+
 	ACTIVE = "啟動"
 	ENABLED = "啟用"
 	STATE = "狀態"

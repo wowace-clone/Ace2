@@ -213,10 +213,10 @@ elseif GetLocale() == "zhTW" then
 	
 	ABOUT = "關於"
 	PRINT_ADDON_INFO = "顯示插件資訊。"
-	DONATE = "Donate" -- fix
-	DONATE_DESC = "Give a much-needed donation to the author of this addon." -- fix
-	HOWTO_DONATE_WINDOWS = "Press Ctrl-A to select the link, then Ctrl-C to copy, then Alt-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
-	HOWTO_DONATE_MAC = "Press Cmd-A to select the link, then Cmd-C to copy, then Cmd-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
+	DONATE = "捐贈"
+	DONATE_DESC = "捐贈金錢給插件作者。"
+	HOWTO_DONATE_WINDOWS = "請按Ctrl-A選擇網站連結，Ctrl-C複製網址，Alt-Tab切換到電腦桌面，打開瀏覽器，在網址列貼上網址。"
+	HOWTO_DONATE_MAC = "請按Cmd-A選擇網站連結，Cmd-C複製網址，Cmd-Tab切換到電腦桌面，打開瀏覽器，在網址列貼上網址。"
 	
 	CATEGORIES = {
 		["Action Bars"] = "動作條",
