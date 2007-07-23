@@ -241,8 +241,8 @@ function AceEvent:TriggerEvent(event, ...)
 	local lastEvent = AceEvent.currentEvent
 	local lastEventUID = AceEvent.currentEventUID
 	AceEvent.currentEvent = event
-	local uid = self.UID_NUM + 1
-	self.UID_NUM = uid
+	local uid = AceEvent.UID_NUM + 1
+	AceEvent.UID_NUM = uid
 	AceEvent.currentEventUID = uid
 
 	local tmp = new()
