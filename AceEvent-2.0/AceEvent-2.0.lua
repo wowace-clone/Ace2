@@ -90,6 +90,14 @@ do
 end
 
 local registeringFromAceEvent
+--[[----------------------------------------------------------------------------------
+Notes:
+	* Registers the addon with a Blizzard event or a custom AceEvent, which will cause the given method to be called when that is triggered.
+Arguments:
+	string - name of the event to register
+	[optional] string or function - name of the method or function to call. Default: same name as "event".
+	[optional] boolean - whether to have method called only once. Default: false
+------------------------------------------------------------------------------------]]
 function AceEvent:RegisterEvent(event, method, once)
 	AceEvent:argCheck(event, 2, "string")
 	if self == AceEvent and not registeringFromAceEvent then
@@ -183,6 +191,15 @@ end
 
 local ALL_EVENTS
 
+--[[----------------------------------------------------------------------------------
+Notes:
+	* Registers all events to the given method
+	* To access the current event, check AceEvent.currentEvent
+	* To access the current event's unique identifier, check AceEvent.currentEventUID
+	* This is only for debugging purposes.
+Arguments:
+	[optional] string or function - name of the method or function to call. Default: same name as "event".
+------------------------------------------------------------------------------------]]
 function AceEvent:RegisterAllEvents(method)
 	if self == AceEvent then
 		AceEvent:argCheck(method, 1, "function")
@@ -203,6 +220,15 @@ function AceEvent:RegisterAllEvents(method)
 	AceEvent_registry[ALL_EVENTS][self] = method
 end
 
+--[[----------------------------------------------------------------------------------
+Notes:
+	* Trigger a custom AceEvent.
+	* This should never be called to simulate fake Blizzard events.
+	* Custom events should be in the form of AddonName_SpecificEvent
+Arguments:
+	string - name of the event
+	tuple - list of arguments to pass along
+------------------------------------------------------------------------------------]]
 function AceEvent:TriggerEvent(event, ...)
 	if type(event) ~= "string" then
 		DEFAULT_CHAT_FRAME:AddMessage(debugstack())
@@ -213,7 +239,11 @@ function AceEvent:TriggerEvent(event, ...)
 		return
 	end
 	local lastEvent = AceEvent.currentEvent
+	local lastEventUID = AceEvent.currentEventUID
 	AceEvent.currentEvent = event
+	local uid = self.UID_NUM + 1
+	self.UID_NUM = uid
+	AceEvent.currentEventUID = uid
 
 	local tmp = new()
 
@@ -301,6 +331,7 @@ function AceEvent:TriggerEvent(event, ...)
 	end
 	tmp = del(tmp)
 	AceEvent.currentEvent = lastEvent
+	AceEvent.currentEventUID = lastEventUID
 end
 
 local delayRegistry
@@ -407,6 +438,15 @@ local function ScheduleEvent(self, repeating, event, delay, ...)
 	end
 end
 
+--[[----------------------------------------------------------------------------------
+Notes:
+	* Schedule an event to fire.
+	* To fire on the next frame, specify a delay of 0.
+Arguments:
+	string or function - name of the event to fire, or a function to call.
+	number - the amount of time to wait until calling.
+	tuple - a list of arguments to pass along.
+------------------------------------------------------------------------------------]]
 function AceEvent:ScheduleEvent(event, delay, ...)
 	if type(event) == "string" or (useTablesAsIDs and type(event) == "table") then
 		if useTablesAsIDs and type(event) == "table" then
@@ -876,10 +916,11 @@ local function activate(self, oldLib, oldDeactivate)
 	self.frame = oldLib and oldLib.frame or CreateFrame("Frame", "AceEvent20Frame")
 	self.playerLogin = IsLoggedIn() and true
 	self.postInit = oldLib and oldLib.postInit or self.playerLogin and ChatTypeInfo and ChatTypeInfo.WHISPER and ChatTypeInfo.WHISPER.r and true
-	self.ALL_EVENTS = oldLib and oldLib.ALL_EVENTS or {}
-	self.FAKE_NIL = oldLib and oldLib.FAKE_NIL or {}
-	self.RATE = oldLib and oldLib.RATE or {}
+	self.ALL_EVENTS = oldLib and oldLib.ALL_EVENTS or _G.newproxy()
+	self.FAKE_NIL = oldLib and oldLib.FAKE_NIL or _G.newproxy()
+	self.RATE = oldLib and oldLib.RATE or _G.newproxy()
 	self.combatSchedules = oldLib and oldLib.combatSchedules or {}
+	self.UID_NUM = oldLib and oldLib.UID_NUM or 0
 	
 	-- Delete this down the road.  Makes sure that the addonframes from revisions 33121 - 36174 get their events unregistered.
 	local addonframes = oldLib and oldLib.addonframes
