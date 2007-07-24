@@ -239,8 +239,8 @@ function AceEvent:TriggerEvent(event, ...)
 		return
 	end
 	local lastEvent = AceEvent.currentEvent
-	local lastEventUID = AceEvent.currentEventUID
 	AceEvent.currentEvent = event
+	local lastEventUID = AceEvent.currentEventUID
 	local uid = AceEvent.UID_NUM + 1
 	AceEvent.UID_NUM = uid
 	AceEvent.currentEventUID = uid
@@ -357,8 +357,12 @@ do
 					end
 					local event = v.event
 					if type(event) == "function" then
+						local uid = AceEvent.UID_NUM + 1
+						AceEvent.UID_NUM = uid
+						AceEvent.currentEventUID = uid
 						local success, err = pcall(event, unpack(v, 1, v.n))
 						if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+						AceEvent.currentEventUID = nil
 					else
 						AceEvent:TriggerEvent(event, unpack(v, 1, v.n))
 					end
