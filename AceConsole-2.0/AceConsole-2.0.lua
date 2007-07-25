@@ -2654,6 +2654,7 @@ end
 
 AceLibrary:Register(AceConsole, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
 
+--[[
 local f = CreateFrame("Frame")
 f:RegisterAllEvents()
 f:SetScript("OnEvent", function(f, event, ...)
@@ -2662,3 +2663,4 @@ f:SetScript("OnEvent", function(f, event, ...)
 	end
 	AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, true, event, ...)
 end)
+]]--
