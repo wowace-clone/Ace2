@@ -584,7 +584,15 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 						good = true
 					end
 					if good then
-						return findTableLevel(options.handler or self, v, chat, text, index + 1, options.pass and (passTable or options))
+						if options.pass then
+							passTable = passTable or options
+							if options.get and options.set then
+								passTable = options
+							end
+						else
+							passTable = nil
+						end
+						return findTableLevel(options.handler or self, v, chat, text, index + 1, passTable)
 					end
 				end
 			end
@@ -1332,6 +1340,10 @@ local function printUsage(self, handler, realOptions, options, path, args, passV
 				local v = options.args[k]
 				if v then
 					local v_p = passTable or v
+					if v.get and v.set then
+						v_p = v
+						passValue = nil
+					end
 					if v.passValue then
 						passValue = v.passValue
 					end
@@ -2261,11 +2273,7 @@ local function handlerFunc(self, chat, msg, options)
 	end
 	this = _G_this
 	if Dewdrop then
-		Dewdrop:Refresh(1)
-		Dewdrop:Refresh(2)
-		Dewdrop:Refresh(3)
-		Dewdrop:Refresh(4)
-		Dewdrop:Refresh(5)
+		Dewdrop:Refresh()
 	end
 end
 
@@ -2619,8 +2627,8 @@ local function activate(self, oldLib, oldDeactivate)
 		end
 	end
 	
-	self:RegisterChatCommand({ "/reload", "/rl", "/reloadui" }, function() ReloadUI() end, "RELOAD")
-	self:RegisterChatCommand({ "/gm" }, function() ToggleHelpFrame() end, "GM")
+	self:RegisterChatCommand("/reload", "/rl", "/reloadui", ReloadUI, "RELOAD")
+	self:RegisterChatCommand("/gm", ToggleHelpFrame, "GM")
 	local t = { "/print", "/echo" }
 	local _,_,_,enabled,loadable = GetAddOnInfo("DevTools")
 	if not enabled and not loadable then
