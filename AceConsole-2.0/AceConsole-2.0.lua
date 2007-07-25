@@ -584,6 +584,7 @@ local function findTableLevel(self, options, chat, text, index, passTable)
 						good = true
 					end
 					if good then
+						work[index] = k -- revert it back to its original form as supplied in args 
 						if options.pass then
 							passTable = passTable or options
 							if options.get and options.set then
@@ -2652,3 +2653,12 @@ local function activate(self, oldLib, oldDeactivate)
 end
 
 AceLibrary:Register(AceConsole, MAJOR_VERSION, MINOR_VERSION, activate, nil, external)
+
+local f = CreateFrame("Frame")
+f:RegisterAllEvents()
+f:SetScript("OnEvent", function(f, event, ...)
+	if event:find("^CHAT_MSG") then
+		return
+	end
+	AceLibrary("AceConsole-2.0"):CustomPrint(nil, nil, nil, ChatFrame3, nil, true, event, ...)
+end)
