@@ -21,6 +21,8 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
+-- #AUTODOC_NAMESPACE AceConsole
+
 local MAP_ONOFF, USAGE, IS_CURRENTLY_SET_TO, IS_NOW_SET_TO, IS_NOT_A_VALID_OPTION_FOR, IS_NOT_A_VALID_VALUE_FOR, NO_OPTIONS_AVAILABLE, OPTION_HANDLER_NOT_FOUND, OPTION_HANDLER_NOT_VALID, OPTION_IS_DISABLED, KEYBINDING_USAGE, DEFAULT_CONFIRM_MESSAGE
 if GetLocale() == "deDE" then
 	MAP_ONOFF = { [false] = "|cffff0000Aus|r", [true] = "|cff00ff00An|r" }
