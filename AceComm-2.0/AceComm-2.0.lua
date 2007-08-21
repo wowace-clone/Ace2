@@ -2517,7 +2517,7 @@ AceLibrary:Register(AceComm, MAJOR_VERSION, MINOR_VERSION, activate, nil, extern
 -- Can run as a standalone addon also, but, really, just embed it! :-)
 --
 
-local CTL_VERSION = 17
+local CTL_VERSION = 18
 
 if ChatThrottleLib and ChatThrottleLib.version >= CTL_VERSION then
 	-- There's already a newer (or same) version loaded. Buh-bye.
@@ -2526,7 +2526,7 @@ end
 
 if not ChatThrottleLib then
 	ChatThrottleLib = {}
-	_G.ChatThrottleLib = ChatThrottleLib
+	getfenv().ChatThrottleLib = ChatThrottleLib  -- lets it work embedded inside other files where "ChatThrottleLib" is a local (e.g. AceComm-2.0.lua)
 end
 
 ChatThrottleLib.MAX_CPS = 800			  -- 2000 seems to be safe if NOTHING ELSE is happening. let's call it 800.
@@ -2537,12 +2537,13 @@ ChatThrottleLib.BURST = 4000				-- WoW's server buffer seems to be about 32KB. 8
 ChatThrottleLib.MIN_FPS = 20				-- Reduce output CPS to half (and don't burst) if FPS drops below this value
 
 
-local setmetatable = _G.setmetatable
-local table_remove = _G.table.remove
-local tostring = _G.tostring
-local GetTime = _G.GetTime
-local math_min = _G.math.min
-local math_max = _G.math.max
+local ChatThrottleLib = ChatThrottleLib
+local setmetatable = setmetatable
+local table_remove = table.remove
+local tostring = tostring
+local GetTime = GetTime
+local math_min = math.min
+local math_max = math.max
 
 ChatThrottleLib.version = CTL_VERSION
 
@@ -2613,22 +2614,16 @@ function ChatThrottleLib.PipeBin:Get()
 end
 
 function ChatThrottleLib.PipeBin:Tidy()
-	if self.count < 25 then
+	if self.count <= 40 then	-- = max raid size, nice arbitrary number
 		return
 	end
 	
-	local n
-	if self.count > 100 then
-		n = self.count-90
-	else
-		n = 10
-	end
-	for i = 2, n do
+	for i = 1, 10 do
+		local delme = self.list
 		self.list = self.list.next
+		delme.next = nil
 	end
-	local delme = self.list
-	self.list = self.list.next
-	delme.next = nil
+	self.count = self.count - 10
 end
 
 
@@ -2709,11 +2704,11 @@ function ChatThrottleLib:Init()
 		-- use secure hooks instead of insecure hooks (v16)
 		self.securelyHooked = true
 		--SendChatMessage
-		self.ORIG_SendChatMessage = _G.SendChatMessage
+		self.ORIG_SendChatMessage = SendChatMessage
 		hooksecurefunc("SendChatMessage", function(...)
 			return ChatThrottleLib.Hook_SendChatMessage(...)
 		end)
-		self.ORIG_SendAddonMessage = _G.SendAddonMessage
+		self.ORIG_SendAddonMessage = SendAddonMessage
 		--SendAddonMessage
 		hooksecurefunc("SendAddonMessage", function(...)
 			return ChatThrottleLib.Hook_SendAddonMessage(...)
@@ -2729,7 +2724,7 @@ function ChatThrottleLib.Hook_SendChatMessage(text, chattype, language, destinat
 	local self = ChatThrottleLib
 	local size = tostring(text or ""):len() + tostring(chattype or ""):len() + tostring(destination or ""):len() + 40
 	self.avail = self.avail - size
-	self.nBypass = self.nBypass + size
+	self.nBypass = self.nBypass + size	-- just a statistic
 	if not self.securelyHooked then
 		self.ORIG_SendChatMessage(text, chattype, language, destination, ...)
 	end
@@ -2737,10 +2732,9 @@ end
 function ChatThrottleLib.Hook_SendAddonMessage(prefix, text, chattype, destination, ...)
 	local self = ChatThrottleLib
 	local size = tostring(text or ""):len() + tostring(prefix or ""):len();
-	assert(size+1<=255, "prefix + text length cannot exceed 254 bytes");
 	size = size + tostring(chattype or ""):len() + tostring(destination or ""):len() + 40
 	self.avail = self.avail - size
-	self.nBypass = self.nBypass + size
+	self.nBypass = self.nBypass + size	-- just a statistic
 	if not self.securelyHooked then
 		self.ORIG_SendAddonMessage(prefix, text, chattype, destination, ...)
 	end
@@ -2763,7 +2757,7 @@ function ChatThrottleLib:UpdateAvail()
 	elseif GetFramerate() < self.MIN_FPS then		-- GetFrameRate call takes ~0.002 secs
 		newavail = newavail * 0.5
 		self.avail = math_min(MAX_CPS, self.avail + newavail)
-		self.bChoking = true		-- just for stats
+		self.bChoking = true		-- just a statistic
 	else
 		self.avail = math_min(self.BURST, self.avail + newavail)
 		self.bChoking = false
@@ -2802,7 +2796,7 @@ end
 function ChatThrottleLib.OnEvent()
 	-- v11: We know that the rate limiter is touchy after login. Assume that it's touch after zoning, too.
 	local self = ChatThrottleLib
-	if _G.event == "PLAYER_ENTERING_WORLD" then
+	if event == "PLAYER_ENTERING_WORLD" then
 		self.HardThrottlingBeginTime = GetTime()	-- Throttle hard for a few seconds after zoning
 		self.avail = 0
 	end
@@ -2812,7 +2806,7 @@ end
 function ChatThrottleLib.OnUpdate()
 	local self = ChatThrottleLib
 	
-	self.OnUpdateDelay = self.OnUpdateDelay + _G.arg1
+	self.OnUpdateDelay = self.OnUpdateDelay + arg1
 	if self.OnUpdateDelay < 0.08 then
 		return
 	end
@@ -2892,9 +2886,13 @@ function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, languag
 		error('Usage: ChatThrottleLib:SendChatMessage("{BULK||NORMAL||ALERT}", "prefix" or nil, "text"[, "chattype"[, "language"[, "destination"]]]', 2)
 	end
 	
-	prefix = prefix or tostring(_G.this)		-- each frame gets its own queue if prefix is not given
+	prefix = prefix or tostring(this)		-- each frame gets its own queue if prefix is not given
 	
-	local nSize = text:len() + self.MSG_OVERHEAD
+	local nSize = text:len()
+	
+	assert(nSize<=255, "text length cannot exceed 255 bytes");
+	
+	nSize = nSize + self.MSG_OVERHEAD
 	
 	-- Check if there's room in the global available bandwidth gauge to send directly
 	if not self.bQueueing and nSize < self:UpdateAvail() then
@@ -2914,7 +2912,7 @@ function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, languag
 	msg.n = 4
 	msg.nSize = nSize
 
-	self:Enqueue(prio, ("%s/%s/%s"):format(prefix, chattype, destination or ""), msg)
+	self:Enqueue(prio, prefix..(chattype or "SAY")..(destination or ""), msg)
 end
 
 
@@ -2924,7 +2922,9 @@ function ChatThrottleLib:SendAddonMessage(prio, prefix, text, chattype, target)
 	end
 	
 	local nSize = prefix:len() + 1 + text:len();
+	
 	assert(nSize<=255, "prefix + text length cannot exceed 254 bytes");
+	
 	nSize = nSize + self.MSG_OVERHEAD;
 	
 	-- Check if there's room in the global available bandwidth gauge to send directly
@@ -2945,7 +2945,7 @@ function ChatThrottleLib:SendAddonMessage(prio, prefix, text, chattype, target)
 	msg.n = (target~=nil) and 4 or 3;
 	msg.nSize = nSize
 	
-	self:Enqueue(prio, ("%s/%s/%s"):format(prefix, chattype, target or ""), msg)
+	self:Enqueue(prio, prefix..chattype..(target or ""), msg)
 end
 
 
@@ -2965,4 +2965,3 @@ if(WOWB_VER) then
 	ChatThrottleLib.Frame:RegisterEvent("CHAT_MSG_SAY")
 end
 ]]
-
