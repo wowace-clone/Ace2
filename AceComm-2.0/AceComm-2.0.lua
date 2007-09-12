@@ -1916,11 +1916,12 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 	local id, point
 	if not message then
-		prefix, id, point, message = prefix:match("^(...)\t(.)(.)%-(.*)$")
-		if not prefix then
+		local tmpPrefix
+		tmpPrefix, id, point, message = prefix:match("^(...)\t(.)(.)%-(.*)$")
+		if not tmpPrefix then
 			local current, max
-			prefix, id, current, max, message = prefix:match("^(...)\t(.)(.)(.)\t(.*)$")
-			if not prefix then
+			tmpPrefix, id, current, max, message = prefix:match("^(...)\t(.)(.)(.)\t(.*)$")
+			if not tmpPrefix then
 				return
 			end
 			if current == max then
@@ -1935,7 +1936,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 				point = 'c'
 			end
 		end
-		prefix = AceComm.prefixHashToText[prefix]
+		prefix = AceComm.prefixHashToText[tmpPrefix]
 		if not prefix then
 			return CheckRefix()
 		end
