@@ -627,10 +627,13 @@ function AceEvent:IsEventRegistered(event)
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
 	if self == AceEvent then
-		return AceEvent_registry[event] and next(AceEvent_registry[event]) and true or false
+		return AceEvent_registry[event] and next(AceEvent_registry[event]) or AceEvent_registry[ALL_EVENTS] and next(AceEvent_registry[ALL_EVENTS]) and true or false
 	end
 	if AceEvent_registry[event] and AceEvent_registry[event][self] then
 		return true, AceEvent_registry[event][self]
+	end
+	if AceEvent_registry[ALL_EVENTS] and AceEvent_registry[ALL_EVENTS][self] then
+		return true, AceEvent_registry[ALL_EVENTS][self]
 	end
 	return false, nil
 end
