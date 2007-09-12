@@ -39,6 +39,13 @@ local AceComm = Mixin {
 
 AceComm.hooks = {}
 
+local WoW22
+do
+	local buildMajor, buildMinor = ("."):split((GetBuildInfo()))
+	buildMajor, buildMinor = tonumber(buildMajor), tonumber(buildMinor)
+	WoW22 = buildMajor < 1 or (buildMajor >= 2 and buildMinor >= 2)
+end
+
 local AceEvent = AceLibrary:HasInstance("AceEvent-2.0") and AceLibrary("AceEvent-2.0")
 
 local byte_a = ("a"):byte()
@@ -68,6 +75,8 @@ local byte_t = ("t"):byte()
 local byte_T = ("T"):byte()
 local byte_u = ("u"):byte()
 local byte_U = ("U"):byte()
+local byte_v = ("v"):byte()
+local byte_V = ("V"):byte()
 local byte_i = ("i"):byte()
 local byte_I = ("I"):byte()
 local byte_inf = ("@"):byte()
@@ -788,8 +797,10 @@ do
 				sb[#sb+1] = "" -- dummy
 				sb[#sb+1] = "" -- dummy
 				local len = 0
+				local num = 0
 				for i = 2, #t do
 					len = len + _Serialize(t[i], textToHash, sb, drunk)
+					num = num + 1
 				end
 				t = del(t)
 --				if not notFirst then
@@ -797,13 +808,17 @@ do
 						recurse[k] = nil
 					end
 --				end
-				if len <= 255 then
+				if not WoW22 then
+					-- still using byte-length instead of element-length
+					num = len
+				end
+				if num <= 255 then
 					sb[sb_id] = "o"
-					sb[sb_id+1] = EncodeByte(len, drunk)
+					sb[sb_id+1] = EncodeByte(num, drunk)
 					return 2 + len
 				else
 					sb[sb_id] = "O"
-					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[sb_id+1] = EncodeBytes(drunk, math_floor(num / 256), num % 256)
 					return 3 + len
 				end
 			end
@@ -819,22 +834,36 @@ do
 					end
 				end
 			end
+			local isset = WoW22 -- only have sets in >= 2.2
+			for k, v in pairs(v) do
+				if v ~= true then
+					isset = false
+					break
+				end
+			end
 			local sb_id = #sb+1
 			sb[#sb+1] = "" -- dummy
 			sb[#sb+1] = "" -- dummy
 			local len = 0
+			local num = 0
 			if islist then
-				n = n * 4
-				while v[n] == nil do
-					n = n - 1
+				num = n * 4
+				while v[num] == nil do
+					num = num - 1
 				end
-				for i = 1, n do
+				for i = 1, num do
 					len = len + _Serialize(v[i], textToHash, sb, drunk)
+				end
+			elseif isset then
+				for k in pairs(v) do
+					len = len + _Serialize(k, textToHash, sb, drunk)
+					num = num + 1
 				end
 			else
 				for k,u in pairs(v) do
 					len = len + _Serialize(k, textToHash, sb, drunk)
 					len = len + _Serialize(u, textToHash, sb, drunk)
+					num = num + 1
 				end
 			end
 			t = del(t)
@@ -843,24 +872,38 @@ do
 					recurse[k] = nil
 				end
 --			end
+			if not WoW22 then
+				-- still using length instead of element-size
+				num = len
+			end
 			if islist then
-				if len <= 255 then
+				if num <= 255 then
 					sb[sb_id] = "u"
-					sb[sb_id+1] = EncodeByte(len, drunk)
+					sb[sb_id+1] = EncodeByte(num, drunk)
 					return 2 + len
 				else
 					sb[sb_id] = "U"
-					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[sb_id+1] = EncodeBytes(drunk, math_floor(num / 256), num % 256)
+					return 3 + len
+				end
+			elseif isset then
+				if num <= 255 then
+					sb[sb_id] = "v"
+					sb[sb_id+1] = EncodeByte(num, drunk)
+					return 2 + len
+				else
+					sb[sb_id] = "V"
+					sb[sb_id+1] = EncodeBytes(drunk, math_floor(num / 256), num % 256)
 					return 3 + len
 				end
 			else
-				if len <= 255 then
+				if num <= 255 then
 					sb[sb_id] = "t"
-					sb[sb_id+1] = EncodeByte(len, drunk)
+					sb[sb_id+1] = EncodeByte(num, drunk)
 					return 2 + len
 				else
 					sb[sb_id] = "T"
-					sb[sb_id+1] = EncodeBytes(drunk, math_floor(len / 256), len % 256)
+					sb[sb_id+1] = EncodeBytes(drunk, math_floor(num / 256), num % 256)
 					return 3 + len
 				end
 			end	
@@ -875,6 +918,15 @@ do
 		sb[1] = ""
 		sb[2] = ""
 		_Serialize(value, textToHash, sb, drunk)
+		if WoW22 then
+			-- expect a table, chop off the initial byte.
+			for i = 1, #sb do
+				if #sb[i] > 0 then
+					sb[i] = sb[i]:sub(2)
+					break
+				end
+			end
+		end
 		local len = 0
 		for i = 1, #sb do
 			len = len + #sb[i]
@@ -1004,98 +1056,197 @@ do
 			return val, position + 8
 		elseif x == byte_u or x == byte_U then
 			-- numerically-indexed table
-			local finish
+			if WoW22 then
+				-- byte #2 is element-length, not byte-length
+				local start
+				local num
+				if x == byte_u then
+					num = value:byte(position + 1)
+					start = position + 2
+				else
+					local a, b = value:byte(position + 1, position + 2)
+					num = a * 256 + b
+					start = position + 3
+				end
+				local t = new()
+				local curr = start - 1
+				for i = 1, num do
+					local v
+					v, curr = _Deserialize(value, curr + 1, hashToText)
+					t[i] = v
+				end
+				return t, curr
+			else
+				-- byte #2 is byte-length, not element-length
+				local finish
+				local start
+				if x == byte_u then
+					local len = value:byte(position + 1)
+					finish = position + 1 + len
+					start = position + 2
+				else
+					local a, b = value:byte(position + 1, position + 2)
+					local len = a * 256 + b
+					finish = position + 2 + len
+					start = position + 3
+				end
+				local t = new()
+				local n = 0
+				local curr = start - 1
+				while curr < finish do
+					local v
+					v, curr = _Deserialize(value, curr + 1, hashToText)
+					n = n + 1
+					t[n] = v
+				end
+				return t, finish
+			end
+		elseif x == byte_v or x == byte_V then
+			-- set-style table
 			local start
-			if x == byte_u then
-				local len = value:byte(position + 1)
-				finish = position + 1 + len
+			local num
+			if x == byte_v then
+				num = value:byte(position + 1)
 				start = position + 2
 			else
 				local a, b = value:byte(position + 1, position + 2)
-				local len = a * 256 + b
-				finish = position + 2 + len
+				num = a * 256 + b
 				start = position + 3
 			end
 			local t = new()
-			local n = 0
 			local curr = start - 1
-			while curr < finish do
+			for i = 1, num do
 				local v
 				v, curr = _Deserialize(value, curr + 1, hashToText)
-				n = n + 1
-				t[n] = v
+				t[v] = true
 			end
-			return t, finish
+			return t, curr
 		elseif x == byte_o or x == byte_O then
 			-- numerically-indexed table
-			local finish
-			local start
-			if x == byte_o then
-				local len = value:byte(position + 1)
-				finish = position + 1 + len
-				start = position + 2
+			if WoW22 then
+				-- byte #2 is element-length, not byte-length
+				local start
+				local num
+				if x == byte_o then
+					num = value:byte(position + 1)
+					start = position + 2
+				else
+					local a, b = value:byte(position + 1, position + 2)
+					num = a * 256 + b
+					start = position + 3
+				end
+				local a, b, c = value:byte(start, start + 3)
+				local hash = a * 256^2 + b * 256 + c
+				local curr = start + 2
+				if not AceComm.classes[hash] then
+					return nil, finish
+				end
+				local class = AceComm.classes[hash]
+				if type(class.Deserialize) ~= "function" or type(class.prototype.Serialize) ~= "function" then
+					return nil, finish
+				end
+				local tmp = new()
+				for i = 1, num do
+					local v
+					v, curr = _Deserialize(value, curr + 1, hashToText)
+					tmp[i] = v
+				end
+				local object = class:Deserialize(unpack(tmp, 1, num))
+				tmp = del(tmp)
+				return object, curr+1
 			else
-				local a, b = value:byte(position + 1, position + 2)
-				local len = a * 256 + b
-				finish = position + 2 + len
-				start = position + 3
+				-- byte #2 is byte-length, not element-length
+				local finish
+				local start
+				if x == byte_o then
+					local len = value:byte(position + 1)
+					finish = position + 1 + len
+					start = position + 2
+				else
+					local a, b = value:byte(position + 1, position + 2)
+					local len = a * 256 + b
+					finish = position + 2 + len
+					start = position + 3
+				end
+				local a, b, c = value:byte(start, start + 3)
+				local hash = a * 256^2 + b * 256 + c
+				local curr = start + 2
+				if not AceComm.classes[hash] then
+					return nil, finish
+				end
+				local class = AceComm.classes[hash]
+				if type(class.Deserialize) ~= "function" or type(class.prototype.Serialize) ~= "function" then
+					return nil, finish
+				end
+				local n = 0
+				local tmp = new()
+				while curr < finish do
+					local v
+					v, curr = _Deserialize(value, curr + 1, hashToText)
+					n = n + 1
+					tmp[n] = v
+				end
+				local object = class:Deserialize(unpack(tmp, 1, n))
+				tmp = del(tmp)
+				return object, finish
 			end
-			local a, b, c = value:byte(start, start + 3)
-			local hash = a * 256^2 + b * 256 + c
-			local curr = start + 2
-			if not AceComm.classes[hash] then
-				return nil, finish
-			end
-			local class = AceComm.classes[hash]
-			if type(class.Deserialize) ~= "function" or type(class.prototype.Serialize) ~= "function" then
-				return nil, finish
-			end
-			local n = 0
-			local tmp = new()
-			while curr < finish do
-				local v
-				v, curr = _Deserialize(value, curr + 1, hashToText)
-				n = n + 1
-				tmp[n] = v
-			end
-			local object = class:Deserialize(unpack(tmp, 1, n))
-			tmp = del(tmp)
-			return object, finish
 		elseif x == byte_t or x == byte_T then
 			-- table
-			local finish
-			local start
-			if x == byte_t then
-				local len = value:byte(position + 1)
-				finish = position + 1 + len
-				start = position + 2
-			else
-				local a, b = value:byte(position + 1, position + 2)
-				local len = a * 256 + b
-				finish = position + 2 + len
-				start = position + 3
-			end
-			local t = new()
-			local curr = start - 1
-			while curr < finish do
-				local key, l = _Deserialize(value, curr + 1, hashToText)
-				local value, m = _Deserialize(value, l + 1, hashToText)
-				curr = m
-				t[key] = value
-			end
-			if type(t.n) ~= "number" then
-				local i = 1
-				while t[i] ~= nil do
-					i = i + 1
+			if WoW22 then
+				-- byte #2 is element-length, not byte-length
+				local start
+				local num
+				if x == byte_t then
+					num = value:byte(position + 1)
+					start = position + 2
+				else
+					local a, b = value:byte(position + 1, position + 2)
+					num = a * 256 + b
+					start = position + 3
 				end
+				local t = new()
+				local curr = start - 1
+				for i = 1, num do
+					local key, val
+					key, curr = _Deserialize(value, curr + 1, hashToText)
+					val, curr = _Deserialize(value, curr + 1, hashToText)
+					t[key] = val
+				end
+				return t, curr
+			else
+				-- byte #2 is byte-length, not element-length
+				local finish
+				local start
+				if x == byte_t then
+					local len = value:byte(position + 1)
+					finish = position + 1 + len
+					start = position + 2
+				else
+					local a, b = value:byte(position + 1, position + 2)
+					local len = a * 256 + b
+					finish = position + 2 + len
+					start = position + 3
+				end
+				local t = new()
+				local curr = start - 1
+				while curr < finish do
+					local key, l = _Deserialize(value, curr + 1, hashToText)
+					local value, m = _Deserialize(value, l + 1, hashToText)
+					curr = m
+					t[key] = value
+				end
+				return t, finish
 			end
-			return t, finish
 		else
-			error("Improper serialized value provided")
+			error(("Improper serialized value provided: %s"):format(x))
 		end
 	end
 	
 	function Deserialize(value, hashToText)
+		if WoW22 then
+			-- prefix the table byte
+			value = "u" .. value
+		end
 		local ret,msg = pcall(_Deserialize, value, nil, hashToText)
 		if ret then
 			return msg
@@ -1463,13 +1614,41 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				end
 				local index = GetChannelName(channel)
 				if index and index > 0 then
-					bit = prefix .. string_char(9 --[[\t]], id) .. encodedChar[i] .. encodedChar[max] .. "\t" .. bit .. "\029"
+					if WoW22 then
+						local point
+						if i == 1 then
+							point = "b"
+						elseif i == max then
+							point = "d"
+						else
+							point = "c"
+						end
+						
+						bit = prefix .. string_char(9 --[[\t]], id) .. point .. "-" .. bit .. "\029"
+					else
+						-- old way
+						bit = prefix .. string_char(9 --[[\t]], id) .. encodedChar[i] .. encodedChar[max] .. "\t" .. bit .. "\029"
+					end
 					ChatThrottleLib:SendChatMessage(priority, prefix, bit, "CHANNEL", nil, index)
 				else
 					return false
 				end
 			else
-				bit = string_char(id) .. soberEncodedChar[i] .. soberEncodedChar[max] .. "\t" .. bit
+				if WoW22 then
+					local point
+					if i == 1 then
+						point = "b"
+					elseif i == max then
+						point = "d"
+					else
+						point = "c"
+					end
+					
+					bit = string_char(id) .. point .. "-" .. bit
+				else
+					-- old way
+					bit = string_char(id) .. soberEncodedChar[i] .. soberEncodedChar[max] .. "\t" .. bit
+				end
 				ChatThrottleLib:SendAddonMessage(priority, prefix, bit, distribution, person)
 			end
 		end
@@ -1487,7 +1666,12 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 			local index = GetChannelName(channel)
 			if index and index > 0 then
 				sb[1] = prefix
-				sb[2] = string_char(9 --[[\t]], id, 1, 1, 9 --[[\t]])
+				if WoW22 then
+					sb[2] = string_char(9 --[[\t]], id, byte_a, byte_minus)
+				else
+					-- old way
+					sb[2] = string_char(9 --[[\t]], id, 1, 1, 9 --[[\t]])
+				end
 				sb[#sb+1] = "\029"
 				local message = table_concat(sb)
 				sb = del(sb)
@@ -1506,7 +1690,12 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 				end
 				recentGuildMessage = GetTime() + 10
 			end
-			sb[1] = string_char(id, 1, 1, 9 --[[\t]])
+			if WoW22 then
+				sb[1] = string_char(id, byte_a, byte_minus)
+			else
+				-- old way
+				sb[1] = string_char(id, 1, 1, 9 --[[\t]])
+			end
 			local message = table_concat(sb)
 			sb = del(sb)
 			ChatThrottleLib:SendAddonMessage(priority, prefix, message, distribution, person)
@@ -1543,9 +1732,9 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	end
 	
 	local message
-	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
+	if not WoW22 and includePerson and select('#', ...) == 0 and type(person) ~= "table" then
 		message = person
-	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
+	elseif not WoW22 and not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
 		message = ...
 	else
 		message = new()
@@ -1596,9 +1785,9 @@ function AceComm:SendCommMessage(distribution, person, ...)
 	end
 	
 	local message
-	if includePerson and select('#', ...) == 0 and type(person) ~= "table" then
+	if not WoW22 and includePerson and select('#', ...) == 0 and type(person) ~= "table" then
 		message = person
-	elseif not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
+	elseif not WoW22 and not includePerson and select('#', ...) == 1 and type((...)) ~= "table" then
 		message = ...
 	else
 		message = new()
@@ -1725,9 +1914,27 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	if (not AceComm_registry[distribution] and (not isGroup or not AceComm_registry.GROUP)) or (isCustom and not AceComm_registry.CUSTOM[customChannel]) then
 		return CheckRefix()
 	end
-	local id, current, max
+	local id, point
 	if not message then
-		prefix, id, current, max, message = prefix:match("^(...)\t(.)(.)(.)\t(.*)$")
+		prefix, id, point, message = prefix:match("^(...)\t(.)(.)%-(.*)$")
+		if not prefix then
+			local current, max
+			prefix, id, current, max, message = prefix:match("^(...)\t(.)(.)(.)\t(.*)$")
+			if not prefix then
+				return
+			end
+			if current == max then
+				if current == "\001" then
+					point = 'a'
+				else
+					point = 'd'
+				end
+			elseif current == "\001" then
+				point = 'b'
+			else
+				point = 'c'
+			end
+		end
 		prefix = AceComm.prefixHashToText[prefix]
 		if not prefix then
 			return CheckRefix()
@@ -1742,15 +1949,33 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			end
 		end
 	else
-		id, current, max, message = message:match("^(.)(.)(.)\t(.*)$")
+		local tmpMessage
+		id, point, tmpMessage = message:match("^(.)(.)%-(.*)$")
+		if not id then
+			local current, max
+			id, current, max, tmpMessage = message:match("^(.)(.)(.)\t(.*)$")
+			if not id then
+				return
+			end
+			if current == max then
+				if current == "\001" then
+					point = 'a'
+				else
+					point = 'd'
+				end
+			elseif current == "\001" then
+				point = 'b'
+			else
+				point = 'c'
+			end
+		end
+		message = tmpMessage
 	end
 	if not message then
 		return
 	end
 	local smallCustomChannel = customChannel and customChannel:sub(8)
-	current = current:byte()
-	max = max:byte()
-	if max > 1 then
+	if point ~= 'a' then
 		local queue = AceComm.recvQueue
 		local x
 		if distribution == "CUSTOM" then
@@ -1759,15 +1984,15 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 			x = prefix .. ":" .. sender .. distribution .. id
 		end
 		if not queue[x] then
-			if current ~= 1 then
+			if point ~= 'b' then
 				return
 			end
 			queue[x] = new()
 		end
 		local chunk = queue[x]
 		chunk.time = GetTime()
-		chunk[current] = message
-		if chunk[max] then
+		chunk[#chunk+1] = message
+		if point == 'd' then
 			local success
 			success, message = pcall(table_concat, chunk)
 			if not success then
@@ -1786,7 +2011,7 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 		if n < 40 then
 			n = 40
 		end
-		while message[n] == nil do
+		while message[n] == nil and n > 0 do
 			n = n - 1
 		end
 	end
