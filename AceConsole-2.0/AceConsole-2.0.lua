@@ -2468,24 +2468,10 @@ function AceConsole:InjectAceOptionsTable(handler, options)
 	end
 	options.handler = handler
 	local class = handler.class
-	if not class then
-		self:error("Cannot retrieve AceOptions tables from a non-object argument #2")
-	end
-	while class and class ~= AceOO.Class do
-		if type(class.GetAceOptionsDataTable) == "function" then
-			local t = class:GetAceOptionsDataTable(handler)
-			for k,v in pairs(t) do
-				if type(options.args) ~= "table" then
-					options.args = {}
-				end
-				if options.args[k] == nil then
-					options.args[k] = v
-				end
-			end
-		end
-		local mixins = class.mixins
-		if mixins then
-			for mixin in pairs(mixins) do
+	if not AceLibrary:HasInstance("AceOO-2.0") or not class then
+		if Rock then
+			-- possible Rock object
+			for mixin in Rock:IterateObjectMixins(handler) do
 				if type(mixin.GetAceOptionsDataTable) == "function" then
 					local t = mixin:GetAceOptionsDataTable(handler)
 					for k,v in pairs(t) do
@@ -2499,8 +2485,40 @@ function AceConsole:InjectAceOptionsTable(handler, options)
 				end
 			end
 		end
-		class = class.super
+	else
+		-- Ace2 object
+		while class and class ~= AceLibrary("AceOO-2.0").Class do
+			if type(class.GetAceOptionsDataTable) == "function" then
+				local t = class:GetAceOptionsDataTable(handler)
+				for k,v in pairs(t) do
+					if type(options.args) ~= "table" then
+						options.args = {}
+					end
+					if options.args[k] == nil then
+						options.args[k] = v
+					end
+				end
+			end
+			local mixins = class.mixins
+			if mixins then
+				for mixin in pairs(mixins) do
+					if type(mixin.GetAceOptionsDataTable) == "function" then
+						local t = mixin:GetAceOptionsDataTable(handler)
+						for k,v in pairs(t) do
+							if type(options.args) ~= "table" then
+								options.args = {}
+							end
+							if options.args[k] == nil then
+								options.args[k] = v
+							end
+						end
+					end
+				end
+			end
+			class = class.super
+		end
 	end
+	
 	return options
 end
 
