@@ -1065,8 +1065,12 @@ local function activate(self, oldLib, oldDeactivate)
 	registeringFromAceEvent = nil
 	
 	-- another hack to make sure that we clean up properly from rev 33121 - 36174
-	for event in pairs(self.registry) do
-		self.frame:RegisterEvent(event)
+	if self.registry[ALL_EVENTS] then
+		self.frame:RegisterAllEvents()
+	else
+		for event in pairs(self.registry) do
+			self.frame:RegisterEvent(event)
+		end
 	end
 	
 	self:activate(oldLib, oldDeactivate)
