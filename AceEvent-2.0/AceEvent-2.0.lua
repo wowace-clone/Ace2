@@ -210,14 +210,18 @@ function AceEvent:RegisterAllEvents(method)
 			AceEvent:error("Cannot register all events to method %q, it does not exist", method)
 		end
 	end
-
+	
 	local AceEvent_registry = AceEvent.registry
 	if not AceEvent_registry[ALL_EVENTS] then
 		AceEvent_registry[ALL_EVENTS] = new()
 		AceEvent.frame:RegisterAllEvents()
 	end
-
+	
+	local remember = not AceEvent_registry[ALL_EVENTS][self]
 	AceEvent_registry[ALL_EVENTS][self] = method
+	if remember then
+		AceEvent:TriggerEvent("AceEvent_EventRegistered", self, "all")
+	end
 end
 
 --[[----------------------------------------------------------------------------------
