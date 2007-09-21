@@ -453,6 +453,10 @@ function AceLibrary:IsNewVersion(major, minor)
 		end
 	end
 	argCheck(self, minor, 3, "number")
+	local lib, oldMinor = LibStub:GetLibrary(major, true)
+	if lib then
+		return oldMinor < minor
+	end
 	local data = self.libs[major]
 	if not data then
 		return true
