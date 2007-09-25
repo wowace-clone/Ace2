@@ -1,4 +1,4 @@
-## Interface: 20100
+## Interface: 20200
 
 ## Title: Lib: Ace2
 ## Notes: AddOn development framework
@@ -19,6 +19,7 @@ AceDebug-2.0\AceDebug-2.0.lua
 # AceLocale-2.0\AceLocale-2.0.lua
 # AceLocale-2.1\AceLocale-2.1.lua
 AceLocale-2.2\AceLocale-2.2.lua
+AceLocale-2.2\AceLocale-2.2-2.lua
 AceTab-2.0\AceTab-2.0.lua
 AceConsole-2.0\AceConsole-2.0.lua
 AceComm-2.0\AceComm-2.0.lua
