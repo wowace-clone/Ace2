@@ -292,6 +292,9 @@ do
 		if drunk then
 			return text:gsub("([\010\015\020\029%%\031Ss\124\127-\255])", drunkHelper)
 		else
+			if not text then
+				DEFAULT_CHAT_FRAME:AddMessage(debugstack())
+			end
 			return text:gsub("([\176\255%z\010\124%%])", soberHelper)
 		end
 	end
@@ -1682,10 +1685,10 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 		else
 			if distribution == "GUILD" and firstGuildMessage then
 				firstGuildMessage = false
-				if GetCVar("EnableErrorSpeech") == "1" then
-					SetCVar("EnableErrorSpeech", "0")
+				if GetCVar(WoW22 and "Sound_EnableErrorSpeech" or "EnableErrorSpeech") == "1" then
+					SetCVar(WoW22 and "Sound_EnableErrorSpeech" or "EnableErrorSpeech", "0")
 					AceLibrary("AceEvent-2.0"):ScheduleEvent("AceComm-EnableErrorSpeech", function()
-						SetCVar("EnableErrorSpeech", "1")
+						SetCVar(WoW22 and "Sound_EnableErrorSpeech" or "EnableErrorSpeech", "1")
 					end, 10)
 				end
 				recentGuildMessage = GetTime() + 10
