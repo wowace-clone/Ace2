@@ -1597,24 +1597,23 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	if type(prefix) ~= "string" then
 		AceComm:error("`SetCommPrefix' must be called before sending a message.")
 	end
-	
-	local message = new()
-	local n = 1
-	if includePerson then
-		message[1] = person
-		n = 2
-	end
-	for i = 1, select('#', ...) do
-		message[n] = select(i, ...)
-		n = n + 1
-	end
 
-	if includePerson then
-		person = nil
+	local ret = nil
+	local n = select('#', ...)
+	if includePerson or n > 1 then
+		local message = new()
+		if includePerson then
+			message[1] = person
+			person = nil
+		end
+		for i = 1, n do
+			message[includePerson and i + 1 or i] = select(i, ...)
+		end
+		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
+		message = del(message)
+	else
+		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, (select(1, ...)), self.commMemoTextToHash)
 	end
-
-	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
-	message = del(message)
 
 	return ret
 end
@@ -1641,26 +1640,23 @@ function AceComm:SendCommMessage(distribution, person, ...)
 		AceComm:error("`SetCommPrefix' must be called before sending a message.")
 	end
 
-	local message = new()
-	local n = 1
-	if includePerson then
-		message[1] = person
-		n = 2
-	end
-	for i = 1, select('#', ...) do
-		message[n] = select(i, ...)
-		n = n + 1
-	end
-
+	local ret = nil
 	local priority = self.commPriority or "NORMAL"
-
-	if includePerson then
-		person = nil
+	local n = select('#', ...)
+	if includePerson or n > 1 then
+		local message = new()
+		if includePerson then
+			message[1] = person
+			person = nil
+		end
+		for i = 1, n do
+			message[includePerson and i + 1 or i] = select(i, ...)
+		end
+		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
+		message = del(message)
+	else
+		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, (select(1, ...)), self.commMemoTextToHash)
 	end
-
-	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
-
-	message = del(message)
 
 	return ret
 end
