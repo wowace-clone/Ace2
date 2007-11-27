@@ -1588,7 +1588,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	prefix = Encode(prefix, drunk)
 	local sb, messageLen = SerializeAndEncode(message, textToHash, drunk)
 	local headerLen = prefix:len() + 6
-	local max = math_floor(messageLen / (250 - headerLen) + 1)
+	local max = math_floor(messageLen / (240 - headerLen) + 1)
 	if max > 1 then
 		local segment = math_floor(messageLen / max + 0.5)
 		local last = 0
