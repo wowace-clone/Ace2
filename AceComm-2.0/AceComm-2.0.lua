@@ -167,10 +167,9 @@ do
 	end
 end
 
-local NumericCheckSum, HexCheckSum, BinaryCheckSum
-local TailoredNumericCheckSum, TailoredHexCheckSum, TailoredBinaryCheckSum
+local NumericCheckSum, HexCheckSum
+local TailoredNumericCheckSum, TailoredBinaryCheckSum
 do
-	local SOME_PRIME = 16777213
 	function NumericCheckSum(text)
 		local counter = 1
 		local len = text:len()
@@ -185,11 +184,6 @@ do
 	
 	function HexCheckSum(text)
 		return ("%06x"):format(NumericCheckSum(text))
-	end
-	
-	function BinaryCheckSum(text)
-		local num = NumericCheckSum(text)
-		return string_char(math_floor(num / 256^2), math_floor(num / 256) % 256, num % 256)
 	end
 	
 	function TailoredNumericCheckSum(text)
@@ -217,19 +211,10 @@ do
 		return a * 256^2 + b * 256 + c
 	end
 	
-	function TailoredHexCheckSum(text)
-		return ("%06x"):format(TailoredNumericCheckSum(text))
-	end
-	
 	function TailoredBinaryCheckSum(text)
 		local num = TailoredNumericCheckSum(text)
 		return string_char(math_floor(num / 256^2), math_floor(num / 256) % 256, num % 256)
 	end
-end
-
-local function GetLatency()
-	local _,_,lag = GetNetStats()
-	return lag / 1000
 end
 
 local function IsInChannel(chan)
@@ -605,7 +590,7 @@ do
 			else
 				self:TriggerEvent("AceComm_LeftChannel", "CUSTOM", channel:sub(8))
 			end
-			if channel:find("^AceComm") and SupposedToBeInChannel(channel) then
+			if SupposedToBeInChannel(channel) then
 				self:ScheduleEvent("AceComm-JoinChannel-" .. channel, JoinChannel, 0, channel)
 			end
 			if AceComm.userRegistry[channel] then
@@ -1398,41 +1383,9 @@ end
 
 local id = byte_Z
 
-local encodedChar = {
-	[10] = "\029\011",
-	[0] = "\127",
-	[127] = "\029\126",
-	[124] = "\029\125",
-	[byte_s] = "\015",
-	[byte_S] = "\020",
-	[15] = "\029\016",
-	[20] = "\029\021",
-	[29] = "\029\030",
-	[37] = "\029\038",
-}
-
-local soberEncodedChar = {
-	[10] = "\176\011",
-	[0] = "\255",
-	[255] = "\176\254",
-	[124] = "\176\125",
-	[byte_deg] = "\176\177",
-	[37] = "\176\038",
-}
-
-for i = 0, 255 do
-	if not encodedChar[i] then
-		encodedChar[i] = string_char(i)
-	end
-	if not soberEncodedChar[i] then
-		soberEncodedChar[i] = string_char(i)
-	end
-end
-
 local recentGuildMessage = 0
 local firstGuildMessage = true
 local stopGuildMessages = false
-
 
 function AceComm:PLAYER_GUILD_UPDATE(arg1)
 	if arg1 and arg1 ~= "player" then return end
@@ -1665,10 +1618,6 @@ function AceComm:SetDefaultCommPriority(priority)
 	AceComm:argCheck(priority, 2, "string")
 	if priority ~= "NORMAL" and priority ~= "BULK" and priority ~= "ALERT" then
 		AceComm:error('Argument #2 must be either "NORMAL", "BULK", or "ALERT"')
-	end
-	
-	if self.commPriority then
-		AceComm:error("Cannot call `SetDefaultCommPriority' more than once")
 	end
 	
 	self.commPriority = priority
@@ -2563,7 +2512,6 @@ AceLibrary:Register(AceComm, MAJOR_VERSION, MINOR_VERSION, activate, nil, extern
 
 
 
-
 --
 -- ChatThrottleLib by Mikk
 --
@@ -2587,7 +2535,7 @@ AceLibrary:Register(AceComm, MAJOR_VERSION, MINOR_VERSION, activate, nil, extern
 -- Can run as a standalone addon also, but, really, just embed it! :-)
 --
 
-local CTL_VERSION = 18
+local CTL_VERSION = 19
 
 if _G.ChatThrottleLib and _G.ChatThrottleLib.version >= CTL_VERSION then
 	-- There's already a newer (or same) version loaded. Buh-bye.
@@ -2600,6 +2548,8 @@ end
 
 ChatThrottleLib = _G.ChatThrottleLib  -- in case some addon does "local ChatThrottleLib" above use and we're copypasted (AceComm, sigh)
 local ChatThrottleLib = _G.ChatThrottleLib
+
+------------------ TWEAKABLES -----------------
 
 ChatThrottleLib.MAX_CPS = 800			  -- 2000 seems to be safe if NOTHING ELSE is happening. let's call it 800.
 ChatThrottleLib.MSG_OVERHEAD = 40		-- Guesstimate overhead for sending a message; source+dest+chattype+protocolstuff
@@ -2615,6 +2565,8 @@ local tostring = tostring
 local GetTime = GetTime
 local math_min = math.min
 local math_max = math.max
+local next = next
+local strlen = string.len
 
 ChatThrottleLib.version = CTL_VERSION
 
@@ -2658,43 +2610,29 @@ end
 
 
 -----------------------------------------------------------------------
--- Recycling bin for pipes (kept in a linked list because that's 
--- how they're worked with in the rotating rings; just reusing members)
+-- Recycling bin for pipes 
+-- A pipe is a plain integer-indexed queue, which also happens to be a ring member
 
-ChatThrottleLib.PipeBin = { count = 0 }
+ChatThrottleLib.PipeBin = nil -- pre-v19, drastically different
+local PipeBin = setmetatable({}, {__mode="k"})
 
-function ChatThrottleLib.PipeBin:Put(pipe)
+local function DelPipe(pipe)
 	for i = #pipe, 1, -1 do
 		pipe[i] = nil
 	end
 	pipe.prev = nil
-	pipe.next = self.list
-	self.list = pipe
-	self.count = self.count + 1
+	pipe.next = nil
+	
+	PipeBin[pipe] = true
 end
 
-function ChatThrottleLib.PipeBin:Get()
-	if self.list then
-		local ret = self.list
-		self.list = ret.next
-		ret.next = nil
-		self.count = self.count - 1
-		return ret
+local function NewPipe()
+	local pipe = next(PipeBin)
+	if pipe then
+		PipeBin[pipe] = nil
+		return pipe
 	end
 	return {}
-end
-
-function ChatThrottleLib.PipeBin:Tidy()
-	if self.count <= 40 then	-- = max raid size, nice arbitrary number
-		return
-	end
-	
-	for i = 1, 10 do
-		local delme = self.list
-		self.list = self.list.next
-		delme.next = nil
-	end
-	self.count = self.count - 10
 end
 
 
@@ -2703,30 +2641,22 @@ end
 -----------------------------------------------------------------------
 -- Recycling bin for messages
 
-ChatThrottleLib.MsgBin = {}
+ChatThrottleLib.MsgBin = nil -- pre-v19, drastically different
+local MsgBin = setmetatable({}, {__mode="k"})
 
-function ChatThrottleLib.MsgBin:Put(msg)
-	msg.text = nil
-	self[#self + 1] = msg
+local function DelMsg(msg)
+	msg[1] = nil
+	-- there's more parameters, but they're very repetetive so the string pool doesn't suffer really, and it's faster to just not delete them.
+	MsgBin[msg] = true
 end
 
-function ChatThrottleLib.MsgBin:Get()
-	return table_remove(self) or {}
-end
-
-function ChatThrottleLib.MsgBin:Tidy()
-	if #self < 50 then
-		return
+local function NewMsg()
+	local msg = next(MsgBin)
+	if msg then
+		MsgBin[msg] = nil
+		return msg
 	end
-	if #self > 150 then	 -- "can't happen" but ...
-		for n = #self, 120, -1 do
-			self[n] = nil
-		end
-	else
-		for n = #self, #self - 20, -1 do
-			self[n] = nil
-		end
-	end
+	return {}
 end
 
 
@@ -2793,7 +2723,7 @@ end
 -- ChatThrottleLib.Hook_SendChatMessage / .Hook_SendAddonMessage
 function ChatThrottleLib.Hook_SendChatMessage(text, chattype, language, destination, ...)
 	local self = ChatThrottleLib
-	local size = tostring(text or ""):len() + tostring(chattype or ""):len() + tostring(destination or ""):len() + 40
+	local size = strlen(tostring(text or "")) + strlen(tostring(destination or "")) + self.MSG_OVERHEAD
 	self.avail = self.avail - size
 	self.nBypass = self.nBypass + size	-- just a statistic
 	if not self.securelyHooked then
@@ -2803,7 +2733,7 @@ end
 function ChatThrottleLib.Hook_SendAddonMessage(prefix, text, chattype, destination, ...)
 	local self = ChatThrottleLib
 	local size = tostring(text or ""):len() + tostring(prefix or ""):len();
-	size = size + tostring(chattype or ""):len() + tostring(destination or ""):len() + 40
+	size = size + tostring(destination or ""):len() + self.MSG_OVERHEAD
 	self.avail = self.avail - size
 	self.nBypass = self.nBypass + size	-- just a statistic
 	if not self.securelyHooked then
@@ -2821,23 +2751,26 @@ function ChatThrottleLib:UpdateAvail()
 	local now = GetTime()
 	local MAX_CPS = self.MAX_CPS;
 	local newavail = MAX_CPS * (now - self.LastAvailUpdate)
+	local avail = self.avail
 
 	if now - self.HardThrottlingBeginTime < 5 then
 		-- First 5 seconds after startup/zoning: VERY hard clamping to avoid irritating the server rate limiter, it seems very cranky then
-		self.avail = math_min(self.avail + (newavail*0.1), MAX_CPS*0.5)
+		avail = math_min(avail + (newavail*0.1), MAX_CPS*0.5)
+		self.bChoking = true
 	elseif GetFramerate() < self.MIN_FPS then		-- GetFrameRate call takes ~0.002 secs
-		newavail = newavail * 0.5
-		self.avail = math_min(MAX_CPS, self.avail + newavail)
+		avail = math_min(MAX_CPS, avail + newavail*0.5)
 		self.bChoking = true		-- just a statistic
 	else
-		self.avail = math_min(self.BURST, self.avail + newavail)
+		avail = math_min(self.BURST, avail + newavail)
 		self.bChoking = false
 	end
 	
-	self.avail = math_max(self.avail, 0-(MAX_CPS*2))	-- Can go negative when someone is eating bandwidth past the lib. but we refuse to stay silent for more than 2 seconds; if they can do it, we can.
+	avail = math_max(avail, 0-(MAX_CPS*2))	-- Can go negative when someone is eating bandwidth past the lib. but we refuse to stay silent for more than 2 seconds; if they can do it, we can.
+	
+	self.avail = avail
 	self.LastAvailUpdate = now
 	
-	return self.avail
+	return avail
 end
 
 
@@ -2852,19 +2785,19 @@ function ChatThrottleLib:Despool(Prio)
 			local pipe = Prio.Ring.pos
 			Prio.Ring:Remove(pipe)
 			Prio.ByName[pipe.name] = nil
-			self.PipeBin:Put(pipe)
+			DelPipe(pipe)
 		else
 			Prio.Ring.pos = Prio.Ring.pos.next
 		end
 		Prio.avail = Prio.avail - msg.nSize
 		msg.f(unpack(msg, 1, msg.n))
 		Prio.nTotalSent = Prio.nTotalSent + msg.nSize
-		self.MsgBin:Put(msg)
+		DelMsg(msg)
 	end
 end
 
 
-function ChatThrottleLib.OnEvent()
+function ChatThrottleLib.OnEvent(this,event)
 	-- v11: We know that the rate limiter is touchy after login. Assume that it's touch after zoning, too.
 	local self = ChatThrottleLib
 	if event == "PLAYER_ENTERING_WORLD" then
@@ -2874,10 +2807,10 @@ function ChatThrottleLib.OnEvent()
 end
 
 
-function ChatThrottleLib.OnUpdate()
+function ChatThrottleLib.OnUpdate(this,delay)
 	local self = ChatThrottleLib
 	
-	self.OnUpdateDelay = self.OnUpdateDelay + arg1
+	self.OnUpdateDelay = self.OnUpdateDelay + delay
 	if self.OnUpdateDelay < 0.08 then
 		return
 	end
@@ -2889,7 +2822,7 @@ function ChatThrottleLib.OnUpdate()
 		return -- argh. some bastard is spewing stuff past the lib. just bail early to save cpu.
 	end
 
-	-- See how many of or priorities have queued messages
+	-- See how many of our priorities have queued messages
 	local n = 0
 	for prioname,Prio in pairs(self.Prio) do
 		if Prio.Ring.pos or Prio.avail < 0 then 
@@ -2922,9 +2855,6 @@ function ChatThrottleLib.OnUpdate()
 		end
 	end
 
-	-- Expire recycled tables if needed	
-	self.MsgBin:Tidy()
-	self.PipeBin:Tidy()
 end
 
 
@@ -2939,7 +2869,7 @@ function ChatThrottleLib:Enqueue(prioname, pipename, msg)
 	local pipe = Prio.ByName[pipename]
 	if not pipe then
 		self.Frame:Show()
-		pipe = self.PipeBin:Get()
+		pipe = NewPipe()
 		pipe.name = pipename
 		Prio.ByName[pipename] = pipe
 		Prio.Ring:Add(pipe)
@@ -2952,7 +2882,7 @@ end
 
 
 
-function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, language, destination)
+function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, language, destination, queueName)
 	if not self or not prio or not text or not self.Prio[prio] then
 		error('Usage: ChatThrottleLib:SendChatMessage("{BULK||NORMAL||ALERT}", "prefix" or nil, "text"[, "chattype"[, "language"[, "destination"]]]', 2)
 	end
@@ -2974,7 +2904,7 @@ function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, languag
 	end
 	
 	-- Message needs to be queued
-	local msg = self.MsgBin:Get()
+	local msg = NewMsg()
 	msg.f = self.ORIG_SendChatMessage
 	msg[1] = text
 	msg[2] = chattype or "SAY"
@@ -2983,11 +2913,11 @@ function ChatThrottleLib:SendChatMessage(prio, prefix,   text, chattype, languag
 	msg.n = 4
 	msg.nSize = nSize
 
-	self:Enqueue(prio, prefix..(chattype or "SAY")..(destination or ""), msg)
+	self:Enqueue(prio, queueName or (prefix..(chattype or "SAY")..(destination or "")), msg)
 end
 
 
-function ChatThrottleLib:SendAddonMessage(prio, prefix, text, chattype, target)
+function ChatThrottleLib:SendAddonMessage(prio, prefix, text, chattype, target, queueName)
 	if not self or not prio or not prefix or not text or not chattype or not self.Prio[prio] then
 		error('Usage: ChatThrottleLib:SendAddonMessage("{BULK||NORMAL||ALERT}", "prefix", "text", "chattype"[, "target"])', 0)
 	end
@@ -3007,7 +2937,7 @@ function ChatThrottleLib:SendAddonMessage(prio, prefix, text, chattype, target)
 	end
 	
 	-- Message needs to be queued
-	local msg = self.MsgBin:Get()
+	local msg = NewMsg()
 	msg.f = self.ORIG_SendAddonMessage
 	msg[1] = prefix
 	msg[2] = text
@@ -3016,7 +2946,7 @@ function ChatThrottleLib:SendAddonMessage(prio, prefix, text, chattype, target)
 	msg.n = (target~=nil) and 4 or 3;
 	msg.nSize = nSize
 	
-	self:Enqueue(prio, prefix..chattype..(target or ""), msg)
+	self:Enqueue(prio, queueName or (prefix..chattype..(target or "")), msg)
 end
 
 
