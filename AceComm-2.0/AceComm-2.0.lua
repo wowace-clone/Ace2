@@ -45,10 +45,7 @@ local byte_a = ("a"):byte()
 local byte_z = ("z"):byte()
 local byte_A = ("A"):byte()
 local byte_Z = ("Z"):byte()
-local byte_fake_s = ("\015"):byte()
-local byte_fake_S = ("\020"):byte()
 local byte_deg = ("\176"):byte()
-local byte_percent = ("%"):byte() -- 37
 
 local byte_b = ("b"):byte()
 local byte_B = ("B"):byte()
@@ -129,7 +126,7 @@ local GetFramerate = _G.GetFramerate
 
 local player = UnitName("player")
 
-local new, del, deepDel
+local new, del
 do
 	local list = setmetatable({},{__mode='k'})
 	function new(...)
@@ -146,18 +143,6 @@ do
 	end
 	function del(t)
 		for k in pairs(t) do
-			t[k] = nil
-		end
-		t[''] = true
-		t[''] = nil
-		list[t] = true
-		return nil
-	end
-	function deepDel(t)
-		for k,v in pairs(t) do
-			if type(v) == "table" then
-				deepDel(v)
-			end
 			t[k] = nil
 		end
 		t[''] = true
@@ -1404,10 +1389,7 @@ local function SendMessage(prefix, priority, distribution, person, message, text
 	end
 	if distribution == "GROUP" then
 		distribution = GetCurrentGroupDistribution()
-		if not distribution then
-			return false
-		end
-	end	
+	end
 	if distribution == "GUILD" and stopGuildMessages then
 		return false
 	end
@@ -1528,7 +1510,7 @@ end
 function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	AceComm:argCheck(priority, 2, "string")
 	if priority ~= "NORMAL" and priority ~= "BULK" and priority ~= "ALERT" then
-		AceComm:error('Argument #2 to `SendPrioritizedCommMessage\' must be either "NORMAL", "BULK", or "ALERT"')
+		AceComm:error('Priority for `Send[Prioritized]CommMessage\' must be either "NORMAL", "BULK", or "ALERT"')
 	end
 	AceComm:argCheck(distribution, 3, "string")
 	local includePerson = true
@@ -1536,14 +1518,14 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 		includePerson = false
 		AceComm:argCheck(person, 4, "string")
 		if person:len() == 0 then
-			AceComm:error("Argument #4 to `SendPrioritizedCommMessage' must be a non-zero-length string")
+			AceComm:error("Person for `Send[Prioritized]CommMessage' must be a non-zero-length string")
 		end
 	end
 	if self == AceComm then
 		AceComm:error("Cannot send a comm message from AceComm directly.")
 	end
 	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" and distribution ~= "ZONE" and distribution ~= "CUSTOM" then
-		AceComm:error('Argument #4 to `SendPrioritizedCommMessage\' must be either nil, "GLOBAL", "ZONE", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", "GROUP", or "CUSTOM". %q is not appropriate', distribution)
+		AceComm:error('Distribution for `Send[Prioritized]CommMessage\' must be either nil, "GLOBAL", "ZONE", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", "GROUP", or "CUSTOM". %q is not appropriate', distribution)
 	end
 	
 	local prefix = AceComm.commPrefixes[self]
@@ -1571,47 +1553,8 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	return ret
 end
 
-function AceComm:SendCommMessage(distribution, person, ...)
-	AceComm:argCheck(distribution, 2, "string")
-	local includePerson = true
-	if distribution == "WHISPER" or distribution == "CUSTOM" then
-		includePerson = false
-		AceComm:argCheck(person, 3, "string")
-		if person:len() == 0 then
-			AceComm:error("Argument #3 to `SendCommMessage' must be a non-zero-length string")
-		end
-	end
-	if self == AceComm then
-		AceComm:error("Cannot send a comm message from AceComm directly.")
-	end
-	if distribution and distribution ~= "GLOBAL" and distribution ~= "WHISPER" and distribution ~= "PARTY" and distribution ~= "RAID" and distribution ~= "GUILD" and distribution ~= "BATTLEGROUND" and distribution ~= "GROUP" and distribution ~= "ZONE" and distribution ~= "CUSTOM" then
-		AceComm:error('Argument #2 to `SendCommMessage\' must be either nil, "GLOBAL", "ZONE", "WHISPER", "PARTY", "RAID", "GUILD", "BATTLEGROUND", "GROUP", or "CUSTOM". %q is not appropriate', distribution)
-	end
-	
-	local prefix = AceComm.commPrefixes[self]
-	if type(prefix) ~= "string" then
-		AceComm:error("`SetCommPrefix' must be called before sending a message.")
-	end
-
-	local ret = nil
-	local priority = self.commPriority or "NORMAL"
-	local n = select('#', ...)
-	if includePerson or n > 1 then
-		local message = new()
-		if includePerson then
-			message[1] = person
-			person = nil
-		end
-		for i = 1, n do
-			message[includePerson and i + 1 or i] = select(i, ...)
-		end
-		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
-		message = del(message)
-	else
-		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, (select(1, ...)), self.commMemoTextToHash)
-	end
-
-	return ret
+function AceComm:SendCommMessage(...)
+	return AceComm.SendPrioritizedCommMessage(self, self.commPriority or "NORMAL", ...)
 end
 
 function AceComm:SetDefaultCommPriority(priority)
@@ -1701,6 +1644,105 @@ local function CheckRefix()
 	end
 end
 
+local function reallyHandleTableMessage(handlers, prefix, sender, distribution, message, custom)
+	local n = #message * 4
+	if n < 40 then n = 40 end
+	while message[n] == nil and n > 0 do
+		n = n - 1
+	end
+	for k, v in pairs(handlers) do
+		local type_v = type(v)
+		if type_v == "string" then
+			local f = k[v]
+			if type(f) == "table" then
+				local i = 1
+				local g = f[message[i]]
+				while g do
+					if type(g) ~= "table" then -- function
+						if custom then
+							g(k, prefix, sender, distribution, custom, unpack(message, i+1, n))
+						else
+							g(k, prefix, sender, distribution, unpack(message, i+1, n))
+						end
+						break
+					else
+						i = i + 1
+						g = g[message[i]]
+					end
+				end
+			else -- function
+				if custom then
+					f(k, prefix, sender, distribution, custom, unpack(message, 1, n))
+				else
+					f(k, prefix, sender, distribution, unpack(message, 1, n))
+				end
+			end
+		elseif type_v == "table" then
+			local i = 1
+			local g = v[message[i]]
+			while g do
+				if type(g) ~= "table" then -- function
+					if custom then
+						g(prefix, sender, distribution, custom, unpack(message, i+1, n))
+					else
+						g(prefix, sender, distribution, unpack(message, i+1, n))
+					end
+					break
+				else
+					i = i + 1
+					g = g[message[i]]
+				end
+			end
+		else -- function
+			if custom then
+				v(prefix, sender, distribution, custom, unpack(message, 1, n))
+			else
+				v(prefix, sender, distribution, unpack(message, 1, n))
+			end
+		end
+	end
+end
+
+local function reallyHandleNonTableMessage(handlers, prefix, sender, distribution, message, custom)
+	for k, v in pairs(handlers) do
+		local type_v = type(v)
+		if type_v == "string" then
+			local f = k[v]
+			if type(f) == "table" then
+				local g = f[message]
+				if g and type(g) == "function" then
+					if custom then
+						g(k, prefix, sender, distribution, custom)
+					else
+						g(k, prefix, sender, distribution)
+					end
+				end
+			else -- function
+				if custom then
+					f(k, prefix, sender, distribution, custom, message)
+				else
+					f(k, prefix, sender, distribution, message)
+				end
+			end
+		elseif type_v == "table" then
+			local g = v[message]
+			if g and type(g) == "function" then
+				if custom then
+					g(k, prefix, sender, distribution, custom)
+				else
+					g(k, prefix, sender, distribution)
+				end
+			end
+		else -- function
+			if custom then
+				v(prefix, sender, distribution, custom, message)
+			else
+				v(prefix, sender, distribution, message)
+			end
+		end
+	end
+end
+
 local function HandleMessage(prefix, message, distribution, sender, customChannel)
 	local isGroup = GetCurrentGroupDistribution() == distribution
 	local isCustom = distribution == "CUSTOM"
@@ -1768,7 +1810,6 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	if not message then
 		return
 	end
-	local smallCustomChannel = customChannel and customChannel:sub(8)
 	if point ~= 'a' then
 		local queue = AceComm.recvQueue
 		local x
@@ -1799,207 +1840,16 @@ local function HandleMessage(prefix, message, distribution, sender, customChanne
 	end
 	message = Deserialize(message, AceComm.prefixMemoizations[prefix])
 	local isTable = type(message) == "table"
-	local n
-	if isTable then
-		n = #message * 4
-		if n < 40 then
-			n = 40
-		end
-		while message[n] == nil and n > 0 do
-			n = n - 1
-		end
-	end
+	local f = isTable and reallyHandleTableMessage or reallyHandleNonTableMessage
 	if AceComm_registry[distribution] then
-		if isTable then
-			if isCustom then
-				if AceComm_registry.CUSTOM[customChannel][prefix] then
-					for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
-						local type_v = type(v)
-						if type_v == "string" then
-							local f = k[v]
-							if type(f) == "table" then
-								local i = 1
-								local g = f[message[i]]
-								while g do
-									if type(g) ~= "table" then -- function
-										g(k, prefix, sender, distribution, smallCustomChannel, unpack(message, i+1, n))
-										break
-									else
-										i = i + 1
-										g = g[message[i]]
-									end
-								end
-							else -- function
-								f(k, prefix, sender, distribution, smallCustomChannel, unpack(message, 1, n))
-							end
-						elseif type_v == "table" then
-							local i = 1
-							local g = v[message[i]]
-							while g do
-								if type(g) ~= "table" then -- function
-									g(prefix, sender, distribution, smallCustomChannel, unpack(message, i+1, n))
-									break
-								else
-									i = i + 1
-									g = g[message[i]]
-								end
-							end
-						else -- function
-							v(prefix, sender, distribution, smallCustomChannel, unpack(message, 1, n))
-						end
-					end
-				end
-			else
-				if AceComm_registry[distribution][prefix] then
-					for k,v in pairs(AceComm_registry[distribution][prefix]) do
-						local type_v = type(v)
-						if type_v == "string" then
-							local f = k[v]
-							if type(f) == "table" then
-								local i = 1
-								local g = f[message[i]]
-								while g do
-									if type(g) ~= "table" then -- function
-										g(k, prefix, sender, distribution, unpack(message, i+1, n))
-										break
-									else
-										i = i + 1
-										g = g[message[i]]
-									end
-								end
-							else -- function
-								f(k, prefix, sender, distribution, unpack(message, 1, n))
-							end
-						elseif type_v == "table" then
-							local i = 1
-							local g = v[message[i]]
-							while g do
-								if type(g) ~= "table" then -- function
-									g(prefix, sender, distribution, unpack(message, i+1, n))
-									break
-								else
-									i = i + 1
-									g = g[message[i]]
-								end
-							end
-						else -- function
-							v(prefix, sender, distribution, unpack(message, 1, n))
-						end
-					end
-				end
-			end
-		else
-			if isCustom then
-				if AceComm_registry.CUSTOM[customChannel][prefix] then
-					for k,v in pairs(AceComm_registry.CUSTOM[customChannel][prefix]) do
-						local type_v = type(v)
-						if type_v == "string" then
-							local f = k[v]
-							if type(f) == "table" then
-								local g = f[message]
-								if g and type(g) == "function" then
-									g(k, prefix, sender, distribution, smallCustomChannel)
-								end
-							else -- function
-								f(k, prefix, sender, distribution, smallCustomChannel, message)
-							end
-						elseif type_v == "table" then
-							local g = v[message]
-							if g and type(g) == "function" then
-								g(k, prefix, sender, distribution, smallCustomChannel)
-							end
-						else -- function
-							v(prefix, sender, distribution, smallCustomChannel, message)
-						end
-					end
-				end
-			else
-				if AceComm_registry[distribution][prefix] then
-					for k,v in pairs(AceComm_registry[distribution][prefix]) do
-						local type_v = type(v)
-						if type_v == "string" then
-							local f = k[v]
-							if type(f) == "table" then
-								local g = f[message]
-								if g and type(g) == "function" then
-									g(k, prefix, sender, distribution)
-								end
-							else -- function
-								f(k, prefix, sender, distribution, message)
-							end
-						elseif type_v == "table" then
-							local g = v[message]
-							if g and type(g) == "function" then
-								g(k, prefix, sender, distribution)
-							end
-						else -- function
-							v(prefix, sender, distribution, message)
-						end
-					end
-				end
-			end
+		if isCustom and AceComm_registry.CUSTOM[customChannel][prefix] then
+			f(AceComm_registry.CUSTOM[customChannel][prefix], prefix, sender, distribution, message, customChannel and customChannel:sub(8))
+		elseif not isCustom and AceComm_registry[distribution][prefix] then
+			f(AceComm_registry[distribution][prefix], prefix, sender, distribution, message)
 		end
 	end
 	if isGroup and AceComm_registry.GROUP and AceComm_registry.GROUP[prefix] then
-		if isTable then
-			for k,v in pairs(AceComm_registry.GROUP[prefix]) do
-				local type_v = type(v)
-				if type_v == "string" then
-					local f = k[v]
-					if type(f) == "table" then
-						local i = 1
-						local g = f[message[i]]
-						while g do
-							if type(g) ~= "table" then -- function
-								g(k, prefix, sender, "GROUP", unpack(message, i+1, n))
-								break
-							else
-								i = i + 1
-								g = g[message[i]]
-							end
-						end
-					else -- function
-						f(k, prefix, sender, "GROUP", unpack(message, 1, n))
-					end
-				elseif type_v == "table" then
-					local i = 1
-					local g = v[message[i]]
-					while g do
-						if type(g) ~= "table" then -- function
-							g(prefix, sender, "GROUP", unpack(message, i+1, n))
-							break
-						else
-							i = i + 1
-							g = g[message[i]]
-						end
-					end
-				else -- function
-					v(prefix, sender, "GROUP", unpack(message, 1, n))
-				end
-			end
-		else
-			for k,v in pairs(AceComm_registry.GROUP[prefix]) do
-				local type_v = type(v)
-				if type_v == "string" then
-					local f = k[v]
-					if type(f) == "table" then
-						local g = f[message]
-						if g and type(g) == "function" then
-							g(k, prefix, sender, "GROUP")
-						end
-					else -- function
-						f(k, prefix, sender, "GROUP", message)
-					end
-				elseif type_v == "table" then
-					local g = v[message]
-					if g and type(g) == "function" then
-						g(k, prefix, sender, "GROUP")
-					end
-				else -- function
-					v(prefix, sender, "GROUP", message)
-				end
-			end
-		end
+		f(AceComm_registry.GROUP[prefix], prefix, sender, "GROUP", message)
 	end
 	if isTable then
 		message = del(message)
