@@ -206,7 +206,7 @@ local function IsInChannel(chan)
 	return GetChannelName(chan) ~= 0
 end
 
-local Encode, EncodeByte
+local Encode, EncodeByte, EncodeBytes
 do
 	local drunkHelper_t = {
 		[29] = "\029\030",
@@ -1058,20 +1058,17 @@ do
 			local a, b, c = value:byte(start, start + 3)
 			local hash = a * 256^2 + b * 256 + c
 			local curr = start + 2
-			if not AceComm.classes[hash] then
-				return nil, finish
-			end
 			local class = AceComm.classes[hash]
-			if type(class.Deserialize) ~= "function" or type(class.prototype.Serialize) ~= "function" then
-				return nil, finish
-			end
 			local tmp = new()
 			for i = 1, num do
 				local v
 				v, curr = _Deserialize(value, curr + 1, hashToText)
 				tmp[i] = v
 			end
-			local object = class:Deserialize(unpack(tmp, 1, num))
+			local object
+			if class and type(class.Deserialize) == "function" and type(class.prototype.Serialize) == "function" then
+				object = class:Deserialize(unpack(tmp, 1, num))
+			end
 			tmp = del(tmp)
 			return object, curr+1
 		elseif x == byte_t or x == byte_T then
