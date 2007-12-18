@@ -2267,7 +2267,7 @@ local function external(self, major, instance)
 		self.addonVersionPinger.OnCommReceive = {
 			PING = function(self, prefix, sender, distribution, addon)
 				local version = ""
-				if AceLibrary:HasInstance(addon) then
+				if AceLibrary:HasInstance(addon, false) then
 					local revision
 					version, revision = AceLibrary(addon):GetLibraryVersion()
 					version = version .. "-" .. revision
