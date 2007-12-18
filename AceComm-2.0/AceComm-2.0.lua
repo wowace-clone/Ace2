@@ -1109,7 +1109,7 @@ do
 end
 
 local function GetCurrentGroupDistribution()
-	if MiniMapBattlefieldFrame.status == "active" then
+	if select(2, IsInInstance()) == "pvp" then
 		return "BATTLEGROUND"
 	elseif UnitInRaid("player") then
 		return "RAID"
@@ -1122,7 +1122,7 @@ local function IsInDistribution(dist, customChannel)
 	if dist == "GROUP" then
 		return not not GetCurrentGroupDistribution()
 	elseif dist == "BATTLEGROUND" then
-		return MiniMapBattlefieldFrame.status == "active"
+		return select(2, IsInInstance()) == "pvp"
 	elseif dist == "RAID" then
 		return GetNumRaidMembers() > 0
 	elseif dist == "PARTY" then
