@@ -452,30 +452,19 @@ local function SupposedToBeInChannel(chan)
 	end
 end
 
+local function checkChannelList(...)
+	for i = 2, select("#", ...), 2 do
+		local c = select(i, ...)
+		if c and not SupposedToBeInChannel(c) then
+			LeaveChannelByName(c)
+		end
+	end
+end
 local function LeaveAceCommChannels(all)
 	if all then
 		shutdown = true
 	end
-	local _,a,_,b,_,c,_,d,_,e,_,f,_,g,_,h,_,i,_,j = GetChannelList()
-	local tmp = new()
-	tmp[1] = a
-	tmp[2] = b
-	tmp[3] = c
-	tmp[4] = d
-	tmp[5] = e
-	tmp[6] = f
-	tmp[7] = g
-	tmp[8] = h
-	tmp[9] = i
-	tmp[10] = j
-	for _,v in ipairs(tmp) do
-		if v and v:find("^AceComm") then
-			if not SupposedToBeInChannel(v) then
-				LeaveChannelByName(v)
-			end
-		end
-	end
-	tmp = del(tmp)
+	checkChannelList(GetChannelList())
 end
 
 local lastRefix = 0
@@ -489,7 +478,6 @@ local function RefixAceCommChannelsAndEvents()
 	
 	local channel = false
 	local whisper = false
-	local addon = false
 	if SupposedToBeInChannel("AceComm") then
 		JoinChannel("AceComm")
 		channel = true
@@ -507,7 +495,13 @@ local function RefixAceCommChannelsAndEvents()
 		end
 	end
 	if AceComm_registry.WHISPER or AceComm_registry.GROUP or AceComm_registry.PARTY or AceComm_registry.RAID or AceComm_registry.BATTLEGROUND or AceComm_registry.GUILD then
-		addon = true
+		if not AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
+			AceComm:RegisterEvent("CHAT_MSG_ADDON")
+		end
+	else
+		if AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
+			AceComm:UnregisterEvent("CHAT_MSG_ADDON")
+		end
 	end
 	
 	if channel then
@@ -535,16 +529,6 @@ local function RefixAceCommChannelsAndEvents()
 		end
 		if AceComm:IsEventRegistered("CHAT_MSG_CHANNEL_LEAVE") then
 			AceComm:UnregisterEvent("CHAT_MSG_CHANNEL_LEAVE")
-		end
-	end
-	
-	if addon then
-		if not AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
-			AceComm:RegisterEvent("CHAT_MSG_ADDON")
-		end
-	else
-		if AceComm:IsEventRegistered("CHAT_MSG_ADDON") then
-			AceComm:UnregisterEvent("CHAT_MSG_ADDON")
 		end
 	end
 end
@@ -611,7 +595,7 @@ end
 
 local SerializeAndEncode
 do
-	local recurse
+	local recurse = {}
 	local function _Serialize(v, textToHash, sb, drunk)
 		local kind = type(v)
 		if kind == "boolean" then
@@ -860,9 +844,6 @@ do
 	end
 	
 	function SerializeAndEncode(value, textToHash, drunk)
-		if not recurse then
-			recurse = new()
-		end
 		local sb = new()
 		sb[1] = ""
 		sb[2] = ""
@@ -1167,7 +1148,7 @@ function AceComm:RegisterComm(prefix, distribution, method, a4)
 		method = "OnCommReceive"
 	end
 	if type(method) == "string" and type(self[method]) ~= "function" and type(self[method]) ~= "table" then
-		AceEvent:error("Cannot register comm %q to method %q, it does not exist", prefix, method)
+		AceComm:error("Cannot register comm %q to method %q, it does not exist", prefix, method)
 	end
 	
 	local registry = AceComm_registry
@@ -1991,25 +1972,25 @@ local notSeenString = '^' .. _G.ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("%%s", "(.-)"):
 local ambiguousString = '^' .. _G.ERR_CHAT_PLAYER_AMBIGUOUS_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 local ERR_GUILD_PERMISSIONS = _G.ERR_GUILD_PERMISSIONS
 function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
-	if event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST" then
-		if _G.arg9:find("^AceComm") then
-			return
-		end
+	if (event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST") and _G.arg9:find("^AceComm") then
+		return
 	elseif event == "CHAT_MSG_SYSTEM" then
 		local arg1 = _G.arg1
-		local player = arg1:match(notSeenString) or arg1:match(ambiguousString)
-		if player then
-			local t = GetTime()
-			if recentNotSeen[player] and recentNotSeen[player] > t then
-				recentNotSeen[player] = t + 10
-				return
-			else
-				recentNotSeen[player] = t + 10
-			end
-		elseif arg1 == ERR_GUILD_PERMISSIONS then
+		if arg1 == ERR_GUILD_PERMISSIONS then
 			if recentGuildMessage > GetTime() then
 				stopGuildMessages = true
 				return
+			end
+		else
+			local player = arg1:match(notSeenString) or arg1:match(ambiguousString)
+			if player then
+				local t = GetTime()
+				if recentNotSeen[player] and recentNotSeen[player] > t then
+					recentNotSeen[player] = t + 10
+					return
+				else
+					recentNotSeen[player] = t + 10
+				end
 			end
 		end
 	end
@@ -2063,37 +2044,32 @@ function AceComm:CHAT_MSG_SYSTEM(text)
 	if text ~= _G.ERR_TOO_MANY_CHAT_CHANNELS then
 		return
 	end
-	
-	local chan = lastChannelJoined
-	if not chan then
-		return
-	end
-	if not lastChannelJoined:find("^AceComm") then
+	if not lastChannelJoined or not lastChannelJoined:find("^AceComm") then
 		return
 	end
 	
 	local text
-	if chan == "AceComm" then
+	if lastChannelJoined == "AceComm" then
 		local addon = self.registry.GLOBAL and next(AceComm_registry.GLOBAL)
 		if not addon then
 			return
 		end
 		addon = tostring(addon)
-		text = ("%s has tried to join the AceComm global channel, but there are not enough channels available. %s may not work because of this"):format(addon, addon)
-	elseif chan == GetCurrentZoneChannel() then
+		text = ("%s has tried to join the AceComm global channel, but there are not enough channels available. %s may not work because of this."):format(addon, addon)
+	elseif lastChannelJoined == GetCurrentZoneChannel() then
 		local addon = AceComm_registry.ZONE and next(AceComm_registry.ZONE)
 		if not addon then
 			return
 		end
 		addon = tostring(addon)
-		text = ("%s has tried to join the AceComm zone channel, but there are not enough channels available. %s may not work because of this"):format(addon, addon)
+		text = ("%s has tried to join the AceComm zone channel, but there are not enough channels available. %s may not work because of this."):format(addon, addon)
 	else
-		local addon = AceComm_registry.CUSTOM and AceComm_registry.CUSTOM[chan] and next(AceComm_registry.CUSTOM[chan])
+		local addon = AceComm_registry.CUSTOM and AceComm_registry.CUSTOM[lastChannelJoined] and next(AceComm_registry.CUSTOM[lastChannelJoined])
 		if not addon then
 			return
 		end
 		addon = tostring(addon)
-		text = ("%s has tried to join the AceComm custom channel %s, but there are not enough channels available. %s may not work because of this"):format(addon, chan, addon)
+		text = ("%s has tried to join the AceComm custom channel %s, but there are not enough channels available. %s may not work because of this."):format(addon, lastChannelJoined, addon)
 	end
 	
 	_G.StaticPopupDialogs["ACECOMM_TOO_MANY_CHANNELS"] = {
