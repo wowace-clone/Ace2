@@ -780,11 +780,7 @@ do
 			local len = 0
 			local num = 0
 			if islist then
-				num = n * 4
-				while v[num] == nil do
-					num = num - 1
-				end
-				for i = 1, num do
+				for i = 1, #v do
 					len = len + _Serialize(v[i], textToHash, sb, drunk)
 				end
 			elseif isset then
@@ -1502,23 +1498,14 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 		AceComm:error("`SetCommPrefix' must be called before sending a message.")
 	end
 
-	local ret = nil
-	local n = select('#', ...)
-	if includePerson or n > 1 then
-		local message = new()
-		if includePerson then
-			message[1] = person
-			person = nil
-		end
-		for i = 1, n do
-			message[includePerson and i + 1 or i] = select(i, ...)
-		end
-		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
-		message = del(message)
-	else
-		ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, (select(1, ...)), self.commMemoTextToHash)
+	local message = new()
+	if includePerson then message[1] = person end
+	for i = 1, select('#', ...) do
+		message[includePerson and i + 1 or i] = select(i, ...)
 	end
-
+	if includePerson then person = nil end
+	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
+	message = del(message)
 	return ret
 end
 
