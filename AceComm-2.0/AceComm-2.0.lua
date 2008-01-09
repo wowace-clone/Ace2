@@ -1931,10 +1931,6 @@ function AceComm:CHAT_MSG_CHANNEL_LEAVE(_, user, _, _, _, _, _, _, channel)
 	end
 end
 
-function AceComm:AceEvent_FullyInitialized()
-	RefixAceCommChannelsAndEvents()
-end
-
 function AceComm:PLAYER_LOGOUT()
 	LeaveAceCommChannels(true)
 end
@@ -2203,15 +2199,15 @@ local function external(self, major, instance)
 	if major == "AceEvent-2.0" then
 		AceEvent = instance
 		
-		AceEvent:embed(AceComm)
+		AceEvent:embed(self)
 		
 		self:UnregisterAllEvents()
 		self:CancelAllScheduledEvents()
 		
 		if AceEvent:IsFullyInitialized() then
-			self:AceEvent_FullyInitialized()
+			RefixAceCommChannelsAndEvents()
 		else
-			self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
+			self:RegisterEvent("AceEvent_FullyInitialized", RefixAceCommChannelsAndEvents, true)
 		end
 		
 		self:RegisterEvent("PLAYER_LOGOUT")
