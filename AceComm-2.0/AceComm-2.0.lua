@@ -780,7 +780,8 @@ do
 			local len = 0
 			local num = 0
 			if islist then
-				for i = 1, #v do
+				num = n
+				for i = 1, n do
 					len = len + _Serialize(v[i], textToHash, sb, drunk)
 				end
 			elseif isset then
