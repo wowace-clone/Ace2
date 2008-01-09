@@ -472,7 +472,6 @@ local function RefixAceCommChannelsAndEvents()
 	LeaveAceCommChannels(false)
 	
 	local channel = false
-	local whisper = false
 	if SupposedToBeInChannel("AceComm") then
 		JoinChannel("AceComm")
 		channel = true
@@ -759,18 +758,6 @@ do
 					return 3 + len
 				end
 			end
-			local t = new()
-			local islist = false
-			local n = #v
-			if n >= 1 then
-				islist = true
-				for k,u in pairs(v) do
-					if type(k) ~= "number" or k < 1 then
-						islist = false
-						break
-					end
-				end
-			end
 			local isset = true
 			for k, v in pairs(v) do
 				if v ~= true then
@@ -783,15 +770,7 @@ do
 			sb[#sb+1] = "" -- dummy
 			local len = 0
 			local num = 0
-			if islist then
-				num = n * 4
-				while v[num] == nil do
-					num = num - 1
-				end
-				for i = 1, num do
-					len = len + _Serialize(v[i], textToHash, sb, drunk)
-				end
-			elseif isset then
+			if isset then
 				for k in pairs(v) do
 					len = len + _Serialize(k, textToHash, sb, drunk)
 					num = num + 1
@@ -803,21 +782,10 @@ do
 					num = num + 1
 				end
 			end
-			t = del(t)
 			for k in pairs(recurse) do
 				recurse[k] = nil
 			end
-			if islist then
-				if num <= 255 then
-					sb[sb_id] = "u"
-					sb[sb_id+1] = EncodeByte(num, drunk)
-					return 2 + len
-				else
-					sb[sb_id] = "U"
-					sb[sb_id+1] = EncodeBytes(drunk, math_floor(num / 256), num % 256)
-					return 3 + len
-				end
-			elseif isset then
+			if isset then
 				if num <= 255 then
 					sb[sb_id] = "v"
 					sb[sb_id+1] = EncodeByte(num, drunk)
@@ -1932,10 +1900,6 @@ function AceComm:CHAT_MSG_CHANNEL_LEAVE(_, user, _, _, _, _, _, _, channel)
 	end
 end
 
-function AceComm:AceEvent_FullyInitialized()
-	RefixAceCommChannelsAndEvents()
-end
-
 function AceComm:PLAYER_LOGOUT()
 	LeaveAceCommChannels(true)
 end
@@ -2204,15 +2168,15 @@ local function external(self, major, instance)
 	if major == "AceEvent-2.0" then
 		AceEvent = instance
 		
-		AceEvent:embed(AceComm)
+		AceEvent:embed(self)
 		
 		self:UnregisterAllEvents()
 		self:CancelAllScheduledEvents()
 		
 		if AceEvent:IsFullyInitialized() then
-			self:AceEvent_FullyInitialized()
+			RefixAceCommChannelsAndEvents()
 		else
-			self:RegisterEvent("AceEvent_FullyInitialized", "AceEvent_FullyInitialized", true)
+			self:RegisterEvent("AceEvent_FullyInitialized", RefixAceCommChannelsAndEvents, true)
 		end
 		
 		self:RegisterEvent("PLAYER_LOGOUT")
