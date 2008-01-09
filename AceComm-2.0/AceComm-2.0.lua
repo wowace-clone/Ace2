@@ -20,8 +20,6 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
-local _G = getfenv(0)
-
 local AceOO = AceLibrary("AceOO-2.0")
 local AceComm = AceOO.Mixin {
 	"SendCommMessage",
@@ -75,7 +73,7 @@ local byte_nan = ("!"):byte()
 local inf = 1/0
 local nan = 0/0
 
-local _G = _G
+local _G = getfenv(0)
 
 local ChatThrottleLib = _G.ChatThrottleLib
 
@@ -106,7 +104,7 @@ local error = _G.error
 local pcall = _G.pcall
 local GetNumRaidMembers = _G.GetNumRaidMembers
 local GetNumPartyMembers = _G.GetNumPartyMembers
-local UnitInRaid = UnitInRaid
+local UnitInRaid = _G.UnitInRaid
 local IsInGuild = _G.IsInGuild
 local GetCVar = _G.GetCVar
 local SetCVar = _G.SetCVar
@@ -455,8 +453,8 @@ local function checkChannelList(...)
 		end
 	end
 end
-local function LeaveAceCommChannels(all)
-	if all then
+local function LeaveAceCommChannels(noShutdown)
+	if not noShutdown then
 		shutdown = true
 	end
 	checkChannelList(GetChannelList())
@@ -469,7 +467,7 @@ local function RefixAceCommChannelsAndEvents()
 		return
 	end
 	lastRefix = GetTime()
-	LeaveAceCommChannels(false)
+	LeaveAceCommChannels(true)
 	
 	local channel = false
 	if SupposedToBeInChannel("AceComm") then
@@ -758,7 +756,6 @@ do
 					return 3 + len
 				end
 			end
-			local t = new()
 			local islist = false
 			local n = #v
 			if n >= 1 then
@@ -802,7 +799,6 @@ do
 					num = num + 1
 				end
 			end
-			t = del(t)
 			for k in pairs(recurse) do
 				recurse[k] = nil
 			end
@@ -1931,10 +1927,6 @@ function AceComm:CHAT_MSG_CHANNEL_LEAVE(_, user, _, _, _, _, _, _, channel)
 	end
 end
 
-function AceComm:PLAYER_LOGOUT()
-	LeaveAceCommChannels(true)
-end
-
 function AceComm:ZONE_CHANGED_NEW_AREA()
 	local lastZone = zoneCache
 	zoneCache = nil
@@ -1987,9 +1979,9 @@ end
 
 function AceComm.hooks:Logout(orig)
 	if IsResting() then
-		LeaveAceCommChannels(true)
+		LeaveAceCommChannels()
 	else
-		self:ScheduleEvent("AceComm-LeaveAceCommChannels", LeaveAceCommChannels, 15, true)
+		self:ScheduleEvent("AceComm-LeaveAceCommChannels", LeaveAceCommChannels, 15)
 	end
 	return orig()
 end
@@ -2003,9 +1995,9 @@ end
 
 function AceComm.hooks:Quit(orig)
 	if IsResting() then
-		LeaveAceCommChannels(true)
+		LeaveAceCommChannels()
 	else
-		self:ScheduleEvent("AceComm-LeaveAceCommChannels", LeaveAceCommChannels, 15, true)
+		self:ScheduleEvent("AceComm-LeaveAceCommChannels", LeaveAceCommChannels, 15)
 	end
 	return orig()
 end
@@ -2210,7 +2202,7 @@ local function external(self, major, instance)
 			self:RegisterEvent("AceEvent_FullyInitialized", RefixAceCommChannelsAndEvents, true)
 		end
 		
-		self:RegisterEvent("PLAYER_LOGOUT")
+		self:RegisterEvent("PLAYER_LOGOUT", LeaveAceCommChannels)
 		self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 		self:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 		self:RegisterEvent("CHAT_MSG_SYSTEM")
