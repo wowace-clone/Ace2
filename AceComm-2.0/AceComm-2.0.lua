@@ -70,6 +70,8 @@ local byte_inf = ("@"):byte()
 local byte_ninf = ("$"):byte()
 local byte_nan = ("!"):byte()
 
+local fake_nil = {}
+
 local inf = 1/0
 local nan = 0/0
 
@@ -590,6 +592,8 @@ do
 	local recurse = {}
 	local function _Serialize(v, textToHash, sb, drunk)
 		local kind = type(v)
+		-- Note that the ordering of these if/elseif's matters, don't
+		-- change it unless you know what you're doing.
 		if kind == "boolean" then
 			if v then
 				sb[#sb+1] = "B" -- true
@@ -598,7 +602,7 @@ do
 				sb[#sb+1] = "b" -- false
 				return 1
 			end
-		elseif not v then
+		elseif not v or v == fake_nil then
 			sb[#sb+1] = "/" -- nil
 			return 1
 		elseif kind == "number" then
@@ -1502,7 +1506,9 @@ function AceComm:SendPrioritizedCommMessage(priority, distribution, person, ...)
 	local message = new()
 	if includePerson then message[1] = person end
 	for i = 1, select('#', ...) do
-		message[includePerson and i + 1 or i] = select(i, ...)
+		local x = select(i, ...)
+		if type(x) == "nil" then x = fake_nil end
+		message[includePerson and i + 1 or i] = x
 	end
 	if includePerson then person = nil end
 	local ret = SendMessage(AceComm.prefixTextToHash[prefix], priority, distribution, person, message, self.commMemoTextToHash)
