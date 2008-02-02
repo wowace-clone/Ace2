@@ -2262,11 +2262,13 @@ local function external(self, major, instance)
 					if not version or version == "" then
 						version = GetAddOnMetadata(addon, "Version")
 						if version and version ~= "" and not IsAddOnLoaded(addon) then
-							version = version .. " (Off)"
+							local enabled, loadable = select(4, GetAddOnInfo(addon))  
+							version = enabled and loadable and version .. " (LoD)" or version .. " (Off)"
 						end
 					end
 					if not version or version == "" then
-						version = IsAddOnLoaded(addon) and true or false
+						local enabled, loadable = select(4, GetAddOnInfo(addon))  
+						version = IsAddOnLoaded(addon) and true or enabled and loadable and "(LoD)" or false
 					end
 				end
 				self:SendCommMessage("WHISPER", sender, "PONG", addon, version)
