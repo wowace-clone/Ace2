@@ -2214,9 +2214,15 @@ local function external(self, major, instance)
 			PING = function(self, prefix, sender, distribution, addon)
 				local version = ""
 				if AceLibrary:HasInstance(addon, false) then
-					local revision
-					version, revision = AceLibrary(addon):GetLibraryVersion()
-					version = version .. "-" .. revision
+					local lib = AceLibrary(addon)
+					if lib.GetLibraryVersion then
+						local revision
+						version, revision = lib:GetLibraryVersion()
+						version = version .. "-" .. revision
+					end
+				elseif LibStub(addon, true) do
+					local _, revision = LibStub(addon, true)
+					version = addon .. "-" .. revision
 				else
 					local revision
 					local _G_addon = _G[addon]
