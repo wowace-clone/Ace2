@@ -2220,7 +2220,7 @@ local function external(self, major, instance)
 						version, revision = lib:GetLibraryVersion()
 						version = version .. "-" .. revision
 					end
-				elseif LibStub(addon, true) do
+				elseif LibStub(addon, true) then
 					local _, revision = LibStub(addon, true)
 					version = addon .. "-" .. revision
 				else
