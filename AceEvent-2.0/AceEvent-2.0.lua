@@ -231,9 +231,6 @@ Arguments:
 	tuple - list of arguments to pass along
 ------------------------------------------------------------------------------------]]
 function AceEvent:TriggerEvent(event, ...)
-	if type(event) ~= "string" then
-		DEFAULT_CHAT_FRAME:AddMessage(debugstack())
-	end
 	AceEvent:argCheck(event, 2, "string")
 	local AceEvent_registry = AceEvent.registry
 	if (not AceEvent_registry[event] or not next(AceEvent_registry[event])) and (not AceEvent_registry[ALL_EVENTS] or not next(AceEvent_registry[ALL_EVENTS])) then
@@ -294,15 +291,18 @@ function AceEvent:TriggerEvent(event, ...)
 				end
 			end
 			if not continue then
-				if type(method) == "string" then
+				local t = type(method)
+				if t == "string" then
 					local obj_method = obj[method]
 					if obj_method then
 						local success, err = pcall(obj_method, obj, ...)
 						if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
 					end
-				elseif method then -- function
+				elseif t == "function" then -- function
 					local success, err = pcall(method, ...)
 					if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+				else
+					AceEvent:error("Cannot trigger event %q. %q's handler, %q, is not a method or function (%s).", event, obj, method, t)
 				end
 			end
 			tmp[obj] = nil
@@ -316,15 +316,18 @@ function AceEvent:TriggerEvent(event, ...)
 		local obj = next(tmp)
 		while obj do
 			local method = tmp[obj]
-			if type(method) == "string" then
+			local t = type(method)
+			if t == "string" then
 				local obj_method = obj[method]
 				if obj_method then
 					local success, err = pcall(obj_method, obj, ...)
 					if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
 				end
-			elseif method then -- function
+			elseif t == "function" then
 				local success, err = pcall(method, ...)
 				if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("(.-: )in.-\n") or "") .. err) end
+			else
+				AceEvent:error("Cannot trigger event %q. %q's handler, %q, is not a method or function (%s).", event, obj, method, t)
 			end
 			tmp[obj] = nil
 			obj = next(tmp)
