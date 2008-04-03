@@ -2292,7 +2292,7 @@ function AceConsole:RegisterChatCommand(...) -- slashCommands, options, name
 				tmp[i] = nil
 			end
 		end
-		for i = 1, select('#', ...)-1 do
+		for i = 1, select('#', ...)+1 do
 			local v = select(i, ...)
 			if type(v) == "string" then
 				tmp[#tmp+1] = v
