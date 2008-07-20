@@ -20,6 +20,8 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0") end
 
+local WotLK = not not ToggleAchievementFrame
+
 local AceOO = AceLibrary("AceOO-2.0")
 local AceComm = AceOO.Mixin {
 	"SendCommMessage",
@@ -1945,30 +1947,58 @@ local recentNotSeen = {}
 local notSeenString = '^' .. _G.ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 local ambiguousString = '^' .. _G.ERR_CHAT_PLAYER_AMBIGUOUS_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 local ERR_GUILD_PERMISSIONS = _G.ERR_GUILD_PERMISSIONS
-function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
-	if (event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST") and _G.arg9:find("^AceComm") then
-		return
-	elseif event == "CHAT_MSG_SYSTEM" then
-		local arg1 = _G.arg1
-		if arg1 == ERR_GUILD_PERMISSIONS then
-			if recentGuildMessage > GetTime() then
-				stopGuildMessages = true
-				return
-			end
-		else
-			local player = arg1:match(notSeenString) or arg1:match(ambiguousString)
-			if player then
-				local t = GetTime()
-				if recentNotSeen[player] and recentNotSeen[player] > t then
-					recentNotSeen[player] = t + 10
+if WotLK then
+	function AceComm.hooks:ChatFrame_MessageEventHandler(orig, self, event, ...)
+		if (event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST") and _G.arg9:find("^AceComm") then
+			return
+		elseif event == "CHAT_MSG_SYSTEM" then
+			local arg1 = _G.arg1
+			if arg1 == ERR_GUILD_PERMISSIONS then
+				if recentGuildMessage > GetTime() then
+					stopGuildMessages = true
 					return
-				else
-					recentNotSeen[player] = t + 10
+				end
+			else
+				local player = arg1:match(notSeenString) or arg1:match(ambiguousString)
+				if player then
+					local t = GetTime()
+					if recentNotSeen[player] and recentNotSeen[player] > t then
+						recentNotSeen[player] = t + 10
+						return
+					else
+						recentNotSeen[player] = t + 10
+					end
 				end
 			end
 		end
+		return orig(self, event, ...)
 	end
-	return orig(event)
+else
+	function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
+		if (event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST") and _G.arg9:find("^AceComm") then
+			return
+		elseif event == "CHAT_MSG_SYSTEM" then
+			local arg1 = _G.arg1
+			if arg1 == ERR_GUILD_PERMISSIONS then
+				if recentGuildMessage > GetTime() then
+					stopGuildMessages = true
+					return
+				end
+			else
+				local player = arg1:match(notSeenString) or arg1:match(ambiguousString)
+				if player then
+					local t = GetTime()
+					if recentNotSeen[player] and recentNotSeen[player] > t then
+						recentNotSeen[player] = t + 10
+						return
+					else
+						recentNotSeen[player] = t + 10
+					end
+				end
+			end
+		end
+		return orig(event)
+	end
 end
 
 function AceComm.hooks:Logout(orig)
