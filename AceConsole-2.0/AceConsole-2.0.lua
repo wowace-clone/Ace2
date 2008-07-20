@@ -21,6 +21,8 @@ if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("AceOO-2.0") then error(MAJOR_VERSION .. " requires AceOO-2.0.") end
 
+local WotLK = not not ToggleAchievementFrame
+
 -- #AUTODOC_NAMESPACE AceConsole
 
 local MAP_ONOFF, USAGE, IS_CURRENTLY_SET_TO, IS_NOW_SET_TO, IS_NOT_A_VALID_OPTION_FOR, IS_NOT_A_VALID_VALUE_FOR, NO_OPTIONS_AVAILABLE, OPTION_HANDLER_NOT_FOUND, OPTION_HANDLER_NOT_VALID, OPTION_IS_DISABLED, KEYBINDING_USAGE, DEFAULT_CONFIRM_MESSAGE
@@ -2376,17 +2378,38 @@ function AceConsole:RegisterChatCommand(...) -- slashCommands, options, name
 	local handler
 	if type(options) == "function" then
 		handler = options
+		local found = false
 		for k,v in pairs(_G) do
 			if handler == v then
 				local k = k
-				handler = function(msg)
-					return _G[k](msg)
+				if WotLK then
+					handler = function(chatFrame, msg)
+						return _G[k](msg)
+					end
+				else
+					handler = function(msg)
+						return _G[k](msg)
+					end
 				end
+				found = true
+				break
+			end
+		end
+		if WotLK and not found then
+			local oldHandler = handler
+			handler = function(chatFrame, msg)
+				oldHandler(msg)
 			end
 		end
 	else
-		function handler(msg)
-			handlerFunc(self, chat, msg, options)
+		if WotLK then
+			function handler(chatFrame, msg)
+				handlerFunc(self, chat, msg, options)
+			end
+		else
+			function handler(msg)
+				handlerFunc(self, chat, msg, options)
+			end
 		end
 	end
 
