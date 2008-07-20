@@ -1948,7 +1948,7 @@ local notSeenString = '^' .. _G.ERR_CHAT_PLAYER_NOT_FOUND_S:gsub("%%s", "(.-)"):
 local ambiguousString = '^' .. _G.ERR_CHAT_PLAYER_AMBIGUOUS_S:gsub("%%s", "(.-)"):gsub("%%1%$s", "(.-)") .. '$'
 local ERR_GUILD_PERMISSIONS = _G.ERR_GUILD_PERMISSIONS
 if WotLK then
-	function AceComm.hooks:ChatFrame_MessageEventHandler(orig, self, event, ...)
+	function AceComm.hooks:ChatFrame_MessageEventHandler(orig, hookSelf, event, ...)
 		if (event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST") and _G.arg9:find("^AceComm") then
 			return
 		elseif event == "CHAT_MSG_SYSTEM" then
@@ -1971,7 +1971,7 @@ if WotLK then
 				end
 			end
 		end
-		return orig(self, event, ...)
+		return orig(hookSelf, event, ...)
 	end
 else
 	function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
@@ -2121,41 +2121,41 @@ local function activate(self, oldLib, oldDeactivate)
 	
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.ChatFrame_MessageEventHandler then
 		local old_ChatFrame_MessageEventHandler = _G.ChatFrame_MessageEventHandler
-		function _G.ChatFrame_MessageEventHandler(event)
+		function _G.ChatFrame_MessageEventHandler(...)
 			if self.hooks.ChatFrame_MessageEventHandler then
-				return self.hooks.ChatFrame_MessageEventHandler(self, old_ChatFrame_MessageEventHandler, event)
+				return self.hooks.ChatFrame_MessageEventHandler(self, old_ChatFrame_MessageEventHandler, ...)
 			else
-				return old_ChatFrame_MessageEventHandler(event)
+				return old_ChatFrame_MessageEventHandler(...)
 			end
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.Logout then
 		local old_Logout = _G.Logout
-		function _G.Logout()
+		function _G.Logout(...)
 			if self.hooks.Logout then
-				return self.hooks.Logout(self, old_Logout)
+				return self.hooks.Logout(self, old_Logout, ...)
 			else
-				return old_Logout()
+				return old_Logout(...)
 			end
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.CancelLogout then
 		local old_CancelLogout = _G.CancelLogout
-		function _G.CancelLogout()
+		function _G.CancelLogout(...)
 			if self.hooks.CancelLogout then
-				return self.hooks.CancelLogout(self, old_CancelLogout)
+				return self.hooks.CancelLogout(self, old_CancelLogout, ...)
 			else
-				return old_CancelLogout()
+				return old_CancelLogout(...)
 			end
 		end
 	end
 	if not oldLib or not oldLib.hooks or not oldLib.hooks.Quit then
 		local old_Quit = _G.Quit
-		function _G.Quit()
+		function _G.Quit(...)
 			if self.hooks.Quit then
-				return self.hooks.Quit(self, old_Quit)
+				return self.hooks.Quit(self, old_Quit, ...)
 			else
-				return old_Quit()
+				return old_Quit(...)
 			end
 		end
 	end
