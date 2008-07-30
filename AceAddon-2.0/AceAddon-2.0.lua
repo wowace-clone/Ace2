@@ -11,6 +11,8 @@ Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0, (optional) AceConsole-2.0
 License: LGPL v2.1
 ]]
 
+local WotLK = select(4,GetBuildInfo()) >= 30000
+
 local MAJOR_VERSION = "AceAddon-2.0"
 local MINOR_VERSION = "$Revision$"
 
@@ -948,7 +950,14 @@ function AceAddon.prototype:init()
 	AceAddon:RegisterEvent("ADDON_LOADED", "ADDON_LOADED")
 	local names = {}
 	for i = 1, GetNumAddOns() do
-		if IsAddOnLoaded(i) then names[GetAddOnInfo(i)] = true end
+		if WotLK then
+			if not IsAddOnLoaded(i) then
+				local name, _,_, enabled, loadable = GetAddOnInfo(i)
+				if enabled and loadable then names[name] = true end
+			end
+		else
+			if IsAddOnLoaded(i) then names[GetAddOnInfo(i)] = true end
+		end
 	end
 	self.possibleNames = names
 	table.insert(AceAddon.nextAddon, self)
