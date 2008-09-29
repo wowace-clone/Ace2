@@ -12,8 +12,6 @@ Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0
 License: LGPL v2.1
 ]]
 
-AceLibrary:HasInstance("Dewdrop-2.0") -- HACK! REMOVE THIS LATER!
-
 local MAJOR_VERSION = "AceDB-2.0"
 local MINOR_VERSION = "$Revision$"
 
