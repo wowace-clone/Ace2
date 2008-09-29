@@ -5,7 +5,7 @@ Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
 Documentation: http://www.wowace.com/index.php/AceHook-2.1
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceHook-2.1
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceHook-2.1
 Description: Mixin to allow for safe hooking of functions, methods, and scripts.
 Dependencies: AceLibrary, AceOO-2.0
 License: LGPL v2.1

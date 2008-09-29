@@ -1,11 +1,11 @@
---[[
+﻿--[[
 Name: AceDebug-2.0
 Revision: $Rev$
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
 Documentation: http://www.wowace.com/index.php/AceDebug-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceDebug-2.0
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceDebug-2.0
 Description: Mixin to allow for simple debugging capabilities.
 Dependencies: AceLibrary, AceOO-2.0
 License: LGPL v2.1
@@ -43,6 +43,9 @@ elseif GetLocale() == "zhCN" then
 elseif GetLocale() == "esES" then
 	DEBUGGING = "Debugging"
 	TOGGLE_DEBUGGING = "Activar/desactivar Debugging."
+elseif GetLocale() == "ruRU" then
+	DEBUGGING = "Отладка"
+	TOGGLE_DEBUGGING = "Вкл/Выкл отладку для этого аддона."
 else -- enUS
 	DEBUGGING = "Debugging"
 	TOGGLE_DEBUGGING = "Toggle debugging for this addon."

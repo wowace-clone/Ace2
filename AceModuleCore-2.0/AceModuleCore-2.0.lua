@@ -5,7 +5,7 @@ Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_
 Inspired By: Ace 1.x by Turan (turan@gryphon.com)
 Website: http://www.wowace.com/
 Documentation: http://www.wowace.com/index.php/AceModuleCore-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceModuleCore-2.0
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceModuleCore-2.0
 Description: Mixin to provide a module system so that modules or plugins can
              use an addon as its core.
 Dependencies: AceLibrary, AceOO-2.0, AceAddon-2.0, AceEvent-2.0 (optional)

@@ -4,7 +4,7 @@ Revision: $Rev$
 Developed by: The Ace Development Team (http://www.wowace.com/index.php/The_Ace_Development_Team)
 Website: http://www.wowace.com/
 Documentation: http://www..wowace.com/index.php/AceTab-2.0
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceTab-2.0
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceTab-2.0
 Description: A tab-completion library
 Dependencies: AceLibrary, AceEvent-2.0
 License: LGPL v2.1
@@ -145,7 +145,7 @@ local function GCS(s1, s2)
 	end
 end
 local pos
-local function CycleTab()
+local function CycleTab(this)
 	this.pMatchLen = this.lMatch:len()
 	local cMatch = 0
 	local matched = false
@@ -206,7 +206,7 @@ function AceTab:OnTabPressed(this)
 	this.lMatch = this.curMatch > 0 and (this.lMatch or this.origWord)
 
 	if this.lMatch and this.lMatch ~= "" and text:sub(1, pos):find(this.lMatch.."$") then
-		return CycleTab()
+		return CycleTab(this)
 	else
 		this.matches = {}
 		this.curMatch = 0
@@ -263,7 +263,7 @@ function AceTab:OnTabPressed(this)
 			this.curMatch = 1
 			this.origWord = word
 			this.lMatch = word
-			CycleTab()
+			CycleTab(this)
 		end
 		local gcs
 		for h, c in pairs(this.matches) do

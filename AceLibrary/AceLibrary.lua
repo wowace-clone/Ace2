@@ -7,7 +7,7 @@ Inspired By: Iriel (iriel@vigilance-committee.org)
              Revision: $Rev$
 Website: http://www.wowace.com/
 Documentation: http://www.wowace.com/index.php/AceLibrary
-SVN: http://svn.wowace.com/root/trunk/Ace2/AceLibrary
+SVN: http://svn.wowace.com/wowace/trunk/Ace2/AceLibrary
 Description: Versioning library to handle other library instances, upgrading,
              and proper access.
              It also provides a base for libraries to work off of, providing
