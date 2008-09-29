@@ -1974,11 +1974,11 @@ if WotLK then
 		return orig(hookSelf, event, ...)
 	end
 else
-	function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event, ...)
-		if (event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST") and select(9, ...):find("^AceComm") then
+	function AceComm.hooks:ChatFrame_MessageEventHandler(orig, event)
+		if (event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_CHANNEL_LIST") and _G.arg9:find("^AceComm") then
 			return
 		elseif event == "CHAT_MSG_SYSTEM" then
-			local arg1 = ...
+			local arg1 = _G.arg1
 			if arg1 == ERR_GUILD_PERMISSIONS then
 				if recentGuildMessage > GetTime() then
 					stopGuildMessages = true
@@ -1997,7 +1997,7 @@ else
 				end
 			end
 		end
-		return orig(event, ...)
+		return orig(event)
 	end
 end
 
