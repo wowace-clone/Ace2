@@ -18,7 +18,7 @@ License: LGPL v2.1
 ]]
 
 local ACELIBRARY_MAJOR = "AceLibrary"
-local ACELIBRARY_MINOR = "$Revision$"
+local ACELIBRARY_MINOR = 90000 + tonumber(("$Revision$"):match("(%d+)"))
 
 local _G = getfenv(0)
 local previous = _G[ACELIBRARY_MAJOR]

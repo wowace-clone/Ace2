@@ -13,7 +13,7 @@ License: LGPL v2.1
 ]]
 
 local MAJOR_VERSION = "AceLocale-2.2"
-local MINOR_VERSION = "$Revision$"
+local MINOR_VERSION = 90000 + tonumber(("$Revision$"):match("(%d+)"))
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
