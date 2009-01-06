@@ -371,8 +371,8 @@ elseif GetLocale() == "esES" then
 elseif GetLocale() == "ruRU" then
 	STANDBY = "|cffff5050(в режиме ожидания)|r"
 
-	TITLE = "Заглавие"
-	NOTES = "Заметки"
+	TITLE = "Название"
+	NOTES = "Описание"
 	VERSION = "Версия"
 	AUTHOR = "Автор"
 	DATE = "Дата"
@@ -382,12 +382,12 @@ elseif GetLocale() == "ruRU" then
 	CREDITS = "Титры"
 	LICENSE = "Лицензия"
 
-	ABOUT = "О аддоне"
-	PRINT_ADDON_INFO = "Показать информацию о аддоне."
+	ABOUT = "Об аддоне"
+	PRINT_ADDON_INFO = "Показать информацию об аддоне."
 	DONATE = "Пожертвовать"
-	DONATE_DESC = "Отблагодарить Автора за разработку аддона."
-	HOWTO_DONATE_WINDOWS = "Для выбора всей ссылки нажмите Ctrl-A, потом для её копирования Ctrl-C, чтобы свернуть игру Alt-Tab, откройте ваш браузер, и вставьте ссылку в строку адреса Ctrl-V"
-	HOWTO_DONATE_MAC = "Для выбора всей ссылки нажмите Cmd-A, потом для её копирования Ctrl-C, чтобы свернуть игру Cmd-Tab, откройте ваш браузер, и вставьте ссылку в строку адреса Cmd-V"
+	DONATE_DESC = "Отблагодарить автора за разработку аддона."
+	HOWTO_DONATE_WINDOWS = "Для выделения всей ссылки нажмите Ctrl-A, потом для её копирования Ctrl-C, чтобы свернуть игру - Alt-Tab, откройте ваш браузер и вставьте ссылку в адресную строку - Ctrl-V"
+	HOWTO_DONATE_MAC = "Для выделения всей ссылки нажмите Cmd-A, потом для её копирования Ctrl-C, чтобы свернуть игру -  Cmd-Tab, откройте ваш браузер и вставьте ссылку в адресную строку Cmd-V"
 
 	CATEGORIES = {
 		["Action Bars"] = "Панели команд",
@@ -423,7 +423,7 @@ elseif GetLocale() == "ruRU" then
 		["Quest"] = "Задания",
 		["Raid"] = "Рейд",
 		["Tradeskill"] = "Умения",
-		["UnitFrame"] = "Фрейми персонажа",
+		["UnitFrame"] = "Фреймы персонажей",
 	}
 else -- enUS
 	STANDBY = "|cffff5050(standby)|r"
