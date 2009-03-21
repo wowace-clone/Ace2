@@ -25,7 +25,7 @@ local function safecall(func,...)
 	if not success then geterrorhandler()(err:find("%.lua:%d+:") and err or (debugstack():match("\n(.-: )in.-\n") or "") .. err) end
 end
 -- Localization
-local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, LICENSE, PRINT_ADDON_INFO, DONATE, DONATE_DESC, HOWTO_DONATE_WINDOWS, HOWTO_DONATE_MAC
+local STANDBY, TITLE, NOTES, VERSION, AUTHOR, DATE, CATEGORY, EMAIL, CREDITS, WEBSITE, CATEGORIES, ABOUT, LICENSE, PRINT_ADDON_INFO
 if GetLocale() == "deDE" then
 	STANDBY = "|cffff5050(Standby)|r" -- capitalized
 
@@ -42,10 +42,6 @@ if GetLocale() == "deDE" then
 
 	ABOUT = "Über"
 	PRINT_ADDON_INFO = "Gibt Addondaten aus"
-	DONATE = "Donate" -- fix
-	DONATE_DESC = "Give a much-needed donation to the author of this addon." -- fix
-	HOWTO_DONATE_WINDOWS = "Press Ctrl-A to select the link, then Ctrl-C to copy, then Alt-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
-	HOWTO_DONATE_MAC = "Press Cmd-A to select the link, then Cmd-C to copy, then Cmd-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
 
 	CATEGORIES = {
 		["Action Bars"] = "Aktionsleisten",
@@ -99,10 +95,6 @@ elseif GetLocale() == "frFR" then
 
 	ABOUT = "A propos"
 	PRINT_ADDON_INFO = "Afficher les informations sur l'addon"
-	DONATE = "Donate" -- fix
-	DONATE_DESC = "Give a much-needed donation to the author of this addon." -- fix
-	HOWTO_DONATE_WINDOWS = "Press Ctrl-A to select the link, then Ctrl-C to copy, then Alt-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
-	HOWTO_DONATE_MAC = "Press Cmd-A to select the link, then Cmd-C to copy, then Cmd-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
 
 	CATEGORIES = {
 		["Action Bars"] = "Barres d'action",
@@ -156,10 +148,6 @@ elseif GetLocale() == "koKR" then
 
 	ABOUT = "정보"
 	PRINT_ADDON_INFO = "애드온에 대한 정보를 출력합니다."
-	DONATE = "기부"
-	DONATE_DESC = "이 애드온의 저작자에게 기부를 합니다."
-	HOWTO_DONATE_WINDOWS = "Ctrl-A를 눌려 링크를 선택후, Ctrl-C로 복사합니다. Alt-Tab 눌려 게임으로 부터 나간후 웹 브라우저를 엽니다. 복사된 링크를 주소 창에 붙여넣기 합니다."
-	HOWTO_DONATE_MAC = "Cmd-A를 눌려 링크를 선택후, Cmd-C로 복사합니다. Cmd-Tab 눌려 게임으로 부터 나간후 웹 브라우저를 엽니다. 복사된 링크를 주소 창에 붙여넣기 합니다."
 
 	CATEGORIES = {
 		["Action Bars"] = "액션바",
@@ -213,10 +201,6 @@ elseif GetLocale() == "zhTW" then
 
 	ABOUT = "關於"
 	PRINT_ADDON_INFO = "顯示插件資訊。"
-	DONATE = "捐贈"
-	DONATE_DESC = "捐贈金錢給插件作者。"
-	HOWTO_DONATE_WINDOWS = "請按Ctrl-A選擇網站連結，Ctrl-C複製網址，Alt-Tab切換到電腦桌面，打開瀏覽器，在網址列貼上網址。"
-	HOWTO_DONATE_MAC = "請按Cmd-A選擇網站連結，Cmd-C複製網址，Cmd-Tab切換到電腦桌面，打開瀏覽器，在網址列貼上網址。"
 
 	CATEGORIES = {
 		["Action Bars"] = "動作條",
@@ -270,10 +254,6 @@ elseif GetLocale() == "zhCN" then
 
 	ABOUT = "关于"
 	PRINT_ADDON_INFO = "印列出插件信息"
-	DONATE = "Donate" -- fix
-	DONATE_DESC = "Give a much-needed donation to the author of this addon." -- fix
-	HOWTO_DONATE_WINDOWS = "Press Ctrl-A to select the link, then Ctrl-C to copy, then Alt-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
-	HOWTO_DONATE_MAC = "Press Cmd-A to select the link, then Cmd-C to copy, then Cmd-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
 
 	CATEGORIES = {
 		["Action Bars"] = "动作条",
@@ -327,10 +307,6 @@ elseif GetLocale() == "esES" then
 
 	ABOUT = "Acerca de"
 	PRINT_ADDON_INFO = "Muestra información acerca del accesorio."
-	DONATE = "Donate" -- fix
-	DONATE_DESC = "Give a much-needed donation to the author of this addon." -- fix
-	HOWTO_DONATE_WINDOWS = "Press Ctrl-A to select the link, then Ctrl-C to copy, then Alt-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
-	HOWTO_DONATE_MAC = "Press Cmd-A to select the link, then Cmd-C to copy, then Cmd-Tab out of the game, open your favorite web browser, and paste the link into the address bar." -- fix
 
 	CATEGORIES = {
 		["Action Bars"] = "Barras de Acción",
@@ -384,10 +360,6 @@ elseif GetLocale() == "ruRU" then
 
 	ABOUT = "Об аддоне"
 	PRINT_ADDON_INFO = "Показать информацию об аддоне."
-	DONATE = "Пожертвовать"
-	DONATE_DESC = "Отблагодарить автора за разработку аддона."
-	HOWTO_DONATE_WINDOWS = "Для выделения всей ссылки нажмите Ctrl-A, потом для её копирования Ctrl-C, чтобы свернуть игру - Alt-Tab, откройте ваш браузер и вставьте ссылку в адресную строку - Ctrl-V"
-	HOWTO_DONATE_MAC = "Для выделения всей ссылки нажмите Cmd-A, потом для её копирования Ctrl-C, чтобы свернуть игру -  Cmd-Tab, откройте ваш браузер и вставьте ссылку в адресную строку Cmd-V"
 
 	CATEGORIES = {
 		["Action Bars"] = "Панели команд",
@@ -441,10 +413,6 @@ else -- enUS
 
 	ABOUT = "About"
 	PRINT_ADDON_INFO = "Show information about the addon."
-	DONATE = "Donate"
-	DONATE_DESC = "Give a much-needed donation to the author of this addon."
-	HOWTO_DONATE_WINDOWS = "Press Ctrl-A to select the link, then Ctrl-C to copy, then Alt-Tab out of the game, open your favorite web browser, and paste the link into the address bar."
-	HOWTO_DONATE_MAC = "Press Cmd-A to select the link, then Cmd-C to copy, then Cmd-Tab out of the game, open your favorite web browser, and paste the link into the address bar."
 
 	CATEGORIES = {
 		["Action Bars"] = "Action Bars",
@@ -559,94 +527,48 @@ local function RegisterOnEnable(self)
 	end
 end
 
+local meta = {
+	Title = "title",
+	Notes = "notes",
+	Version = "version",
+	Author = "author",
+	["X-Credits"] = "credits",
+	["X-Date"] = "date",
+	["X-eMail"] = "email",
+	["X-Category"] = "category",
+	["X-License"] = "license",
+	["X-Website"] = "website",
+}
+
 function AceAddon:InitializeAddon(addon, name)
 	if addon.name == nil then
 		addon.name = name
 	end
 	if GetAddOnMetadata then
 		-- TOC checks
-		if addon.title == nil then
-			addon.title = GetAddOnMetadata(name, "Title")
+		for m, key in pairs(meta) do
+			if addon[key] == nil then
+				addon[key] = GetAddOnMetadata(name, m)
+			end
+			if type(addon[key]) == "string" then
+				addon[key] = addon[key]:trim()
+			end
 		end
 		if type(addon.title) == "string" then
 			local num = addon.title:find(" |cff7fff7f %-Ace2%-|r$")
 			if num then
 				addon.title = addon.title:sub(1, num - 1)
 			end
-			addon.title = addon.title:trim()
-		end
-		if addon.notes == nil then
-			addon.notes = GetAddOnMetadata(name, "Notes")
-		end
-		if type(addon.notes) == "string" then
-			addon.notes = addon.notes:trim()
-		end
-		if addon.version == nil then
-			addon.version = GetAddOnMetadata(name, "Version")
 		end
 		if type(addon.version) == "string" then
-			if addon.version:find("%$Revision: (%d+) %$") then
-				addon.version = addon.version:gsub("%$Revision: (%d+) %$", "%1")
-			elseif addon.version:find("%$Rev: (%d+) %$") then
-				addon.version = addon.version:gsub("%$Rev: (%d+) %$", "%1")
-			elseif addon.version:find("%$LastChangedRevision: (%d+) %$") then
-				addon.version = addon.version:gsub("%$LastChangedRevision: (%d+) %$", "%1")
+			if addon.version:find("%$%w+: (%d+) %$") then
+				addon.version = addon.version:gsub("%$%w+: (%d+) %$", "%1")
 			end
-			addon.version = addon.version:trim()
-		end
-		if addon.author == nil then
-			addon.author = GetAddOnMetadata(name, "Author")
-		end
-		if type(addon.author) == "string" then
-			addon.author = addon.author:trim()
-		end
-		if addon.credits == nil then
-			addon.credits = GetAddOnMetadata(name, "X-Credits")
-		end
-		if type(addon.credits) == "string" then
-			addon.credits = addon.credits:trim()
-		end
-		if addon.donate == nil then
-			addon.donate = GetAddOnMetadata(name, "X-Donate")
-		end
-		if type(addon.donate) == "string" then
-			addon.donate = addon.donate:trim()
-		end
-		if addon.date == nil then
-			addon.date = GetAddOnMetadata(name, "X-Date") or GetAddOnMetadata(name, "X-ReleaseDate")
 		end
 		if type(addon.date) == "string" then
-			if addon.date:find("%$Date: (.-) %$") then
-				addon.date = addon.date:gsub("%$Date: (.-) %$", "%1")
-			elseif addon.date:find("%$LastChangedDate: (.-) %$") then
-				addon.date = addon.date:gsub("%$LastChangedDate: (.-) %$", "%1")
+			if addon.date:find("%$%w+: (.-) %$") then
+				addon.date = addon.date:gsub("%$%w+: (.-) %$", "%1")
 			end
-			addon.date = addon.date:trim()
-		end
-
-		if addon.category == nil then
-			addon.category = GetAddOnMetadata(name, "X-Category")
-		end
-		if type(addon.category) == "string" then
-			addon.category = addon.category:trim()
-		end
-		if addon.email == nil then
-			addon.email = GetAddOnMetadata(name, "X-eMail") or GetAddOnMetadata(name, "X-Email")
-		end
-		if type(addon.email) == "string" then
-			addon.email = addon.email:trim()
-		end
-		if addon.license == nil then
-			addon.license = GetAddOnMetadata(name, "X-License")
-		end
-		if type(addon.license) == "string" then
-			addon.license = addon.license:trim()
-		end
-		if addon.website == nil then
-			addon.website = GetAddOnMetadata(name, "X-Website")
-		end
-		if type(addon.website) == "string" then
-			addon.website = addon.website:trim()
 		end
 	end
 	local current = addon.class
@@ -692,15 +614,6 @@ local function createAboutFrame()
 	    insets = { left = 5, right = 5, top = 5, bottom = 5 }
 	})
 	aboutFrame:SetBackdropColor(0,0,0,1)
-
-	local donateButton = CreateFrame("Button", "AceAddon20AboutFrameDonateButton", aboutFrame, "UIPanelButtonTemplate2")
-	aboutFrame.donateButton = donateButton
-	donateButton:SetPoint("BOTTOMRIGHT", -20, 20)
-	_G.AceAddon20AboutFrameDonateButtonText:SetText(DONATE)
-	donateButton:SetWidth(_G.AceAddon20AboutFrameDonateButtonText:GetWidth()+20)
-	donateButton:SetScript("OnClick", function()
-		aboutFrame.currentAddon:OpenDonationFrame()
-	end)
 
 	local text = aboutFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
 	aboutFrame.title = text
@@ -768,7 +681,6 @@ local function createAboutFrame()
 
 	createAboutFrame = nil
 end
-local donateFrame
 
 local function unobfuscateEmail(email)
 	return email:gsub(" AT ", "@"):gsub(" DOT ", ".")
@@ -826,78 +738,9 @@ function AceAddon.prototype:PrintAddonInfo()
 		aboutFrame:AddLine(LICENSE, tostring(self.license))
 	end
 
-	if donateFrame and donateFrame:IsShown() then
-		donateFrame:Hide()
-	end
-
 	aboutFrame.currentAddon = self
 
 	aboutFrame:Show()
-
-	if self.donate then
-		aboutFrame.donateButton:Show()
-	else
-		aboutFrame.donateButton:Hide()
-	end
-end
-
-local function createDonateFrame()
-	donateFrame = CreateFrame("Frame", "AceAddon20Frame", UIParent, "DialogBoxFrame")
-
-	donateFrame:SetWidth(500)
-	donateFrame:SetHeight(200)
-	donateFrame:SetPoint("CENTER")
-	donateFrame:SetBackdrop({
-		bgFile = [[Interface\DialogFrame\UI-DialogBox-Background]],
-		edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
-		tile = true, tileSize = 16, edgeSize = 16,
-		insets = { left = 5, right = 5, top = 5, bottom = 5 }
-	})
-	donateFrame:SetBackdropColor(0,0,0,1)
-
-	local text = donateFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-	text:SetPoint("TOP", 0, -5)
-	text:SetText(DONATE)
-
-	local howto = donateFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	howto:SetPoint("TOP", text, "BOTTOM", 0, -5)
-	howto:SetPoint("LEFT", 16, 0)
-	howto:SetPoint("RIGHT", -16, 0)
-	if not IsMacClient() then
-		-- Windows or Linux
-		howto:SetText(HOWTO_DONATE_WINDOWS)
-	else
-		howto:SetText(HOWTO_DONATE_MAC)
-	end
-
-	local scrollFrame = CreateFrame("ScrollFrame", "AceAddon20FrameScrollFrame", donateFrame, "UIPanelScrollFrameTemplate")
-	scrollFrame:SetToplevel(true)
-	scrollFrame:SetPoint("TOP", -10, -76)
-	scrollFrame:SetWidth(455)
-	scrollFrame:SetHeight(70)
-	howto:SetPoint("BOTTOM", scrollFrame, "TOP")
-
-	local editBox = CreateFrame("EditBox", nil, scrollFrame)
-	donateFrame.editBox = editBox
-	scrollFrame:SetScrollChild(editBox)
-	editBox:SetFontObject(ChatFontNormal)
-	editBox:SetMultiLine(true)
-	editBox:SetMaxLetters(99999)
-	editBox:SetWidth(450)
-	editBox:SetHeight(54)
-	editBox:SetPoint("BOTTOM", 5, 0)
-	editBox:SetJustifyH("LEFT")
-	editBox:SetJustifyV("TOP")
-	editBox:SetAutoFocus(false)
-	editBox:SetScript("OnTextChanged", function(this)
-		if this:GetText() ~= this.text then
-			this:SetText(this.text)
-		end
-	end)
-	editBox:SetScript("OnEscapePressed", function(this)
-		this:ClearFocus()
-	end)
-	createDonateFrame = nil
 end
 
 local function fix(char)
@@ -906,48 +749,6 @@ end
 
 local function urlencode(text)
 	return text:gsub("[^0-9A-Za-z]", fix)
-end
-
-function AceAddon.prototype:OpenDonationFrame()
-	if createDonateFrame then
-		createDonateFrame()
-	end
-	local donate = self.donate
-	if type(donate) ~= "string" then
-		donate = "Wowace"
-	end
-	local style, data = (":"):split(donate, 2)
-	style = style:lower()
-	if style ~= "website" and style ~= "paypal" then
-		style = "wowace"
-	end
-	if style == "wowace" then
-		donateFrame.editBox.text = "http://www.wowace.com/wiki/Donations"
-	elseif style == "website" then
-		donateFrame.editBox.text = data
-	else -- PayPal
-		local text = "https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=" .. urlencode(unobfuscateEmail(data))
-		local name
-		if type(self.title) == "string" then
-			name = self.title
-		elseif type(self.name) == "string" then
-			name = self.name
-		end
-		if name then
-			name = name:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
-			text = text .. "&item_name=" .. urlencode(name)
-		end
-		donateFrame.editBox.text = text
-	end
-	donateFrame.editBox:SetText(donateFrame.editBox.text)
-
-	if aboutFrame and aboutFrame:IsShown() then
-		aboutFrame:Hide()
-	end
-
-	donateFrame:Show()
-
-	donateFrame.editBox:SetFocus()
 end
 
 local options
@@ -960,16 +761,6 @@ function AceAddon:GetAceOptionsDataTable(target)
 			func = "PrintAddonInfo",
 			order = -1,
 		},
-		donate = {
-			name = DONATE,
-			desc = DONATE_DESC,
-			type = "execute",
-			func = "OpenDonationFrame",
-			order = -1,
-			hidden = function()
-				return not target.donate
-			end
-		}
 	}
 end
 
