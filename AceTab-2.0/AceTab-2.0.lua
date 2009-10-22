@@ -72,7 +72,7 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 		editframes = {"ChatFrameEditBox"}
 	elseif type(editframes) ~= "table" then
 		editframes = { editframes }
-	elseif type(editframes) == "table" and type(editframes[0]) == "userdata" and type(editframes.IsFrameType) == "function" then
+	elseif type(editframes) == "table" and type(editframes[0]) == "userdata" and type(editframes.IsFrameType or editframes.IsObjectType) == "function" then -- 3.3 hack (IsFrameType => IsObjecType)
 		editframes = {editframes:GetName()}
 	end
 	
@@ -85,13 +85,13 @@ function AceTab:RegisterTabCompletion(descriptor, regex, wlfunc, usage, editfram
 			Gframe = _G[frame]
 		end
 
-		if type(Gframe) ~= "table" or type(Gframe[0]) ~= "userdata" or type(Gframe.IsFrameType) ~= "function" then
+		if type(Gframe) ~= "table" or type(Gframe[0]) ~= "userdata" or type(Gframe.IsFrameType or Gframe.IsObjectType) ~= "function" then -- 3.3 hack (IsFrameType => IsObjecType)
 			self:error("Cannot register frame %q; it does not exist", frame)
 			frame = nil
 		end
 		
 		if frame then
-			if Gframe:GetFrameType() ~= "EditBox" then
+			if (Gframe.GetFrameType or Gframe.GetObjectType)(Gframe) ~= "EditBox" then -- 3.3 hack (IsFrameType => IsObjecType)
 				self:error("Cannot register frame %q; it is not an EditBox", frame)
 				frame = nil
 			else
