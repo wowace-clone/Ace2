@@ -543,10 +543,7 @@ function AceAddon:ADDON_LOADED(name)
 end
 
 local function RegisterOnEnable(self)
-	if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage then -- HACK
-		AceAddon.playerLoginFired = true
-	end
-	if AceAddon.playerLoginFired then
+	if IsLoggedIn() then
 		AceAddon.addonsStarted[self] = true
 		if (type(self.IsActive) ~= "function" or self:IsActive()) and (not AceModuleCore or not AceModuleCore:IsModule(self) or AceModuleCore:IsModuleActive(self)) then
 			AceAddon:ManualEnable(self)
@@ -974,7 +971,6 @@ function AceAddon:GetAceOptionsDataTable(target)
 end
 
 function AceAddon:PLAYER_LOGIN()
-	self.playerLoginFired = true
 	if self.addonsToOnEnable then
 		while #self.addonsToOnEnable > 0 do
 			local addon = table.remove(self.addonsToOnEnable, 1)
@@ -1434,7 +1430,6 @@ end
 local function activate(self, oldLib, oldDeactivate)
 	AceAddon = self
 
-	self.playerLoginFired = oldLib and oldLib.playerLoginFired or DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.defaultLanguage
 	self.addonsToOnEnable = oldLib and oldLib.addonsToOnEnable
 	self.addons = oldLib and oldLib.addons or {}
 	self.nextAddon = oldLib and oldLib.nextAddon or {}
