@@ -1,4 +1,4 @@
-## Interface: 30000
+## Interface: 30300
 
 ## Title: Lib: AceComm-2.0
 ## Notes: AddOn development framework
@@ -10,3 +10,4 @@
 ## Dependencies: AceLibrary, AceEvent-2.0, AceOO-2.0
  
 AceComm-2.0.lua
+

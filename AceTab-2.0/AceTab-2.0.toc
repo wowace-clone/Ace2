@@ -9,4 +9,3 @@
 ## X-License: LGPL v2.1 + MIT for AceOO-2.0
 ## Dependencies: AceLibrary, AceOO-2.0, AceEvent-2.0
  
-AceTab-2.0.lua

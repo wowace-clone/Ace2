@@ -1,4 +1,4 @@
-## Interface: 30000
+## Interface: 30300
 
 ## Title: Lib: AceEvent-2.0
 ## Notes: AddOn development framework
@@ -10,3 +10,4 @@
 ## Dependencies: AceLibrary, AceOO-2.0
  
 AceEvent-2.0.lua
+
